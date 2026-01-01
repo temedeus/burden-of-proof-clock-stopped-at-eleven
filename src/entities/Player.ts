@@ -1,9 +1,11 @@
 import { Entity } from "./Entity";
+import { Input } from "../engine/Input";
+import { TILE_SIZE } from "../world/constants";
 
 export class Player extends Entity {
-    speed = 200; // pixels per second
+    speed = 180; // pixels per second
 
-    update(dt: number, input: any) {
+    update(dt: number, input: Input) {
         let dx = 0;
         let dy = 0;
 
@@ -18,12 +20,24 @@ export class Player extends Entity {
             dy *= 0.7071;
         }
 
-        this.x += dx * this.speed * dt;
-        this.y += dy * this.speed * dt;
+        const nextX = this.x + dx * this.speed * dt;
+        const nextY = this.y + dy * this.speed * dt;
+
+        // TEMP: no collision yet
+        this.x = nextX;
+        this.y = nextY;
+    }
+
+    get tileX(): number {
+        return Math.floor(this.x / TILE_SIZE);
+    }
+
+    get tileY(): number {
+        return Math.floor(this.y / TILE_SIZE);
     }
 
     render(ctx: CanvasRenderingContext2D) {
         ctx.fillStyle = "white";
-        ctx.fillRect(this.x, this.y, 20, 20);
+        ctx.fillRect(this.x, this.y, TILE_SIZE * 0.8, TILE_SIZE * 0.8);
     }
 }

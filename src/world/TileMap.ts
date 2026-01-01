@@ -1,7 +1,8 @@
 import { TILE_SIZE } from "./constants";
 import {
     TILE_WALL,
-    TILE_FURNITURE
+    TILE_FURNITURE,
+    TILE_DOOR
 } from "./TileTypes";
 
 export class TileMap {
@@ -25,7 +26,9 @@ export class TileMap {
             for (let x = 0; x < this.width; x++) {
                 const tile = this.tiles[y * this.width + x];
 
-                if (tile === TILE_WALL) {
+                if (tile === TILE_DOOR) {
+                    ctx.fillStyle = "#886644"; // wooden door
+                } else if (tile === TILE_WALL) {
                     ctx.fillStyle = "#555";
                 } else if (tile === TILE_FURNITURE) {
                     ctx.fillStyle = "#3a2f28";

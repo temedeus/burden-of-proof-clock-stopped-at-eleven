@@ -1,11 +1,16 @@
 import { Entity } from "./Entity";
 import { Input } from "../engine/Input";
 import { TILE_SIZE } from "../world/constants";
+import { TileMap } from "../world/TileMap";
 
 export class Player extends Entity {
-    speed = 180; // pixels per second
+    speed = 180;
 
-    update(dt: number, input: Input) {
+    // collision box (smaller than tile)
+    width = TILE_SIZE * 0.7;
+    height = TILE_SIZE * 0.7;
+
+    update(dt: number, input: Input, map: TileMap) {
         let dx = 0;
         let dy = 0;
 
@@ -14,30 +19,47 @@ export class Player extends Entity {
         if (input.isDown("a") || input.isDown("arrowleft")) dx -= 1;
         if (input.isDown("d") || input.isDown("arrowright")) dx += 1;
 
-        // normalize diagonal movement
         if (dx !== 0 && dy !== 0) {
             dx *= 0.7071;
             dy *= 0.7071;
         }
 
-        const nextX = this.x + dx * this.speed * dt;
-        const nextY = this.y + dy * this.speed * dt;
+        const moveX = dx * this.speed * dt;
+        const moveY = dy * this.speed * dt;
 
-        // TEMP: no collision yet
-        this.x = nextX;
-        this.y = nextY;
+        // move X, then resolve collision
+        this.tryMove(moveX, 0, map);
+
+        // move Y, then resolve collision
+        this.tryMove(0, moveY, map);
     }
 
-    get tileX(): number {
-        return Math.floor(this.x / TILE_SIZE);
+    private tryMove(dx: number, dy: number, map: TileMap) {
+        const nextX = this.x + dx;
+        const nextY = this.y + dy;
+
+        if (!this.collides(nextX, nextY, map)) {
+            this.x = nextX;
+            this.y = nextY;
+        }
     }
 
-    get tileY(): number {
-        return Math.floor(this.y / TILE_SIZE);
+    private collides(x: number, y: number, map: TileMap): boolean {
+        const left = Math.floor(x / TILE_SIZE);
+        const right = Math.floor((x + this.width) / TILE_SIZE);
+        const top = Math.floor(y / TILE_SIZE);
+        const bottom = Math.floor((y + this.height) / TILE_SIZE);
+
+        return (
+            map.isBlocked(left, top) ||
+            map.isBlocked(right, top) ||
+            map.isBlocked(left, bottom) ||
+            map.isBlocked(right, bottom)
+        );
     }
 
     render(ctx: CanvasRenderingContext2D) {
         ctx.fillStyle = "white";
-        ctx.fillRect(this.x, this.y, TILE_SIZE * 0.8, TILE_SIZE * 0.8);
+        ctx.fillRect(this.x, this.y, this.width, this.height);
     }
 }

@@ -3,12 +3,15 @@ import { Input } from "../engine/Input";
 import { TILE_SIZE } from "../world/constants";
 import { TileMap } from "../world/TileMap";
 
+export type Facing = "up" | "down" | "left" | "right";
+
 export class Player extends Entity {
     speed = 180;
 
     // collision box (smaller than tile)
     width = TILE_SIZE * 0.7;
     height = TILE_SIZE * 0.7;
+    facing: Facing = "down";
 
     update(dt: number, input: Input, map: TileMap) {
         let dx = 0;
@@ -22,6 +25,11 @@ export class Player extends Entity {
         if (dx !== 0 && dy !== 0) {
             dx *= 0.7071;
             dy *= 0.7071;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                this.facing = dx > 0 ? "right" : "left";
+            } else {
+                this.facing = dy > 0 ? "down" : "up";
+            }
         }
 
         const moveX = dx * this.speed * dt;

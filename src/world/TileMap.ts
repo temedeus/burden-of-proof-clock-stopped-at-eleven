@@ -21,6 +21,13 @@ export class TileMap {
         return tile === TILE_WALL || tile === TILE_FURNITURE;
     }
 
+    getTile(tx: number, ty: number): number {
+        if (tx < 0 || ty < 0 || tx >= this.width || ty >= this.height) {
+            return -1;
+        }
+        return this.tiles[ty * this.width + tx];
+    }
+
     render(ctx: CanvasRenderingContext2D) {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {

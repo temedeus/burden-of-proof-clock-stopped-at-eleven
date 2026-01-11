@@ -66,9 +66,15 @@ export class Game {
 
         for (const exit of this.currentRoom.exits) {
             if (exit.x === tx && exit.y === ty) {
-                this.currentRoom = this.rooms[exit.targetRoom];
+                const nextRoom = this.rooms[exit.targetRoom];
+
+                // Move to the target room
+                this.currentRoom = nextRoom;
+
+                // Spawn at the DOOR ENTRY POINT, not the room default
                 this.player.x = exit.spawnX * TILE_SIZE;
                 this.player.y = exit.spawnY * TILE_SIZE;
+
                 return;
             }
         }

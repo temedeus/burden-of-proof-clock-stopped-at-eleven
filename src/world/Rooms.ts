@@ -111,7 +111,7 @@ export function createHall(width: number, height: number): Room {
                 y: 0,
                 targetRoom: "library",
                 spawnX: doorX,
-                spawnY: 1
+                spawnY: height-2
             }
         ],        []
     );

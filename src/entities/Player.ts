@@ -22,15 +22,10 @@ export class Player extends Entity {
         if (input.isDown("a") || input.isDown("arrowleft")) dx -= 1;
         if (input.isDown("d") || input.isDown("arrowright")) dx += 1;
 
-        if (dx !== 0 && dy !== 0) {
-            dx *= 0.7071;
-            dy *= 0.7071;
-            if (Math.abs(dx) > Math.abs(dy)) {
-                this.facing = dx > 0 ? "right" : "left";
-            } else {
-                this.facing = dy > 0 ? "down" : "up";
-            }
-        }
+        if (dx > 0) this.facing = "right";
+        else if (dx < 0) this.facing = "left";
+        else if (dy > 0) this.facing = "down";
+        else if (dy < 0) this.facing = "up";
 
         const moveX = dx * this.speed * dt;
         const moveY = dy * this.speed * dt;
@@ -69,5 +64,12 @@ export class Player extends Entity {
     render(ctx: CanvasRenderingContext2D) {
         ctx.fillStyle = "white";
         ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+
+    getInteractionPoint(): { x: number; y: number } {
+        return {
+            x: this.x + this.width / 2,
+            y: this.y + this.height / 2
+        };
     }
 }

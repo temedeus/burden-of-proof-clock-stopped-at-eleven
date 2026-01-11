@@ -31,11 +31,14 @@ export class Game {
     }
 
     update(dt: number) {
+
         if (this.state === "playing") {
             this.player.update(dt, this.input, this.currentRoom.map);
             this.checkRoomTransition();
 
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
+                console.log("wasPressed", this.player.facing);
+
                 const result = this.interaction.interact(
                     this.player,
                     this.currentRoom
@@ -61,11 +64,7 @@ export class Game {
         const tx = Math.floor(centerX / TILE_SIZE);
         const ty = Math.floor(centerY / TILE_SIZE);
 
-        console.log("PLAYER TILE:", tx, ty);
-
-
         for (const exit of this.currentRoom.exits) {
-            console.log("EXIT TILE:", exit.x, exit.y, "→", exit.targetRoom);
             if (exit.x === tx && exit.y === ty) {
                 this.currentRoom = this.rooms[exit.targetRoom];
                 this.player.x = exit.spawnX * TILE_SIZE;

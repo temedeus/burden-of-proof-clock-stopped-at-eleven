@@ -2,9 +2,12 @@ import { TILE_SIZE } from "./constants";
 import {
     TILE_WALL,
     TILE_FURNITURE,
-    TILE_DOOR
+    TILE_DOOR,
+    TILE_FLOOR
 } from "./TileTypes";
 import { NPC } from "../entities/NPC";
+import { spriteLoader } from "../assets/SpriteLoader";
+import { TILE_TO_SPRITE } from "../assets/SpriteMap";
 
 export class TileMap {
     constructor(
@@ -31,11 +34,12 @@ export class TileMap {
             const npcBottomTile = Math.floor((npc.y + npc.height) / TILE_SIZE);
 
             // Check if the given tile coordinates overlap with NPC's tile bounds
+            // Right and bottom boundaries are exclusive (use < not <=)
             if (
                 tx >= npcLeftTile &&
-                tx <= npcRightTile &&
+                tx < npcRightTile &&
                 ty >= npcTopTile &&
-                ty <= npcBottomTile
+                ty < npcBottomTile
             ) {
                 return true;
             }
@@ -55,23 +59,19 @@ export class TileMap {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 const tile = this.tiles[y * this.width + x];
+                const tileX = x * TILE_SIZE;
+                const tileY = y * TILE_SIZE;
 
-                if (tile === TILE_DOOR) {
-                    ctx.fillStyle = "#886644"; // wooden door
-                } else if (tile === TILE_WALL) {
-                    ctx.fillStyle = "#555";
-                } else if (tile === TILE_FURNITURE) {
-                    ctx.fillStyle = "#3a2f28";
+                // Get sprite name for this tile type
+                const spriteName = TILE_TO_SPRITE[tile];
+                
+                if (spriteName) {
+                    // Render sprite from spritesheet (will be scaled to TILE_SIZE)
+                    spriteLoader.drawSprite(ctx, spriteName, tileX, tileY, TILE_SIZE, TILE_SIZE);
                 } else {
-                    continue;
+                    // Fallback: render floor tile for empty tiles
+                    spriteLoader.drawSprite(ctx, 'floor', tileX, tileY, TILE_SIZE, TILE_SIZE);
                 }
-
-                ctx.fillRect(
-                    x * TILE_SIZE,
-                    y * TILE_SIZE,
-                    TILE_SIZE,
-                    TILE_SIZE
-                );
             }
         }
     }

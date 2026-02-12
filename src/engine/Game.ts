@@ -9,6 +9,7 @@ import { ClueSystem } from "../systems/ClueSystem";
 import cluesData from "../data/clues.json";
 import butlerConfig from "../data/npcs/butler.json";
 import libraryConfig from "../data/rooms/library.json";
+import { spriteLoader } from "../assets/SpriteLoader";
 
 type GameState = "playing" | "interacting" | "inventory";
 
@@ -57,6 +58,11 @@ export class Game {
 
         // Load NPC configs and initialize NPCs
         this.loadNPCs();
+
+        // Load spritesheet
+        spriteLoader.load().catch(err => {
+            console.error('Failed to load spritesheet:', err);
+        });
 
         this.currentRoom = this.rooms.library;
     }

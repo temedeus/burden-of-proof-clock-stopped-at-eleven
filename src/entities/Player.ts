@@ -3,6 +3,7 @@ import { Input } from "../engine/Input";
 import { TILE_SIZE } from "../world/constants";
 import { TileMap } from "../world/TileMap";
 import { NPC } from "./NPC";
+import { spriteLoader } from "../assets/SpriteLoader";
 
 export type Facing = "up" | "down" | "left" | "right";
 
@@ -63,8 +64,8 @@ export class Player extends Entity {
     }
 
     render(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = "white";
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        // Render player sprite from spritesheet
+        spriteLoader.drawSprite(ctx, 'player', this.x, this.y, this.width, this.height);
     }
 
     getInteractionPoint(): { x: number; y: number } {

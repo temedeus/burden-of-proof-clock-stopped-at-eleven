@@ -23,10 +23,19 @@ export class InteractionSystem {
 
         // Check NPCs first
         for (const npc of room.npcs) {
-            const npcTileX = Math.floor(npc.x / TILE_SIZE);
-            const npcTileY = Math.floor(npc.y / TILE_SIZE);
+            // Calculate all tiles the NPC occupies
+            const npcLeftTile = Math.floor(npc.x / TILE_SIZE);
+            const npcRightTile = Math.floor((npc.x + npc.width) / TILE_SIZE);
+            const npcTopTile = Math.floor(npc.y / TILE_SIZE);
+            const npcBottomTile = Math.floor((npc.y + npc.height) / TILE_SIZE);
             
-            if (npcTileX === x && npcTileY === y) {
+            // Check if the target tile is within any of the NPC's occupied tiles
+            if (
+                x >= npcLeftTile &&
+                x < npcRightTile &&
+                y >= npcTopTile &&
+                y < npcBottomTile
+            ) {
                 // Get dialog for this NPC
                 if (npcDialogs && npcDialogs[npc.id]) {
                     const dialog = this.dialogSystem.getDialog(npcDialogs[npc.id]);

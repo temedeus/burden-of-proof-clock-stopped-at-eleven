@@ -45,9 +45,18 @@ export class Game {
     private state: GameState = "playing";
     private message: string | null = null;
     private clueNotification: { clueId: string } | null = null;
+    private debugMode: boolean = false;
 
 
     constructor(private ctx: CanvasRenderingContext2D) {
+        // Check for debug flag in URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        this.debugMode = urlParams.get('debug') === 'true' || urlParams.get('debug') === '1';
+        
+        if (this.debugMode) {
+            console.log('🐛 Debug mode enabled! Collision and interaction areas will be visible.');
+        }
+
         const w = Math.floor(ctx.canvas.width / TILE_SIZE);
         const h = Math.floor(ctx.canvas.height / TILE_SIZE);
 
@@ -233,8 +242,10 @@ export class Game {
             .sort((a, b) => (a.y + a.height) - (b.y + b.height))
             .forEach(actor => actor.render(ctx));
 
-        // Debug visualization for collision and interaction areas
-        this.renderDebugOverlay(ctx);
+        // Debug visualization for collision and interaction areas (only when debug mode is enabled)
+        if (this.debugMode) {
+            this.renderDebugOverlay(ctx);
+        }
 
         if (this.message) {
             ctx.fillStyle = "rgba(0,0,0,0.7)";

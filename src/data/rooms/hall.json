@@ -1,0 +1,15 @@
+{
+  "id": "hall",
+  "width": 20,
+  "height": 15,
+  "furniture": [],
+  "exits": [
+    {
+      "x": "center",
+      "y": "top",
+      "targetRoom": "library",
+      "spawnX": "center",
+      "spawnY": "bottom-1"
+    }
+  ]
+}

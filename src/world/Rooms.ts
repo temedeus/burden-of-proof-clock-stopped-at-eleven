@@ -2,118 +2,162 @@ import {Room} from "./Room";
 import {TileMap} from "./TileMap";
 import {TILE_DOOR, TILE_FLOOR, TILE_FURNITURE, TILE_WALL} from "./TileTypes";
 import {Interactable} from "./Interactable";
+import tableConfig from "../data/furniture/table.json";
+import bookshelvesConfig from "../data/furniture/bookshelves.json";
+import libraryConfig from "../data/rooms/library.json";
+import hallConfig from "../data/rooms/hall.json";
 
-const table: Interactable = {
-    id: "table",
-    name: "Large Oak Table",
-    description: "A heavy oak table, scarred by years of use.",
-    tiles: []
+interface FurnitureConfig {
+    id: string;
+    name: string;
+    description: string;
+    width: number;
+    height: number;
+}
+
+interface FurniturePlacement {
+    furnitureId: string;
+    x: number | "center";
+    y: number | "center" | "top" | "bottom";
+    anchor: "top-left" | "center";
+}
+
+interface ExitConfig {
+    x: number | "center";
+    y: number | "top" | "bottom" | "center";
+    targetRoom: string;
+    spawnX: number | "center";
+    spawnY: number | "bottom-1" | number;
+}
+
+interface RoomConfig {
+    id: string;
+    width: number;
+    height: number;
+    furniture: FurniturePlacement[];
+    exits: ExitConfig[];
+}
+
+// Furniture config map
+const furnitureConfigs: Record<string, FurnitureConfig> = {
+    table: tableConfig as FurnitureConfig,
+    bookshelves: bookshelvesConfig as FurnitureConfig
 };
 
-const shelves: Interactable = {
-    id: "shelves",
-    name: "Bookshelves",
-    description: "Rows of leather-bound volumes. Some seem recently disturbed.",
-    tiles: []
-};
+function resolvePosition(
+    value: number | "center" | "top" | "bottom",
+    dimension: "width" | "height",
+    roomDimension: number
+): number {
+    if (typeof value === "number") return value;
+    if (value === "center") return Math.floor(roomDimension / 2);
+    if (value === "top") return 0;
+    if (value === "bottom") return roomDimension - 1;
+    return 0;
+}
 
+function resolveSpawnY(
+    value: number | "bottom-1",
+    roomHeight: number
+): number {
+    if (typeof value === "number") return value;
+    if (value === "bottom-1") return roomHeight - 2;
+    return 1;
+}
 
-export function createLibrary(width: number, height: number): Room {
-    const tiles = new Array(width * height).fill(TILE_FLOOR);
+function placeFurniture(
+    tiles: number[],
+    width: number,
+    height: number,
+    furniture: FurnitureConfig,
+    placement: FurniturePlacement
+): Interactable {
+    const interactable: Interactable = {
+        id: furniture.id,
+        name: furniture.name,
+        description: furniture.description,
+        tiles: []
+    };
 
-    // ─────────────────────────
-    // OUTER WALLS
-    // ─────────────────────────
-    for (let x = 0; x < width; x++) {
-        tiles[x] = TILE_WALL;
-        tiles[(height - 1) * width + x] = TILE_WALL;
+    let startX: number;
+    let startY: number;
+
+    if (placement.anchor === "center") {
+        startX = resolvePosition(placement.x, "width", width) - Math.floor(furniture.width / 2);
+        startY = resolvePosition(placement.y, "height", height) - Math.floor(furniture.height / 2);
+    } else {
+        startX = resolvePosition(placement.x, "width", width);
+        startY = resolvePosition(placement.y, "height", height);
     }
 
-    for (let y = 0; y < height; y++) {
-        tiles[y * width] = TILE_WALL;
-        tiles[y * width + (width - 1)] = TILE_WALL;
-    }
-
-    // ─────────────────────────
-    // CENTRAL TABLE (3×2)
-    // ─────────────────────────
-    const cx = Math.floor(width / 2);
-    const cy = Math.floor(height / 2);
-
-    // central table (3x2)
-    for (let y = cy; y <= cy + 1; y++) {
-        for (let x = cx - 1; x <= cx + 1; x++) {
-            tiles[y * width + x] = TILE_FURNITURE;
-            table.tiles.push({x, y});
+    for (let y = 0; y < furniture.height; y++) {
+        for (let x = 0; x < furniture.width; x++) {
+            const tileX = startX + x;
+            const tileY = startY + y;
+            
+            if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
+                tiles[tileY * width + tileX] = TILE_FURNITURE;
+                interactable.tiles.push({x: tileX, y: tileY});
+            }
         }
     }
 
-    // bookshelves
-    for (let x = 2; x < width - 2; x++) {
-        const y = height - 3;
-        tiles[y * width + x] = TILE_FURNITURE;
-        shelves.tiles.push({x, y});
+    return interactable;
+}
+
+function createRoomFromConfig(config: RoomConfig, width?: number, height?: number): Room {
+    const roomWidth = width || config.width;
+    const roomHeight = height || config.height;
+    
+    const tiles = new Array(roomWidth * roomHeight).fill(TILE_FLOOR);
+
+    // Outer walls
+    for (let x = 0; x < roomWidth; x++) {
+        tiles[x] = TILE_WALL;
+        tiles[(roomHeight - 1) * roomWidth + x] = TILE_WALL;
     }
 
-    // ─────────────────────────
-    // DOOR (BOTTOM CENTER)
-    // ─────────────────────────
-    const doorX = Math.floor(width / 2);
-    const doorY = height - 1;
-    tiles[doorY * width + doorX] = TILE_DOOR;
+    for (let y = 0; y < roomHeight; y++) {
+        tiles[y * roomWidth] = TILE_WALL;
+        tiles[y * roomWidth + (roomWidth - 1)] = TILE_WALL;
+    }
+
+    // Place furniture
+    const interactables: Interactable[] = [];
+    for (const placement of config.furniture) {
+        const furnitureConfig = furnitureConfigs[placement.furnitureId];
+        if (furnitureConfig) {
+            const interactable = placeFurniture(tiles, roomWidth, roomHeight, furnitureConfig, placement);
+            interactables.push(interactable);
+        }
+    }
+
+    // Place exits
+    const exits = config.exits.map(exit => ({
+        x: resolvePosition(exit.x, "width", roomWidth),
+        y: resolvePosition(exit.y, "height", roomHeight),
+        targetRoom: exit.targetRoom,
+        spawnX: resolvePosition(exit.spawnX, "width", roomWidth),
+        spawnY: resolveSpawnY(exit.spawnY, roomHeight)
+    }));
+
+    // Place door tiles
+    exits.forEach(exit => {
+        tiles[exit.y * roomWidth + exit.x] = TILE_DOOR;
+    });
 
     return new Room(
-        "library",
-        new TileMap(width, height, tiles),
-        [
-            {
-                x: doorX,
-                y: doorY,
-                targetRoom: "hall",
-                spawnX: doorX,
-                spawnY: 1
-            }
-        ],
-        [table, shelves]
+        config.id,
+        new TileMap(roomWidth, roomHeight, tiles),
+        exits,
+        interactables
     );
 }
 
+export function createLibrary(width: number, height: number): Room {
+    return createRoomFromConfig(libraryConfig as RoomConfig, width, height);
+}
 
 export function createHall(width: number, height: number): Room {
-    const tiles = new Array(width * height).fill(TILE_FLOOR);
-
-    // walls
-    for (let x = 0; x < width; x++) {
-        tiles[x] = TILE_WALL;
-        tiles[(height - 1) * width + x] = TILE_WALL;
-    }
-    for (let y = 0; y < height; y++) {
-        tiles[y * width] = TILE_WALL;
-        tiles[y * width + (width - 1)] = TILE_WALL;
-    }
-
-    // door at top center
-    const doorX = Math.floor(width / 2);
-    tiles[0 * width + doorX] = TILE_DOOR;
-
-    const cy = Math.floor(height / 2);
-    tiles[cy * width + 3] = TILE_FURNITURE;
-    tiles[cy * width + 4] = TILE_FURNITURE;
-    tiles[cy * width + 5] = TILE_FURNITURE;
-
-
-    return new Room(
-        "hall",
-        new TileMap(width, height, tiles),
-        [
-            {
-                x: doorX,
-                y: 0,
-                targetRoom: "library",
-                spawnX: doorX,
-                spawnY: height-2
-            }
-        ],        []
-    );
-
+    return createRoomFromConfig(hallConfig as RoomConfig, width, height);
 }

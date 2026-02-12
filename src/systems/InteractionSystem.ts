@@ -1,14 +1,36 @@
 import { Player } from "../entities/Player";
 import { Room } from "../world/Room";
 import { TILE_SIZE } from "../world/constants";
+import { ClueSystem } from "./ClueSystem";
+
+export interface InteractionResult {
+    description: string;
+    clues: string[];
+}
 
 export class InteractionSystem {
-    interact(player: Player, room: Room): string | null {
+    constructor(private clueSystem: ClueSystem) {}
+
+    interact(player: Player, room: Room): InteractionResult | null {
         const { x, y } = this.getTargetTile(player);
 
         for (const obj of room.interactables) {
             if (obj.tiles.some(t => t.x === x && t.y === y)) {
-                return obj.description;
+                // Only add clues that haven't been collected yet
+                const newClues: string[] = [];
+                if (obj.clues) {
+                    for (const clueId of obj.clues) {
+                        if (!this.clueSystem.hasClue(clueId)) {
+                            this.clueSystem.addClue(clueId);
+                            newClues.push(clueId);
+                        }
+                    }
+                }
+                
+                return {
+                    description: obj.description,
+                    clues: newClues // Only return newly collected clues
+                };
             }
         }
 

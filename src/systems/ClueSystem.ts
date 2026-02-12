@@ -9,4 +9,8 @@ export class ClueSystem {
   hasClue(id: string): boolean {
     return this.discovered.has(id);
   }
+
+  getAllClues(): string[] {
+    return Array.from(this.discovered);
+  }
 }

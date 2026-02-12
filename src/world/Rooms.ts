@@ -13,6 +13,7 @@ interface FurnitureConfig {
     description: string;
     width: number;
     height: number;
+    clues?: string[];
 }
 
 interface FurniturePlacement {
@@ -76,7 +77,8 @@ function placeFurniture(
         id: furniture.id,
         name: furniture.name,
         description: furniture.description,
-        tiles: []
+        tiles: [],
+        clues: furniture.clues || []
     };
 
     let startX: number;

@@ -3,4 +3,5 @@ export interface Interactable {
     name: string;
     description: string;
     tiles: { x: number; y: number }[];
+    clues?: string[];
 }

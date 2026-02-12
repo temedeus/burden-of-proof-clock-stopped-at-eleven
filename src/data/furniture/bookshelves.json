@@ -3,5 +3,8 @@
   "name": "Bookshelves",
   "description": "Rows of leather-bound volumes. Some seem recently disturbed.",
   "width": 1,
-  "height": 4
+  "height": 4,
+  "clues": [
+    "torn_page"
+  ]
 }

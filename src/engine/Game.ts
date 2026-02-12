@@ -114,7 +114,7 @@ export class Game {
         }
 
         if (this.state === "playing") {
-            this.player.update(dt, this.input, this.currentRoom.map);
+            this.player.update(dt, this.input, this.currentRoom.map, this.currentRoom.npcs);
             this.checkRoomTransition();
 
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {

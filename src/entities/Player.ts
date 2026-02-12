@@ -2,6 +2,7 @@ import { Entity } from "./Entity";
 import { Input } from "../engine/Input";
 import { TILE_SIZE } from "../world/constants";
 import { TileMap } from "../world/TileMap";
+import { NPC } from "./NPC";
 
 export type Facing = "up" | "down" | "left" | "right";
 
@@ -13,7 +14,7 @@ export class Player extends Entity {
     height = TILE_SIZE * 0.7;
     facing: Facing = "down";
 
-    update(dt: number, input: Input, map: TileMap) {
+    update(dt: number, input: Input, map: TileMap, npcs: NPC[] = []) {
         let dx = 0;
         let dy = 0;
 
@@ -31,33 +32,33 @@ export class Player extends Entity {
         const moveY = dy * this.speed * dt;
 
         // move X, then resolve collision
-        this.tryMove(moveX, 0, map);
+        this.tryMove(moveX, 0, map, npcs);
 
         // move Y, then resolve collision
-        this.tryMove(0, moveY, map);
+        this.tryMove(0, moveY, map, npcs);
     }
 
-    private tryMove(dx: number, dy: number, map: TileMap) {
+    private tryMove(dx: number, dy: number, map: TileMap, npcs: NPC[] = []) {
         const nextX = this.x + dx;
         const nextY = this.y + dy;
 
-        if (!this.collides(nextX, nextY, map)) {
+        if (!this.collides(nextX, nextY, map, npcs)) {
             this.x = nextX;
             this.y = nextY;
         }
     }
 
-    private collides(x: number, y: number, map: TileMap): boolean {
+    private collides(x: number, y: number, map: TileMap, npcs: NPC[] = []): boolean {
         const left = Math.floor(x / TILE_SIZE);
         const right = Math.floor((x + this.width) / TILE_SIZE);
         const top = Math.floor(y / TILE_SIZE);
         const bottom = Math.floor((y + this.height) / TILE_SIZE);
 
         return (
-            map.isBlocked(left, top) ||
-            map.isBlocked(right, top) ||
-            map.isBlocked(left, bottom) ||
-            map.isBlocked(right, bottom)
+            map.isBlocked(left, top, npcs) ||
+            map.isBlocked(right, top, npcs) ||
+            map.isBlocked(left, bottom, npcs) ||
+            map.isBlocked(right, bottom, npcs)
         );
     }
 

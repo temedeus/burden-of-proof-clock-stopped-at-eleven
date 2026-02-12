@@ -128,6 +128,7 @@ export class Game {
 
             ctx.fillStyle = "white";
             ctx.font = "16px serif";
+            ctx.textAlign = "left";
             ctx.fillText(this.message, 30, ctx.canvas.height - 35);
         }
 
@@ -236,5 +237,8 @@ export class Game {
         ctx.fillStyle = "#fff";
         ctx.font = "14px serif";
         ctx.fillText(clueName, ctx.canvas.width / 2, notifY + 55);
+        
+        // Reset text alignment for other rendering
+        ctx.textAlign = "left";
     }
 }

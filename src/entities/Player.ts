@@ -10,9 +10,9 @@ export type Facing = "up" | "down" | "left" | "right";
 export class Player extends Entity {
     speed = 180;
 
-    // collision box (smaller than tile)
-    width = TILE_SIZE * 0.7;
-    height = TILE_SIZE * 0.7;
+    // collision box (2x2 tiles)
+    width = TILE_SIZE * 2;
+    height = TILE_SIZE * 2;
     facing: Facing = "down";
 
     update(dt: number, input: Input, map: TileMap, npcs: NPC[] = []) {
@@ -50,17 +50,24 @@ export class Player extends Entity {
     }
 
     private collides(x: number, y: number, map: TileMap, npcs: NPC[] = []): boolean {
-        const left = Math.floor(x / TILE_SIZE);
-        const right = Math.floor((x + this.width) / TILE_SIZE);
-        const top = Math.floor(y / TILE_SIZE);
-        const bottom = Math.floor((y + this.height) / TILE_SIZE);
+        // Calculate all tiles the player occupies (same logic as NPC collision)
+        const leftTile = Math.floor(x / TILE_SIZE);
+        const rightTile = Math.floor((x + this.width) / TILE_SIZE);
+        const topTile = Math.floor(y / TILE_SIZE);
+        const bottomTile = Math.floor((y + this.height) / TILE_SIZE);
 
-        return (
-            map.isBlocked(left, top, npcs) ||
-            map.isBlocked(right, top, npcs) ||
-            map.isBlocked(left, bottom, npcs) ||
-            map.isBlocked(right, bottom, npcs)
-        );
+        // Check all tiles the player would occupy (2x2 grid)
+        // Right and bottom boundaries are exclusive (use < not <=)
+        for (let ty = topTile; ty < bottomTile; ty++) {
+            for (let tx = leftTile; tx < rightTile; tx++) {
+                // isBlocked handles out-of-bounds checks, so this will catch walls and boundaries
+                if (map.isBlocked(tx, ty, npcs)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     render(ctx: CanvasRenderingContext2D) {

@@ -76,10 +76,10 @@ export const SPRITE_MAP: Record<string, SpriteCoords> = {
     
     // Player sprite (placeholder - adjust based on actual spritesheet)
     player: {
-        x: 1060,  // Placeholder - might be in a different location
-        y: 646,
-        width: 180,
-        height: 262
+        x: 1040,  // Placeholder - might be in a different location
+        y: 626,
+        width: 200,
+        height: 282
     }
 };
 
@@ -89,6 +89,6 @@ export const SPRITE_MAP: Record<string, SpriteCoords> = {
 export const TILE_TO_SPRITE: Record<number, string> = {
     0: 'floor',  // TILE_FLOOR
     1: 'wall',   // TILE_WALL
-    2: 'table',  // TILE_FURNITURE (default to table)
+    2: 'floor',  // TILE_FURNITURE is rendered separately as furniture sprites
     3: 'door'    // TILE_DOOR
 };

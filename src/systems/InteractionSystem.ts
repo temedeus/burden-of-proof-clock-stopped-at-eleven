@@ -21,7 +21,7 @@ export class InteractionSystem {
     interact(player: Player, room: Room, npcDialogs?: Record<string, any>): InteractionResult | null {
         const { x, y } = this.getTargetTile(player);
 
-        // Check NPCs first
+        // Check NPCs first - check if NPC is in the direction player is facing and adjacent
         for (const npc of room.npcs) {
             // Calculate all tiles the NPC occupies
             const npcLeftTile = Math.floor(npc.x / TILE_SIZE);
@@ -29,13 +29,26 @@ export class InteractionSystem {
             const npcTopTile = Math.floor(npc.y / TILE_SIZE);
             const npcBottomTile = Math.floor((npc.y + npc.height) / TILE_SIZE);
             
-            // Check if the target tile is within any of the NPC's occupied tiles
-            if (
+            // Calculate player's occupied tiles
+            const playerLeftTile = Math.floor(player.x / TILE_SIZE);
+            const playerRightTile = Math.floor((player.x + player.width) / TILE_SIZE);
+            const playerTopTile = Math.floor(player.y / TILE_SIZE);
+            const playerBottomTile = Math.floor((player.y + player.height) / TILE_SIZE);
+            
+            // Check if NPC is adjacent to player (touching or within 1 tile)
+            const horizontalAdjacent = playerRightTile >= npcLeftTile - 1 && playerLeftTile <= npcRightTile + 1;
+            const verticalAdjacent = playerBottomTile >= npcTopTile - 1 && playerTopTile <= npcBottomTile + 1;
+            
+            // Check if target tile (in facing direction) overlaps with NPC
+            const targetOverlapsNPC = (
                 x >= npcLeftTile &&
                 x < npcRightTile &&
                 y >= npcTopTile &&
                 y < npcBottomTile
-            ) {
+            );
+            
+            // NPC must be adjacent AND the target tile must overlap with NPC (facing direction matters)
+            if (horizontalAdjacent && verticalAdjacent && targetOverlapsNPC) {
                 // Get dialog for this NPC
                 if (npcDialogs && npcDialogs[npc.id]) {
                     const dialog = this.dialogSystem.getDialog(npcDialogs[npc.id]);
@@ -53,24 +66,46 @@ export class InteractionSystem {
             }
         }
 
-        // Check interactables
+        // Check interactables - check if furniture is in the direction player is facing and adjacent
         for (const obj of room.interactables) {
-            if (obj.tiles.some(t => t.x === x && t.y === y)) {
-                // Only add clues that haven't been collected yet
-                const newClues: string[] = [];
-                if (obj.clues) {
-                    for (const clueId of obj.clues) {
-                        if (!this.clueSystem.hasClue(clueId)) {
-                            this.clueSystem.addClue(clueId);
-                            newClues.push(clueId);
+            // Check if target tile overlaps with furniture
+            const targetOverlapsFurniture = obj.tiles.some(t => t.x === x && t.y === y);
+            
+            if (targetOverlapsFurniture) {
+                // Calculate player's occupied tiles
+                const playerLeftTile = Math.floor(player.x / TILE_SIZE);
+                const playerRightTile = Math.floor((player.x + player.width) / TILE_SIZE);
+                const playerTopTile = Math.floor(player.y / TILE_SIZE);
+                const playerBottomTile = Math.floor((player.y + player.height) / TILE_SIZE);
+                
+                // Calculate furniture bounding box
+                const furnitureMinX = Math.min(...obj.tiles.map(t => t.x));
+                const furnitureMaxX = Math.max(...obj.tiles.map(t => t.x));
+                const furnitureMinY = Math.min(...obj.tiles.map(t => t.y));
+                const furnitureMaxY = Math.max(...obj.tiles.map(t => t.y));
+                
+                // Check if furniture is adjacent to player (touching or within 1 tile)
+                const horizontalAdjacent = playerRightTile >= furnitureMinX - 1 && playerLeftTile <= furnitureMaxX + 1;
+                const verticalAdjacent = playerBottomTile >= furnitureMinY - 1 && playerTopTile <= furnitureMaxY + 1;
+                
+                // Only interact if adjacent (facing direction already checked via target tile)
+                if (horizontalAdjacent && verticalAdjacent) {
+                    // Only add clues that haven't been collected yet
+                    const newClues: string[] = [];
+                    if (obj.clues) {
+                        for (const clueId of obj.clues) {
+                            if (!this.clueSystem.hasClue(clueId)) {
+                                this.clueSystem.addClue(clueId);
+                                newClues.push(clueId);
+                            }
                         }
                     }
+                    
+                    return {
+                        description: obj.description,
+                        clues: newClues // Only return newly collected clues
+                    };
                 }
-                
-                return {
-                    description: obj.description,
-                    clues: newClues // Only return newly collected clues
-                };
             }
         }
 

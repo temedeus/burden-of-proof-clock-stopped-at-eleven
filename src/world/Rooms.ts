@@ -2,6 +2,8 @@ import {Room} from "./Room";
 import {TileMap} from "./TileMap";
 import {TILE_DOOR, TILE_FLOOR, TILE_FURNITURE, TILE_WALL} from "./TileTypes";
 import {Interactable} from "./Interactable";
+import {NPC} from "../entities/NPC";
+import {TILE_SIZE} from "./constants";
 import tableConfig from "../data/furniture/table.json";
 import bookshelvesConfig from "../data/furniture/bookshelves.json";
 import libraryConfig from "../data/rooms/library.json";
@@ -31,12 +33,19 @@ interface ExitConfig {
     spawnY: number | "bottom-1" | number;
 }
 
+interface NPCPlacement {
+    npcId: string;
+    x: number | "center";
+    y: number | "center" | "top" | "bottom";
+}
+
 interface RoomConfig {
     id: string;
     width: number;
     height: number;
     furniture: FurniturePlacement[];
     exits: ExitConfig[];
+    npcs?: NPCPlacement[];
 }
 
 // Furniture config map
@@ -44,6 +53,9 @@ const furnitureConfigs: Record<string, FurnitureConfig> = {
     table: tableConfig as FurnitureConfig,
     bookshelves: bookshelvesConfig as FurnitureConfig
 };
+
+// NPC config cache
+const npcConfigs: Record<string, any> = {};
 
 function resolvePosition(
     value: number | "center" | "top" | "bottom",
@@ -148,11 +160,15 @@ function createRoomFromConfig(config: RoomConfig, width?: number, height?: numbe
         tiles[exit.y * roomWidth + exit.x] = TILE_DOOR;
     });
 
+    // Place NPCs - NPCs will be initialized in Game.ts with proper configs
+    const npcs: NPC[] = [];
+
     return new Room(
         config.id,
         new TileMap(roomWidth, roomHeight, tiles),
         exits,
-        interactables
+        interactables,
+        npcs
     );
 }
 

@@ -2,10 +2,13 @@ import { Room } from "../world/Room";
 import { createLibrary, createHall } from "../world/Rooms";
 import {Input} from "./Input";
 import {Player} from "../entities/Player";
+import {NPC} from "../entities/NPC";
 import {TILE_SIZE} from "../world/constants";
 import { InteractionSystem } from "../systems/InteractionSystem";
 import { ClueSystem } from "../systems/ClueSystem";
 import cluesData from "../data/clues.json";
+import butlerConfig from "../data/npcs/butler.json";
+import libraryConfig from "../data/rooms/library.json";
 
 type GameState = "playing" | "interacting" | "inventory";
 
@@ -18,10 +21,21 @@ interface CluesData {
     [key: string]: ClueData;
 }
 
+interface NPCConfig {
+    id: string;
+    name: string;
+    role?: string;
+    dialog: {
+        default: string;
+        conditions?: Array<{ requiresClue?: string; dialog: string }>;
+    };
+}
+
 export class Game {
     private input = new Input();
     private rooms: Record<string, Room>;
     private currentRoom: Room;
+    private npcDialogs: Record<string, any> = {};
 
     private player = new Player("player", 64, 64);
 
@@ -41,7 +55,51 @@ export class Game {
             hall: createHall(w, h)
         };
 
+        // Load NPC configs and initialize NPCs
+        this.loadNPCs();
+
         this.currentRoom = this.rooms.library;
+    }
+
+    private loadNPCs() {
+        // Load NPC configs
+        const npcConfigs: Record<string, NPCConfig> = {
+            butler: butlerConfig as NPCConfig
+        };
+
+        // Store dialog configs
+        for (const [id, config] of Object.entries(npcConfigs)) {
+            this.npcDialogs[id] = config.dialog;
+        }
+
+        // Initialize NPCs in rooms based on room config
+        const libConfig = libraryConfig as any;
+        if (libConfig.npcs) {
+            for (const npcPlacement of libConfig.npcs) {
+                const npcConfig = npcConfigs[npcPlacement.npcId];
+                if (npcConfig) {
+                    const npcX = this.resolveNPCPosition(npcPlacement.x, "width", libConfig.width) * TILE_SIZE;
+                    const npcY = this.resolveNPCPosition(npcPlacement.y, "height", libConfig.height) * TILE_SIZE;
+                    
+                    const npc = new NPC(
+                        npcConfig.id,
+                        npcX,
+                        npcY,
+                        npcConfig.name,
+                        npcConfig.role
+                    );
+                    this.rooms.library.npcs.push(npc);
+                }
+            }
+        }
+    }
+
+    private resolveNPCPosition(value: number | "center" | "top" | "bottom", dimension: "width" | "height", roomDimension: number): number {
+        if (typeof value === "number") return value;
+        if (value === "center") return Math.floor(roomDimension / 2);
+        if (value === "top") return 1;
+        if (value === "bottom") return roomDimension - 2;
+        return 1;
     }
 
     update(dt: number) {
@@ -64,7 +122,8 @@ export class Game {
 
                 const result = this.interaction.interact(
                     this.player,
-                    this.currentRoom
+                    this.currentRoom,
+                    this.npcDialogs
                 );
 
                 if (result) {
@@ -120,6 +179,12 @@ export class Game {
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
         this.currentRoom.map.render(ctx);
+        
+        // Render NPCs
+        for (const npc of this.currentRoom.npcs) {
+            npc.render(ctx);
+        }
+        
         this.player.render(ctx);
 
         if (this.message) {

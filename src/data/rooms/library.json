@@ -22,7 +22,14 @@
       "y": "bottom",
       "targetRoom": "hall",
       "spawnX": "center",
-      "spawnY": "top-1"
+      "spawnY": 1
+    }
+  ],
+  "npcs": [
+    {
+      "npcId": "butler",
+      "x": 5,
+      "y": 3
     }
   ]
 }

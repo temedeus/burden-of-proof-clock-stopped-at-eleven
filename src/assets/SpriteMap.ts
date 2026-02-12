@@ -76,10 +76,10 @@ export const SPRITE_MAP: Record<string, SpriteCoords> = {
     
     // Player sprite (placeholder - adjust based on actual spritesheet)
     player: {
-        x: 0,  // Placeholder - might be in a different location
-        y: 0,
-        width: 512,
-        height: 512
+        x: 1060,  // Placeholder - might be in a different location
+        y: 646,
+        width: 180,
+        height: 262
     }
 };
 

@@ -50,11 +50,13 @@ export class Player extends Entity {
     }
 
     private collides(x: number, y: number, map: TileMap, npcs: NPC[] = []): boolean {
-        // Calculate all tiles the player occupies
+        // Use exact pixel position (same as sprite rendering)
+        // Calculate all tiles the player's collision box overlaps (pixel-precise)
+        // Use Math.floor for left/top (inclusive) and Math.ceil for right/bottom (exclusive)
         const leftTile = Math.floor(x / TILE_SIZE);
-        const rightTile = Math.floor((x + this.width) / TILE_SIZE);
+        const rightTile = Math.ceil((x + this.width) / TILE_SIZE);
         const topTile = Math.floor(y / TILE_SIZE);
-        const bottomTile = Math.floor((y + this.height) / TILE_SIZE);
+        const bottomTile = Math.ceil((y + this.height) / TILE_SIZE);
 
         // Only check bottom 2 tiles (bottom row) for collision with NPCs/furniture
         // This allows player to get closer from top/left/right directions
@@ -84,19 +86,27 @@ export class Player extends Entity {
             }
         }
 
-        // Check NPCs - only check bottom row of player's tiles
+        // Check NPCs - only check bottom row of player's tiles (pixel-based)
+        // This allows player to get closer from top/left/right directions
         for (const npc of npcs) {
-            const npcLeftTile = Math.floor(npc.x / TILE_SIZE);
-            const npcRightTile = Math.floor((npc.x + npc.width) / TILE_SIZE);
-            const npcTopTile = Math.floor(npc.y / TILE_SIZE);
-            const npcBottomTile = Math.floor((npc.y + npc.height) / TILE_SIZE);
-
-            // Only check if bottom row of player overlaps with NPC
-            if (bottomRow >= npcTopTile && bottomRow < npcBottomTile) {
-                for (let tx = leftTile; tx < rightTile; tx++) {
-                    if (tx >= npcLeftTile && tx < npcRightTile) {
-                        return true; // Collision detected
-                    }
+            // Player's bottom row spans from y + height - TILE_SIZE to y + height
+            const playerBottomRowTop = y + this.height - TILE_SIZE;
+            const playerBottomRowBottom = y + this.height;
+            
+            // NPC's bottom row spans from npc.y + npc.height - TILE_SIZE to npc.y + npc.height
+            const npcBottomRowTop = npc.y + npc.height - TILE_SIZE;
+            const npcBottomRowBottom = npc.y + npc.height;
+            
+            // Only check collision if player's bottom row overlaps with NPC's bottom row
+            // This allows passing when player and NPC are at different vertical levels
+            if (playerBottomRowBottom > npcBottomRowTop && playerBottomRowTop < npcBottomRowBottom) {
+                // Check horizontal overlap using pixel bounds
+                const playerRightX = x + this.width;
+                const npcRightX = npc.x + npc.width;
+                
+                // Only collide if there's actual overlap (not just touching)
+                if (playerRightX > npc.x && x < npcRightX) {
+                    return true; // Collision detected
                 }
             }
         }

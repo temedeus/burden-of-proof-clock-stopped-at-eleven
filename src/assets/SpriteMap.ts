@@ -54,10 +54,10 @@ export const SPRITE_MAP: Record<string, SpriteCoords> = {
         height: 512
     },
     bookshelf: {
-        x: 0,  // First sprite in bottom row
-        y: 512,
-        width: 308,
-        height: 276
+        x: 224,  // First sprite in bottom row
+        y: 384,
+        width: 292,
+        height: 504
     },
     
     // NPC sprites (bottom row, y=512)

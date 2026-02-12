@@ -162,14 +162,56 @@ export class Game {
     }
 
     private checkRoomTransition() {
-        const centerX = this.player.x + this.player.width / 2;
-        const centerY = this.player.y + this.player.height / 2;
-
-        const tx = Math.floor(centerX / TILE_SIZE);
-        const ty = Math.floor(centerY / TILE_SIZE);
+        // Calculate player's occupied tiles
+        const playerLeftTile = Math.floor(this.player.x / TILE_SIZE);
+        const playerRightTile = Math.floor((this.player.x + this.player.width) / TILE_SIZE);
+        const playerTopTile = Math.floor(this.player.y / TILE_SIZE);
+        const playerBottomTile = Math.floor((this.player.y + this.player.height) / TILE_SIZE);
 
         for (const exit of this.currentRoom.exits) {
-            if (exit.x === tx && exit.y === ty) {
+            // Check if player overlaps with door (2 tiles wide)
+            // Determine door orientation: if on top/bottom wall, door is horizontal; if on left/right wall, door is vertical
+            const isTopOrBottom = exit.y === 0 || exit.y === this.currentRoom.map.height - 1;
+            
+            let overlapsDoor = false;
+            
+            if (isTopOrBottom) {
+                // Horizontal door (on top or bottom wall) - 2 tiles wide horizontally
+                // Check if player overlaps with either door tile (exit.x or exit.x+1)
+                const doorX1 = exit.x;
+                const doorX2 = exit.x + 1;
+                
+                // Check if player's horizontal range overlaps with door tiles
+                const horizontalOverlap = (
+                    (playerLeftTile < doorX2 && playerRightTile > doorX1)
+                );
+                
+                // Check if player's vertical position overlaps with door row
+                const verticalOverlap = (
+                    (playerTopTile <= exit.y && playerBottomTile > exit.y)
+                );
+                
+                overlapsDoor = horizontalOverlap && verticalOverlap;
+            } else {
+                // Vertical door (on left or right wall) - 2 tiles wide vertically
+                // Check if player overlaps with either door tile (exit.y or exit.y+1)
+                const doorY1 = exit.y;
+                const doorY2 = exit.y + 1;
+                
+                // Check if player's vertical range overlaps with door tiles
+                const verticalOverlap = (
+                    (playerTopTile < doorY2 && playerBottomTile > doorY1)
+                );
+                
+                // Check if player's horizontal position overlaps with door column
+                const horizontalOverlap = (
+                    (playerLeftTile <= exit.x && playerRightTile > exit.x)
+                );
+                
+                overlapsDoor = horizontalOverlap && verticalOverlap;
+            }
+            
+            if (overlapsDoor) {
                 const nextRoom = this.rooms[exit.targetRoom];
 
                 // Move to the target room

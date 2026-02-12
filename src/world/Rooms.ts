@@ -155,9 +155,37 @@ function createRoomFromConfig(config: RoomConfig, width?: number, height?: numbe
         spawnY: resolveSpawnY(exit.spawnY, roomHeight)
     }));
 
-    // Place door tiles
+    // Place door tiles (2 tiles wide to accommodate 2x2 player)
     exits.forEach(exit => {
-        tiles[exit.y * roomWidth + exit.x] = TILE_DOOR;
+        // Place 2 door tiles side by side
+        // Determine direction: if on top/bottom wall, place horizontally; if on left/right wall, place vertically
+        const isTopOrBottom = exit.y === 0 || exit.y === roomHeight - 1;
+        
+        if (isTopOrBottom) {
+            // Horizontal door (on top or bottom wall)
+            // Place 2 tiles horizontally, centered on exit.x
+            const doorX1 = exit.x;
+            const doorX2 = exit.x + 1;
+            
+            if (doorX1 >= 0 && doorX1 < roomWidth) {
+                tiles[exit.y * roomWidth + doorX1] = TILE_DOOR;
+            }
+            if (doorX2 >= 0 && doorX2 < roomWidth) {
+                tiles[exit.y * roomWidth + doorX2] = TILE_DOOR;
+            }
+        } else {
+            // Vertical door (on left or right wall)
+            // Place 2 tiles vertically, centered on exit.y
+            const doorY1 = exit.y;
+            const doorY2 = exit.y + 1;
+            
+            if (doorY1 >= 0 && doorY1 < roomHeight) {
+                tiles[doorY1 * roomWidth + exit.x] = TILE_DOOR;
+            }
+            if (doorY2 >= 0 && doorY2 < roomHeight) {
+                tiles[doorY2 * roomWidth + exit.x] = TILE_DOOR;
+            }
+        }
     });
 
     // Place NPCs - NPCs will be initialized in Game.ts with proper configs

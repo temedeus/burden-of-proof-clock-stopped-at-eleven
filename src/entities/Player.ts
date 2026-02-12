@@ -50,19 +50,53 @@ export class Player extends Entity {
     }
 
     private collides(x: number, y: number, map: TileMap, npcs: NPC[] = []): boolean {
-        // Calculate all tiles the player occupies (same logic as NPC collision)
+        // Calculate all tiles the player occupies
         const leftTile = Math.floor(x / TILE_SIZE);
         const rightTile = Math.floor((x + this.width) / TILE_SIZE);
         const topTile = Math.floor(y / TILE_SIZE);
         const bottomTile = Math.floor((y + this.height) / TILE_SIZE);
 
-        // Check all tiles the player would occupy (2x2 grid)
-        // Right and bottom boundaries are exclusive (use < not <=)
+        // Only check bottom 2 tiles (bottom row) for collision with NPCs/furniture
+        // This allows player to get closer from top/left/right directions
+        const bottomRow = bottomTile - 1; // Bottom row of player's 2x2 grid
+        
+        // Check walls for all tiles (strict collision)
         for (let ty = topTile; ty < bottomTile; ty++) {
             for (let tx = leftTile; tx < rightTile; tx++) {
-                // isBlocked handles out-of-bounds checks, so this will catch walls and boundaries
-                if (map.isBlocked(tx, ty, npcs)) {
+                if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) {
                     return true;
+                }
+                const tile = map.getTile(tx, ty);
+                if (tile === 1) { // TILE_WALL - strict collision
+                    return true;
+                }
+            }
+        }
+
+        // Check furniture - only check bottom row of player's tiles
+        for (let tx = leftTile; tx < rightTile; tx++) {
+            if (tx < 0 || tx >= map.width || bottomRow < 0 || bottomRow >= map.height) {
+                continue;
+            }
+            const tile = map.getTile(tx, bottomRow);
+            if (tile === 2) { // TILE_FURNITURE - only bottom row checks
+                return true;
+            }
+        }
+
+        // Check NPCs - only check bottom row of player's tiles
+        for (const npc of npcs) {
+            const npcLeftTile = Math.floor(npc.x / TILE_SIZE);
+            const npcRightTile = Math.floor((npc.x + npc.width) / TILE_SIZE);
+            const npcTopTile = Math.floor(npc.y / TILE_SIZE);
+            const npcBottomTile = Math.floor((npc.y + npc.height) / TILE_SIZE);
+
+            // Only check if bottom row of player overlaps with NPC
+            if (bottomRow >= npcTopTile && bottomRow < npcBottomTile) {
+                for (let tx = leftTile; tx < rightTile; tx++) {
+                    if (tx >= npcLeftTile && tx < npcRightTile) {
+                        return true; // Collision detected
+                    }
                 }
             }
         }

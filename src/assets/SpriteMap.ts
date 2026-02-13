@@ -40,10 +40,10 @@ export const SPRITE_MAP: Record<string, SpriteCoords> = {
         height: 276
     },
     door: {
-        x: 1024,  // Third sprite in top row
-        y: 0,
-        width: 512,
-        height: 512
+        x: 538,
+        y: 382,
+        width: 416,
+        height: 630
     },
     
     // Furniture sprites

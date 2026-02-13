@@ -63,7 +63,8 @@ export class TileMap {
                 const tileY = y * TILE_SIZE;
 
                 // Get sprite name for this tile type
-                const spriteName = TILE_TO_SPRITE[tile];
+                // TILE_DOOR is rendered separately as one sprite spanning 3 tiles (see Game)
+                const spriteName = tile === TILE_DOOR ? 'floor' : TILE_TO_SPRITE[tile];
                 
                 if (spriteName) {
                     // Render sprite from spritesheet (will be scaled to TILE_SIZE)

@@ -43,7 +43,7 @@ export const SPRITE_MAP: Record<string, SpriteCoords> = {
         x: 538,
         y: 382,
         width: 416,
-        height: 630
+        height: 250
     },
     
     // Furniture sprites

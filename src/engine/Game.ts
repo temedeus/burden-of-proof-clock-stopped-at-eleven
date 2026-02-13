@@ -242,6 +242,21 @@ export class Game {
 
         this.currentRoom.map.render(ctx);
 
+        // Render doors as single sprite spanning 3 tiles (horizontal or vertical)
+        for (const exit of this.currentRoom.exits) {
+            const isTopOrBottom = exit.y === 0 || exit.y === this.currentRoom.map.height - 1;
+            if (isTopOrBottom) {
+                const x = (exit.x - 1) * TILE_SIZE;
+                const y = exit.y * TILE_SIZE;
+                spriteLoader.drawSprite(ctx, 'door', x, y, TILE_SIZE * 3, TILE_SIZE);
+            } else {
+                // Vertical door: extend bounds slightly to cover floor visible at edges
+                const x = exit.x * TILE_SIZE - 1;
+                const y = (exit.y - 1) * TILE_SIZE - 1;
+                spriteLoader.drawSprite(ctx, 'door', x, y, TILE_SIZE + 2, TILE_SIZE * 3 + 2);
+            }
+        }
+
         // Build furniture "actors" from interactables for depth-sorted rendering
         const furnitureActors = this.currentRoom.interactables.map(obj => {
             const minX = Math.min(...obj.tiles.map(t => t.x));

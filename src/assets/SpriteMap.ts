@@ -54,9 +54,9 @@ export const SPRITE_MAP: Record<string, SpriteCoords> = {
         height: 512
     },
     bookshelf: {
-        x: 224,  // First sprite in bottom row
+        x: 250,  // First sprite in bottom row
         y: 384,
-        width: 292,
+        width: 202,
         height: 504
     },
     

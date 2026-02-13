@@ -23,6 +23,10 @@ interface FurniturePlacement {
     x: number | "center";
     y: number | "center" | "top" | "bottom";
     anchor: "top-left" | "center";
+    /** Override clues for this instance (default: use furniture config). Use [] for none, ["clueId"] for specific clues */
+    clues?: string[];
+    /** Override description for this instance */
+    description?: string;
 }
 
 interface ExitConfig {
@@ -90,9 +94,9 @@ function placeFurniture(
     const interactable: Interactable = {
         id: furniture.id,
         name: furniture.name,
-        description: furniture.description,
+        description: placement.description ?? furniture.description,
         tiles: [],
-        clues: furniture.clues || []
+        clues: placement.clues !== undefined ? placement.clues : (furniture.clues || [])
     };
 
     let startX: number;

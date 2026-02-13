@@ -1,10 +1,7 @@
 {
   "id": "shelves",
   "name": "Bookshelves",
-  "description": "Rows of leather-bound volumes. Some seem recently disturbed.",
+  "description": "Rows of leather-bound volumes.",
   "width": 1,
-  "height": 2,
-  "clues": [
-    "torn_page"
-  ]
+  "height": 2
 }

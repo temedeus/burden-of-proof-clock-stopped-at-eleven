@@ -30,7 +30,7 @@ interface ExitConfig {
     y: number | "top" | "bottom" | "center";
     targetRoom: string;
     spawnX: number | "center";
-    spawnY: number | "bottom-1" | number;
+    spawnY: number | "bottom-1" | "bottom-2" | "bottom-3" | number;
 }
 
 interface NPCPlacement {
@@ -70,11 +70,13 @@ function resolvePosition(
 }
 
 function resolveSpawnY(
-    value: number | "bottom-1",
+    value: number | "bottom-1" | "bottom-2" | "bottom-3",
     roomHeight: number
 ): number {
     if (typeof value === "number") return value;
     if (value === "bottom-1") return roomHeight - 2;
+    if (value === "bottom-2") return roomHeight - 3;
+    if (value === "bottom-3") return roomHeight - 4;
     return 1;
 }
 
@@ -155,35 +157,32 @@ function createRoomFromConfig(config: RoomConfig, width?: number, height?: numbe
         spawnY: resolveSpawnY(exit.spawnY, roomHeight)
     }));
 
-    // Place door tiles (2 tiles wide to accommodate 2x2 player)
+    // Place door tiles (3 tiles wide to accommodate 2x2 player with alignment buffer)
     exits.forEach(exit => {
-        // Place 2 door tiles side by side
-        // Determine direction: if on top/bottom wall, place horizontally; if on left/right wall, place vertically
+        // Place 3 door tiles so player has room to align and pass through
         const isTopOrBottom = exit.y === 0 || exit.y === roomHeight - 1;
         
         if (isTopOrBottom) {
-            // Horizontal door (on top or bottom wall)
-            // Place 2 tiles horizontally, centered on exit.x
-            const doorX1 = exit.x;
-            const doorX2 = exit.x + 1;
+            // Horizontal door (on top or bottom wall) - 3 tiles wide centered on exit.x
+            const doorX1 = exit.x - 1;
+            const doorX2 = exit.x;
+            const doorX3 = exit.x + 1;
             
-            if (doorX1 >= 0 && doorX1 < roomWidth) {
-                tiles[exit.y * roomWidth + doorX1] = TILE_DOOR;
-            }
-            if (doorX2 >= 0 && doorX2 < roomWidth) {
-                tiles[exit.y * roomWidth + doorX2] = TILE_DOOR;
+            for (const doorX of [doorX1, doorX2, doorX3]) {
+                if (doorX >= 0 && doorX < roomWidth) {
+                    tiles[exit.y * roomWidth + doorX] = TILE_DOOR;
+                }
             }
         } else {
-            // Vertical door (on left or right wall)
-            // Place 2 tiles vertically, centered on exit.y
-            const doorY1 = exit.y;
-            const doorY2 = exit.y + 1;
+            // Vertical door (on left or right wall) - 3 tiles tall centered on exit.y
+            const doorY1 = exit.y - 1;
+            const doorY2 = exit.y;
+            const doorY3 = exit.y + 1;
             
-            if (doorY1 >= 0 && doorY1 < roomHeight) {
-                tiles[doorY1 * roomWidth + exit.x] = TILE_DOOR;
-            }
-            if (doorY2 >= 0 && doorY2 < roomHeight) {
-                tiles[doorY2 * roomWidth + exit.x] = TILE_DOOR;
+            for (const doorY of [doorY1, doorY2, doorY3]) {
+                if (doorY >= 0 && doorY < roomHeight) {
+                    tiles[doorY * roomWidth + exit.x] = TILE_DOOR;
+                }
             }
         }
     });

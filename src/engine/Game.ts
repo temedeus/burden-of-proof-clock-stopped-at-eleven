@@ -46,6 +46,7 @@ export class Game {
     private message: string | null = null;
     private clueNotification: { clueId: string } | null = null;
     private debugMode: boolean = false;
+    private roomTransitionCooldown = 0; // seconds - prevents immediate re-trigger after spawn
 
 
     constructor(private ctx: CanvasRenderingContext2D) {
@@ -130,6 +131,7 @@ export class Game {
 
         if (this.state === "playing") {
             this.player.update(dt, this.input, this.currentRoom.map, this.currentRoom.npcs);
+            this.roomTransitionCooldown = Math.max(0, this.roomTransitionCooldown - dt);
             this.checkRoomTransition();
 
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
@@ -162,45 +164,45 @@ export class Game {
     }
 
     private checkRoomTransition() {
-        // Calculate player's occupied tiles
+        if (this.roomTransitionCooldown > 0) return;
+
+        // Calculate player's occupied tiles (use ceil for right/bottom to match Player collision logic)
         const playerLeftTile = Math.floor(this.player.x / TILE_SIZE);
-        const playerRightTile = Math.floor((this.player.x + this.player.width) / TILE_SIZE);
+        const playerRightTile = Math.ceil((this.player.x + this.player.width) / TILE_SIZE);
         const playerTopTile = Math.floor(this.player.y / TILE_SIZE);
-        const playerBottomTile = Math.floor((this.player.y + this.player.height) / TILE_SIZE);
+        const playerBottomTile = Math.ceil((this.player.y + this.player.height) / TILE_SIZE);
 
         for (const exit of this.currentRoom.exits) {
-            // Check if player overlaps with door (2 tiles wide)
+            // Check if player overlaps with door (3 tiles wide/tall)
             // Determine door orientation: if on top/bottom wall, door is horizontal; if on left/right wall, door is vertical
             const isTopOrBottom = exit.y === 0 || exit.y === this.currentRoom.map.height - 1;
             
             let overlapsDoor = false;
             
             if (isTopOrBottom) {
-                // Horizontal door (on top or bottom wall) - 2 tiles wide horizontally
-                // Check if player overlaps with either door tile (exit.x or exit.x+1)
-                const doorX1 = exit.x;
-                const doorX2 = exit.x + 1;
+                // Horizontal door (on top or bottom wall) - 3 tiles wide (exit.x-1, exit.x, exit.x+1)
+                const doorLeft = exit.x - 1;
+                const doorRight = exit.x + 2; // exclusive
                 
                 // Check if player's horizontal range overlaps with door tiles
                 const horizontalOverlap = (
-                    (playerLeftTile < doorX2 && playerRightTile > doorX1)
+                    (playerLeftTile < doorRight && playerRightTile > doorLeft)
                 );
                 
                 // Check if player's vertical position overlaps with door row
                 const verticalOverlap = (
-                    (playerTopTile <= exit.y && playerBottomTile > exit.y)
+                    (playerTopTile <= exit.y && playerBottomTile >= exit.y)
                 );
                 
                 overlapsDoor = horizontalOverlap && verticalOverlap;
             } else {
-                // Vertical door (on left or right wall) - 2 tiles wide vertically
-                // Check if player overlaps with either door tile (exit.y or exit.y+1)
-                const doorY1 = exit.y;
-                const doorY2 = exit.y + 1;
+                // Vertical door (on left or right wall) - 3 tiles tall (exit.y-1, exit.y, exit.y+1)
+                const doorTop = exit.y - 1;
+                const doorBottom = exit.y + 2; // exclusive
                 
                 // Check if player's vertical range overlaps with door tiles
                 const verticalOverlap = (
-                    (playerTopTile < doorY2 && playerBottomTile > doorY1)
+                    (playerTopTile < doorBottom && playerBottomTile > doorTop)
                 );
                 
                 // Check if player's horizontal position overlaps with door column
@@ -220,6 +222,9 @@ export class Game {
                 // Spawn at the DOOR ENTRY POINT, not the room default
                 this.player.x = exit.spawnX * TILE_SIZE;
                 this.player.y = exit.spawnY * TILE_SIZE;
+
+                // Cooldown prevents immediate re-trigger (spawn position may overlap door)
+                this.roomTransitionCooldown = 0.4;
 
                 return;
             }

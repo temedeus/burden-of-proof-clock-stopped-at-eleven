@@ -47,7 +47,10 @@ export class Game {
     private debugMode: boolean = false;
     private roomTransitionCooldown = 0;
     private redBlinkRemaining = 0;
-    private chaseStartsIn = 0; // seconds until chef starts chasing (3s head start after accusation)
+    private chaseStartsIn = 0; // seconds until chef starts chasing (1.5s head start after accusation)
+    private murdererSpawnsIn = 0; // after room change: 1.5s before murderer appears in new room
+    private murdererSpawnX = 0;
+    private murdererSpawnY = 0;
 
 
     constructor(private ctx: CanvasRenderingContext2D) {
@@ -114,6 +117,31 @@ export class Game {
         return 1;
     }
 
+    /** Returns the murderer NPC from whichever room he's in, or null */
+    private getMurderer(): NPC | null {
+        for (const room of Object.values(this.rooms)) {
+            const found = room.npcs.find((n) => n.id === MURDERER_NPC_ID);
+            if (found) return found;
+        }
+        return null;
+    }
+
+    /** Move murderer to current room at the stored spawn position (after room change head start) */
+    private spawnMurdererInCurrentRoom(): void {
+        const chef = this.getMurderer();
+        if (!chef) return;
+        for (const room of Object.values(this.rooms)) {
+            const idx = room.npcs.indexOf(chef);
+            if (idx >= 0) {
+                room.npcs.splice(idx, 1);
+                break;
+            }
+        }
+        chef.x = this.murdererSpawnX;
+        chef.y = this.murdererSpawnY;
+        this.currentRoom.npcs.push(chef);
+    }
+
     update(dt: number) {
         // Handle inventory toggle
         if (this.input.wasPressed("i")) {
@@ -132,9 +160,16 @@ export class Game {
             if (this.chaseStartsIn > 0) {
                 this.chaseStartsIn -= dt;
                 if (this.chaseStartsIn <= 0) {
-                    const chef = this.rooms.hall.npcs.find((n) => n.id === MURDERER_NPC_ID);
+                    const chef = this.getMurderer();
                     if (chef) chef.setChasing(true);
                     this.chaseStartsIn = 0;
+                }
+            }
+            if (this.murdererSpawnsIn > 0) {
+                this.murdererSpawnsIn -= dt;
+                if (this.murdererSpawnsIn <= 0) {
+                    this.spawnMurdererInCurrentRoom();
+                    this.murdererSpawnsIn = 0;
                 }
             }
             const playerCenterX = this.player.x + this.player.width / 2;
@@ -231,15 +266,18 @@ export class Game {
             if (overlapsDoor) {
                 const nextRoom = this.rooms[exit.targetRoom];
 
-                // Move to the target room
                 this.currentRoom = nextRoom;
-
-                // Spawn at the DOOR ENTRY POINT, not the room default
                 this.player.x = exit.spawnX * TILE_SIZE;
                 this.player.y = exit.spawnY * TILE_SIZE;
-
-                // Cooldown prevents immediate re-trigger (spawn position may overlap door)
                 this.roomTransitionCooldown = 0.4;
+
+                // If murderer is chasing, give player 1.5s head start in new room before he spawns at the door
+                const chef = this.getMurderer();
+                if (chef?.isChasing()) {
+                    this.murdererSpawnsIn = 1.5;
+                    this.murdererSpawnX = exit.spawnX * TILE_SIZE;
+                    this.murdererSpawnY = exit.spawnY * TILE_SIZE;
+                }
 
                 return;
             }

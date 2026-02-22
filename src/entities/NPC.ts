@@ -4,7 +4,7 @@ import { spriteLoader } from "../assets/SpriteLoader";
 import { TileMap } from "../world/TileMap";
 import { TILE_WALL, TILE_FURNITURE } from "../world/TileTypes";
 
-const CHASE_SPEED = 120; // pixels per second
+const CHASE_SPEED = 100; // slightly slower than player (180) so they have a chance to escape
 
 export class NPC extends Entity {
   width = TILE_SIZE * 2;

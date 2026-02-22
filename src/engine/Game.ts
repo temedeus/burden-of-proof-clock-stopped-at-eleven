@@ -46,7 +46,8 @@ export class Game {
     private clueNotification: { clueId: string } | null = null;
     private debugMode: boolean = false;
     private roomTransitionCooldown = 0;
-    private redBlinkRemaining = 0; // seconds of red blink after accusing murderer
+    private redBlinkRemaining = 0;
+    private chaseStartsIn = 0; // seconds until chef starts chasing (3s head start after accusation)
 
 
     constructor(private ctx: CanvasRenderingContext2D) {
@@ -128,6 +129,14 @@ export class Game {
             this.player.update(dt, this.input, this.currentRoom.map, this.currentRoom.npcs);
             this.roomTransitionCooldown = Math.max(0, this.roomTransitionCooldown - dt);
             this.redBlinkRemaining = Math.max(0, this.redBlinkRemaining - dt);
+            if (this.chaseStartsIn > 0) {
+                this.chaseStartsIn -= dt;
+                if (this.chaseStartsIn <= 0) {
+                    const chef = this.rooms.hall.npcs.find((n) => n.id === MURDERER_NPC_ID);
+                    if (chef) chef.setChasing(true);
+                    this.chaseStartsIn = 0;
+                }
+            }
             const playerCenterX = this.player.x + this.player.width / 2;
             const playerCenterY = this.player.y + this.player.height / 2;
             for (const npc of this.currentRoom.npcs) {
@@ -155,8 +164,7 @@ export class Game {
                         REQUIRED_CLUES_FOR_ACCUSATION.every((c) => this.clueSystem.hasClue(c))
                     ) {
                         this.redBlinkRemaining = 3;
-                        const chef = this.currentRoom.npcs.find((n) => n.id === MURDERER_NPC_ID);
-                        if (chef) chef.setChasing(true);
+                        this.chaseStartsIn = 1.5; // 1.5 seconds to run before chef starts chasing
                     }
                     this.state = "interacting";
                 }

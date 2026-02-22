@@ -2,14 +2,16 @@
   "id": "hall",
   "width": 20,
   "height": 15,
-  "furniture": [],
+  "furniture": [
+    {"furnitureId": "bookshelves", "x": 1, "y": 1, "anchor": "top-left"},
+    {"furnitureId": "bookshelves", "x": 2, "y": 1, "anchor": "top-left"},
+    {"furnitureId": "bookshelves", "x": 3, "y": 1, "anchor": "top-left"}
+  ],
   "exits": [
-    {
-      "x": "center",
-      "y": "top",
-      "targetRoom": "library",
-      "spawnX": "center",
-      "spawnY": "bottom-3"
-    }
+    {"x": "center", "y": "top", "targetRoom": "library", "spawnX": "center", "spawnY": "bottom-3"}
+  ],
+  "npcs": [
+    {"npcId": "maid", "x": 8, "y": 7},
+    {"npcId": "cook", "x": 14, "y": 10}
   ]
 }

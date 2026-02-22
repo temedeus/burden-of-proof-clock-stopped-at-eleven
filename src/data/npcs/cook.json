@@ -1,0 +1,8 @@
+{
+  "id": "cook",
+  "name": "Chef Pierre",
+  "role": "Cook",
+  "dialog": {
+    "default": "Dinner will be ready at eight. I hope nothing spoils the evening."
+  }
+}

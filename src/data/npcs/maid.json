@@ -1,0 +1,8 @@
+{
+  "id": "maid",
+  "name": "Mrs. Clarke",
+  "role": "Maid",
+  "dialog": {
+    "default": "I've been cleaning the hall all morning. Have you seen the master?"
+  }
+}

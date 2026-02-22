@@ -6,21 +6,17 @@ import {NPC} from "../entities/NPC";
 import {TILE_SIZE} from "../world/constants";
 import { InteractionSystem } from "../systems/InteractionSystem";
 import { ClueSystem } from "../systems/ClueSystem";
-import cluesData from "../data/clues.json";
 import butlerConfig from "../data/npcs/butler.json";
+import maidConfig from "../data/npcs/maid.json";
+import cookConfig from "../data/npcs/cook.json";
 import libraryConfig from "../data/rooms/library.json";
+import hallConfig from "../data/rooms/hall.json";
 import { spriteLoader } from "../assets/SpriteLoader";
+import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
+import { renderInventoryPanel } from "./InventoryPanel";
+import { renderClueNotification } from "./ClueNotification";
 
 type GameState = "playing" | "interacting" | "inventory";
-
-interface ClueData {
-    name: string;
-    description: string;
-}
-
-interface CluesData {
-    [key: string]: ClueData;
-}
 
 interface NPCConfig {
     id: string;
@@ -50,12 +46,9 @@ export class Game {
 
 
     constructor(private ctx: CanvasRenderingContext2D) {
-        // Check for debug flag in URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        this.debugMode = urlParams.get('debug') === 'true' || urlParams.get('debug') === '1';
-        
+        this.debugMode = isDebugMode();
         if (this.debugMode) {
-            console.log('🐛 Debug mode enabled! Collision and interaction areas will be visible.');
+            console.log("🐛 Debug mode enabled! Collision and interaction areas will be visible.");
         }
 
         const w = Math.floor(ctx.canvas.width / TILE_SIZE);
@@ -78,33 +71,31 @@ export class Game {
     }
 
     private loadNPCs() {
-        // Load NPC configs
         const npcConfigs: Record<string, NPCConfig> = {
-            butler: butlerConfig as NPCConfig
+            butler: butlerConfig as NPCConfig,
+            maid: maidConfig as NPCConfig,
+            cook: cookConfig as NPCConfig
         };
 
-        // Store dialog configs
         for (const [id, config] of Object.entries(npcConfigs)) {
             this.npcDialogs[id] = config.dialog;
         }
 
-        // Initialize NPCs in rooms based on room config
-        const libConfig = libraryConfig as any;
-        if (libConfig.npcs) {
-            for (const npcPlacement of libConfig.npcs) {
+        const roomConfigs: Record<string, { config: any; room: Room }> = {
+            library: { config: libraryConfig as any, room: this.rooms.library },
+            hall: { config: hallConfig as any, room: this.rooms.hall }
+        };
+
+        for (const { config, room } of Object.values(roomConfigs)) {
+            if (!config.npcs) continue;
+            for (const npcPlacement of config.npcs) {
                 const npcConfig = npcConfigs[npcPlacement.npcId];
                 if (npcConfig) {
-                    const npcX = this.resolveNPCPosition(npcPlacement.x, "width", libConfig.width) * TILE_SIZE;
-                    const npcY = this.resolveNPCPosition(npcPlacement.y, "height", libConfig.height) * TILE_SIZE;
-                    
-                    const npc = new NPC(
-                        npcConfig.id,
-                        npcX,
-                        npcY,
-                        npcConfig.name,
-                        npcConfig.role
+                    const npcX = this.resolveNPCPosition(npcPlacement.x, "width", config.width) * TILE_SIZE;
+                    const npcY = this.resolveNPCPosition(npcPlacement.y, "height", config.height) * TILE_SIZE;
+                    room.npcs.push(
+                        new NPC(npcConfig.id, npcX, npcY, npcConfig.name, npcConfig.role)
                     );
-                    this.rooms.library.npcs.push(npc);
                 }
             }
         }
@@ -135,8 +126,6 @@ export class Game {
             this.checkRoomTransition();
 
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
-                console.log("wasPressed", this.player.facing);
-
                 const result = this.interaction.interact(
                     this.player,
                     this.currentRoom,
@@ -233,7 +222,7 @@ export class Game {
 
     render(ctx: CanvasRenderingContext2D) {
         if (this.state === "inventory") {
-            this.renderInventory(ctx);
+            renderInventoryPanel(ctx, this.clueSystem);
             return;
         }
 
@@ -304,9 +293,8 @@ export class Game {
             .sort((a, b) => (a.y + a.height) - (b.y + b.height))
             .forEach(actor => actor.render(ctx));
 
-        // Debug visualization for collision and interaction areas (only when debug mode is enabled)
         if (this.debugMode) {
-            this.renderDebugOverlay(ctx);
+            renderDebugOverlay(ctx, this.player, this.currentRoom);
         }
 
         if (this.message) {
@@ -319,213 +307,9 @@ export class Game {
             ctx.fillText(this.message, 30, ctx.canvas.height - 35);
         }
 
-        // Render clue notification
         if (this.clueNotification) {
-            this.renderClueNotification(ctx);
+            renderClueNotification(ctx, this.clueNotification.clueId);
         }
     }
 
-    private renderInventory(ctx: CanvasRenderingContext2D) {
-        // Dark overlay
-        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-        const clues = this.clueSystem.getAllClues();
-        const cluesDataTyped = cluesData as CluesData;
-
-        // Inventory panel
-        const panelWidth = 500;
-        const panelHeight = 400;
-        const panelX = (ctx.canvas.width - panelWidth) / 2;
-        const panelY = (ctx.canvas.height - panelHeight) / 2;
-
-        // Panel background
-        ctx.fillStyle = "#2a2a2a";
-        ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
-
-        // Border
-        ctx.strokeStyle = "#666";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
-
-        // Title
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 24px serif";
-        ctx.textAlign = "center";
-        ctx.fillText("Inventory", ctx.canvas.width / 2, panelY + 40);
-
-        // Clues list
-        ctx.font = "18px serif";
-        ctx.textAlign = "left";
-        
-        if (clues.length === 0) {
-            ctx.fillStyle = "#888";
-            ctx.textAlign = "center";
-            ctx.fillText("No clues found yet", ctx.canvas.width / 2, panelY + 120);
-        } else {
-            let yOffset = panelY + 80;
-            clues.forEach((clueId, index) => {
-                const clue = cluesDataTyped[clueId];
-                if (clue) {
-                    // Clue name
-                    ctx.fillStyle = "#ffd700";
-                    ctx.font = "bold 18px serif";
-                    ctx.fillText(`${index + 1}. ${clue.name}`, panelX + 30, yOffset);
-                    
-                    // Clue description
-                    ctx.fillStyle = "#ccc";
-                    ctx.font = "14px serif";
-                    ctx.fillText(clue.description, panelX + 30, yOffset + 25);
-                    
-                    yOffset += 60;
-                } else {
-                    // Fallback if clue data not found
-                    ctx.fillStyle = "#ffd700";
-                    ctx.font = "bold 18px serif";
-                    ctx.fillText(`${index + 1}. ${clueId}`, panelX + 30, yOffset);
-                    yOffset += 40;
-                }
-            });
-        }
-
-        // Instructions
-        ctx.fillStyle = "#888";
-        ctx.font = "14px serif";
-        ctx.textAlign = "center";
-        ctx.fillText("Press I to close", ctx.canvas.width / 2, panelY + panelHeight - 30);
-    }
-
-    private renderDebugOverlay(ctx: CanvasRenderingContext2D) {
-
-        // Draw player collision box (red outline)
-        ctx.strokeStyle = "#ff0000";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(this.player.x, this.player.y, this.player.width, this.player.height);
-        
-        // Draw player tile boundaries
-        const playerLeftTile = Math.floor(this.player.x / TILE_SIZE);
-        const playerRightTile = Math.floor((this.player.x + this.player.width) / TILE_SIZE);
-        const playerTopTile = Math.floor(this.player.y / TILE_SIZE);
-        const playerBottomTile = Math.floor((this.player.y + this.player.height) / TILE_SIZE);
-        
-        ctx.strokeStyle = "#ff6666";
-        ctx.lineWidth = 1;
-        for (let ty = playerTopTile; ty < playerBottomTile; ty++) {
-            for (let tx = playerLeftTile; tx < playerRightTile; tx++) {
-                ctx.strokeRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            }
-        }
-
-        // Draw NPC collision boxes (blue outline)
-        for (const npc of this.currentRoom.npcs) {
-            ctx.strokeStyle = "#0000ff";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(npc.x, npc.y, npc.width, npc.height);
-            
-            // Draw NPC tile boundaries
-            const npcLeftTile = Math.floor(npc.x / TILE_SIZE);
-            const npcRightTile = Math.floor((npc.x + npc.width) / TILE_SIZE);
-            const npcTopTile = Math.floor(npc.y / TILE_SIZE);
-            const npcBottomTile = Math.floor((npc.y + npc.height) / TILE_SIZE);
-            
-            ctx.strokeStyle = "#6666ff";
-            ctx.lineWidth = 1;
-            for (let ty = npcTopTile; ty < npcBottomTile; ty++) {
-                for (let tx = npcLeftTile; tx < npcRightTile; tx++) {
-                    ctx.strokeRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                }
-            }
-        }
-
-        // Draw furniture collision areas (green outline)
-        for (const obj of this.currentRoom.interactables) {
-            const minX = Math.min(...obj.tiles.map(t => t.x));
-            const maxX = Math.max(...obj.tiles.map(t => t.x));
-            const minY = Math.min(...obj.tiles.map(t => t.y));
-            const maxY = Math.max(...obj.tiles.map(t => t.y));
-            
-            ctx.strokeStyle = "#00ff00";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, (maxX - minX + 1) * TILE_SIZE, (maxY - minY + 1) * TILE_SIZE);
-            
-            // Draw furniture tile boundaries
-            ctx.strokeStyle = "#66ff66";
-            ctx.lineWidth = 1;
-            for (const tile of obj.tiles) {
-                ctx.strokeRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            }
-        }
-
-        // Draw interaction target tile (yellow highlight)
-        const interactionPoint = this.player.getInteractionPoint();
-        const reach = TILE_SIZE * 0.6;
-        let targetX = interactionPoint.x;
-        let targetY = interactionPoint.y;
-        
-        switch (this.player.facing) {
-            case "up": targetY -= reach; break;
-            case "down": targetY += reach; break;
-            case "left": targetX -= reach; break;
-            case "right": targetX += reach; break;
-        }
-        
-        const targetTileX = Math.floor(targetX / TILE_SIZE);
-        const targetTileY = Math.floor(targetY / TILE_SIZE);
-        
-        ctx.fillStyle = "rgba(255, 255, 0, 0.3)";
-        ctx.fillRect(targetTileX * TILE_SIZE, targetTileY * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        ctx.strokeStyle = "#ffff00";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(targetTileX * TILE_SIZE, targetTileY * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        
-        // Draw interaction point (orange circle)
-        ctx.fillStyle = "#ff8800";
-        ctx.beginPath();
-        ctx.arc(interactionPoint.x, interactionPoint.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw reach line (orange)
-        ctx.strokeStyle = "#ff8800";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(interactionPoint.x, interactionPoint.y);
-        ctx.lineTo(targetX, targetY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-    }
-
-    private renderClueNotification(ctx: CanvasRenderingContext2D) {
-        const cluesDataTyped = cluesData as CluesData;
-        const clue = cluesDataTyped[this.clueNotification!.clueId];
-        const clueName = clue ? clue.name : this.clueNotification!.clueId;
-
-        // Notification panel
-        const notifWidth = 300;
-        const notifHeight = 80;
-        const notifX = (ctx.canvas.width - notifWidth) / 2;
-        const notifY = 50;
-
-        // Background
-        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-        ctx.fillRect(notifX, notifY, notifWidth, notifHeight);
-
-        // Border
-        ctx.strokeStyle = "#ffd700";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(notifX, notifY, notifWidth, notifHeight);
-
-        // Text
-        ctx.fillStyle = "#ffd700";
-        ctx.font = "bold 16px serif";
-        ctx.textAlign = "center";
-        ctx.fillText("Clue Found!", ctx.canvas.width / 2, notifY + 30);
-
-        ctx.fillStyle = "#fff";
-        ctx.font = "14px serif";
-        ctx.fillText(clueName, ctx.canvas.width / 2, notifY + 55);
-        
-        // Reset text alignment for other rendering
-        ctx.textAlign = "left";
-    }
 }

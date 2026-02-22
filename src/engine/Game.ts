@@ -28,6 +28,9 @@ interface NPCConfig {
     };
 }
 
+const MURDERER_NPC_ID = "cook";
+const REQUIRED_CLUES_FOR_ACCUSATION = ["torn_page"];
+
 export class Game {
     private input = new Input();
     private rooms: Record<string, Room>;
@@ -42,7 +45,8 @@ export class Game {
     private message: string | null = null;
     private clueNotification: { clueId: string } | null = null;
     private debugMode: boolean = false;
-    private roomTransitionCooldown = 0; // seconds - prevents immediate re-trigger after spawn
+    private roomTransitionCooldown = 0;
+    private redBlinkRemaining = 0; // seconds of red blink after accusing murderer
 
 
     constructor(private ctx: CanvasRenderingContext2D) {
@@ -123,6 +127,14 @@ export class Game {
         if (this.state === "playing") {
             this.player.update(dt, this.input, this.currentRoom.map, this.currentRoom.npcs);
             this.roomTransitionCooldown = Math.max(0, this.roomTransitionCooldown - dt);
+            this.redBlinkRemaining = Math.max(0, this.redBlinkRemaining - dt);
+            const playerCenterX = this.player.x + this.player.width / 2;
+            const playerCenterY = this.player.y + this.player.height / 2;
+            for (const npc of this.currentRoom.npcs) {
+                if (npc.isChasing()) {
+                    npc.updateChase(dt, playerCenterX, playerCenterY, this.currentRoom.map);
+                }
+            }
             this.checkRoomTransition();
 
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
@@ -134,11 +146,17 @@ export class Game {
 
                 if (result) {
                     this.message = result.description;
-                    // Show notification for first clue found
                     if (result.clues.length > 0) {
-                        this.clueNotification = {
-                            clueId: result.clues[0]
-                        };
+                        this.clueNotification = { clueId: result.clues[0] };
+                    }
+                    // Accuse murderer: has required clues and talked to chef
+                    if (
+                        result.speakerId === MURDERER_NPC_ID &&
+                        REQUIRED_CLUES_FOR_ACCUSATION.every((c) => this.clueSystem.hasClue(c))
+                    ) {
+                        this.redBlinkRemaining = 3;
+                        const chef = this.currentRoom.npcs.find((n) => n.id === MURDERER_NPC_ID);
+                        if (chef) chef.setChasing(true);
                     }
                     this.state = "interacting";
                 }
@@ -310,6 +328,14 @@ export class Game {
         if (this.clueNotification) {
             renderClueNotification(ctx, this.clueNotification.clueId);
         }
-    }
 
+        // Subtle red blink for 3 seconds after accusing the murderer
+        if (this.redBlinkRemaining > 0) {
+            const intensity = this.redBlinkRemaining / 3;
+            const pulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.008);
+            const alpha = 0.12 * intensity * pulse;
+            ctx.fillStyle = `rgba(180, 0, 0, ${alpha})`;
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        }
+    }
 }

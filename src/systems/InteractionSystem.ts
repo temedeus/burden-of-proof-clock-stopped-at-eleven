@@ -9,6 +9,7 @@ export interface InteractionResult {
     description: string;
     clues: string[];
     speaker?: string; // NPC name if talking to NPC
+    speakerId?: string; // NPC id (e.g. "cook") for game logic
 }
 
 export class InteractionSystem {
@@ -49,19 +50,20 @@ export class InteractionSystem {
             
             // NPC must be adjacent AND the target tile must overlap with NPC (facing direction matters)
             if (horizontalAdjacent && verticalAdjacent && targetOverlapsNPC) {
-                // Get dialog for this NPC
                 if (npcDialogs && npcDialogs[npc.id]) {
                     const dialog = this.dialogSystem.getDialog(npcDialogs[npc.id]);
                     return {
                         description: `${npc.name}: ${dialog}`,
                         clues: [],
-                        speaker: npc.name
+                        speaker: npc.name,
+                        speakerId: npc.id
                     };
                 }
                 return {
                     description: `${npc.name}: Hello there.`,
                     clues: [],
-                    speaker: npc.name
+                    speaker: npc.name,
+                    speakerId: npc.id
                 };
             }
         }

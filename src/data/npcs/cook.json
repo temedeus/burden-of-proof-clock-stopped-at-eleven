@@ -3,6 +3,12 @@
   "name": "Chef Pierre",
   "role": "Cook",
   "dialog": {
-    "default": "Dinner will be ready at eight. I hope nothing spoils the evening."
+    "default": "Dinner will be ready at eight. I hope nothing spoils the evening.",
+    "conditions": [
+      {
+        "requiresClue": "torn_page",
+        "dialog": "That page... You shouldn't have found that. Now you've left me no choice."
+      }
+    ]
   }
 }

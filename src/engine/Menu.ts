@@ -1,7 +1,7 @@
 import { Input } from "./Input";
 import { loadSettings, setMuteSounds } from "./Settings";
 
-export type MenuScreen = "main" | "difficulty" | "pause" | "settings";
+export type MenuScreen = "main" | "difficulty" | "pause" | "settings" | "game_over";
 
 export type MenuAction =
     | { type: "start"; difficulty: "easy" | "medium" | "hard" }
@@ -9,7 +9,6 @@ export type MenuAction =
     | { type: "open_difficulty" }
     | { type: "resume" }
     | { type: "quit_to_menu" }
-    | { type: "quit_game" }
     | { type: "back" }
     | null;
 
@@ -20,14 +19,6 @@ const HOVER_COLOR = "#c4a574";
 
 export class Menu {
     private selectedIndex = 0;
-<<<<<<< Updated upstream
-    private input = new Input();
-
-    constructor(
-        private canvas: HTMLCanvasElement,
-        private screen: MenuScreen
-    ) {}
-=======
     private input: Input;
 
     constructor(
@@ -37,7 +28,6 @@ export class Menu {
     ) {
         this.input = input ?? new Input();
     }
->>>>>>> Stashed changes
 
     setScreen(screen: MenuScreen): void {
         this.screen = screen;
@@ -56,13 +46,7 @@ export class Menu {
 
         if (escape) {
             if (this.screen === "settings" || this.screen === "difficulty") {
-<<<<<<< Updated upstream
-                this.screen = this.screen === "difficulty" ? "main" : "pause";
-                this.selectedIndex = 0;
-                return null;
-=======
                 return { type: "back" };
->>>>>>> Stashed changes
             }
             if (this.screen === "pause") {
                 return { type: "resume" };
@@ -85,8 +69,7 @@ export class Menu {
             case "main":
                 return [
                     { id: "start", label: "Start Game" },
-                    { id: "settings", label: "Settings" },
-                    { id: "quit", label: "Quit" }
+                    { id: "settings", label: "Settings" }
                 ];
             case "difficulty":
                 return [
@@ -98,9 +81,10 @@ export class Menu {
                 return [
                     { id: "resume", label: "Resume" },
                     { id: "settings", label: "Settings" },
-                    { id: "quit_to_menu", label: "Quit to Menu" },
-                    { id: "quit_game", label: "Quit Game" }
+                    { id: "quit_to_menu", label: "Quit to Menu" }
                 ];
+            case "game_over":
+                return [{ id: "quit_to_menu", label: "Back to Menu" }];
             case "settings":
                 return [{ id: "mute_toggle", label: "" }, { id: "back", label: "Back" }];
             default:
@@ -123,14 +107,10 @@ export class Menu {
                 if (this.screen === "main") return { type: "open_settings" };
                 if (this.screen === "pause") return { type: "open_settings" };
                 return null;
-            case "quit":
-                return { type: "quit_game" };
             case "resume":
                 return { type: "resume" };
             case "quit_to_menu":
                 return { type: "quit_to_menu" };
-            case "quit_game":
-                return { type: "quit_game" };
             case "mute_toggle":
                 setMuteSounds(!loadSettings().muteSounds);
                 return null;
@@ -153,12 +133,19 @@ export class Menu {
             return;
         }
 
+        if (this.screen === "game_over") {
+            this.renderGameOver(ctx, w, h);
+            return;
+        }
+
         const title =
             this.screen === "main"
                 ? "Murder at Blackwood Manor"
                 : this.screen === "difficulty"
                   ? "Select Difficulty"
-                  : "Paused";
+                  : this.screen === "game_over"
+                    ? "Game Over"
+                    : "Paused";
 
         ctx.fillStyle = MENU_ACCENT;
         ctx.font = "bold 36px serif";
@@ -166,7 +153,7 @@ export class Menu {
         ctx.fillText(title, w / 2, h * 0.28);
 
         const items = this.getMenuItems();
-        const startY = this.screen === "difficulty" ? h * 0.4 : h * 0.42;
+        const startY = this.screen === "difficulty" ? h * 0.4 : this.screen === "game_over" ? h * 0.5 : h * 0.42;
         const lineHeight = 44;
 
         ctx.font = "22px serif";
@@ -180,6 +167,21 @@ export class Menu {
             ctx.fillText(label, w / 2, y);
         }
 
+        ctx.textAlign = "left";
+    }
+
+    private renderGameOver(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        ctx.fillStyle = "#8b0000";
+        ctx.font = "bold 42px serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Game Over", w / 2, h * 0.35);
+        ctx.fillStyle = TEXT_COLOR;
+        ctx.font = "20px serif";
+        ctx.fillText("The murderer has caught you.", w / 2, h * 0.42);
+        ctx.font = "22px serif";
+        const y = h * 0.52;
+        ctx.fillStyle = this.selectedIndex === 0 ? HOVER_COLOR : TEXT_COLOR;
+        ctx.fillText("Back to Menu", w / 2, y);
         ctx.textAlign = "left";
     }
 

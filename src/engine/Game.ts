@@ -64,21 +64,16 @@ export class Game {
     private murdererSpawnY = 0;
     private difficulty: Difficulty = "medium";
     private onMenuRequest?: () => void;
+    private onGameOver?: () => void;
 
     constructor(
         private ctx: CanvasRenderingContext2D,
-<<<<<<< Updated upstream
-        options?: { difficulty?: Difficulty; onMenuRequest?: () => void }
+        options?: { difficulty?: Difficulty; onMenuRequest?: () => void; onGameOver?: () => void; input?: Input }
     ) {
         this.difficulty = options?.difficulty ?? "medium";
         this.onMenuRequest = options?.onMenuRequest;
-=======
-        options?: { difficulty?: Difficulty; onMenuRequest?: () => void; input?: Input }
-    ) {
-        this.difficulty = options?.difficulty ?? "medium";
-        this.onMenuRequest = options?.onMenuRequest;
+        this.onGameOver = options?.onGameOver;
         this.input = options?.input ?? new Input();
->>>>>>> Stashed changes
         this.debugMode = isDebugMode();
         if (this.debugMode) {
             console.log("🐛 Debug mode enabled! Collision and interaction areas will be visible.");
@@ -151,6 +146,15 @@ export class Game {
         return null;
     }
 
+    private npcOverlapsPlayer(npc: NPC): boolean {
+        return (
+            this.player.x < npc.x + npc.width &&
+            this.player.x + this.player.width > npc.x &&
+            this.player.y < npc.y + npc.height &&
+            this.player.y + this.player.height > npc.y
+        );
+    }
+
     /** Move murderer to current room at the stored spawn position (after room change head start) */
     private spawnMurdererInCurrentRoom(): void {
         const chef = this.getMurderer();
@@ -210,6 +214,10 @@ export class Game {
             for (const npc of this.currentRoom.npcs) {
                 if (npc.isChasing()) {
                     npc.updateChase(dt, playerCenterX, playerCenterY, this.currentRoom.map);
+                    if (this.npcOverlapsPlayer(npc)) {
+                        this.onGameOver?.();
+                        return;
+                    }
                 }
             }
             this.checkRoomTransition();

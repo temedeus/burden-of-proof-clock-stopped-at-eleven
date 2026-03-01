@@ -4,13 +4,14 @@ import { spriteLoader } from "../assets/SpriteLoader";
 import { TileMap } from "../world/TileMap";
 import { TILE_WALL, TILE_FURNITURE } from "../world/TileTypes";
 
-const CHASE_SPEED = 100; // slightly slower than player (180) so they have a chance to escape
+const DEFAULT_CHASE_SPEED = 100;
 
 export class NPC extends Entity {
   width = TILE_SIZE * 2;
   height = TILE_SIZE * 2;
   private spriteName: string = "npc_male";
   private chasing = false;
+  private chaseSpeed = DEFAULT_CHASE_SPEED;
 
   constructor(
     id: string,
@@ -36,6 +37,10 @@ export class NPC extends Entity {
     this.chasing = value;
   }
 
+  setChaseSpeed(speed: number): void {
+    this.chaseSpeed = speed;
+  }
+
   isChasing(): boolean {
     return this.chasing;
   }
@@ -51,8 +56,8 @@ export class NPC extends Entity {
     if (len < 1) return;
     dx /= len;
     dy /= len;
-    const moveX = dx * CHASE_SPEED * dt;
-    const moveY = dy * CHASE_SPEED * dt;
+    const moveX = dx * this.chaseSpeed * dt;
+    const moveY = dy * this.chaseSpeed * dt;
     if (!this.collidesWithMap(this.x + moveX, this.y, map)) this.x += moveX;
     if (!this.collidesWithMap(this.x, this.y + moveY, map)) this.y += moveY;
   }

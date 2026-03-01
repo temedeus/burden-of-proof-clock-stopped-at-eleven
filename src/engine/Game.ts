@@ -31,6 +31,17 @@ interface NPCConfig {
 const MURDERER_NPC_ID = "cook";
 const REQUIRED_CLUES_FOR_ACCUSATION = ["torn_page"];
 
+export type Difficulty = "easy" | "medium" | "hard";
+
+const DIFFICULTY_CONFIG: Record<
+    Difficulty,
+    { chaseHeadStart: number; murdererChaseSpeed: number; murdererSpawnsIn: number }
+> = {
+    easy: { chaseHeadStart: 2.5, murdererChaseSpeed: 80, murdererSpawnsIn: 2 },
+    medium: { chaseHeadStart: 1.5, murdererChaseSpeed: 100, murdererSpawnsIn: 1.5 },
+    hard: { chaseHeadStart: 0.5, murdererChaseSpeed: 120, murdererSpawnsIn: 1 }
+};
+
 export class Game {
     private input = new Input();
     private rooms: Record<string, Room>;
@@ -51,9 +62,15 @@ export class Game {
     private murdererSpawnsIn = 0; // after room change: 1.5s before murderer appears in new room
     private murdererSpawnX = 0;
     private murdererSpawnY = 0;
+    private difficulty: Difficulty = "medium";
+    private onMenuRequest?: () => void;
 
-
-    constructor(private ctx: CanvasRenderingContext2D) {
+    constructor(
+        private ctx: CanvasRenderingContext2D,
+        options?: { difficulty?: Difficulty; onMenuRequest?: () => void }
+    ) {
+        this.difficulty = options?.difficulty ?? "medium";
+        this.onMenuRequest = options?.onMenuRequest;
         this.debugMode = isDebugMode();
         if (this.debugMode) {
             console.log("🐛 Debug mode enabled! Collision and interaction areas will be visible.");
@@ -143,6 +160,11 @@ export class Game {
     }
 
     update(dt: number) {
+        if (this.input.wasPressed("escape")) {
+            this.onMenuRequest?.();
+            return;
+        }
+
         // Handle inventory toggle
         if (this.input.wasPressed("i")) {
             if (this.state === "inventory") {
@@ -161,7 +183,10 @@ export class Game {
                 this.chaseStartsIn -= dt;
                 if (this.chaseStartsIn <= 0) {
                     const chef = this.getMurderer();
-                    if (chef) chef.setChasing(true);
+                    if (chef) {
+                        chef.setChasing(true);
+                        chef.setChaseSpeed(DIFFICULTY_CONFIG[this.difficulty].murdererChaseSpeed);
+                    }
                     this.chaseStartsIn = 0;
                 }
             }
@@ -198,8 +223,9 @@ export class Game {
                         result.speakerId === MURDERER_NPC_ID &&
                         REQUIRED_CLUES_FOR_ACCUSATION.every((c) => this.clueSystem.hasClue(c))
                     ) {
+                        const config = DIFFICULTY_CONFIG[this.difficulty];
                         this.redBlinkRemaining = 3;
-                        this.chaseStartsIn = 1.5; // 1.5 seconds to run before chef starts chasing
+                        this.chaseStartsIn = config.chaseHeadStart;
                     }
                     this.state = "interacting";
                 }
@@ -274,7 +300,7 @@ export class Game {
                 // If murderer is chasing, give player 1.5s head start in new room before he spawns at the door
                 const chef = this.getMurderer();
                 if (chef?.isChasing()) {
-                    this.murdererSpawnsIn = 1.5;
+                    this.murdererSpawnsIn = DIFFICULTY_CONFIG[this.difficulty].murdererSpawnsIn;
                     this.murdererSpawnX = exit.spawnX * TILE_SIZE;
                     this.murdererSpawnY = exit.spawnY * TILE_SIZE;
                 }

@@ -43,7 +43,7 @@ const DIFFICULTY_CONFIG: Record<
 };
 
 export class Game {
-    private input = new Input();
+    private input: Input;
     private rooms: Record<string, Room>;
     private currentRoom: Room;
     private npcDialogs: Record<string, any> = {};
@@ -67,10 +67,18 @@ export class Game {
 
     constructor(
         private ctx: CanvasRenderingContext2D,
+<<<<<<< Updated upstream
         options?: { difficulty?: Difficulty; onMenuRequest?: () => void }
     ) {
         this.difficulty = options?.difficulty ?? "medium";
         this.onMenuRequest = options?.onMenuRequest;
+=======
+        options?: { difficulty?: Difficulty; onMenuRequest?: () => void; input?: Input }
+    ) {
+        this.difficulty = options?.difficulty ?? "medium";
+        this.onMenuRequest = options?.onMenuRequest;
+        this.input = options?.input ?? new Input();
+>>>>>>> Stashed changes
         this.debugMode = isDebugMode();
         if (this.debugMode) {
             console.log("🐛 Debug mode enabled! Collision and interaction areas will be visible.");

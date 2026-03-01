@@ -20,12 +20,24 @@ const HOVER_COLOR = "#c4a574";
 
 export class Menu {
     private selectedIndex = 0;
+<<<<<<< Updated upstream
     private input = new Input();
 
     constructor(
         private canvas: HTMLCanvasElement,
         private screen: MenuScreen
     ) {}
+=======
+    private input: Input;
+
+    constructor(
+        private canvas: HTMLCanvasElement,
+        private screen: MenuScreen,
+        input?: Input
+    ) {
+        this.input = input ?? new Input();
+    }
+>>>>>>> Stashed changes
 
     setScreen(screen: MenuScreen): void {
         this.screen = screen;
@@ -44,9 +56,13 @@ export class Menu {
 
         if (escape) {
             if (this.screen === "settings" || this.screen === "difficulty") {
+<<<<<<< Updated upstream
                 this.screen = this.screen === "difficulty" ? "main" : "pause";
                 this.selectedIndex = 0;
                 return null;
+=======
+                return { type: "back" };
+>>>>>>> Stashed changes
             }
             if (this.screen === "pause") {
                 return { type: "resume" };

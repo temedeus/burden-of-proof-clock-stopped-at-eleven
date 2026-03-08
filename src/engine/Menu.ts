@@ -1,5 +1,6 @@
 import { Input } from "./Input";
 import { loadSettings, setMuteSounds } from "./Settings";
+import { spriteLoader } from "../assets/SpriteLoader";
 
 export type MenuScreen = "main" | "difficulty" | "character_select" | "pause" | "settings" | "game_over";
 
@@ -59,8 +60,15 @@ export class Menu {
         }
 
         const items = this.getMenuItems();
-        if (up) this.selectedIndex = (this.selectedIndex - 1 + items.length) % items.length;
-        if (down) this.selectedIndex = (this.selectedIndex + 1) % items.length;
+        if (this.screen === "character_select") {
+            const left = this.input.wasPressed("arrowleft") || this.input.wasPressed("a");
+            const right = this.input.wasPressed("arrowright") || this.input.wasPressed("d");
+            if (left) this.selectedIndex = (this.selectedIndex - 1 + items.length) % items.length;
+            if (right) this.selectedIndex = (this.selectedIndex + 1) % items.length;
+        } else {
+            if (up) this.selectedIndex = (this.selectedIndex - 1 + items.length) % items.length;
+            if (down) this.selectedIndex = (this.selectedIndex + 1) % items.length;
+        }
 
         if (enter) {
             return this.activateItem(items[this.selectedIndex]);
@@ -158,16 +166,24 @@ export class Menu {
             return;
         }
 
+        if (this.screen === "character_select") {
+            this.renderCharacterSelect(ctx, w, h);
+            return;
+        }
+
         const title =
             this.screen === "main"
                 ? "Murder at Blackwood Manor"
                 : this.screen === "difficulty"
                   ? "Select Difficulty"
-                  : this.screen === "character_select"
-                    ? "Select Character"
-                    : this.screen === "game_over"
-                      ? "Game Over"
-                      : "Paused";
+                  : this.screen === "game_over"
+                    ? "Game Over"
+                    : "Paused";
+
+        if (this.screen === "character_select") {
+            ctx.textAlign = "left";
+            return;
+        }
 
         ctx.fillStyle = MENU_ACCENT;
         ctx.font = "bold 36px serif";
@@ -196,6 +212,50 @@ export class Menu {
             ctx.fillText(label, w / 2, y);
         }
 
+        ctx.textAlign = "left";
+    }
+
+    private renderCharacterSelect(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        const zoomedSize = 160;
+        const smallSize = 80;
+        const centerX = w / 2;
+        const centerY = h * 0.52;
+        const sideOffset = 140;
+
+        const characters: { id: "female_detective" | "male_detective"; label: string }[] = [
+            { id: "female_detective", label: "Female Detective" },
+            { id: "male_detective", label: "Male Detective" }
+        ];
+
+        ctx.fillStyle = MENU_ACCENT;
+        ctx.font = "bold 36px serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Select Character", centerX, h * 0.2);
+
+        ctx.font = "18px serif";
+        ctx.fillStyle = TEXT_COLOR;
+        ctx.fillText("← → to choose    Enter to confirm    Esc to back", centerX, h * 0.28);
+
+        const female = characters[0];
+        const male = characters[1];
+
+        if (this.selectedIndex === 0) {
+            spriteLoader.drawSprite(ctx, male.id, centerX + sideOffset - smallSize / 2, centerY - smallSize / 2, smallSize, smallSize);
+            spriteLoader.drawSprite(ctx, female.id, centerX - zoomedSize / 2, centerY - zoomedSize / 2, zoomedSize, zoomedSize);
+            ctx.fillStyle = HOVER_COLOR;
+            ctx.font = "bold 20px serif";
+            ctx.fillText(female.label, centerX, centerY + zoomedSize / 2 + 28);
+        } else {
+            spriteLoader.drawSprite(ctx, female.id, centerX - sideOffset - smallSize / 2, centerY - smallSize / 2, smallSize, smallSize);
+            spriteLoader.drawSprite(ctx, male.id, centerX - zoomedSize / 2, centerY - zoomedSize / 2, zoomedSize, zoomedSize);
+            ctx.fillStyle = HOVER_COLOR;
+            ctx.font = "bold 20px serif";
+            ctx.fillText(male.label, centerX, centerY + zoomedSize / 2 + 28);
+        }
+
+        ctx.fillStyle = TEXT_COLOR;
+        ctx.font = "16px serif";
+        ctx.fillText("Press Enter to play", centerX, h * 0.88);
         ctx.textAlign = "left";
     }
 

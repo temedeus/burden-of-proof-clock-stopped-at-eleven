@@ -2,6 +2,7 @@ import { Loop } from "./engine/Loop";
 import { Game } from "./engine/Game";
 import { Menu, MenuAction } from "./engine/Menu";
 import { Input } from "./engine/Input";
+import { spriteLoader } from "./assets/SpriteLoader";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -14,6 +15,25 @@ const sharedInput = new Input();
 const menu = new Menu(canvas, "main", sharedInput);
 
 const loop = new Loop();
+
+// Preload sprites so character select and game can draw them immediately
+spriteLoader.load().then(() => {
+    loop.start((dt) => {
+        if (appScreen === "playing" && game) {
+            game.update(dt);
+            game.render(ctx);
+            return;
+        }
+
+        if (appScreen === "game_over" && game) {
+            game.render(ctx);
+        }
+
+        const action = menu.update();
+        handleMenuAction(action);
+        menu.render(ctx);
+    });
+}).catch((err) => console.error("Failed to load sprites:", err));
 
 function handleMenuAction(action: MenuAction): void {
     if (!action) return;
@@ -51,19 +71,3 @@ function handleMenuAction(action: MenuAction): void {
             break;
     }
 }
-
-loop.start((dt) => {
-    if (appScreen === "playing" && game) {
-        game.update(dt);
-        game.render(ctx);
-        return;
-    }
-
-    if (appScreen === "game_over" && game) {
-        game.render(ctx);
-    }
-
-    const action = menu.update();
-    handleMenuAction(action);
-    menu.render(ctx);
-});

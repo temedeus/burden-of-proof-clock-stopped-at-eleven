@@ -2,23 +2,32 @@ import { Loop } from "./engine/Loop";
 import { Game } from "./engine/Game";
 import { Menu, MenuAction } from "./engine/Menu";
 import { Input } from "./engine/Input";
+import { IntroScreen } from "./engine/IntroScreen";
 import { spriteLoader } from "./assets/SpriteLoader";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 
-type AppScreen = "main_menu" | "playing" | "pause_menu" | "settings" | "game_over";
+type AppScreen = "main_menu" | "playing" | "pause_menu" | "settings" | "game_over" | "intro";
 
 let appScreen: AppScreen = "main_menu";
 let game: Game | null = null;
 const sharedInput = new Input();
 const menu = new Menu(canvas, "main", sharedInput);
+let introScreen: IntroScreen | null = null;
+let pendingStart: { difficulty: "easy" | "medium" | "hard"; character: "female_detective" | "male_detective" } | null = null;
 
 const loop = new Loop();
 
 // Preload sprites so character select and game can draw them immediately
 spriteLoader.load().then(() => {
     loop.start((dt) => {
+        if (appScreen === "intro" && introScreen) {
+            introScreen.update();
+            if (introScreen) introScreen.render(ctx);
+            return;
+        }
+
         if (appScreen === "playing" && game) {
             game.update(dt);
             game.render(ctx);
@@ -49,25 +58,32 @@ function handleMenuAction(action: MenuAction): void {
     if (!action) return;
     switch (action.type) {
         case "start":
-            game = new Game(ctx, {
-                difficulty: action.difficulty,
-                playerSprite: action.character,
-                onMenuRequest: () => {
-                    appScreen = "pause_menu";
-                    menu.setScreen("pause");
-                },
-                onGameOver: () => {
-                    appScreen = "game_over";
-                    menu.setScreen("game_over");
-                },
-                onVictoryComplete: () => {
-                    game = null;
-                    appScreen = "main_menu";
-                    menu.setScreen("main");
-                },
-                input: sharedInput
+            pendingStart = { difficulty: action.difficulty, character: action.character };
+            introScreen = new IntroScreen(sharedInput, action.character, () => {
+                if (!pendingStart) return;
+                game = new Game(ctx, {
+                    difficulty: pendingStart.difficulty,
+                    playerSprite: pendingStart.character,
+                    onMenuRequest: () => {
+                        appScreen = "pause_menu";
+                        menu.setScreen("pause");
+                    },
+                    onGameOver: () => {
+                        appScreen = "game_over";
+                        menu.setScreen("game_over");
+                    },
+                    onVictoryComplete: () => {
+                        game = null;
+                        appScreen = "main_menu";
+                        menu.setScreen("main");
+                    },
+                    input: sharedInput
+                });
+                appScreen = "playing";
+                pendingStart = null;
+                introScreen = null;
             });
-            appScreen = "playing";
+            appScreen = "intro";
             break;
         case "open_settings":
         case "open_difficulty":

@@ -1,0 +1,9 @@
+{
+  "id": "worker_boy",
+  "name": "Stable Boy",
+  "role": "Worker",
+  "spriteName": "worker_boy",
+  "dialog": {
+    "default": "The horses are spooked. Something's not right tonight."
+  }
+}

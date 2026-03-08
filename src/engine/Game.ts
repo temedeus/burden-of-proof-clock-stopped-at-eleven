@@ -1,5 +1,5 @@
 import { Room } from "../world/Room";
-import { createLibrary, createHall } from "../world/Rooms";
+import { createLibrary, createHall, createStudy, createKitchen } from "../world/Rooms";
 import {Input} from "./Input";
 import { Player, PlayerSpriteName } from "../entities/Player";
 import {NPC} from "../entities/NPC";
@@ -9,8 +9,16 @@ import { ClueSystem } from "../systems/ClueSystem";
 import butlerConfig from "../data/npcs/butler.json";
 import maidConfig from "../data/npcs/maid.json";
 import cookConfig from "../data/npcs/cook.json";
+import baronConfig from "../data/npcs/baron.json";
+import baronessConfig from "../data/npcs/baroness.json";
+import workerManConfig from "../data/npcs/worker_man.json";
+import workerBoyConfig from "../data/npcs/worker_boy.json";
+import policeConfig from "../data/npcs/police.json";
+import police2Config from "../data/npcs/police2.json";
 import libraryConfig from "../data/rooms/library.json";
 import hallConfig from "../data/rooms/hall.json";
+import studyConfig from "../data/rooms/study.json";
+import kitchenConfig from "../data/rooms/kitchen.json";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
 import { renderInventoryPanel } from "./InventoryPanel";
@@ -22,6 +30,7 @@ interface NPCConfig {
     id: string;
     name: string;
     role?: string;
+    spriteName?: string;
     dialog: {
         default: string;
         conditions?: Array<{ requiresClue?: string; dialog: string }>;
@@ -85,7 +94,9 @@ export class Game {
 
         this.rooms = {
             library: createLibrary(w, h),
-            hall: createHall(w, h)
+            hall: createHall(w, h),
+            study: createStudy(w, h),
+            kitchen: createKitchen(w, h)
         };
 
         // Load NPC configs and initialize NPCs
@@ -103,7 +114,13 @@ export class Game {
         const npcConfigs: Record<string, NPCConfig> = {
             butler: butlerConfig as NPCConfig,
             maid: maidConfig as NPCConfig,
-            cook: cookConfig as NPCConfig
+            cook: cookConfig as NPCConfig,
+            baron: baronConfig as NPCConfig,
+            baroness: baronessConfig as NPCConfig,
+            worker_man: workerManConfig as NPCConfig,
+            worker_boy: workerBoyConfig as NPCConfig,
+            police: policeConfig as NPCConfig,
+            police2: police2Config as NPCConfig
         };
 
         for (const [id, config] of Object.entries(npcConfigs)) {
@@ -112,7 +129,9 @@ export class Game {
 
         const roomConfigs: Record<string, { config: any; room: Room }> = {
             library: { config: libraryConfig as any, room: this.rooms.library },
-            hall: { config: hallConfig as any, room: this.rooms.hall }
+            hall: { config: hallConfig as any, room: this.rooms.hall },
+            study: { config: studyConfig as any, room: this.rooms.study },
+            kitchen: { config: kitchenConfig as any, room: this.rooms.kitchen }
         };
 
         for (const { config, room } of Object.values(roomConfigs)) {
@@ -123,7 +142,7 @@ export class Game {
                     const npcX = this.resolveNPCPosition(npcPlacement.x, "width", config.width) * TILE_SIZE;
                     const npcY = this.resolveNPCPosition(npcPlacement.y, "height", config.height) * TILE_SIZE;
                     room.npcs.push(
-                        new NPC(npcConfig.id, npcX, npcY, npcConfig.name, npcConfig.role)
+                        new NPC(npcConfig.id, npcX, npcY, npcConfig.name, npcConfig.role, npcConfig.spriteName)
                     );
                 }
             }

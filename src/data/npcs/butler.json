@@ -2,6 +2,7 @@
   "id": "butler",
   "name": "Mr. Thompson",
   "role": "Butler",
+  "spriteName": "npc_male",
   "dialog": {
     "default": "Good evening, sir. Is there anything I can help you with?",
     "conditions": [

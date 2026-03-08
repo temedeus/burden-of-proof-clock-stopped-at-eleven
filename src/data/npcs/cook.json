@@ -2,6 +2,7 @@
   "id": "cook",
   "name": "Chef Pierre",
   "role": "Cook",
+  "spriteName": "worker_man",
   "dialog": {
     "default": "Dinner will be ready at eight. I hope nothing spoils the evening.",
     "conditions": [

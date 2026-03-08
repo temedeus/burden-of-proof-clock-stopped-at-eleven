@@ -2,6 +2,7 @@
   "id": "maid",
   "name": "Mrs. Clarke",
   "role": "Maid",
+  "spriteName": "maid",
   "dialog": {
     "default": "I've been cleaning the hall all morning. Have you seen the master?"
   }

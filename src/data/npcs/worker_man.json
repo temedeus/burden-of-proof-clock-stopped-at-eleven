@@ -1,0 +1,9 @@
+{
+  "id": "worker_man",
+  "name": "Groundskeeper",
+  "role": "Worker",
+  "spriteName": "worker_man",
+  "dialog": {
+    "default": "I was out by the shed when I heard the commotion. Didn't see nothing."
+  }
+}

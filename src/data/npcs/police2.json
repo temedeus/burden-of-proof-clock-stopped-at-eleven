@@ -1,0 +1,9 @@
+{
+  "id": "police2",
+  "name": "Constable Reed",
+  "role": "Police",
+  "spriteName": "police2",
+  "dialog": {
+    "default": "No one leaves the manor until the Inspector says so."
+  }
+}

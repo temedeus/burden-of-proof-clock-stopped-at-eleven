@@ -1,0 +1,9 @@
+{
+  "id": "police",
+  "name": "Inspector Walsh",
+  "role": "Police",
+  "spriteName": "police",
+  "dialog": {
+    "default": "We've secured the scene. Report any findings to me at once."
+  }
+}

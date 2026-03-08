@@ -8,6 +8,8 @@ import tableConfig from "../data/furniture/table.json";
 import bookshelvesConfig from "../data/furniture/bookshelves.json";
 import libraryConfig from "../data/rooms/library.json";
 import hallConfig from "../data/rooms/hall.json";
+import studyConfig from "../data/rooms/study.json";
+import kitchenConfig from "../data/rooms/kitchen.json";
 
 interface FurnitureConfig {
     id: string;
@@ -34,7 +36,7 @@ interface ExitConfig {
     y: number | "top" | "bottom" | "center";
     targetRoom: string;
     spawnX: number | "center";
-    spawnY: number | "bottom-1" | "bottom-2" | "bottom-3" | number;
+    spawnY: number | "bottom-1" | "bottom-2" | "bottom-3" | "center" | number;
 }
 
 interface NPCPlacement {
@@ -74,10 +76,11 @@ function resolvePosition(
 }
 
 function resolveSpawnY(
-    value: number | "bottom-1" | "bottom-2" | "bottom-3",
+    value: number | "bottom-1" | "bottom-2" | "bottom-3" | "center",
     roomHeight: number
 ): number {
     if (typeof value === "number") return value;
+    if (value === "center") return Math.floor(roomHeight / 2) - 1;
     if (value === "bottom-1") return roomHeight - 2;
     if (value === "bottom-2") return roomHeight - 3;
     if (value === "bottom-3") return roomHeight - 4;
@@ -209,4 +212,12 @@ export function createLibrary(width: number, height: number): Room {
 
 export function createHall(width: number, height: number): Room {
     return createRoomFromConfig(hallConfig as RoomConfig, width, height);
+}
+
+export function createStudy(width: number, height: number): Room {
+    return createRoomFromConfig(studyConfig as RoomConfig, width, height);
+}
+
+export function createKitchen(width: number, height: number): Room {
+    return createRoomFromConfig(kitchenConfig as RoomConfig, width, height);
 }

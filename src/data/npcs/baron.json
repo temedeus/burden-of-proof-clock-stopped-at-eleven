@@ -1,0 +1,9 @@
+{
+  "id": "baron",
+  "name": "Baron Blackwood",
+  "role": "Baron",
+  "spriteName": "baron",
+  "dialog": {
+    "default": "I trust you are finding everything in order, Detective. This household has seen better days."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "baroness",
+  "name": "Lady Blackwood",
+  "role": "Baroness",
+  "spriteName": "baroness",
+  "dialog": {
+    "default": "Please find whoever did this. The staff are beside themselves."
+  }
+}

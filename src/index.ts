@@ -22,6 +22,16 @@ spriteLoader.load().then(() => {
         if (appScreen === "playing" && game) {
             game.update(dt);
             game.render(ctx);
+            // Handle victory return-to-menu in main loop so we reliably catch the key
+            if (
+                game.isWaitingForVictoryInput() &&
+                (sharedInput.wasPressed("escape") ||
+                    sharedInput.wasPressed("enter") ||
+                    sharedInput.wasPressed(" ") ||
+                    sharedInput.wasPressed("e"))
+            ) {
+                game.returnToMenuFromVictory();
+            }
             return;
         }
 

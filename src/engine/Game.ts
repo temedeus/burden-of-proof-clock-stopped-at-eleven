@@ -243,7 +243,7 @@ export class Game {
 
         this.victoryDoorTarget = { x: doorX, y: doorY };
         this.victoryPhase = true;
-        this.victoryTimer = 4;
+        this.victoryTimer = 2; // short so "press to return" appears quickly
         this.victoryRoom = room;
         this.victoryPoliceId = policeId;
         this.state = "victory";
@@ -257,19 +257,24 @@ export class Game {
             const murderer = this.getMurderer();
             const police = this.getNPCById(this.victoryPoliceId);
             if (murderer && police) {
-                // Murderer moves toward the door
                 murderer.updateChase(dt, this.victoryDoorTarget.x, this.victoryDoorTarget.y, this.victoryRoom.map);
-                // Police chases murderer
                 const mcx = murderer.x + murderer.width / 2;
                 const mcy = murderer.y + murderer.height / 2;
                 police.updateChase(dt, mcx, mcy, this.victoryRoom.map);
             }
             return;
         }
-        // Victory timer finished: wait for key to return to main menu
-        if (this.input.wasPressed("e") || this.input.wasPressed(" ") || this.input.wasPressed("escape")) {
-            this.onVictoryComplete?.();
-        }
+        // When timer <= 0, key check is done in index.ts so we don't miss the key
+    }
+
+    /** True when victory screen is showing and we're waiting for the user to press a key to return to menu */
+    isWaitingForVictoryInput(): boolean {
+        return this.victoryPhase;
+    }
+
+    /** Call when user presses key to leave victory screen (called from main loop in index.ts) */
+    returnToMenuFromVictory(): void {
+        this.onVictoryComplete?.();
     }
 
     private npcOverlapsPlayer(npc: NPC): boolean {
@@ -298,6 +303,12 @@ export class Game {
     }
 
     update(dt: number) {
+        // Handle victory first so Escape/Enter go to main menu, not pause
+        if (this.state === "victory") {
+            this.updateVictory(dt);
+            return;
+        }
+
         if (this.input.wasPressed("escape")) {
             this.onMenuRequest?.();
             return;
@@ -310,11 +321,6 @@ export class Game {
             } else if (this.state === "playing") {
                 this.state = "inventory";
             }
-            return;
-        }
-
-        if (this.state === "victory") {
-            this.updateVictory(dt);
             return;
         }
 
@@ -570,17 +576,17 @@ export class Game {
 
         // Victory: fade in immediately, then congratulations, then "press to return to menu"
         if (this.victoryPhase) {
-            const elapsed = 4 - this.victoryTimer;
-            // Start fading immediately (full black in ~1.2s)
-            const fadeAlpha = this.victoryTimer <= 0 ? 1 : Math.min(1, elapsed / 1.2);
+            const elapsed = 2 - this.victoryTimer;
+            // Start fading immediately (full black in ~0.8s)
+            const fadeAlpha = this.victoryTimer <= 0 ? 1 : Math.min(1, elapsed / 0.8);
             if (fadeAlpha > 0) {
                 ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
                 ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             }
-            // Show text once fade is underway (after ~0.6s)
-            const showText = elapsed >= 0.6 || this.victoryTimer <= 0;
+            // Show text once fade is underway (after ~0.4s)
+            const showText = elapsed >= 0.4 || this.victoryTimer <= 0;
             if (showText) {
-                const textAlpha = this.victoryTimer <= 0 ? 1 : Math.min(1, (elapsed - 0.6) / 0.4);
+                const textAlpha = this.victoryTimer <= 0 ? 1 : Math.min(1, (elapsed - 0.4) / 0.3);
                 ctx.save();
                 ctx.globalAlpha = textAlpha;
                 ctx.fillStyle = "#fff";

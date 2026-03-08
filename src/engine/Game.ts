@@ -24,7 +24,7 @@ import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
 import { renderInventoryPanel } from "./InventoryPanel";
 import { renderClueNotification } from "./ClueNotification";
 
-type GameState = "playing" | "interacting" | "inventory";
+type GameState = "playing" | "interacting" | "inventory" | "victory";
 
 interface NPCConfig {
     id: string;
@@ -38,6 +38,7 @@ interface NPCConfig {
 }
 
 const MURDERER_NPC_ID = "cook";
+const POLICE_NPC_IDS = ["police", "police2"];
 const REQUIRED_CLUES_FOR_ACCUSATION = ["torn_page"];
 
 export type Difficulty = "easy" | "medium" | "hard";
@@ -67,21 +68,30 @@ export class Game {
     private debugMode: boolean = false;
     private roomTransitionCooldown = 0;
     private redBlinkRemaining = 0;
-    private chaseStartsIn = 0; // seconds until chef starts chasing (1.5s head start after accusation)
+    private accusedMurderer = false; // set when you accuse cook; murderer chases until you're caught or you talk to police
+    private chaseStartsIn = 0; // seconds until murderer starts chasing (head start after accusation)
     private murdererSpawnsIn = 0; // after room change: 1.5s before murderer appears in new room
     private murdererSpawnX = 0;
     private murdererSpawnY = 0;
     private difficulty: Difficulty = "medium";
+    private victoryPhase = false;
+    private victoryTimer = 5; // seconds in victory (fade + text); when <= 0 show "press to return"
+    private victoryRoom: Room | null = null; // room where chase happens
+    private victoryPoliceId: string | null = null;
+    /** Door position (pixel center) the murderer runs toward */
+    private victoryDoorTarget: { x: number; y: number } | null = null;
     private onMenuRequest?: () => void;
     private onGameOver?: () => void;
+    private onVictoryComplete?: () => void;
 
     constructor(
         private ctx: CanvasRenderingContext2D,
-        options?: { difficulty?: Difficulty; onMenuRequest?: () => void; onGameOver?: () => void; input?: Input; playerSprite?: PlayerSpriteName }
+        options?: { difficulty?: Difficulty; onMenuRequest?: () => void; onGameOver?: () => void; onVictoryComplete?: () => void; input?: Input; playerSprite?: PlayerSpriteName }
     ) {
         this.difficulty = options?.difficulty ?? "medium";
         this.onMenuRequest = options?.onMenuRequest;
         this.onGameOver = options?.onGameOver;
+        this.onVictoryComplete = options?.onVictoryComplete;
         this.input = options?.input ?? new Input();
         this.player = new Player("player", 64, 64, options?.playerSprite ?? "female_detective");
         this.debugMode = isDebugMode();
@@ -166,6 +176,102 @@ export class Game {
         return null;
     }
 
+    /** Returns the room that contains the given NPC, or null */
+    private getRoomContainingNPC(npcId: string): Room | null {
+        for (const room of Object.values(this.rooms)) {
+            if (room.npcs.some((n) => n.id === npcId)) return room;
+        }
+        return null;
+    }
+
+    /** Returns the NPC by id from whichever room, or null */
+    private getNPCById(npcId: string): NPC | null {
+        const room = this.getRoomContainingNPC(npcId);
+        return room ? room.npcs.find((n) => n.id === npcId) ?? null : null;
+    }
+
+    /** Move an NPC from its current room to target room */
+    private moveNPCToRoom(npc: NPC, targetRoom: Room, atX: number, atY: number): void {
+        for (const room of Object.values(this.rooms)) {
+            const idx = room.npcs.indexOf(npc);
+            if (idx >= 0) {
+                room.npcs.splice(idx, 1);
+                break;
+            }
+        }
+        npc.x = atX;
+        npc.y = atY;
+        targetRoom.npcs.push(npc);
+    }
+
+    private startVictorySequence(policeId: string): void {
+        const police = this.getNPCById(policeId);
+        const murderer = this.getMurderer();
+        if (!police || !murderer) return;
+
+        const room = this.currentRoom;
+
+        // Ensure murderer is in this room (only if they're in another room)
+        const murdererRoom = this.getRoomContainingNPC(MURDERER_NPC_ID);
+        let spawnExitIndex = 0;
+        if (murdererRoom !== room) {
+            const exit = room.exits[0];
+            if (exit) {
+                const spawnX = exit.spawnX * TILE_SIZE;
+                const spawnY = exit.spawnY * TILE_SIZE;
+                this.moveNPCToRoom(murderer, room, spawnX, spawnY);
+                spawnExitIndex = 1; // run toward the other door if there is one
+            } else {
+                this.moveNPCToRoom(murderer, room, murderer.x, murderer.y);
+            }
+        }
+
+        // Pick a door for the murderer to run to (use a different exit if we have multiple)
+        const exitIndex = room.exits.length > 1 ? spawnExitIndex % room.exits.length : 0;
+        const exit = room.exits[exitIndex];
+        if (!exit) return;
+        const doorX = exit.x * TILE_SIZE + TILE_SIZE;
+        const doorY = exit.y * TILE_SIZE + TILE_SIZE;
+
+        // Murderer runs toward the door; police chases murderer. Do not move the police.
+        murderer.setChasing(false);
+        murderer.setFleeing(false);
+        murderer.setChasing(true);
+        murderer.setChaseSpeed(75);
+        police.setChasing(true);
+        police.setChaseSpeed(120);
+
+        this.victoryDoorTarget = { x: doorX, y: doorY };
+        this.victoryPhase = true;
+        this.victoryTimer = 4;
+        this.victoryRoom = room;
+        this.victoryPoliceId = policeId;
+        this.state = "victory";
+        this.message = null;
+    }
+
+    private updateVictory(dt: number): void {
+        if (this.victoryTimer > 0) {
+            this.victoryTimer -= dt;
+            if (!this.victoryRoom || !this.victoryPoliceId || !this.victoryDoorTarget) return;
+            const murderer = this.getMurderer();
+            const police = this.getNPCById(this.victoryPoliceId);
+            if (murderer && police) {
+                // Murderer moves toward the door
+                murderer.updateChase(dt, this.victoryDoorTarget.x, this.victoryDoorTarget.y, this.victoryRoom.map);
+                // Police chases murderer
+                const mcx = murderer.x + murderer.width / 2;
+                const mcy = murderer.y + murderer.height / 2;
+                police.updateChase(dt, mcx, mcy, this.victoryRoom.map);
+            }
+            return;
+        }
+        // Victory timer finished: wait for key to return to main menu
+        if (this.input.wasPressed("e") || this.input.wasPressed(" ") || this.input.wasPressed("escape")) {
+            this.onVictoryComplete?.();
+        }
+    }
+
     private npcOverlapsPlayer(npc: NPC): boolean {
         return (
             this.player.x < npc.x + npc.width &&
@@ -207,10 +313,50 @@ export class Game {
             return;
         }
 
+        if (this.state === "victory") {
+            this.updateVictory(dt);
+            return;
+        }
+
         if (this.state === "playing") {
             this.player.update(dt, this.input, this.currentRoom.map, this.currentRoom.npcs);
             this.roomTransitionCooldown = Math.max(0, this.roomTransitionCooldown - dt);
             this.redBlinkRemaining = Math.max(0, this.redBlinkRemaining - dt);
+
+            // Check interaction first so talking to police triggers victory before "murderer caught you"
+            if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
+                const result = this.interaction.interact(
+                    this.player,
+                    this.currentRoom,
+                    this.npcDialogs
+                );
+
+                if (result) {
+                    this.message = result.description;
+                    if (result.clues.length > 0) {
+                        this.clueNotification = { clueId: result.clues[0] };
+                    }
+                    if (
+                        result.speakerId === MURDERER_NPC_ID &&
+                        REQUIRED_CLUES_FOR_ACCUSATION.every((c) => this.clueSystem.hasClue(c))
+                    ) {
+                        this.accusedMurderer = true;
+                        this.redBlinkRemaining = 3;
+                        this.chaseStartsIn = DIFFICULTY_CONFIG[this.difficulty].chaseHeadStart;
+                        this.message = result.description + " Find a police officer!";
+                    }
+                    if (
+                        result.speakerId && POLICE_NPC_IDS.includes(result.speakerId) &&
+                        this.accusedMurderer
+                    ) {
+                        this.startVictorySequence(result.speakerId);
+                        return;
+                    }
+                    this.state = "interacting";
+                }
+            }
+
+            // Murderer chase: after head start he chases player; if he catches you = game over
             if (this.chaseStartsIn > 0) {
                 this.chaseStartsIn -= dt;
                 if (this.chaseStartsIn <= 0) {
@@ -240,32 +386,8 @@ export class Game {
                     }
                 }
             }
+
             this.checkRoomTransition();
-
-            if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
-                const result = this.interaction.interact(
-                    this.player,
-                    this.currentRoom,
-                    this.npcDialogs
-                );
-
-                if (result) {
-                    this.message = result.description;
-                    if (result.clues.length > 0) {
-                        this.clueNotification = { clueId: result.clues[0] };
-                    }
-                    // Accuse murderer: has required clues and talked to chef
-                    if (
-                        result.speakerId === MURDERER_NPC_ID &&
-                        REQUIRED_CLUES_FOR_ACCUSATION.every((c) => this.clueSystem.hasClue(c))
-                    ) {
-                        const config = DIFFICULTY_CONFIG[this.difficulty];
-                        this.redBlinkRemaining = 3;
-                        this.chaseStartsIn = config.chaseHeadStart;
-                    }
-                    this.state = "interacting";
-                }
-            }
         } else if (this.state === "interacting") {
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
                 this.message = null;
@@ -333,7 +455,7 @@ export class Game {
                 this.player.y = exit.spawnY * TILE_SIZE;
                 this.roomTransitionCooldown = 0.4;
 
-                // If murderer is chasing, give player 1.5s head start in new room before he spawns at the door
+                // If murderer is chasing, give player head start in new room before he spawns at the door
                 const chef = this.getMurderer();
                 if (chef?.isChasing()) {
                     this.murdererSpawnsIn = DIFFICULTY_CONFIG[this.difficulty].murdererSpawnsIn;
@@ -444,6 +566,36 @@ export class Game {
             const alpha = 0.12 * intensity * pulse;
             ctx.fillStyle = `rgba(180, 0, 0, ${alpha})`;
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        }
+
+        // Victory: fade in immediately, then congratulations, then "press to return to menu"
+        if (this.victoryPhase) {
+            const elapsed = 4 - this.victoryTimer;
+            // Start fading immediately (full black in ~1.2s)
+            const fadeAlpha = this.victoryTimer <= 0 ? 1 : Math.min(1, elapsed / 1.2);
+            if (fadeAlpha > 0) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
+                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            }
+            // Show text once fade is underway (after ~0.6s)
+            const showText = elapsed >= 0.6 || this.victoryTimer <= 0;
+            if (showText) {
+                const textAlpha = this.victoryTimer <= 0 ? 1 : Math.min(1, (elapsed - 0.6) / 0.4);
+                ctx.save();
+                ctx.globalAlpha = textAlpha;
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 48px serif";
+                ctx.textAlign = "center";
+                ctx.fillText("Congratulations!", ctx.canvas.width / 2, ctx.canvas.height / 2 - 40);
+                ctx.font = "24px serif";
+                ctx.fillText("The murderer is being apprehended.", ctx.canvas.width / 2, ctx.canvas.height / 2 + 10);
+                if (this.victoryTimer <= 0) {
+                    ctx.font = "20px serif";
+                    ctx.fillStyle = "rgba(255,255,255,0.9)";
+                    ctx.fillText("Press Enter or Escape to return to main menu", ctx.canvas.width / 2, ctx.canvas.height / 2 + 70);
+                }
+                ctx.restore();
+            }
         }
     }
 }

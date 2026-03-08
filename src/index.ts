@@ -50,6 +50,11 @@ function handleMenuAction(action: MenuAction): void {
                     appScreen = "game_over";
                     menu.setScreen("game_over");
                 },
+                onVictoryComplete: () => {
+                    game = null;
+                    appScreen = "main_menu";
+                    menu.setScreen("main");
+                },
                 input: sharedInput
             });
             appScreen = "playing";

@@ -12,6 +12,8 @@ export class NPC extends Entity {
   private spriteName: string = "npc_male";
   private chasing = false;
   private chaseSpeed = DEFAULT_CHASE_SPEED;
+  private fleeing = false;
+  private fleeSpeed = 90;
 
   constructor(
     id: string,
@@ -41,6 +43,18 @@ export class NPC extends Entity {
     this.chaseSpeed = speed;
   }
 
+  setFleeing(value: boolean): void {
+    this.fleeing = value;
+  }
+
+  setFleeSpeed(speed: number): void {
+    this.fleeSpeed = speed;
+  }
+
+  isFleeing(): boolean {
+    return this.fleeing;
+  }
+
   isChasing(): boolean {
     return this.chasing;
   }
@@ -58,6 +72,23 @@ export class NPC extends Entity {
     dy /= len;
     const moveX = dx * this.chaseSpeed * dt;
     const moveY = dy * this.chaseSpeed * dt;
+    if (!this.collidesWithMap(this.x + moveX, this.y, map)) this.x += moveX;
+    if (!this.collidesWithMap(this.x, this.y + moveY, map)) this.y += moveY;
+  }
+
+  /** Move away from a point (e.g. murderer fleeing from police) */
+  updateFlee(dt: number, fromX: number, fromY: number, map: TileMap): void {
+    if (!this.fleeing) return;
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2;
+    let dx = centerX - fromX;
+    let dy = centerY - fromY;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 1) return;
+    dx /= len;
+    dy /= len;
+    const moveX = dx * this.fleeSpeed * dt;
+    const moveY = dy * this.fleeSpeed * dt;
     if (!this.collidesWithMap(this.x + moveX, this.y, map)) this.x += moveX;
     if (!this.collidesWithMap(this.x, this.y + moveY, map)) this.y += moveY;
   }

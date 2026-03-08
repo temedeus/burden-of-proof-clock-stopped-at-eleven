@@ -104,5 +104,7 @@ export const SPRITE_MAP_2: Record<string, SpriteCoords> = {
     baroness: { x: 738, y: 250, width: 922 - 738, height: 548 - 250 },
     maid: { x: 964, y: 250, width: 1124 - 964, height: 548 - 250 },
     worker_man: { x: 1150, y: 250, width: 1308 - 1150, height: 548 - 250 },
-    worker_boy: { x: 1326, y: 250, width: 1484 - 1326, height: 548 - 250 }
+    worker_boy: { x: 1326, y: 250, width: 1484 - 1326, height: 548 - 250 },
+    police: { x: 86, y: 632, width: 248 - 86, height: 954 - 632 },
+    police2: { x: 340, y: 632, width: 534 - 340, height: 954 - 632 }
 };

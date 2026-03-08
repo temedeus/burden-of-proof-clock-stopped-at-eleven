@@ -1,10 +1,10 @@
 import { Input } from "./Input";
 import { loadSettings, setMuteSounds } from "./Settings";
 
-export type MenuScreen = "main" | "difficulty" | "pause" | "settings" | "game_over";
+export type MenuScreen = "main" | "difficulty" | "character_select" | "pause" | "settings" | "game_over";
 
 export type MenuAction =
-    | { type: "start"; difficulty: "easy" | "medium" | "hard" }
+    | { type: "start"; difficulty: "easy" | "medium" | "hard"; character: "male_detective" | "female_detective" }
     | { type: "open_settings" }
     | { type: "open_difficulty" }
     | { type: "resume" }
@@ -20,6 +20,7 @@ const HOVER_COLOR = "#c4a574";
 export class Menu {
     private selectedIndex = 0;
     private input: Input;
+    private pendingDifficulty: "easy" | "medium" | "hard" = "medium";
 
     constructor(
         private canvas: HTMLCanvasElement,
@@ -47,6 +48,10 @@ export class Menu {
         if (escape) {
             if (this.screen === "settings" || this.screen === "difficulty") {
                 return { type: "back" };
+            }
+            if (this.screen === "character_select") {
+                this.setScreen("difficulty");
+                return null;
             }
             if (this.screen === "pause") {
                 return { type: "resume" };
@@ -77,6 +82,11 @@ export class Menu {
                     { id: "medium", label: "Medium" },
                     { id: "hard", label: "Hard" }
                 ];
+            case "character_select":
+                return [
+                    { id: "female_detective", label: "Female Detective" },
+                    { id: "male_detective", label: "Male Detective" }
+                ];
             case "pause":
                 return [
                     { id: "resume", label: "Resume" },
@@ -98,11 +108,21 @@ export class Menu {
                 this.setScreen("difficulty");
                 return null;
             case "easy":
-                return { type: "start", difficulty: "easy" };
+                this.pendingDifficulty = "easy";
+                this.setScreen("character_select");
+                return null;
             case "medium":
-                return { type: "start", difficulty: "medium" };
+                this.pendingDifficulty = "medium";
+                this.setScreen("character_select");
+                return null;
             case "hard":
-                return { type: "start", difficulty: "hard" };
+                this.pendingDifficulty = "hard";
+                this.setScreen("character_select");
+                return null;
+            case "female_detective":
+                return { type: "start", difficulty: this.pendingDifficulty, character: "female_detective" };
+            case "male_detective":
+                return { type: "start", difficulty: this.pendingDifficulty, character: "male_detective" };
             case "settings":
                 if (this.screen === "main") return { type: "open_settings" };
                 if (this.screen === "pause") return { type: "open_settings" };
@@ -143,9 +163,11 @@ export class Menu {
                 ? "Murder at Blackwood Manor"
                 : this.screen === "difficulty"
                   ? "Select Difficulty"
-                  : this.screen === "game_over"
-                    ? "Game Over"
-                    : "Paused";
+                  : this.screen === "character_select"
+                    ? "Select Character"
+                    : this.screen === "game_over"
+                      ? "Game Over"
+                      : "Paused";
 
         ctx.fillStyle = MENU_ACCENT;
         ctx.font = "bold 36px serif";
@@ -153,7 +175,14 @@ export class Menu {
         ctx.fillText(title, w / 2, h * 0.28);
 
         const items = this.getMenuItems();
-        const startY = this.screen === "difficulty" ? h * 0.4 : this.screen === "game_over" ? h * 0.5 : h * 0.42;
+        const startY =
+            this.screen === "difficulty"
+                ? h * 0.4
+                : this.screen === "character_select"
+                  ? h * 0.4
+                  : this.screen === "game_over"
+                    ? h * 0.5
+                    : h * 0.42;
         const lineHeight = 44;
 
         ctx.font = "22px serif";

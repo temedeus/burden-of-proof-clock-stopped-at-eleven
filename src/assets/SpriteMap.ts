@@ -92,3 +92,17 @@ export const TILE_TO_SPRITE: Record<number, string> = {
     2: 'floor',  // TILE_FURNITURE is rendered separately as furniture sprites
     3: 'door'    // TILE_DOOR
 };
+
+/**
+ * Spritesheet 2: character sprites (female_detective, male_detective, baron, etc.)
+ * Positions: x, y - width and height derived from bounds.
+ */
+export const SPRITE_MAP_2: Record<string, SpriteCoords> = {
+    female_detective: { x: 86, y: 250, width: 260 - 86, height: 548 - 250 },
+    male_detective: { x: 302, y: 250, width: 482 - 302, height: 548 - 250 },
+    baron: { x: 526, y: 250, width: 692 - 526, height: 548 - 250 },
+    baroness: { x: 738, y: 250, width: 922 - 738, height: 548 - 250 },
+    maid: { x: 964, y: 250, width: 1124 - 964, height: 548 - 250 },
+    worker_man: { x: 1150, y: 250, width: 1308 - 1150, height: 548 - 250 },
+    worker_boy: { x: 1326, y: 250, width: 1484 - 1326, height: 548 - 250 }
+};

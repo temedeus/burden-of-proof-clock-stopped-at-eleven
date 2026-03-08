@@ -7,13 +7,19 @@ import { spriteLoader } from "../assets/SpriteLoader";
 
 export type Facing = "up" | "down" | "left" | "right";
 
+export type PlayerSpriteName = "male_detective" | "female_detective";
+
 export class Player extends Entity {
     speed = 180;
-
-    // collision box (2x2 tiles)
     width = TILE_SIZE * 2;
     height = TILE_SIZE * 2;
     facing: Facing = "down";
+    private spriteName: string;
+
+    constructor(id: string, x: number, y: number, spriteName: PlayerSpriteName = "female_detective") {
+        super(id, x, y);
+        this.spriteName = spriteName;
+    }
 
     update(dt: number, input: Input, map: TileMap, npcs: NPC[] = []) {
         let dx = 0;
@@ -115,8 +121,7 @@ export class Player extends Entity {
     }
 
     render(ctx: CanvasRenderingContext2D) {
-        // Render player sprite from spritesheet
-        spriteLoader.drawSprite(ctx, 'player', this.x, this.y, this.width, this.height);
+        spriteLoader.drawSprite(ctx, this.spriteName, this.x, this.y, this.width, this.height);
     }
 
     getInteractionPoint(): { x: number; y: number } {

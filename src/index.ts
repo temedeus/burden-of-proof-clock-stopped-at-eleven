@@ -21,6 +21,7 @@ function handleMenuAction(action: MenuAction): void {
         case "start":
             game = new Game(ctx, {
                 difficulty: action.difficulty,
+                playerSprite: action.character,
                 onMenuRequest: () => {
                     appScreen = "pause_menu";
                     menu.setScreen("pause");

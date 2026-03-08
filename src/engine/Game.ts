@@ -1,7 +1,7 @@
 import { Room } from "../world/Room";
 import { createLibrary, createHall } from "../world/Rooms";
 import {Input} from "./Input";
-import {Player} from "../entities/Player";
+import { Player, PlayerSpriteName } from "../entities/Player";
 import {NPC} from "../entities/NPC";
 import {TILE_SIZE} from "../world/constants";
 import { InteractionSystem } from "../systems/InteractionSystem";
@@ -48,7 +48,7 @@ export class Game {
     private currentRoom: Room;
     private npcDialogs: Record<string, any> = {};
 
-    private player = new Player("player", 64, 64);
+    private player: Player;
 
     private clueSystem = new ClueSystem();
     private interaction = new InteractionSystem(this.clueSystem);
@@ -68,12 +68,13 @@ export class Game {
 
     constructor(
         private ctx: CanvasRenderingContext2D,
-        options?: { difficulty?: Difficulty; onMenuRequest?: () => void; onGameOver?: () => void; input?: Input }
+        options?: { difficulty?: Difficulty; onMenuRequest?: () => void; onGameOver?: () => void; input?: Input; playerSprite?: PlayerSpriteName }
     ) {
         this.difficulty = options?.difficulty ?? "medium";
         this.onMenuRequest = options?.onMenuRequest;
         this.onGameOver = options?.onGameOver;
         this.input = options?.input ?? new Input();
+        this.player = new Player("player", 64, 64, options?.playerSprite ?? "female_detective");
         this.debugMode = isDebugMode();
         if (this.debugMode) {
             console.log("🐛 Debug mode enabled! Collision and interaction areas will be visible.");

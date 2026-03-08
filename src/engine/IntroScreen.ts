@@ -31,7 +31,7 @@ export class IntroScreen {
         private playerSprite: PlayerSpriteName,
         private onComplete: () => void
     ) {
-        this.totalSlides = CHARACTER_SLIDES.length + 1; // characters + detective
+        this.totalSlides = 1 + CHARACTER_SLIDES.length + 1; // premise + characters + detective
     }
 
     update(): void {
@@ -52,19 +52,21 @@ export class IntroScreen {
         ctx.fillRect(0, 0, w, h);
 
         const isLastSlide = this.slideIndex === this.totalSlides - 1;
-        const isDetectiveSlide = this.slideIndex === CHARACTER_SLIDES.length;
+        const isPremiseSlide = this.slideIndex === 0;
+        const isDetectiveSlide = this.slideIndex === this.totalSlides - 1;
 
-        if (this.slideIndex === 0) {
-            ctx.fillStyle = "#8b4513";
-            ctx.font = "bold 26px serif";
-            ctx.textAlign = "center";
-            ctx.fillText("Blackwood Manor — the household", w / 2, h * 0.18);
-        }
-
-        if (isDetectiveSlide) {
+        if (isPremiseSlide) {
+            this.renderPremiseSlide(ctx, w, h);
+        } else if (isDetectiveSlide) {
             this.renderDetectiveSlide(ctx, w, h);
-        } else if (this.slideIndex < CHARACTER_SLIDES.length) {
-            this.renderCharacterSlide(ctx, w, h, CHARACTER_SLIDES[this.slideIndex]);
+        } else if (this.slideIndex >= 1 && this.slideIndex <= CHARACTER_SLIDES.length) {
+            if (this.slideIndex === 1) {
+                ctx.fillStyle = "#8b4513";
+                ctx.font = "bold 26px serif";
+                ctx.textAlign = "center";
+                ctx.fillText("Blackwood Manor — the household", w / 2, h * 0.18);
+            }
+            this.renderCharacterSlide(ctx, w, h, CHARACTER_SLIDES[this.slideIndex - 1]);
         }
 
         const promptY = h * 0.88;
@@ -82,6 +84,38 @@ export class IntroScreen {
         ctx.fillStyle = "rgba(255,255,255,0.4)";
         ctx.fillText(progress, w / 2, h - 20);
         ctx.textAlign = "left";
+    }
+
+    private renderPremiseSlide(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        const centerX = w / 2;
+        const lineHeight = 28;
+
+        ctx.fillStyle = "#8b4513";
+        ctx.font = "bold 32px serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Murder at Blackwood Manor", centerX, h * 0.2);
+
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.font = "20px serif";
+        ctx.textAlign = "center";
+
+        const lines = [
+            "A terrible crime has shaken the household.",
+            "Someone has been killed under the baron's roof.",
+            "",
+            "The police have secured the scene. Now a detective",
+            "must gather clues, question the residents,",
+            "and find the murderer before it's too late."
+        ];
+        let y = h * 0.38;
+        for (const line of lines) {
+            ctx.fillText(line, centerX, y);
+            y += lineHeight;
+        }
+
+        ctx.font = "18px serif";
+        ctx.fillStyle = "rgba(200,180,140,0.95)";
+        ctx.fillText("— Blackwood Manor, the night of the murder —", centerX, y + lineHeight);
     }
 
     private renderCharacterSlide(ctx: CanvasRenderingContext2D, w: number, h: number, slide: CharacterSlide): void {

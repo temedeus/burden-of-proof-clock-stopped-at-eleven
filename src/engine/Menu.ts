@@ -57,6 +57,9 @@ export class Menu {
             if (this.screen === "pause") {
                 return { type: "resume" };
             }
+            if (this.screen === "game_over") {
+                return { type: "quit_to_menu" };
+            }
         }
 
         const items = this.getMenuItems();

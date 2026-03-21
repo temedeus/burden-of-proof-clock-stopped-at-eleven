@@ -44,8 +44,11 @@ spriteLoader.load().then(() => {
             return;
         }
 
-        if (appScreen === "game_over" && game) {
-            game.render(ctx);
+        if (appScreen === "game_over") {
+            const action = menu.update();
+            handleMenuAction(action);
+            menu.render(ctx);
+            return;
         }
 
         const action = menu.update();

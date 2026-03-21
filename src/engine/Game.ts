@@ -474,6 +474,30 @@ export class Game {
         }
     }
 
+    private wrapDialogText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+        const lines: string[] = [];
+        const paragraphs = text.split("\n");
+
+        for (const paragraph of paragraphs) {
+            const words = paragraph.split(" ");
+            let current = "";
+
+            for (const word of words) {
+                const next = current ? `${current} ${word}` : word;
+                if (ctx.measureText(next).width <= maxWidth) {
+                    current = next;
+                } else {
+                    if (current) lines.push(current);
+                    current = word;
+                }
+            }
+
+            if (current) lines.push(current);
+        }
+
+        return lines.length > 0 ? lines : [text];
+    }
+
     render(ctx: CanvasRenderingContext2D) {
         if (this.state === "inventory") {
             renderInventoryPanel(ctx, this.clueSystem);
@@ -552,13 +576,25 @@ export class Game {
         }
 
         if (this.message) {
-            ctx.fillStyle = "rgba(0,0,0,0.7)";
-            ctx.fillRect(20, ctx.canvas.height - 60, ctx.canvas.width - 40, 40);
-
-            ctx.fillStyle = "white";
             ctx.font = "16px serif";
             ctx.textAlign = "left";
-            ctx.fillText(this.message, 30, ctx.canvas.height - 35);
+
+            const boxWidth = Math.floor(ctx.canvas.width / 3);
+            const padding = 12;
+            const lineHeight = 20;
+            const maxTextWidth = boxWidth - padding * 2;
+            const lines = this.wrapDialogText(ctx, this.message, maxTextWidth);
+            const boxHeight = padding * 2 + lines.length * lineHeight;
+            const boxX = 20;
+            const boxY = ctx.canvas.height - 20 - boxHeight;
+
+            ctx.fillStyle = "rgba(0,0,0,0.78)";
+            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+            ctx.fillStyle = "white";
+            for (let i = 0; i < lines.length; i++) {
+                ctx.fillText(lines[i], boxX + padding, boxY + padding + 16 + i * lineHeight);
+            }
         }
 
         if (this.clueNotification) {

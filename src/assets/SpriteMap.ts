@@ -108,3 +108,61 @@ export const SPRITE_MAP_2: Record<string, SpriteCoords> = {
     police: { x: 86, y: 632, width: 248 - 86, height: 954 - 632 },
     police2: { x: 340, y: 632, width: 534 - 340, height: 954 - 632 }
 };
+
+/**
+ * Garden / outdoor objects — spritesheet3.png (garden atlas)
+ */
+export const SPRITE_MAP_GARDEN: Record<string, SpriteCoords> = {
+    fountain: { x: 30, y: 303, width: 559, height: 344 },
+    tree: { x: 573, y: 95, width: 309, height: 749 },
+    bush: { x: 464, y: 922, width: 461, height: 314 },
+    pond_corner_flower: { x: 1473, y: 397, width: 283, height: 248 },
+    pond_corner_plain: { x: 1762, y: 397, width: 241, height: 242 },
+    pond_corner_grass: { x: 1477, y: 668, width: 283, height: 239 },
+    pond_corner_rock: { x: 1759, y: 661, width: 247, height: 246 },
+    water_reeds: { x: 1019, y: 942, width: 295, height: 248 },
+    water_ripple: { x: 1333, y: 939, width: 292, height: 247 },
+    water_lily: { x: 1648, y: 937, width: 358, height: 259 }
+};
+
+/**
+ * Exterior / terrain objects — spritesheet4.png (exterior atlas)
+ */
+export const SPRITE_MAP_EXTERIOR: Record<string, SpriteCoords> = {
+    grass: { x: 62, y: 291, width: 357, height: 253 },
+    gravel: { x: 476, y: 297, width: 358, height: 250 },
+    manor_gate: { x: 886, y: 253, width: 447, height: 291 },
+    manor_building: { x: 16, y: 605, width: 1338, height: 876 }
+};
+
+/**
+ * Interior objects — spritesheet5.png (interior atlas)
+ */
+export const SPRITE_MAP_INTERIOR: Record<string, SpriteCoords> = {
+    fireplace: { x: 84, y: 106, width: 1903, height: 1164 },
+    dining_table: { x: 830, y: 111, width: 1049, height: 558 }
+};
+
+/**
+ * Unified enum for garden / exterior / interior sprite names (optional convenience)
+ */
+export enum SpriteId {
+    Fountain = "fountain",
+    Tree = "tree",
+    Bush = "bush",
+    PondCornerFlower = "pond_corner_flower",
+    PondCornerPlain = "pond_corner_plain",
+    PondCornerGrass = "pond_corner_grass",
+    PondCornerRock = "pond_corner_rock",
+    WaterReeds = "water_reeds",
+    WaterRipple = "water_ripple",
+    WaterLily = "water_lily",
+
+    Grass = "grass",
+    Gravel = "gravel",
+    ManorGate = "manor_gate",
+    ManorBuilding = "manor_building",
+
+    Fireplace = "fireplace",
+    DiningTable = "dining_table"
+}

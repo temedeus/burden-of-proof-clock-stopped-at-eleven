@@ -156,6 +156,30 @@ export class Menu {
         const w = ctx.canvas.width;
         const h = ctx.canvas.height;
 
+        if (this.screen === "main") {
+            this.renderMainMenuBackground(ctx, w, h);
+            ctx.fillStyle = "rgba(0,0,0,0.58)";
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.fillStyle = MENU_ACCENT;
+            ctx.font = "bold 36px serif";
+            ctx.textAlign = "center";
+            ctx.fillText("Murder at Blackwood Manor", w / 2, h * 0.28);
+
+            const items = this.getMenuItems();
+            const startY = h * 0.42;
+            const lineHeight = 44;
+            ctx.font = "22px serif";
+            for (let i = 0; i < items.length; i++) {
+                const label = items[i].label;
+                const y = startY + i * lineHeight;
+                ctx.fillStyle = i === this.selectedIndex ? HOVER_COLOR : TEXT_COLOR;
+                ctx.fillText(label, w / 2, y);
+            }
+            ctx.textAlign = "left";
+            return;
+        }
+
         ctx.fillStyle = "rgba(0,0,0,0.85)";
         ctx.fillRect(0, 0, w, h);
 
@@ -175,13 +199,11 @@ export class Menu {
         }
 
         const title =
-            this.screen === "main"
-                ? "Murder at Blackwood Manor"
-                : this.screen === "difficulty"
-                  ? "Select Difficulty"
-                  : this.screen === "game_over"
-                    ? "Game Over"
-                    : "Paused";
+            this.screen === "difficulty"
+                ? "Select Difficulty"
+                : this.screen === "game_over"
+                  ? "Game Over"
+                  : "Paused";
 
         if (this.screen === "character_select") {
             ctx.textAlign = "left";
@@ -294,5 +316,10 @@ export class Menu {
         ctx.fillStyle = this.selectedIndex === 1 ? HOVER_COLOR : TEXT_COLOR;
         ctx.fillText("Back", w / 2, startY + lineHeight);
         ctx.textAlign = "left";
+    }
+
+    /** Full-screen manor background for main menu (spritesheet3: manor_building) */
+    private renderMainMenuBackground(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        spriteLoader.drawSprite(ctx, "manor_building", 0, 0, w, h);
     }
 }

@@ -1,5 +1,13 @@
 import { Room } from "../world/Room";
-import { createLibrary, createHall, createStudy, createKitchen } from "../world/Rooms";
+import {
+    createLibrary,
+    createHall,
+    createStudy,
+    createKitchen,
+    createGarden,
+    createCourtyard,
+    createDining
+} from "../world/Rooms";
 import {Input} from "./Input";
 import { Player, PlayerSpriteName } from "../entities/Player";
 import {NPC} from "../entities/NPC";
@@ -19,6 +27,9 @@ import libraryConfig from "../data/rooms/library.json";
 import hallConfig from "../data/rooms/hall.json";
 import studyConfig from "../data/rooms/study.json";
 import kitchenConfig from "../data/rooms/kitchen.json";
+import gardenConfig from "../data/rooms/garden.json";
+import courtyardConfig from "../data/rooms/courtyard.json";
+import diningConfig from "../data/rooms/dining.json";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
 import { renderInventoryPanel } from "./InventoryPanel";
@@ -106,7 +117,10 @@ export class Game {
             library: createLibrary(w, h),
             hall: createHall(w, h),
             study: createStudy(w, h),
-            kitchen: createKitchen(w, h)
+            kitchen: createKitchen(w, h),
+            garden: createGarden(w, h),
+            courtyard: createCourtyard(w, h),
+            dining: createDining(w, h)
         };
 
         // Load NPC configs and initialize NPCs
@@ -141,7 +155,10 @@ export class Game {
             library: { config: libraryConfig as any, room: this.rooms.library },
             hall: { config: hallConfig as any, room: this.rooms.hall },
             study: { config: studyConfig as any, room: this.rooms.study },
-            kitchen: { config: kitchenConfig as any, room: this.rooms.kitchen }
+            kitchen: { config: kitchenConfig as any, room: this.rooms.kitchen },
+            garden: { config: gardenConfig as any, room: this.rooms.garden },
+            courtyard: { config: courtyardConfig as any, room: this.rooms.courtyard },
+            dining: { config: diningConfig as any, room: this.rooms.dining }
         };
 
         for (const { config, room } of Object.values(roomConfigs)) {
@@ -534,26 +551,61 @@ export class Game {
             const widthTiles = maxX - minX + 1;
             const heightTiles = maxY - minY + 1;
 
-            // Map interactable id to sprite name
+            // Map interactable to sprite name (atlas sprites use Interactable.spriteName)
             let spriteName = "table";
-            if (obj.id === "shelves" || obj.id === "bookshelves") {
+            if (obj.spriteName) {
+                spriteName = obj.spriteName;
+            } else if (obj.id === "shelves" || obj.id === "bookshelves") {
                 spriteName = "bookshelf";
             } else if (obj.id === "table") {
                 spriteName = "table";
             }
 
+            // Fireplace: wall-mounted at top row, same draw size as a horizontal door (3×1 tiles)
+            const isFireplace = spriteName === "fireplace";
+            const decorW = obj.drawWidthTiles;
+            const decorH = obj.drawHeightTiles;
+            const hasDecorDraw =
+                !isFireplace && decorW != null && decorH != null;
+
+            let drawW: number;
+            let drawH: number;
+            let drawX: number;
+            let drawY: number;
+
+            if (isFireplace) {
+                drawW = TILE_SIZE * 3;
+                drawH = TILE_SIZE;
+                drawX = minX * TILE_SIZE;
+                drawY = minY * TILE_SIZE;
+            } else if (hasDecorDraw) {
+                drawW = decorW * TILE_SIZE;
+                drawH = decorH * TILE_SIZE;
+                const footW = widthTiles * TILE_SIZE;
+                const footH = heightTiles * TILE_SIZE;
+                const baseX = minX * TILE_SIZE + (footW - drawW) / 2;
+                if (obj.renderAnchor === "bottom") {
+                    drawX = baseX;
+                    drawY = (maxY + 1) * TILE_SIZE - drawH;
+                } else {
+                    drawX = baseX;
+                    drawY = minY * TILE_SIZE + (footH - drawH) / 2;
+                }
+            } else {
+                drawW = widthTiles * TILE_SIZE;
+                drawH = heightTiles * TILE_SIZE;
+                drawX = minX * TILE_SIZE;
+                drawY = minY * TILE_SIZE;
+            }
+
+            const sortY = hasDecorDraw || isFireplace ? drawY : minY * TILE_SIZE;
+            const sortH = hasDecorDraw || isFireplace ? drawH : heightTiles * TILE_SIZE;
+
             return {
-                y: minY * TILE_SIZE,
-                height: heightTiles * TILE_SIZE,
+                y: sortY,
+                height: sortH,
                 render: (ctx: CanvasRenderingContext2D) => {
-                    spriteLoader.drawSprite(
-                        ctx,
-                        spriteName,
-                        minX * TILE_SIZE,
-                        minY * TILE_SIZE,
-                        widthTiles * TILE_SIZE,
-                        heightTiles * TILE_SIZE
-                    );
+                    spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
                 }
             };
         });

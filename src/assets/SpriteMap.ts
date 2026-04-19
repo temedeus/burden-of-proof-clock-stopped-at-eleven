@@ -90,7 +90,9 @@ export const TILE_TO_SPRITE: Record<number, string> = {
     0: 'floor',  // TILE_FLOOR
     1: 'wall',   // TILE_WALL
     2: 'floor',  // TILE_FURNITURE is rendered separately as furniture sprites
-    3: 'door'    // TILE_DOOR
+    3: 'door',   // TILE_DOOR (drawn separately in Game)
+    4: 'grass',  // TILE_GRASS (spritesheet4)
+    5: 'gravel'  // TILE_GRAVEL (spritesheet4)
 };
 
 /**
@@ -113,9 +115,9 @@ export const SPRITE_MAP_2: Record<string, SpriteCoords> = {
  * Garden / outdoor objects — spritesheet3.png (garden atlas)
  */
 export const SPRITE_MAP_GARDEN: Record<string, SpriteCoords> = {
-    fountain: { x: 30, y: 303, width: 559, height: 344 },
-    tree: { x: 573, y: 95, width: 309, height: 749 },
-    bush: { x: 464, y: 922, width: 461, height: 314 },
+    fountain: { x: 0, y: 0, width: 442, height: 504 },
+    tree: { x: 434, y: 76, width: 656, height: 620 },
+    bush: { x: 350, y: 690, width: 344, height: 224 },
     pond_corner_flower: { x: 1473, y: 397, width: 283, height: 248 },
     pond_corner_plain: { x: 1762, y: 397, width: 241, height: 242 },
     pond_corner_grass: { x: 1477, y: 668, width: 283, height: 239 },
@@ -129,8 +131,8 @@ export const SPRITE_MAP_GARDEN: Record<string, SpriteCoords> = {
  * Exterior / terrain objects — spritesheet4.png (exterior atlas)
  */
 export const SPRITE_MAP_EXTERIOR: Record<string, SpriteCoords> = {
-    grass: { x: 62, y: 291, width: 357, height: 253 },
-    gravel: { x: 476, y: 297, width: 358, height: 250 },
+    grass: { x: 51, y: 228, width: 261, height: 177 },
+    gravel: { x: 363, y: 234, width: 246, height: 171 },
     manor_gate: { x: 886, y: 253, width: 447, height: 291 },
     manor_building: { x: 16, y: 605, width: 1338, height: 876 }
 };

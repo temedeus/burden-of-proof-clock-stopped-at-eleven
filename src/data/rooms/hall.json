@@ -9,7 +9,8 @@
   ],
   "exits": [
     {"x": "center", "y": "top", "targetRoom": "library", "spawnX": "center", "spawnY": "bottom-3"},
-    {"x": "bottom", "y": "center", "targetRoom": "kitchen", "spawnX": 1, "spawnY": "center"}
+    {"x": "bottom", "y": "center", "targetRoom": "kitchen", "spawnX": 1, "spawnY": "center"},
+    {"x": "center", "y": "bottom", "targetRoom": "garden", "spawnX": "center", "spawnY": 12}
   ],
   "npcs": [
     {"npcId": "maid", "x": 8, "y": 7},

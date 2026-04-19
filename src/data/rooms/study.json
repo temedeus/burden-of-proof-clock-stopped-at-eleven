@@ -11,7 +11,8 @@
   ],
   "exits": [
     {"x": 0, "y": "center", "targetRoom": "library", "spawnX": 17, "spawnY": "center"},
-    {"x": "center", "y": "bottom", "targetRoom": "kitchen", "spawnX": "center", "spawnY": 1}
+    {"x": "center", "y": "bottom", "targetRoom": "kitchen", "spawnX": "center", "spawnY": 1},
+    {"x": "bottom", "y": "center", "targetRoom": "dining", "spawnX": 1, "spawnY": "center"}
   ],
   "npcs": [
     {"npcId": "police2", "x": 10, "y": 4},

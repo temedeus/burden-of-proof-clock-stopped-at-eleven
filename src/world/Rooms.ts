@@ -1,6 +1,6 @@
 import {Room} from "./Room";
 import {TileMap} from "./TileMap";
-import {TILE_DOOR, TILE_FLOOR, TILE_FURNITURE, TILE_WALL} from "./TileTypes";
+import {TILE_DOOR, TILE_FLOOR, TILE_FURNITURE, TILE_GRASS, TILE_GRAVEL, TILE_WALL} from "./TileTypes";
 import {Interactable} from "./Interactable";
 import {NPC} from "../entities/NPC";
 import {TILE_SIZE} from "./constants";
@@ -10,6 +10,10 @@ import libraryConfig from "../data/rooms/library.json";
 import hallConfig from "../data/rooms/hall.json";
 import studyConfig from "../data/rooms/study.json";
 import kitchenConfig from "../data/rooms/kitchen.json";
+import gardenConfig from "../data/rooms/garden.json";
+import courtyardConfig from "../data/rooms/courtyard.json";
+import diningConfig from "../data/rooms/dining.json";
+import decorationsConfig from "../data/furniture/decorations.json";
 
 interface FurnitureConfig {
     id: string;
@@ -18,6 +22,11 @@ interface FurnitureConfig {
     width: number;
     height: number;
     clues?: string[];
+    spriteName?: string;
+    /** Draw size in tiles (optional; defaults to width×height). Collision uses width×height only. */
+    drawWidth?: number;
+    drawHeight?: number;
+    renderAnchor?: "center" | "bottom";
 }
 
 interface FurniturePlacement {
@@ -45,10 +54,23 @@ interface NPCPlacement {
     y: number | "center" | "top" | "bottom";
 }
 
+/** Vertical strip of gravel tiles (walkable), e.g. path under a north door */
+interface GravelPathConfig {
+    orientation: "vertical";
+    /** How many tiles wide the path is (e.g. 2) */
+    widthTiles: number;
+    /** Horizontal center column of the path (uses same rules as exit `x`) */
+    centerX: number | "center";
+}
+
 interface RoomConfig {
     id: string;
     width: number;
     height: number;
+    /** Default floor fill; walls and doors unchanged */
+    floorTile?: "floor" | "grass" | "gravel";
+    /** Paint gravel over grass for interior path rows (after walls, before furniture) */
+    gravelPath?: GravelPathConfig;
     furniture: FurniturePlacement[];
     exits: ExitConfig[];
     npcs?: NPCPlacement[];
@@ -57,7 +79,8 @@ interface RoomConfig {
 // Furniture config map
 const furnitureConfigs: Record<string, FurnitureConfig> = {
     table: tableConfig as FurnitureConfig,
-    bookshelves: bookshelvesConfig as FurnitureConfig
+    bookshelves: bookshelvesConfig as FurnitureConfig,
+    ...(decorationsConfig as Record<string, FurnitureConfig>)
 };
 
 // NPC config cache
@@ -99,7 +122,12 @@ function placeFurniture(
         name: furniture.name,
         description: placement.description ?? furniture.description,
         tiles: [],
-        clues: placement.clues !== undefined ? placement.clues : (furniture.clues || [])
+        clues: placement.clues !== undefined ? placement.clues : (furniture.clues || []),
+        ...(furniture.spriteName ? { spriteName: furniture.spriteName } : {}),
+        ...(furniture.drawWidth != null && furniture.drawHeight != null
+            ? { drawWidthTiles: furniture.drawWidth, drawHeightTiles: furniture.drawHeight }
+            : {}),
+        ...(furniture.renderAnchor ? { renderAnchor: furniture.renderAnchor } : {})
     };
 
     let startX: number;
@@ -128,11 +156,37 @@ function placeFurniture(
     return interactable;
 }
 
+function applyGravelPath(
+    tiles: number[],
+    roomWidth: number,
+    roomHeight: number,
+    path: GravelPathConfig
+): void {
+    const cx = resolvePosition(path.centerX, "width", roomWidth);
+    const w = path.widthTiles;
+    const startCol = cx - Math.floor(w / 2);
+    for (let y = 1; y < roomHeight - 1; y++) {
+        for (let i = 0; i < w; i++) {
+            const x = startCol + i;
+            if (x < 1 || x >= roomWidth - 1) continue;
+            const idx = y * roomWidth + x;
+            if (tiles[idx] === TILE_WALL) continue;
+            tiles[idx] = TILE_GRAVEL;
+        }
+    }
+}
+
 function createRoomFromConfig(config: RoomConfig, width?: number, height?: number): Room {
     const roomWidth = width || config.width;
     const roomHeight = height || config.height;
     
-    const tiles = new Array(roomWidth * roomHeight).fill(TILE_FLOOR);
+    const baseFloor =
+        config.floorTile === "grass"
+            ? TILE_GRASS
+            : config.floorTile === "gravel"
+              ? TILE_GRAVEL
+              : TILE_FLOOR;
+    const tiles = new Array(roomWidth * roomHeight).fill(baseFloor);
 
     // Outer walls
     for (let x = 0; x < roomWidth; x++) {
@@ -143,6 +197,10 @@ function createRoomFromConfig(config: RoomConfig, width?: number, height?: numbe
     for (let y = 0; y < roomHeight; y++) {
         tiles[y * roomWidth] = TILE_WALL;
         tiles[y * roomWidth + (roomWidth - 1)] = TILE_WALL;
+    }
+
+    if (config.gravelPath) {
+        applyGravelPath(tiles, roomWidth, roomHeight, config.gravelPath);
     }
 
     // Place furniture
@@ -197,9 +255,16 @@ function createRoomFromConfig(config: RoomConfig, width?: number, height?: numbe
     // Place NPCs - NPCs will be initialized in Game.ts with proper configs
     const npcs: NPC[] = [];
 
+    const furnitureUnderlay: "floor" | "grass" | "gravel" =
+        config.floorTile === "grass"
+            ? "grass"
+            : config.floorTile === "gravel"
+              ? "gravel"
+              : "floor";
+
     return new Room(
         config.id,
-        new TileMap(roomWidth, roomHeight, tiles),
+        new TileMap(roomWidth, roomHeight, tiles, furnitureUnderlay),
         exits,
         interactables,
         npcs
@@ -220,4 +285,16 @@ export function createStudy(width: number, height: number): Room {
 
 export function createKitchen(width: number, height: number): Room {
     return createRoomFromConfig(kitchenConfig as RoomConfig, width, height);
+}
+
+export function createGarden(width: number, height: number): Room {
+    return createRoomFromConfig(gardenConfig as RoomConfig, width, height);
+}
+
+export function createCourtyard(width: number, height: number): Room {
+    return createRoomFromConfig(courtyardConfig as RoomConfig, width, height);
+}
+
+export function createDining(width: number, height: number): Room {
+    return createRoomFromConfig(diningConfig as RoomConfig, width, height);
 }

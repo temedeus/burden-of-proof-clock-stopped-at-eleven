@@ -3,7 +3,9 @@ import {
     TILE_WALL,
     TILE_FURNITURE,
     TILE_DOOR,
-    TILE_FLOOR
+    TILE_FLOOR,
+    TILE_GRASS,
+    TILE_GRAVEL
 } from "./TileTypes";
 import { NPC } from "../entities/NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
@@ -13,7 +15,9 @@ export class TileMap {
     constructor(
         public width: number,
         public height: number,
-        public tiles: number[]
+        public tiles: number[],
+        /** Base terrain drawn where furniture blocks movement (interior rooms use parquet `floor`) */
+        public furnitureUnderlay: "floor" | "grass" | "gravel" = "floor"
     ) {}
 
     isBlocked(tx: number, ty: number, npcs: NPC[] = []): boolean {
@@ -64,7 +68,20 @@ export class TileMap {
 
                 // Get sprite name for this tile type
                 // TILE_DOOR is rendered separately as one sprite spanning 3 tiles (see Game)
-                const spriteName = tile === TILE_DOOR ? 'floor' : TILE_TO_SPRITE[tile];
+                const spriteName =
+                    tile === TILE_DOOR
+                        ? 'floor'
+                        : tile === TILE_GRASS
+                          ? 'grass'
+                          : tile === TILE_GRAVEL
+                            ? 'gravel'
+                            : tile === TILE_FURNITURE
+                              ? this.furnitureUnderlay === 'grass'
+                                  ? 'grass'
+                                  : this.furnitureUnderlay === 'gravel'
+                                    ? 'gravel'
+                                    : 'floor'
+                              : TILE_TO_SPRITE[tile];
                 
                 if (spriteName) {
                     // Render sprite from spritesheet (will be scaled to TILE_SIZE)

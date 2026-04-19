@@ -10,7 +10,8 @@
   ],
   "exits": [
     {"x": "center", "y": "top", "targetRoom": "study", "spawnX": "center", "spawnY": "bottom-3"},
-    {"x": 0, "y": "center", "targetRoom": "hall", "spawnX": 17, "spawnY": "center"}
+    {"x": 0, "y": "center", "targetRoom": "hall", "spawnX": 17, "spawnY": "center"},
+    {"x": "center", "y": "bottom", "targetRoom": "courtyard", "spawnX": "center", "spawnY": 2}
   ],
   "npcs": [
     {"npcId": "worker_man", "x": 8, "y": 9}

@@ -1,0 +1,150 @@
+{
+  "fountain": {
+    "id": "fountain",
+    "name": "Stone fountain",
+    "description": "Cool water still trickles from the stone basin.",
+    "width": 4,
+    "height": 3,
+    "drawWidth": 4,
+    "drawHeight": 3,
+    "renderAnchor": "bottom",
+    "spriteName": "fountain"
+  },
+  "tree": {
+    "id": "tree",
+    "name": "Old oak",
+    "description": "Ancient branches spread over the lawn.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 4,
+    "drawHeight": 5,
+    "renderAnchor": "bottom",
+    "spriteName": "tree"
+  },
+  "bush": {
+    "id": "bush",
+    "name": "Shrubbery",
+    "description": "Neatly trimmed hedges.",
+    "width": 2,
+    "height": 2,
+    "spriteName": "bush"
+  },
+  "pond_corner_flower": {
+    "id": "pond_corner_flower",
+    "name": "Pond edge",
+    "description": "Flowers grow at the water's edge.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "center",
+    "spriteName": "pond_corner_flower"
+  },
+  "pond_corner_plain": {
+    "id": "pond_corner_plain",
+    "name": "Pond edge",
+    "description": "Still water laps the stone.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "center",
+    "spriteName": "pond_corner_plain"
+  },
+  "pond_corner_grass": {
+    "id": "pond_corner_grass",
+    "name": "Pond edge",
+    "description": "Grass meets the pond.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "center",
+    "spriteName": "pond_corner_grass"
+  },
+  "pond_corner_rock": {
+    "id": "pond_corner_rock",
+    "name": "Pond edge",
+    "description": "Wet stone at the corner.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "center",
+    "spriteName": "pond_corner_rock"
+  },
+  "water_reeds": {
+    "id": "water_reeds",
+    "name": "Reeds",
+    "description": "Tall reeds sway in the breeze.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "center",
+    "spriteName": "water_reeds"
+  },
+  "water_ripple": {
+    "id": "water_ripple",
+    "name": "Ripples",
+    "description": "Something disturbed the surface.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "center",
+    "spriteName": "water_ripple"
+  },
+  "water_lily": {
+    "id": "water_lily",
+    "name": "Lily pads",
+    "description": "Pale flowers float on the water.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "center",
+    "spriteName": "water_lily"
+  },
+  "manor_gate": {
+    "id": "manor_gate",
+    "name": "Iron gate",
+    "description": "Heavy wrought iron; the estate lies beyond.",
+    "width": 4,
+    "height": 2,
+    "drawWidth": 8,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "spriteName": "manor_gate"
+  },
+  "manor_building": {
+    "id": "manor_building",
+    "name": "Manor house",
+    "description": "The great house looms against the sky.",
+    "width": 6,
+    "height": 3,
+    "drawWidth": 12,
+    "drawHeight": 6,
+    "renderAnchor": "bottom",
+    "spriteName": "manor_building"
+  },
+  "fireplace": {
+    "id": "fireplace",
+    "name": "Fireplace",
+    "description": "Cold ashes fill the hearth.",
+    "width": 3,
+    "height": 1,
+    "spriteName": "fireplace"
+  },
+  "dining_table": {
+    "id": "dining_table",
+    "name": "Dining table",
+    "description": "A long table set for many guests.",
+    "width": 4,
+    "height": 3,
+    "drawWidth": 8,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "spriteName": "dining_table"
+  }
+}

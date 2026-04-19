@@ -1,0 +1,13 @@
+{
+  "id": "courtyard",
+  "width": 20,
+  "height": 15,
+  "floorTile": "gravel",
+  "furniture": [
+    {"furnitureId": "manor_gate", "x": "center", "y": 5, "anchor": "center"},
+    {"furnitureId": "manor_building", "x": 1, "y": 6, "anchor": "top-left"}
+  ],
+  "exits": [
+    {"x": "center", "y": "top", "targetRoom": "kitchen", "spawnX": "center", "spawnY": "bottom-2"}
+  ]
+}

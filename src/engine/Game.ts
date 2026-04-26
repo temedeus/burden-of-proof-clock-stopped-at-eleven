@@ -63,6 +63,18 @@ const DIFFICULTY_CONFIG: Record<
     hard: { chaseHeadStart: 0.5, murdererChaseSpeed: 120, murdererSpawnsIn: 1 }
 };
 
+const ROOM_DISPLAY_TITLES: Record<string, string> = {
+    library: "Library",
+    hall: "Hall",
+    study: "Study",
+    kitchen: "Kitchen",
+    garden: "Garden",
+    courtyard: "Courtyard",
+    dining: "Dining Room"
+};
+
+const ROOM_TITLE_DURATION = 2;
+
 export class Game {
     private input: Input;
     private rooms: Record<string, Room>;
@@ -94,6 +106,9 @@ export class Game {
     private onMenuRequest?: () => void;
     private onGameOver?: () => void;
     private onVictoryComplete?: () => void;
+
+    /** Centered room name; fades in and out over `ROOM_TITLE_DURATION` seconds */
+    private roomTitleBanner: { title: string; elapsed: number } | null = null;
 
     constructor(
         private ctx: CanvasRenderingContext2D,
@@ -132,6 +147,18 @@ export class Game {
         });
 
         this.currentRoom = this.rooms.library;
+        this.startRoomTitleBanner("library");
+    }
+
+    private getRoomDisplayTitle(roomId: string): string {
+        return ROOM_DISPLAY_TITLES[roomId] ?? roomId.charAt(0).toUpperCase() + roomId.slice(1);
+    }
+
+    private startRoomTitleBanner(roomId: string): void {
+        this.roomTitleBanner = {
+            title: this.getRoomDisplayTitle(roomId),
+            elapsed: 0
+        };
     }
 
     private loadNPCs() {
@@ -320,6 +347,13 @@ export class Game {
     }
 
     update(dt: number) {
+        if (this.roomTitleBanner) {
+            this.roomTitleBanner.elapsed += dt;
+            if (this.roomTitleBanner.elapsed >= ROOM_TITLE_DURATION) {
+                this.roomTitleBanner = null;
+            }
+        }
+
         // Handle victory first so Escape/Enter go to main menu, not pause
         if (this.state === "victory") {
             this.updateVictory(dt);
@@ -476,7 +510,8 @@ export class Game {
                 this.currentRoom = nextRoom;
                 this.player.x = exit.spawnX * TILE_SIZE;
                 this.player.y = exit.spawnY * TILE_SIZE;
-                this.roomTransitionCooldown = 0.4;
+                this.roomTransitionCooldown = 0.65;
+                this.startRoomTitleBanner(exit.targetRoom);
 
                 // If murderer is chasing, give player head start in new room before he spawns at the door
                 const chef = this.getMurderer();
@@ -651,6 +686,26 @@ export class Game {
 
         if (this.clueNotification) {
             renderClueNotification(ctx, this.clueNotification.clueId);
+        }
+
+        if (this.roomTitleBanner) {
+            const t = Math.min(this.roomTitleBanner.elapsed, ROOM_TITLE_DURATION);
+            const alpha = Math.sin((t / ROOM_TITLE_DURATION) * Math.PI);
+            if (alpha > 0.01) {
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.font = "bold 36px serif";
+                ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+                ctx.strokeStyle = "rgba(0, 0, 0, 0.55)";
+                ctx.lineWidth = 4;
+                const cx = ctx.canvas.width / 2;
+                const cy = ctx.canvas.height / 2;
+                ctx.strokeText(this.roomTitleBanner.title, cx, cy);
+                ctx.fillText(this.roomTitleBanner.title, cx, cy);
+                ctx.restore();
+            }
         }
 
         // Subtle red blink for 3 seconds after accusing the murderer

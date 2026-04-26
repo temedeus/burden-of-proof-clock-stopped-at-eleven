@@ -133,7 +133,7 @@ export const SPRITE_MAP_GARDEN: Record<string, SpriteCoords> = {
 export const SPRITE_MAP_EXTERIOR: Record<string, SpriteCoords> = {
     grass: { x: 51, y: 228, width: 261, height: 177 },
     gravel: { x: 363, y: 234, width: 246, height: 171 },
-    manor_gate: { x: 886, y: 253, width: 447, height: 291 },
+    manor_gate: { x: 667, y: 192, width: 329, height: 211 },
     manor_building: { x: 16, y: 605, width: 1338, height: 876 }
 };
 

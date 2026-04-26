@@ -203,6 +203,21 @@ function createRoomFromConfig(config: RoomConfig, width?: number, height?: numbe
         applyGravelPath(tiles, roomWidth, roomHeight, config.gravelPath);
     }
 
+    /** Terrain before props; used to draw grass/gravel under transparent furniture sprites */
+    const terrainBeforeFurniture = tiles.slice();
+
+    // Bottom wall gate sits on gravel path: underlay gravel where wall meets path (replacing wall tiles next)
+    if (config.gravelPath) {
+        const cx = resolvePosition(config.gravelPath.centerX, "width", roomWidth);
+        const bottomY = roomHeight - 1;
+        for (let dx = -1; dx <= 1; dx++) {
+            const x = cx + dx;
+            if (x >= 1 && x < roomWidth - 1) {
+                terrainBeforeFurniture[bottomY * roomWidth + x] = TILE_GRAVEL;
+            }
+        }
+    }
+
     // Place furniture
     const interactables: Interactable[] = [];
     for (const placement of config.furniture) {
@@ -264,7 +279,7 @@ function createRoomFromConfig(config: RoomConfig, width?: number, height?: numbe
 
     return new Room(
         config.id,
-        new TileMap(roomWidth, roomHeight, tiles, furnitureUnderlay),
+        new TileMap(roomWidth, roomHeight, tiles, furnitureUnderlay, terrainBeforeFurniture),
         exits,
         interactables,
         npcs

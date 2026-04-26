@@ -10,14 +10,17 @@
   },
   "furniture": [
     {"furnitureId": "fountain", "x": 4, "y": 10, "anchor": "center"},
-    {"furnitureId": "bush", "x": 4, "y": 3, "anchor": "top-left"},
-    {"furnitureId": "bush", "x": 14, "y": 3, "anchor": "top-left"},
-    {"furnitureId": "bush", "x": 4, "y": 6, "anchor": "top-left"},
+    {"furnitureId": "bush", "x": 9, "y": 2, "anchor": "top-left"},
+    {"furnitureId": "bush", "x": 14, "y": 2, "anchor": "top-left"},
+    {"furnitureId": "bush", "x": 9, "y": 6, "anchor": "top-left"},
     {"furnitureId": "bush", "x": 14, "y": 6, "anchor": "top-left"},
-    {"furnitureId": "bush", "x": 4, "y": 12, "anchor": "top-left"},
-    {"furnitureId": "bush", "x": 14, "y": 12, "anchor": "top-left"}
+    {"furnitureId": "bush", "x": 9, "y": 10, "anchor": "top-left"},
+    {"furnitureId": "bush", "x": 14, "y": 10, "anchor": "top-left"},
+    {"furnitureId": "bush", "x": 9, "y": 12, "anchor": "top-left"},
+    {"furnitureId": "bush", "x": 14, "y": 12, "anchor": "top-left"},
+    {"furnitureId": "gate_garden_south", "x": "center", "y": "bottom", "anchor": "center"}
   ],
   "exits": [
-    {"x": "center", "y": "top", "targetRoom": "hall", "spawnX": "center", "spawnY": "bottom-2"}
+    {"x": "center", "y": "top", "targetRoom": "hall", "spawnX": "center", "spawnY": 11}
   ]
 }

@@ -117,6 +117,17 @@
     "renderAnchor": "bottom",
     "spriteName": "manor_gate"
   },
+  "gate_garden_south": {
+    "id": "gate_garden_south",
+    "name": "Garden gate",
+    "description": "A closed wrought-iron gate. It does not open from this side.",
+    "width": 3,
+    "height": 1,
+    "drawWidth": 6,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "spriteName": "manor_gate"
+  },
   "manor_building": {
     "id": "manor_building",
     "name": "Manor house",

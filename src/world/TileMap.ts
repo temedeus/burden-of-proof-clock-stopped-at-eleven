@@ -16,8 +16,10 @@ export class TileMap {
         public width: number,
         public height: number,
         public tiles: number[],
-        /** Base terrain drawn where furniture blocks movement (interior rooms use parquet `floor`) */
-        public furnitureUnderlay: "floor" | "grass" | "gravel" = "floor"
+        /** Fallback when `terrainBeforeFurniture` is absent (interior rooms use parquet `floor`) */
+        public furnitureUnderlay: "floor" | "grass" | "gravel" = "floor",
+        /** Snapshot of terrain before furniture was placed; transparent props show grass/gravel/floor per cell */
+        public terrainBeforeFurniture: number[] | null = null
     ) {}
 
     isBlocked(tx: number, ty: number, npcs: NPC[] = []): boolean {
@@ -59,6 +61,23 @@ export class TileMap {
         return this.tiles[ty * this.width + tx];
     }
 
+    /** Floor sprite under TILE_FURNITURE (matches grass/gravel/path under transparent props) */
+    private spriteUnderFurniture(x: number, y: number): string {
+        const idx = y * this.width + x;
+        const snap = this.terrainBeforeFurniture;
+        if (snap && idx >= 0 && idx < snap.length) {
+            const t = snap[idx];
+            if (t === TILE_GRASS) return "grass";
+            if (t === TILE_GRAVEL) return "gravel";
+            if (t === TILE_FLOOR) return "floor";
+        }
+        return this.furnitureUnderlay === "grass"
+            ? "grass"
+            : this.furnitureUnderlay === "gravel"
+              ? "gravel"
+              : "floor";
+    }
+
     render(ctx: CanvasRenderingContext2D) {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
@@ -76,11 +95,7 @@ export class TileMap {
                           : tile === TILE_GRAVEL
                             ? 'gravel'
                             : tile === TILE_FURNITURE
-                              ? this.furnitureUnderlay === 'grass'
-                                  ? 'grass'
-                                  : this.furnitureUnderlay === 'gravel'
-                                    ? 'gravel'
-                                    : 'floor'
+                              ? this.spriteUnderFurniture(x, y)
                               : TILE_TO_SPRITE[tile];
                 
                 if (spriteName) {

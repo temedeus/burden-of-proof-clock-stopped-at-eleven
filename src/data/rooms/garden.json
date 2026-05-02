@@ -9,6 +9,7 @@
     "centerX": "center"
   },
   "furniture": [
+    {"furnitureId": "pond", "x": 16, "y": 3, "anchor": "top-left"},
     {"furnitureId": "fountain", "x": 4, "y": 10, "anchor": "center"},
     {"furnitureId": "bush", "x": 9, "y": 2, "anchor": "top-left"},
     {"furnitureId": "bush", "x": 14, "y": 2, "anchor": "top-left"},

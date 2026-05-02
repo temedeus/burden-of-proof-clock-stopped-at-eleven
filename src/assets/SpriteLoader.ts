@@ -2,6 +2,7 @@ import {
     SPRITE_MAP,
     SPRITE_MAP_2,
     SPRITE_MAP_GARDEN,
+    SPRITE_MAP_POND,
     SPRITE_MAP_EXTERIOR,
     SPRITE_MAP_INTERIOR
 } from './SpriteMap';
@@ -12,6 +13,7 @@ const spritesheet2Url = new URL('./spritesheet2.png', import.meta.url).href;
 const spritesheet3Url = new URL('./spritesheet3.png', import.meta.url).href;
 const spritesheet4Url = new URL('./spritesheet4.png', import.meta.url).href;
 const spritesheet5Url = new URL('./spritesheet5.png', import.meta.url).href;
+const pondUrl = new URL('./pond.png', import.meta.url).href;
 
 export class SpriteLoader {
     private image: HTMLImageElement | null = null;
@@ -19,15 +21,17 @@ export class SpriteLoader {
     private imageGarden: HTMLImageElement | null = null;
     private imageExterior: HTMLImageElement | null = null;
     private imageInterior: HTMLImageElement | null = null;
+    private imagePond: HTMLImageElement | null = null;
     private loaded = false;
     private loaded2 = false;
     private loadedGarden = false;
     private loadedExterior = false;
     private loadedInterior = false;
+    private loadedPond = false;
     private loadPromise: Promise<void> | null = null;
 
     /**
-     * Load all spritesheet images (1–5)
+     * Load all spritesheet images (1–5) plus pond.png
      */
     load(): Promise<void> {
         if (
@@ -40,7 +44,9 @@ export class SpriteLoader {
             this.loadedExterior &&
             this.imageExterior &&
             this.loadedInterior &&
-            this.imageInterior
+            this.imageInterior &&
+            this.loadedPond &&
+            this.imagePond
         ) {
             return Promise.resolve();
         }
@@ -85,7 +91,11 @@ export class SpriteLoader {
             loadImg(spritesheet5Url, (img) => {
                 this.imageInterior = img;
                 this.loadedInterior = true;
-            }, 'Spritesheet 5 (interior)')
+            }, 'Spritesheet 5 (interior)'),
+            loadImg(pondUrl, (img) => {
+                this.imagePond = img;
+                this.loadedPond = true;
+            }, 'pond.png')
         ]).then(() => {});
 
         return this.loadPromise;
@@ -102,7 +112,9 @@ export class SpriteLoader {
             this.loadedExterior &&
             this.imageExterior !== null &&
             this.loadedInterior &&
-            this.imageInterior !== null
+            this.imageInterior !== null &&
+            this.loadedPond &&
+            this.imagePond !== null
         );
     }
 
@@ -129,6 +141,11 @@ export class SpriteLoader {
         return this.imageInterior;
     }
 
+    /** Standalone pond.png */
+    getImagePond(): HTMLImageElement | null {
+        return this.imagePond;
+    }
+
     /**
      * Draw a sprite from the appropriate spritesheet
      */
@@ -142,6 +159,27 @@ export class SpriteLoader {
     ): void {
         const drawWidth = width || TILE_SIZE;
         const drawHeight = height || TILE_SIZE;
+
+        const pond = SPRITE_MAP_POND[spriteName];
+        if (pond) {
+            if (!this.imagePond || !this.loadedPond) {
+                ctx.fillStyle = '#446688';
+                ctx.fillRect(dx, dy, drawWidth, drawHeight);
+                return;
+            }
+            ctx.drawImage(
+                this.imagePond,
+                pond.x,
+                pond.y,
+                pond.width,
+                pond.height,
+                dx,
+                dy,
+                drawWidth,
+                drawHeight
+            );
+            return;
+        }
 
         const garden = SPRITE_MAP_GARDEN[spriteName];
         if (garden) {

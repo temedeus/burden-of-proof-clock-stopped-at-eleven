@@ -11,4 +11,6 @@ export interface Interactable {
     drawHeightTiles?: number;
     /** Where the collision footprint sits relative to the drawn sprite */
     renderAnchor?: "center" | "bottom";
+    /** Floor decal: no blocking; drawn beneath NPCs/player (see Game render pass). */
+    walkableDecor?: boolean;
 }

@@ -128,6 +128,13 @@ export const SPRITE_MAP_GARDEN: Record<string, SpriteCoords> = {
 };
 
 /**
+ * Standalone pond.png — full image (972×1619)
+ */
+export const SPRITE_MAP_POND: Record<string, SpriteCoords> = {
+    pond: { x: 0, y: 0, width: 972, height: 1619 }
+};
+
+/**
  * Exterior / terrain objects — spritesheet4.png (exterior atlas)
  */
 export const SPRITE_MAP_EXTERIOR: Record<string, SpriteCoords> = {
@@ -141,8 +148,12 @@ export const SPRITE_MAP_EXTERIOR: Record<string, SpriteCoords> = {
  * Interior objects — spritesheet5.png (interior atlas)
  */
 export const SPRITE_MAP_INTERIOR: Record<string, SpriteCoords> = {
-    fireplace: { x: 84, y: 106, width: 1903, height: 1164 },
-    dining_table: { x: 830, y: 111, width: 1049, height: 558 }
+    fireplace: { x: 0, y: 0, width: 506, height: 571 },
+    dining_table: { x: 615, y: 84, width: 806, height: 422 },
+    kitchen_table: { x: 602, y: 87, width: 808, height: 409 },
+    booze_table: { x: 135, y: 660, width: 318, height: 279 },
+    drinking_chair: { x: 499, y: 560, width: 465, height: 349 },
+    carpet: { x: 1023, y: 580, width: 470, height: 322 }
 };
 
 /**
@@ -159,6 +170,7 @@ export enum SpriteId {
     WaterReeds = "water_reeds",
     WaterRipple = "water_ripple",
     WaterLily = "water_lily",
+    Pond = "pond",
 
     Grass = "grass",
     Gravel = "gravel",
@@ -166,5 +178,9 @@ export enum SpriteId {
     ManorBuilding = "manor_building",
 
     Fireplace = "fireplace",
-    DiningTable = "dining_table"
+    DiningTable = "dining_table",
+    KitchenTable = "kitchen_table",
+    BoozeTable = "booze_table",
+    DrinkingChair = "drinking_chair",
+    Carpet = "carpet"
 }

@@ -8,6 +8,7 @@
     "drawWidth": 4,
     "drawHeight": 3,
     "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 1,
     "spriteName": "fountain"
   },
   "tree": {
@@ -28,6 +29,16 @@
     "width": 2,
     "height": 2,
     "spriteName": "bush"
+  },
+  "pond": {
+    "id": "pond",
+    "name": "Pond",
+    "description": "Still water; best not to wade in.",
+    "width": 3,
+    "height": 5,
+    "drawWidth": 3,
+    "drawHeight": 5,
+    "spriteName": "pond"
   },
   "pond_corner_flower": {
     "id": "pond_corner_flower",
@@ -143,19 +154,68 @@
     "id": "fireplace",
     "name": "Fireplace",
     "description": "Cold ashes fill the hearth.",
-    "width": 3,
+    "width": 5,
     "height": 1,
+    "drawWidth": 6,
+    "drawHeight": 7,
+    "renderAnchor": "bottom",
     "spriteName": "fireplace"
+  },
+  "kitchen_table": {
+    "id": "kitchen_table",
+    "name": "Kitchen table",
+    "description": "A sturdy work surface, flour-dusted at the edges.",
+    "width": 3,
+    "height": 2,
+    "drawWidth": 8,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "spriteName": "kitchen_table"
+  },
+  "booze_table": {
+    "id": "booze_table",
+    "name": "Side table",
+    "description": "Empty glasses and a crystal decanter.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 4,
+    "drawHeight": 3,
+    "renderAnchor": "bottom",
+    "spriteName": "booze_table"
+  },
+  "drinking_chair": {
+    "id": "drinking_chair",
+    "name": "Armchair",
+    "description": "Leather worn smooth where many have sat.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 5,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "spriteName": "drinking_chair"
   },
   "dining_table": {
     "id": "dining_table",
     "name": "Dining table",
     "description": "A long table set for many guests.",
-    "width": 4,
+    "width": 8,
     "height": 3,
     "drawWidth": 8,
     "drawHeight": 4,
     "renderAnchor": "bottom",
     "spriteName": "dining_table"
+  },
+  "carpet": {
+    "id": "carpet",
+    "name": "Carpet",
+    "description": "A patterned wool rug.",
+    "width": 9,
+    "height": 6,
+    "drawWidth": 9,
+    "drawHeight": 6,
+    "renderAnchor": "center",
+    "walkableDecor": true,
+    "spriteName": "carpet",
+    "clues": []
   }
 }

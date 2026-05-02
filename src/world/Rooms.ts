@@ -27,6 +27,10 @@ interface FurnitureConfig {
     drawWidth?: number;
     drawHeight?: number;
     renderAnchor?: "center" | "bottom";
+    /** If set, only the bottom N rows (full `width`) are solid; upper rows stay walkable (e.g. fountain base). */
+    collisionRowsFromBottom?: number;
+    /** Render only: no tile blocking (e.g. floor carpet). */
+    walkableDecor?: boolean;
 }
 
 interface FurniturePlacement {
@@ -127,7 +131,8 @@ function placeFurniture(
         ...(furniture.drawWidth != null && furniture.drawHeight != null
             ? { drawWidthTiles: furniture.drawWidth, drawHeightTiles: furniture.drawHeight }
             : {}),
-        ...(furniture.renderAnchor ? { renderAnchor: furniture.renderAnchor } : {})
+        ...(furniture.renderAnchor ? { renderAnchor: furniture.renderAnchor } : {}),
+        ...(furniture.walkableDecor ? { walkableDecor: true } : {})
     };
 
     let startX: number;
@@ -141,14 +146,31 @@ function placeFurniture(
         startY = resolvePosition(placement.y, "height", height);
     }
 
-    for (let y = 0; y < furniture.height; y++) {
+    if (furniture.walkableDecor) {
+        for (let tileY = startY; tileY < startY + furniture.height; tileY++) {
+            for (let x = 0; x < furniture.width; x++) {
+                const tileX = startX + x;
+                if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
+                    interactable.tiles.push({ x: tileX, y: tileY });
+                }
+            }
+        }
+        return interactable;
+    }
+
+    const collisionRows =
+        furniture.collisionRowsFromBottom != null
+            ? Math.min(Math.max(1, furniture.collisionRowsFromBottom), furniture.height)
+            : furniture.height;
+    const collisionStartY = startY + furniture.height - collisionRows;
+
+    for (let tileY = collisionStartY; tileY < startY + furniture.height; tileY++) {
         for (let x = 0; x < furniture.width; x++) {
             const tileX = startX + x;
-            const tileY = startY + y;
-            
+
             if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
                 tiles[tileY * width + tileX] = TILE_FURNITURE;
-                interactable.tiles.push({x: tileX, y: tileY});
+                interactable.tiles.push({ x: tileX, y: tileY });
             }
         }
     }

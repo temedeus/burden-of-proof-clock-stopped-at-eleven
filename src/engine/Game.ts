@@ -1,4 +1,5 @@
 import { Room } from "../world/Room";
+import { Interactable } from "../world/Interactable";
 import {
     createLibrary,
     createHall,
@@ -36,6 +37,73 @@ import { renderInventoryPanel } from "./InventoryPanel";
 import { renderClueNotification } from "./ClueNotification";
 
 type GameState = "playing" | "interacting" | "inventory" | "victory";
+
+type DepthActor = { y: number; height: number; render(ctx: CanvasRenderingContext2D): void };
+
+function furnitureActorFromInteractable(obj: Interactable): DepthActor {
+    const minX = Math.min(...obj.tiles.map((t) => t.x));
+    const maxX = Math.max(...obj.tiles.map((t) => t.x));
+    const minY = Math.min(...obj.tiles.map((t) => t.y));
+    const maxY = Math.max(...obj.tiles.map((t) => t.y));
+
+    const widthTiles = maxX - minX + 1;
+    const heightTiles = maxY - minY + 1;
+
+    let spriteName = "table";
+    if (obj.spriteName) {
+        spriteName = obj.spriteName;
+    } else if (obj.id === "shelves" || obj.id === "bookshelves") {
+        spriteName = "bookshelf";
+    } else if (obj.id === "table") {
+        spriteName = "table";
+    }
+
+    const isFireplace = spriteName === "fireplace";
+    const decorW = obj.drawWidthTiles;
+    const decorH = obj.drawHeightTiles;
+    const hasDecorDraw = decorW != null && decorH != null;
+
+    let drawW: number;
+    let drawH: number;
+    let drawX: number;
+    let drawY: number;
+
+    if (isFireplace && !hasDecorDraw) {
+        drawW = TILE_SIZE * 3;
+        drawH = TILE_SIZE;
+        drawX = minX * TILE_SIZE;
+        drawY = minY * TILE_SIZE;
+    } else if (hasDecorDraw) {
+        drawW = decorW * TILE_SIZE;
+        drawH = decorH * TILE_SIZE;
+        const footW = widthTiles * TILE_SIZE;
+        const footH = heightTiles * TILE_SIZE;
+        const baseX = minX * TILE_SIZE + (footW - drawW) / 2;
+        if (obj.renderAnchor === "bottom") {
+            drawX = baseX;
+            drawY = (maxY + 1) * TILE_SIZE - drawH;
+        } else {
+            drawX = baseX;
+            drawY = minY * TILE_SIZE + (footH - drawH) / 2;
+        }
+    } else {
+        drawW = widthTiles * TILE_SIZE;
+        drawH = heightTiles * TILE_SIZE;
+        drawX = minX * TILE_SIZE;
+        drawY = minY * TILE_SIZE;
+    }
+
+    const sortY = hasDecorDraw || isFireplace ? drawY : minY * TILE_SIZE;
+    const sortH = hasDecorDraw || isFireplace ? drawH : heightTiles * TILE_SIZE;
+
+    return {
+        y: sortY,
+        height: sortH,
+        render: (ctx: CanvasRenderingContext2D) => {
+            spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
+        }
+    };
+}
 
 interface NPCConfig {
     id: string;
@@ -576,87 +644,34 @@ export class Game {
             }
         }
 
-        // Build furniture "actors" from interactables for depth-sorted rendering
-        const furnitureActors = this.currentRoom.interactables.map(obj => {
-            const minX = Math.min(...obj.tiles.map(t => t.x));
-            const maxX = Math.max(...obj.tiles.map(t => t.x));
-            const minY = Math.min(...obj.tiles.map(t => t.y));
-            const maxY = Math.max(...obj.tiles.map(t => t.y));
-
-            const widthTiles = maxX - minX + 1;
-            const heightTiles = maxY - minY + 1;
-
-            // Map interactable to sprite name (atlas sprites use Interactable.spriteName)
-            let spriteName = "table";
-            if (obj.spriteName) {
-                spriteName = obj.spriteName;
-            } else if (obj.id === "shelves" || obj.id === "bookshelves") {
-                spriteName = "bookshelf";
-            } else if (obj.id === "table") {
-                spriteName = "table";
-            }
-
-            // Fireplace: wall-mounted at top row, same draw size as a horizontal door (3×1 tiles)
-            const isFireplace = spriteName === "fireplace";
-            const decorW = obj.drawWidthTiles;
-            const decorH = obj.drawHeightTiles;
-            const hasDecorDraw =
-                !isFireplace && decorW != null && decorH != null;
-
-            let drawW: number;
-            let drawH: number;
-            let drawX: number;
-            let drawY: number;
-
-            if (isFireplace) {
-                drawW = TILE_SIZE * 3;
-                drawH = TILE_SIZE;
-                drawX = minX * TILE_SIZE;
-                drawY = minY * TILE_SIZE;
-            } else if (hasDecorDraw) {
-                drawW = decorW * TILE_SIZE;
-                drawH = decorH * TILE_SIZE;
-                const footW = widthTiles * TILE_SIZE;
-                const footH = heightTiles * TILE_SIZE;
-                const baseX = minX * TILE_SIZE + (footW - drawW) / 2;
-                if (obj.renderAnchor === "bottom") {
-                    drawX = baseX;
-                    drawY = (maxY + 1) * TILE_SIZE - drawH;
-                } else {
-                    drawX = baseX;
-                    drawY = minY * TILE_SIZE + (footH - drawH) / 2;
-                }
+        // Walkable floor decals (rugs): no collision; drawn under entities so transparency still reads as floor.
+        const rugActors: DepthActor[] = [];
+        const furnitureActors: DepthActor[] = [];
+        for (const obj of this.currentRoom.interactables) {
+            const actor = furnitureActorFromInteractable(obj);
+            if (obj.walkableDecor) {
+                rugActors.push(actor);
             } else {
-                drawW = widthTiles * TILE_SIZE;
-                drawH = heightTiles * TILE_SIZE;
-                drawX = minX * TILE_SIZE;
-                drawY = minY * TILE_SIZE;
+                furnitureActors.push(actor);
             }
+        }
 
-            const sortY = hasDecorDraw || isFireplace ? drawY : minY * TILE_SIZE;
-            const sortH = hasDecorDraw || isFireplace ? drawH : heightTiles * TILE_SIZE;
+        rugActors
+            .slice()
+            .sort((a, b) => a.y + a.height - (b.y + b.height))
+            .forEach((a) => a.render(ctx));
 
-            return {
-                y: sortY,
-                height: sortH,
-                render: (ctx: CanvasRenderingContext2D) => {
-                    spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
-                }
-            };
-        });
-
-        // Render furniture, NPCs, and player with simple Y-sorting so entities "in front"
-        // (lower on the screen) are drawn on top of those "behind" them.
-        const actors: Array<{ y: number; height: number; render(ctx: CanvasRenderingContext2D): void }> = [
+        // Furniture, NPCs, and player — Y-sort so nearer screen-bottom draws on top.
+        const actors: DepthActor[] = [
             ...furnitureActors,
             ...this.currentRoom.npcs,
             this.player
         ];
 
         actors
-            .slice() // avoid mutating original arrays
-            .sort((a, b) => (a.y + a.height) - (b.y + b.height))
-            .forEach(actor => actor.render(ctx));
+            .slice()
+            .sort((a, b) => a.y + a.height - (b.y + b.height))
+            .forEach((a) => a.render(ctx));
 
         if (this.debugMode) {
             renderDebugOverlay(ctx, this.player, this.currentRoom);

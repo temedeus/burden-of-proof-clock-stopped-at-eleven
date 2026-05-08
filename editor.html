@@ -5,11 +5,19 @@
   <title>Blackwood Level Editor</title>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #151515; color: #f4f4f4; }
-    #app { display: grid; grid-template-columns: 260px 1fr; gap: 12px; height: 100vh; padding: 12px; box-sizing: border-box; }
+    #app { display: grid; grid-template-columns: 280px 1fr; gap: 12px; height: 100vh; padding: 12px; box-sizing: border-box; }
     .panel { background: #222; border: 1px solid #333; border-radius: 8px; padding: 10px; overflow: auto; }
     button, select { width: 100%; margin-bottom: 8px; }
-    textarea { width: 100%; height: calc(100vh - 130px); background: #0f0f0f; color: #ddd; border: 1px solid #333; border-radius: 6px; padding: 8px; box-sizing: border-box; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    textarea { width: 100%; height: 240px; background: #0f0f0f; color: #ddd; border: 1px solid #333; border-radius: 6px; padding: 8px; box-sizing: border-box; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    #canvas-wrap { display: flex; justify-content: center; align-items: start; margin-bottom: 10px; }
+    #room-canvas { background: #111; border: 1px solid #3a3a3a; image-rendering: pixelated; cursor: crosshair; }
     .issues { margin-top: 10px; white-space: pre-wrap; color: #ffb3b3; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .tab-btn { width: 100%; padding: 6px; border: 1px solid #444; background: #1a1a1a; color: #ddd; border-radius: 6px; cursor: pointer; }
+    .tab-btn.active { background: #2b4a64; border-color: #5b9bd5; color: #fff; }
+    .mode-section { display: none; }
+    .mode-section.active { display: block; }
+    .status-badge { margin: 6px 0 8px 0; padding: 6px 8px; border-radius: 6px; background: #1f2f3a; border: 1px solid #365066; color: #d7ecff; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -21,14 +29,48 @@
       <button id="rename-room-btn">Rename Room</button>
       <button id="delete-room-btn">Delete Room</button>
       <button id="save-json-btn">Save Room To Backend</button>
+      <button id="save-all-btn">Save All Rooms To Backend</button>
       <button id="validate-btn">Validate Selected JSON</button>
       <button id="validate-all-btn">Validate All Rooms</button>
       <button id="export-btn">Export Rooms JSON</button>
       <button id="reload-backend-btn">Reload Rooms From Backend</button>
       <p id="backend-status">Backend: checking...</p>
+      <p id="dirty-status">Unsaved changes: none</p>
+      <h4>Canvas Tools</h4>
+      <select id="tool-select">
+        <option value="add">Add</option>
+        <option value="select" selected>Select</option>
+        <option value="delete">Delete</option>
+      </select>
+      <div id="mode-target-badge" class="status-badge">Mode: Select | Target: Furniture</div>
+      <div class="tabs">
+        <button id="tab-furniture" class="tab-btn active" type="button">Furniture</button>
+        <button id="tab-npc" class="tab-btn" type="button">NPCs</button>
+        <button id="tab-doors" class="tab-btn" type="button">Doors</button>
+      </div>
+      <div id="furniture-section" class="mode-section active">
+        <select id="furniture-select"></select>
+        <button id="add-furniture-btn">Add Selected Furniture (center)</button>
+        <button id="delete-selected-furniture-btn">Delete Selected Furniture</button>
+      </div>
+      <div id="npc-section" class="mode-section">
+        <select id="npc-select"></select>
+        <button id="add-npc-btn">Add Selected NPC (center)</button>
+        <button id="delete-selected-npc-btn">Delete Selected NPC</button>
+      </div>
+      <div id="doors-section" class="mode-section">
+        <select id="door-target-room-select"></select>
+        <button id="set-door-target-btn">Set Selected Door Target</button>
+        <button id="add-door-btn">Add Door (click to arm placement)</button>
+        <button id="delete-selected-door-btn">Delete Selected Door</button>
+      </div>
+      <p>Use Add/Select/Delete modes. Click on canvas to apply the current mode.</p>
       <div id="issues" class="issues"></div>
     </div>
     <div class="panel">
+      <div id="canvas-wrap">
+        <canvas id="room-canvas" width="800" height="600"></canvas>
+      </div>
       <textarea id="room-json"></textarea>
     </div>
   </div>

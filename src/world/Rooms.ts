@@ -152,7 +152,7 @@ function applyGravelPath(
     }
 }
 
-function createRoomFromConfig(config: RoomConfig, width?: number, height?: number): Room {
+export function createRoomFromConfig(config: RoomConfig, width?: number, height?: number): Room {
     const roomWidth = width || config.width;
     const roomHeight = height || config.height;
     

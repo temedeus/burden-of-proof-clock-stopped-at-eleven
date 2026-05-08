@@ -39,6 +39,25 @@ async function readRooms() {
     return rooms;
 }
 
+async function syncRooms(nextRooms) {
+    await mkdir(ROOMS_DIR, { recursive: true });
+    const existingEntries = await readdir(ROOMS_DIR);
+    const existingJson = new Set(existingEntries.filter((entry) => entry.endsWith(".json")));
+
+    for (const [roomId, room] of Object.entries(nextRooms)) {
+        if (!safeRoomId(roomId)) {
+            throw new Error(`Invalid room id '${roomId}' in sync payload.`);
+        }
+        room.id = roomId;
+        await writeFile(roomPath(roomId), JSON.stringify(room, null, 2) + "\n", "utf8");
+        existingJson.delete(`${roomId}.json`);
+    }
+
+    for (const staleFile of existingJson) {
+        await rm(join(ROOMS_DIR, staleFile), { force: true });
+    }
+}
+
 async function readBody(req) {
     let data = "";
     for await (const chunk of req) data += chunk;
@@ -92,6 +111,18 @@ const server = createServer(async (req, res) => {
                 return;
             }
             await rename(roomPath(fromId), roomPath(toId));
+            sendJson(res, 200, { ok: true });
+            return;
+        }
+
+        if (req.method === "POST" && pathname === "/api/rooms/sync") {
+            const payload = await readBody(req);
+            const rooms = payload.rooms;
+            if (!rooms || typeof rooms !== "object") {
+                sendJson(res, 400, { error: "Missing rooms payload." });
+                return;
+            }
+            await syncRooms(rooms);
             sendJson(res, 200, { ok: true });
             return;
         }

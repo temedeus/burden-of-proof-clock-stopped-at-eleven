@@ -14,6 +14,7 @@ import gardenConfig from "../data/rooms/garden.json";
 import courtyardConfig from "../data/rooms/courtyard.json";
 import diningConfig from "../data/rooms/dining.json";
 import decorationsConfig from "../data/furniture/decorations.json";
+import type { FurniturePlacement, GravelPathConfig, RoomConfig } from "@cse/content-schema";
 
 interface FurnitureConfig {
     id: string;
@@ -31,53 +32,6 @@ interface FurnitureConfig {
     collisionRowsFromBottom?: number;
     /** Render only: no tile blocking (e.g. floor carpet). */
     walkableDecor?: boolean;
-}
-
-interface FurniturePlacement {
-    furnitureId: string;
-    x: number | "center";
-    y: number | "center" | "top" | "bottom";
-    anchor: "top-left" | "center";
-    /** Override clues for this instance (default: use furniture config). Use [] for none, ["clueId"] for specific clues */
-    clues?: string[];
-    /** Override description for this instance */
-    description?: string;
-}
-
-interface ExitConfig {
-    x: number | "center";
-    y: number | "top" | "bottom" | "center";
-    targetRoom: string;
-    spawnX: number | "center";
-    spawnY: number | "bottom-1" | "bottom-2" | "bottom-3" | "center" | number;
-}
-
-interface NPCPlacement {
-    npcId: string;
-    x: number | "center";
-    y: number | "center" | "top" | "bottom";
-}
-
-/** Vertical strip of gravel tiles (walkable), e.g. path under a north door */
-interface GravelPathConfig {
-    orientation: "vertical";
-    /** How many tiles wide the path is (e.g. 2) */
-    widthTiles: number;
-    /** Horizontal center column of the path (uses same rules as exit `x`) */
-    centerX: number | "center";
-}
-
-interface RoomConfig {
-    id: string;
-    width: number;
-    height: number;
-    /** Default floor fill; walls and doors unchanged */
-    floorTile?: "floor" | "grass" | "gravel";
-    /** Paint gravel over grass for interior path rows (after walls, before furniture) */
-    gravelPath?: GravelPathConfig;
-    furniture: FurniturePlacement[];
-    exits: ExitConfig[];
-    npcs?: NPCPlacement[];
 }
 
 // Furniture config map

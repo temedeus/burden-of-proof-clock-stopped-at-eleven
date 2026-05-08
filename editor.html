@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Blackwood Level Editor</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #151515; color: #f4f4f4; }
+    #app { display: grid; grid-template-columns: 260px 1fr; gap: 12px; height: 100vh; padding: 12px; box-sizing: border-box; }
+    .panel { background: #222; border: 1px solid #333; border-radius: 8px; padding: 10px; overflow: auto; }
+    button, select { width: 100%; margin-bottom: 8px; }
+    textarea { width: 100%; height: calc(100vh - 130px); background: #0f0f0f; color: #ddd; border: 1px solid #333; border-radius: 6px; padding: 8px; box-sizing: border-box; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .issues { margin-top: 10px; white-space: pre-wrap; color: #ffb3b3; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="panel">
+      <h3>Rooms</h3>
+      <select id="room-select"></select>
+      <button id="new-room-btn">Create New Room</button>
+      <button id="rename-room-btn">Rename Room</button>
+      <button id="delete-room-btn">Delete Room</button>
+      <button id="save-json-btn">Save Room To Backend</button>
+      <button id="validate-btn">Validate Selected JSON</button>
+      <button id="validate-all-btn">Validate All Rooms</button>
+      <button id="export-btn">Export Rooms JSON</button>
+      <button id="reload-backend-btn">Reload Rooms From Backend</button>
+      <p id="backend-status">Backend: checking...</p>
+      <div id="issues" class="issues"></div>
+    </div>
+    <div class="panel">
+      <textarea id="room-json"></textarea>
+    </div>
+  </div>
+  <script type="module" src="./src/editor/index.ts"></script>
+</body>
+</html>

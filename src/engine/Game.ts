@@ -15,26 +15,12 @@ import {NPC} from "../entities/NPC";
 import {TILE_SIZE} from "../world/constants";
 import { InteractionSystem } from "../systems/InteractionSystem";
 import { ClueSystem } from "../systems/ClueSystem";
-import butlerConfig from "../data/npcs/butler.json";
-import maidConfig from "../data/npcs/maid.json";
-import cookConfig from "../data/npcs/cook.json";
-import baronConfig from "../data/npcs/baron.json";
-import baronessConfig from "../data/npcs/baroness.json";
-import workerManConfig from "../data/npcs/worker_man.json";
-import workerBoyConfig from "../data/npcs/worker_boy.json";
-import policeConfig from "../data/npcs/police.json";
-import police2Config from "../data/npcs/police2.json";
-import libraryConfig from "../data/rooms/library.json";
-import hallConfig from "../data/rooms/hall.json";
-import studyConfig from "../data/rooms/study.json";
-import kitchenConfig from "../data/rooms/kitchen.json";
-import gardenConfig from "../data/rooms/garden.json";
-import courtyardConfig from "../data/rooms/courtyard.json";
-import diningConfig from "../data/rooms/dining.json";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
 import { renderInventoryPanel } from "./InventoryPanel";
 import { renderClueNotification } from "./ClueNotification";
+import { loadGameContent } from "../content/loadGameContent";
+import type { NPCConfig, RoomConfig } from "@cse/content-schema";
 
 type GameState = "playing" | "interacting" | "inventory" | "victory";
 
@@ -105,17 +91,6 @@ function furnitureActorFromInteractable(obj: Interactable): DepthActor {
     };
 }
 
-interface NPCConfig {
-    id: string;
-    name: string;
-    role?: string;
-    spriteName?: string;
-    dialog: {
-        default: string;
-        conditions?: Array<{ requiresClue?: string; dialog: string }>;
-    };
-}
-
 const MURDERER_NPC_ID = "cook";
 const POLICE_NPC_IDS = ["police", "police2"];
 const REQUIRED_CLUES_FOR_ACCUSATION = ["torn_page"];
@@ -174,6 +149,7 @@ export class Game {
     private onMenuRequest?: () => void;
     private onGameOver?: () => void;
     private onVictoryComplete?: () => void;
+    private readonly content = loadGameContent();
 
     /** Centered room name; fades in and out over `ROOM_TITLE_DURATION` seconds */
     private roomTitleBanner: { title: string; elapsed: number } | null = null;
@@ -230,30 +206,20 @@ export class Game {
     }
 
     private loadNPCs() {
-        const npcConfigs: Record<string, NPCConfig> = {
-            butler: butlerConfig as NPCConfig,
-            maid: maidConfig as NPCConfig,
-            cook: cookConfig as NPCConfig,
-            baron: baronConfig as NPCConfig,
-            baroness: baronessConfig as NPCConfig,
-            worker_man: workerManConfig as NPCConfig,
-            worker_boy: workerBoyConfig as NPCConfig,
-            police: policeConfig as NPCConfig,
-            police2: police2Config as NPCConfig
-        };
+        const npcConfigs: Record<string, NPCConfig> = this.content.npcs;
 
         for (const [id, config] of Object.entries(npcConfigs)) {
             this.npcDialogs[id] = config.dialog;
         }
 
-        const roomConfigs: Record<string, { config: any; room: Room }> = {
-            library: { config: libraryConfig as any, room: this.rooms.library },
-            hall: { config: hallConfig as any, room: this.rooms.hall },
-            study: { config: studyConfig as any, room: this.rooms.study },
-            kitchen: { config: kitchenConfig as any, room: this.rooms.kitchen },
-            garden: { config: gardenConfig as any, room: this.rooms.garden },
-            courtyard: { config: courtyardConfig as any, room: this.rooms.courtyard },
-            dining: { config: diningConfig as any, room: this.rooms.dining }
+        const roomConfigs: Record<string, { config: RoomConfig; room: Room }> = {
+            library: { config: this.content.rooms.library, room: this.rooms.library },
+            hall: { config: this.content.rooms.hall, room: this.rooms.hall },
+            study: { config: this.content.rooms.study, room: this.rooms.study },
+            kitchen: { config: this.content.rooms.kitchen, room: this.rooms.kitchen },
+            garden: { config: this.content.rooms.garden, room: this.rooms.garden },
+            courtyard: { config: this.content.rooms.courtyard, room: this.rooms.courtyard },
+            dining: { config: this.content.rooms.dining, room: this.rooms.dining }
         };
 
         for (const { config, room } of Object.values(roomConfigs)) {

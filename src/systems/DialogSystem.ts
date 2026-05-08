@@ -1,14 +1,5 @@
 import { ClueSystem } from "./ClueSystem";
-
-export interface DialogCondition {
-    requiresClue?: string;
-    dialog: string;
-}
-
-export interface NPCDialogConfig {
-    default: string;
-    conditions?: DialogCondition[];
-}
+import type { NPCDialogConfig } from "@cse/content-schema";
 
 export class DialogSystem {
     constructor(private clueSystem: ClueSystem) {}

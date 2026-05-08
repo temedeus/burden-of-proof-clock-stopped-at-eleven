@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
+    "dev:editor": "vite --open /editor.html",
+    "dev:editor:backend": "node scripts/editor-backend.mjs",
+    "dev:editor:full": "concurrently \"pnpm dev:editor:backend\" \"pnpm dev:editor\"",
     "build": "tsc",
+    "validate": "node scripts/validate-content.mjs",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -72,6 +72,36 @@ Stop services:
 pnpm docker:down
 ```
 
+### Local Docker Setup (No Docker Desktop)
+
+If you do not want Docker Desktop on macOS, use Colima + Docker CLI.
+
+1. Install runtime + CLI tools:
+   ```bash
+   brew install colima docker docker-compose
+   ```
+2. Start Colima:
+   ```bash
+   colima start --cpu 4 --memory 8 --disk 40
+   ```
+3. Verify Docker/Compose:
+   ```bash
+   docker version
+   docker compose version
+   ```
+4. Start project stack:
+   ```bash
+   pnpm docker:up
+   ```
+5. Stop project stack:
+   ```bash
+   pnpm docker:down
+   ```
+
+Notes:
+- First run may take a while due to image/model pulls.
+- If `docker compose` is unavailable, try `docker-compose up`.
+
 ## Debug Mode
 
 To enable debug visualization for collision and interaction areas, add `?debug=true` to the URL when running the game.

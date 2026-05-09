@@ -16,6 +16,7 @@ const VALID_SPRITES = new Set([
 function validateRooms(rooms, furnitureById, npcsById) {
     const issues = [];
     const roomIds = new Set(rooms.map((room) => room.id));
+    const npcPlacementCounts = new Map();
     const posTokens = new Set(["center", "top", "bottom"]);
     const exitYTokens = new Set(["center", "top", "bottom"]);
     const spawnYTokens = new Set(["center", "bottom-1", "bottom-2", "bottom-3"]);
@@ -76,6 +77,7 @@ function validateRooms(rooms, furnitureById, npcsById) {
         }
 
         for (const placement of room.npcs ?? []) {
+            npcPlacementCounts.set(placement.npcId, (npcPlacementCounts.get(placement.npcId) ?? 0) + 1);
             const npc = npcsById[placement.npcId];
             if (!npc) issues.push({ roomId: room.id, message: `Unknown npc '${placement.npcId}'.` });
             if (!(typeof placement.x === "number" || placement.x === "center")) issues.push({ roomId: room.id, message: `NPC '${placement.npcId}' has invalid x.` });
@@ -88,6 +90,15 @@ function validateRooms(rooms, furnitureById, npcsById) {
             if (npc?.spriteName && !VALID_SPRITES.has(npc.spriteName)) {
                 issues.push({ roomId: room.id, message: `NPC '${placement.npcId}' uses unknown sprite '${npc.spriteName}'.` });
             }
+        }
+    }
+
+    for (const npcId of Object.keys(npcsById)) {
+        const count = npcPlacementCounts.get(npcId) ?? 0;
+        if (count === 0) {
+            issues.push({ roomId: "global", message: `NPC '${npcId}' is not placed in any room.` });
+        } else if (count > 1) {
+            issues.push({ roomId: "global", message: `NPC '${npcId}' is placed ${count} times; expected exactly once.` });
         }
     }
 

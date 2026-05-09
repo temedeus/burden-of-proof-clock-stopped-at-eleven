@@ -613,6 +613,11 @@ function addSelectedNpcAtCenter(): void {
     const room = workingRooms[roomSelect.value];
     const npcId = npcSelect.value;
     if (!room || !(content.npcs as Record<string, NPCConfig>)[npcId]) return;
+    const existingRoomId = findNpcPlacementRoomId(npcId);
+    if (existingRoomId) {
+        issuesEl.textContent = `Cannot add '${npcId}': already placed in room '${existingRoomId}'.`;
+        return;
+    }
     if (!room.npcs) room.npcs = [];
     const runtime = getRuntimeRoomSize();
     const x = Math.max(0, Math.floor((runtime.width - 2) / 2));
@@ -632,6 +637,15 @@ function deleteSelectedNpc(): void {
     selectedNpcIndex = null;
     markDirty(room.id);
     syncTextareaFromRoom(room.id);
+}
+
+function findNpcPlacementRoomId(npcId: string): string | null {
+    for (const [roomId, room] of Object.entries(workingRooms)) {
+        if ((room.npcs ?? []).some((npc) => npc.npcId === npcId)) {
+            return roomId;
+        }
+    }
+    return null;
 }
 
 function addDoorAtTile(tileX: number, tileY: number): void {
@@ -900,8 +914,14 @@ canvas.addEventListener("pointerdown", (event) => {
             toolSelect.value = "select";
             updateModeTargetBadge();
         } else if (target === "npc") {
+            const npcId = npcSelect.value;
+            const existingRoomId = findNpcPlacementRoomId(npcId);
+            if (existingRoomId) {
+                issuesEl.textContent = `Cannot add '${npcId}': already placed in room '${existingRoomId}'.`;
+                return;
+            }
             if (!room.npcs) room.npcs = [];
-            room.npcs.push({ npcId: npcSelect.value, x: tile.x, y: tile.y });
+            room.npcs.push({ npcId, x: tile.x, y: tile.y });
             selectedNpcIndex = room.npcs.length - 1;
             selectedFurnitureIndex = null;
             selectedDoorIndex = null;

@@ -57,6 +57,7 @@ export function validateRooms(
 ): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
     const roomIds = new Set(rooms.map((room) => room.id));
+    const npcPlacementCounts = new Map<string, number>();
 
     for (const room of rooms) {
         if (!room.id || !isNumber(room.width) || !isNumber(room.height)) {
@@ -124,6 +125,7 @@ export function validateRooms(
         }
 
         for (const placement of room.npcs ?? []) {
+            npcPlacementCounts.set(placement.npcId, (npcPlacementCounts.get(placement.npcId) ?? 0) + 1);
             const npc = npcsById[placement.npcId];
             if (!npc) {
                 issues.push({ roomId: room.id, message: `NPC '${placement.npcId}' is referenced but not defined.` });
@@ -148,6 +150,15 @@ export function validateRooms(
                     message: `NPC '${placement.npcId}' references unknown sprite '${npc.spriteName}'.`
                 });
             }
+        }
+    }
+
+    for (const npcId of Object.keys(npcsById)) {
+        const count = npcPlacementCounts.get(npcId) ?? 0;
+        if (count === 0) {
+            issues.push({ roomId: "global", message: `NPC '${npcId}' is not placed in any room.` });
+        } else if (count > 1) {
+            issues.push({ roomId: "global", message: `NPC '${npcId}' is placed ${count} times; expected exactly once.` });
         }
     }
 

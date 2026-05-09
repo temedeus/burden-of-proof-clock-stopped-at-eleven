@@ -61,6 +61,9 @@ const saveJsonButton = document.getElementById("save-json-btn") as HTMLButtonEle
 const saveAllButton = document.getElementById("save-all-btn") as HTMLButtonElement;
 const exportButton = document.getElementById("export-btn") as HTMLButtonElement;
 const reloadBackendButton = document.getElementById("reload-backend-btn") as HTMLButtonElement;
+const aiQualitySelect = document.getElementById("ai-quality-select") as HTMLSelectElement;
+const aiVariantCountInput = document.getElementById("ai-variant-count") as HTMLInputElement;
+const generateStoryButton = document.getElementById("generate-story-btn") as HTMLButtonElement;
 
 const dirtyRooms = new Set<string>();
 const furnitureById: Record<string, FurnitureConfig> = {
@@ -811,6 +814,37 @@ async function saveAllRooms(): Promise<void> {
     }
 }
 
+async function generateStoryWithAI(): Promise<void> {
+    try {
+        const variantCount = Math.max(1, Math.min(20, Number(aiVariantCountInput.value || "1")));
+        const qualityMode = aiQualitySelect.value === "quality" ? "quality" : "fast";
+        generateStoryButton.disabled = true;
+        generateStoryButton.textContent = "Generating...";
+        issuesEl.textContent = "AI generation running...";
+
+        const response = await fetch(`${backendBase}/api/ai/generate-case`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                variantCount,
+                qualityMode,
+                seedBase: Date.now()
+            })
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.error ?? `AI generation failed with HTTP ${response.status}`);
+        }
+        const ids = (payload.generatedIds ?? []).join(", ");
+        issuesEl.textContent = `Generated ${payload.generatedCount ?? 0} story variant(s): ${ids}`;
+    } catch (error) {
+        issuesEl.textContent = `AI generation failed: ${(error as Error).message}`;
+    } finally {
+        generateStoryButton.disabled = false;
+        generateStoryButton.textContent = "Generate Story (AI)";
+    }
+}
+
 async function createRoom() {
     const newId = window.prompt("New room id (e.g. attic):");
     if (!newId) return;
@@ -1112,6 +1146,7 @@ saveJsonButton.addEventListener("click", () => { void saveCurrentJson(); });
 saveAllButton.addEventListener("click", () => { void saveAllRooms(); });
 exportButton.addEventListener("click", exportRoomsJson);
 reloadBackendButton.addEventListener("click", () => { void fetchRoomsFromBackend(); });
+generateStoryButton.addEventListener("click", () => { void generateStoryWithAI(); });
 addFurnitureButton.addEventListener("click", addSelectedFurnitureAtCenter);
 deleteSelectedFurnitureButton.addEventListener("click", deleteSelectedFurniture);
 addNpcButton.addEventListener("click", addSelectedNpcAtCenter);

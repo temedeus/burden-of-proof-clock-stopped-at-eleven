@@ -4,6 +4,9 @@ import { join } from "node:path";
 const ROOT = process.cwd();
 const ROOMS_DIR = join(ROOT, "src", "data", "rooms");
 const NPCS_DIR = join(ROOT, "src", "data", "npcs");
+const STORY_DIR = join(ROOT, "src", "data", "story", "generated");
+const STORY_FILES_DIR = join(STORY_DIR, "stories");
+const STORY_MANIFEST_FILE = join(STORY_DIR, "story_manifest.json");
 const VALID_SPRITES = new Set([
     "wall", "floor", "door", "table", "bookshelf", "npc_male", "npc_female", "player",
     "female_detective", "male_detective", "baron", "baroness", "maid", "worker_man", "worker_boy",
@@ -138,6 +141,37 @@ async function main() {
     const npcsById = await readJsonDir(NPCS_DIR);
     const furnitureById = await loadFurnitureMap();
     const issues = validateRooms(Object.values(roomsById), furnitureById, npcsById);
+    try {
+        const manifest = await readJson(STORY_MANIFEST_FILE);
+        const seen = new Set();
+        for (const story of manifest.stories ?? []) {
+            if (seen.has(story.id)) {
+                issues.push({ roomId: "global", message: `Duplicate story id '${story.id}' in manifest.` });
+                continue;
+            }
+            seen.add(story.id);
+            const rel = story.files?.story;
+            if (!rel) {
+                issues.push({ roomId: "global", message: `Story '${story.id}' missing files.story.` });
+                continue;
+            }
+            const filePath = join(ROOT, "src", "data", "story", rel.replace(/^generated\//, "generated/"));
+            try {
+                await readJson(filePath);
+            } catch {
+                issues.push({ roomId: "global", message: `Manifest story file missing/unreadable for '${story.id}'.` });
+            }
+        }
+        const storyFiles = (await readdir(STORY_FILES_DIR)).filter((f) => f.endsWith(".json"));
+        for (const fileName of storyFiles) {
+            const id = fileName.replace(".json", "");
+            if (!seen.has(id)) {
+                issues.push({ roomId: "global", message: `Story file '${fileName}' is not listed in manifest.` });
+            }
+        }
+    } catch {
+        // No generated stories yet is acceptable in early setups.
+    }
 
     if (issues.length === 0) {
         console.log("Content validation passed.");

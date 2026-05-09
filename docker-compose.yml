@@ -1,0 +1,44 @@
+services:
+  editor-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    working_dir: /app
+    command: pnpm dev:editor --host 0.0.0.0 --port 5173
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - editor_node_modules:/app/node_modules
+    depends_on:
+      - editor-backend
+
+  editor-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    working_dir: /app
+    command: pnpm dev:editor:backend
+    environment:
+      EDITOR_BACKEND_PORT: "8787"
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      AI_MODEL_DEFAULT: "mistral"
+      AI_MODEL_QUALITY: "mistral"
+    ports:
+      - "8787:8787"
+    volumes:
+      - .:/app
+      - editor_node_modules:/app/node_modules
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  ollama_data:
+  editor_node_modules:

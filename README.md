@@ -35,6 +35,43 @@
   pnpm validate
   ```
 
+## AI Story Generation (Local)
+
+The editor can generate static story variants locally through the backend.
+This is an offline authoring step (not live gameplay inference).
+
+1. Start editor + backend:
+   ```bash
+   pnpm dev:editor:full
+   ```
+2. In the editor, use **Generate Story (AI)**.
+3. Choose quality mode (`Fast Local` or `Quality Local`) and variant count.
+4. Generated files are written to:
+   - `src/data/story/generated/stories/*.json`
+   - `src/data/story/generated/story_manifest.json`
+
+### Ollama setup
+
+- Backend expects local Ollama API at `http://localhost:11434` by default.
+- Env overrides:
+  - `OLLAMA_BASE_URL`
+  - `AI_MODEL_DEFAULT`
+  - `AI_MODEL_QUALITY`
+
+## Docker (Optional Local Stack)
+
+Bring up editor + backend + Ollama:
+
+```bash
+pnpm docker:up
+```
+
+Stop services:
+
+```bash
+pnpm docker:down
+```
+
 ## Debug Mode
 
 To enable debug visualization for collision and interaction areas, add `?debug=true` to the URL when running the game.

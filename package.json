@@ -8,6 +8,8 @@
     "dev:editor": "vite --open /editor.html",
     "dev:editor:backend": "node scripts/editor-backend.mjs",
     "dev:editor:full": "concurrently \"pnpm dev:editor:backend\" \"pnpm dev:editor\"",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
     "build": "tsc",
     "validate": "node scripts/validate-content.mjs",
     "preview": "vite preview",

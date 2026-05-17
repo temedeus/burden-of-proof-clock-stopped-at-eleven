@@ -27,7 +27,7 @@ services:
     environment:
       EDITOR_BACKEND_PORT: "8787"
       OLLAMA_BASE_URL: "http://ollama:11434"
-      AI_MODEL: "tinyllama"
+      AI_MODEL: "ministral-3:3b"
     ports:
       - "8787:8787"
     volumes:

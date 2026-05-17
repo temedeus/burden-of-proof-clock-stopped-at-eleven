@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 const PORT = Number(process.env.EDITOR_BACKEND_PORT ?? 8787);
 const ROOT = process.cwd();
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
-const AI_MODEL = process.env.AI_MODEL ?? process.env.AI_MODEL_DEFAULT ?? "tinyllama";
+const AI_MODEL = process.env.AI_MODEL ?? process.env.AI_MODEL_DEFAULT ?? "ministral-3:3b";
 const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120000);
 const AI_MAX_RETRIES = Number(process.env.AI_MAX_RETRIES ?? 1);
 
@@ -202,7 +202,7 @@ async function callOllama({ model, prompt, seed }) {
             if (response.status === 404) {
                 detail = `Model '${model}' not found. Pull it: ollama pull ${model}`;
             } else if (/memory/i.test(detail)) {
-                detail += `. Try a smaller model (e.g. tinyllama) or give Docker/Colima more RAM (see src/editor/README.md).`;
+                detail += `. Try ministral-3:3b or give Docker/Colima more RAM (see src/editor/README.md).`;
             }
             throw new Error(`Ollama request failed: ${detail}`);
         }

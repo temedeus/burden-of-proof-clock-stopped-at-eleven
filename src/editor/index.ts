@@ -858,7 +858,7 @@ async function generateStoryWithAI(): Promise<void> {
 
         const variantCount = Math.max(1, Math.min(20, Number(aiVariantCountInput.value || "1")));
         reportEditorIssue(
-            `AI generation running (${variantCount} variant(s))… This can take several minutes. Ensure Ollama is running and tinyllama is pulled.`
+            `AI generation running (${variantCount} variant(s))… This can take several minutes. Ensure Ollama is running and ministral-3:3b is pulled.`
         );
 
         const response = await fetch(`${backendBase}/api/ai/generate-case`, {

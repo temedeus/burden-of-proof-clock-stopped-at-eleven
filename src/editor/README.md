@@ -26,7 +26,7 @@ Use this when you want the editor and Node backend on your machine (fast reload,
 
 ```bash
 pnpm docker:ollama:up
-docker compose exec ollama ollama pull tinyllama
+docker compose exec ollama ollama pull ministral-3:3b
 ```
 
 **Terminal 2 — editor + backend on the host:**
@@ -106,7 +106,7 @@ With Docker: `docker compose restart editor-backend`
 
 ## AI Story Generation
 
-In the editor, use **Generate Story (AI)** and set the variant count. Uses the local `tinyllama` model by default (~1 GB RAM).
+In the editor, use **Generate Story (AI)** and set the variant count. Uses **Ministral 3B** (`ministral-3:3b`) by default — Mistral’s smallest local model (~3 GB download, ~4 GB RAM while running).
 
 Output:
 
@@ -120,7 +120,7 @@ Requires Ollama at `http://localhost:11434` (local install or Docker stack below
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API base URL |
-| `AI_MODEL` | `tinyllama` | Ollama model name (`AI_MODEL_DEFAULT` also accepted) |
+| `AI_MODEL` | `ministral-3:3b` | Ollama model name (`AI_MODEL_DEFAULT` also accepted) |
 | `EDITOR_BACKEND_PORT` | `8787` | Backend listen port |
 
 In Docker, `OLLAMA_BASE_URL` is set to `http://ollama:11434` for the backend service.
@@ -139,7 +139,7 @@ docker compose logs ollama --tail 20
 model requires more system memory (4.5 GiB) than is available (1.9 GiB)
 ```
 
-Default `tinyllama` fits in ~2 GB. If you switched to a larger model, either pull `tinyllama` again or give Colima more RAM:
+Default `ministral-3:3b` needs ~4 GB RAM in Colima. If you hit OOM, give Colima more memory or use `tinyllama` via `AI_MODEL=tinyllama`:
 
 ```bash
 colima stop
@@ -148,11 +148,10 @@ colima start --cpu 4 --memory 8 --disk 40
 
 **Model not found (HTTP 404):**
 
-Usually the backend is still running **old code** (asking for `mistral`) or `tinyllama` was never pulled.
+Usually the backend is still running **old code** or the model was never pulled.
 
 ```bash
-docker compose exec ollama ollama pull tinyllama
-# restart backend so it picks up AI_MODEL=tinyllama:
+docker compose exec ollama ollama pull ministral-3:3b
 pnpm dev:editor:backend
 ```
 
@@ -163,7 +162,9 @@ curl -s http://localhost:8787/health | python3 -m json.tool
 curl -s http://localhost:11434/api/tags
 ```
 
-`health` should show `"aiModel": "tinyllama"` and `"aiModelReady": true`.
+`health` should show `"aiModel": "ministral-3:3b"` and `"aiModelReady": true`.
+
+**Note:** `ministral-3` needs a recent Ollama (0.13.1+). Upgrade the Docker image if pull fails: `docker compose pull ollama`.
 
 ### Backend API (selected)
 
@@ -209,6 +210,136 @@ pnpm docker:up
 ```
 
 First run may take a while (image and model pulls). Open `http://localhost:5173/editor.html` manually in the browser.
+
+---
+
+## Cleaning up Docker & Ollama
+
+### Stop running services
+
+```bash
+pnpm docker:ollama:down    # Ollama only
+pnpm docker:down           # full stack (editor + backend + Ollama)
+```
+
+Also press **Ctrl+C** in any terminal running `pnpm dev:editor:full` or `pnpm dev`.
+
+---
+
+### Level 1 — Remove downloaded models only (keep Docker setup)
+
+Deletes all models inside the Ollama volume but keeps the volume/container setup.
+
+**While Ollama is running:**
+
+```bash
+docker compose exec ollama ollama list
+docker compose exec ollama ollama rm ministral-3:3b
+docker compose exec ollama ollama rm tinyllama
+docker compose exec ollama ollama rm mistral
+# repeat for any other models from `ollama list`
+```
+
+**Or wipe the model store in one step** (Ollama can be stopped):
+
+```bash
+pnpm docker:ollama:down
+docker volume rm clock-stopped-at-eleven_ollama_data
+```
+
+If the volume name differs: `docker volume ls | grep ollama`
+
+---
+
+### Level 2 — Reset this project’s Docker (containers + volumes)
+
+Removes containers and **both** compose volumes for this repo (`ollama_data` = all pulled models, `editor_node_modules` = container `node_modules`):
+
+```bash
+pnpm docker:clean
+```
+
+Equivalent manual command:
+
+```bash
+docker compose --profile ollama --profile full down -v --remove-orphans
+```
+
+Does **not** remove built images or the `ollama/ollama` base image. After this, run `pnpm docker:ollama:up` and `ollama pull ministral-3:3b` again.
+
+---
+
+### Level 3 — Remove this project’s built images
+
+After Level 2, delete images built for `editor-app` / `editor-backend`:
+
+```bash
+docker images --format '{{.Repository}}:{{.Tag}}' | grep clock-stopped-at-eleven | xargs -r docker rmi
+```
+
+On macOS without `xargs -r`:
+
+```bash
+docker images | grep clock-stopped-at-eleven | awk '{print $3}' | xargs docker rmi 2>/dev/null
+```
+
+---
+
+### Level 4 — Remove Ollama image and reclaim all unused Docker disk
+
+**Warning:** affects other Docker projects on your machine, not only this repo.
+
+```bash
+pnpm docker:clean
+docker rmi ollama/ollama:latest
+docker image prune -f
+docker volume prune -f
+docker builder prune -f
+```
+
+Optional aggressive cleanup (unused containers, networks, images):
+
+```bash
+docker system prune -a --volumes
+```
+
+---
+
+### Native Ollama (not Docker)
+
+If you installed the Ollama app / CLI on macOS:
+
+```bash
+ollama list
+ollama rm ministral-3:3b
+# nuclear — all local models + cache:
+rm -rf ~/.ollama
+```
+
+---
+
+### Generated story files in the repo (optional)
+
+This is **not** Docker; it only clears AI output under `src/data/`:
+
+```bash
+rm -rf src/data/story/generated/stories/*
+rm -f src/data/story/generated/story_manifest.json
+```
+
+Room/NPC JSON you edited in the editor is **not** removed.
+
+---
+
+### Fresh start checklist
+
+```bash
+pnpm docker:clean
+docker rmi ollama/ollama:latest 2>/dev/null
+pnpm docker:ollama:up
+docker compose exec ollama ollama pull ministral-3:3b
+pnpm dev:editor:full
+```
 
 ---
 

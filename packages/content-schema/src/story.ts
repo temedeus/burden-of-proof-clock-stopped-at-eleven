@@ -48,7 +48,7 @@ export interface StoryManifestEntry {
     files: {
         story: string;
     };
-    qualityTier: "fast" | "quality";
+    qualityTier: "local" | "fast" | "quality";
     isValid: boolean;
 }
 

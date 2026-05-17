@@ -5,8 +5,7 @@ import { join, resolve } from "node:path";
 const PORT = Number(process.env.EDITOR_BACKEND_PORT ?? 8787);
 const ROOT = process.cwd();
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
-const AI_MODEL_DEFAULT = process.env.AI_MODEL_DEFAULT ?? "mistral";
-const AI_MODEL_QUALITY = process.env.AI_MODEL_QUALITY ?? "mistral";
+const AI_MODEL = process.env.AI_MODEL ?? process.env.AI_MODEL_DEFAULT ?? "tinyllama";
 const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120000);
 const AI_MAX_RETRIES = Number(process.env.AI_MAX_RETRIES ?? 1);
 
@@ -148,6 +147,34 @@ ${JSON.stringify(input)}
 `;
 }
 
+async function listOllamaModelNames() {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
+    if (!response.ok) return [];
+    const payload = await response.json();
+    return (payload.models ?? []).map((entry) => entry.name);
+}
+
+function isModelInstalled(requested, installedNames) {
+    const base = requested.split(":")[0];
+    return installedNames.some(
+        (name) => name === requested || name === `${base}:latest` || name.split(":")[0] === base
+    );
+}
+
+async function assertOllamaModelAvailable() {
+    const installed = await listOllamaModelNames();
+    if (installed.length === 0) {
+        throw new Error(
+            `No Ollama models installed. Run: ollama pull ${AI_MODEL} (Docker: docker compose exec ollama ollama pull ${AI_MODEL})`
+        );
+    }
+    if (!isModelInstalled(AI_MODEL, installed)) {
+        throw new Error(
+            `Model '${AI_MODEL}' not found. Installed: ${installed.join(", ")}. Run: ollama pull ${AI_MODEL}`
+        );
+    }
+}
+
 async function callOllama({ model, prompt, seed }) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
@@ -165,7 +192,19 @@ async function callOllama({ model, prompt, seed }) {
             })
         });
         if (!response.ok) {
-            throw new Error(`Ollama request failed with HTTP ${response.status}`);
+            let detail = `HTTP ${response.status}`;
+            try {
+                const errBody = await response.json();
+                if (typeof errBody?.error === "string") detail = errBody.error;
+            } catch {
+                // ignore non-JSON error bodies
+            }
+            if (response.status === 404) {
+                detail = `Model '${model}' not found. Pull it: ollama pull ${model}`;
+            } else if (/memory/i.test(detail)) {
+                detail += `. Try a smaller model (e.g. tinyllama) or give Docker/Colima more RAM (see src/editor/README.md).`;
+            }
+            throw new Error(`Ollama request failed: ${detail}`);
         }
         const payload = await response.json();
         const content = payload?.message?.content;
@@ -280,13 +319,14 @@ async function writeStoryArtifacts(storyItems) {
     return nextManifest;
 }
 
-async function generateStories({ variantCount = 1, qualityMode = "fast", seedBase = Date.now(), dryRun = false }) {
+async function generateStories({ variantCount = 1, seedBase = Date.now(), dryRun = false }) {
+    await assertOllamaModelAvailable();
     const rooms = await readRooms();
     const npcs = await readNpcs();
     const furniture = await readFurniture();
     const clues = await readClues();
     const context = { rooms, npcs, furniture, clues };
-    const model = qualityMode === "quality" ? AI_MODEL_QUALITY : AI_MODEL_DEFAULT;
+    const model = AI_MODEL;
 
     const generated = [];
     for (let i = 0; i < variantCount; i++) {
@@ -313,7 +353,7 @@ async function generateStories({ variantCount = 1, qualityMode = "fast", seedBas
         generated.push({
             id: createStoryId(i),
             seed,
-            qualityTier: qualityMode,
+            qualityTier: "local",
             createdAt: new Date().toISOString(),
             payload: parsed
         });
@@ -337,7 +377,14 @@ const server = createServer(async (req, res) => {
         }
 
         if (req.method === "GET" && pathname === "/health") {
-            sendJson(res, 200, { ok: true });
+            const installed = await listOllamaModelNames();
+            sendJson(res, 200, {
+                ok: true,
+                features: ["rooms", "ai"],
+                aiModel: AI_MODEL,
+                ollamaModels: installed,
+                aiModelReady: isModelInstalled(AI_MODEL, installed)
+            });
             return;
         }
 
@@ -355,9 +402,8 @@ const server = createServer(async (req, res) => {
         if (req.method === "POST" && pathname === "/api/ai/generate-case") {
             const payload = await readBody(req);
             const variantCount = Math.max(1, Math.min(20, Number(payload.variantCount ?? 1)));
-            const qualityMode = payload.qualityMode === "quality" ? "quality" : "fast";
             const seedBase = Number(payload.seedBase ?? Date.now());
-            const result = await generateStories({ variantCount, qualityMode, seedBase, dryRun: false });
+            const result = await generateStories({ variantCount, seedBase, dryRun: false });
             sendJson(res, 200, {
                 ok: true,
                 generatedCount: result.generated.length,
@@ -370,9 +416,8 @@ const server = createServer(async (req, res) => {
         if (req.method === "POST" && pathname === "/api/ai/preview-case") {
             const payload = await readBody(req);
             const variantCount = Math.max(1, Math.min(5, Number(payload.variantCount ?? 1)));
-            const qualityMode = payload.qualityMode === "quality" ? "quality" : "fast";
             const seedBase = Number(payload.seedBase ?? Date.now());
-            const result = await generateStories({ variantCount, qualityMode, seedBase, dryRun: true });
+            const result = await generateStories({ variantCount, seedBase, dryRun: true });
             sendJson(res, 200, {
                 ok: true,
                 generated: result.generated.map((g) => ({
@@ -458,6 +503,12 @@ const server = createServer(async (req, res) => {
     }
 });
 
-server.listen(PORT, () => {
-    console.log(`Editor backend running at http://localhost:${PORT}`);
+server.listen(PORT, async () => {
+    console.log(`Editor backend running at http://localhost:${PORT} (ai model: ${AI_MODEL})`);
+    try {
+        await assertOllamaModelAvailable();
+        console.log(`Ollama OK at ${OLLAMA_BASE_URL}, model '${AI_MODEL}' is available.`);
+    } catch (error) {
+        console.warn(`Ollama warning: ${error instanceof Error ? error.message : error}`);
+    }
 });

@@ -61,7 +61,6 @@ const saveJsonButton = document.getElementById("save-json-btn") as HTMLButtonEle
 const saveAllButton = document.getElementById("save-all-btn") as HTMLButtonElement;
 const exportButton = document.getElementById("export-btn") as HTMLButtonElement;
 const reloadBackendButton = document.getElementById("reload-backend-btn") as HTMLButtonElement;
-const aiQualitySelect = document.getElementById("ai-quality-select") as HTMLSelectElement;
 const aiVariantCountInput = document.getElementById("ai-variant-count") as HTMLInputElement;
 const generateStoryButton = document.getElementById("generate-story-btn") as HTMLButtonElement;
 
@@ -292,10 +291,18 @@ function refreshRoomOptions() {
     else roomSelect.value = Object.keys(workingRooms)[0] ?? "";
 }
 
-function setBackendStatus(online: boolean): void {
-    backendStatusEl.textContent = online
-        ? "Backend: online (filesystem save enabled)"
-        : "Backend: offline (using in-memory rooms only)";
+let backendHasAi = false;
+
+function setBackendStatus(online: boolean, aiEnabled?: boolean): void {
+    const ai = online ? (aiEnabled ?? backendHasAi) : false;
+    backendHasAi = ai;
+    if (!online) {
+        backendStatusEl.textContent = "Backend: offline (using in-memory rooms only)";
+        return;
+    }
+    backendStatusEl.textContent = ai
+        ? "Backend: online (rooms + AI)"
+        : "Backend: online (rooms only — restart backend for AI: pnpm dev:editor:backend)";
 }
 
 function setDirtyStatus(): void {
@@ -315,6 +322,26 @@ function clearDirty(roomId: string): void {
     setDirtyStatus();
 }
 
+async function probeBackendFeatures(): Promise<boolean> {
+    try {
+        const health = await fetch(`${backendBase}/health`);
+        if (!health.ok) return false;
+        const payload = (await health.json()) as { features?: string[] };
+        if (Array.isArray(payload.features) && payload.features.includes("ai")) {
+            return true;
+        }
+        const stories = await fetch(`${backendBase}/api/ai/stories`);
+        return stories.ok;
+    } catch {
+        return false;
+    }
+}
+
+function reportEditorIssue(message: string): void {
+    issuesEl.textContent = message;
+    issuesEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
 async function fetchRoomsFromBackend(force = false): Promise<boolean> {
     if (!force && dirtyRooms.size > 0) {
         const proceed = window.confirm("You have unsaved changes. Reloading will discard them. Continue?");
@@ -328,7 +355,8 @@ async function fetchRoomsFromBackend(force = false): Promise<boolean> {
         Object.assign(workingRooms, payload.rooms);
         dirtyRooms.clear();
         setDirtyStatus();
-        setBackendStatus(true);
+        const aiEnabled = await probeBackendFeatures();
+        setBackendStatus(true, aiEnabled);
         refreshRoomOptions();
         renderSelectedRoom();
         return true;
@@ -815,30 +843,40 @@ async function saveAllRooms(): Promise<void> {
 }
 
 async function generateStoryWithAI(): Promise<void> {
+    generateStoryButton.disabled = true;
+    generateStoryButton.textContent = "Generating...";
     try {
+        reportEditorIssue("Checking AI backend...");
+        const aiEnabled = await probeBackendFeatures();
+        if (!aiEnabled) {
+            setBackendStatus(true, false);
+            throw new Error(
+                "AI routes not available. Restart the backend: pnpm dev:editor:backend — or: docker compose restart editor-backend"
+            );
+        }
+        setBackendStatus(true, true);
+
         const variantCount = Math.max(1, Math.min(20, Number(aiVariantCountInput.value || "1")));
-        const qualityMode = aiQualitySelect.value === "quality" ? "quality" : "fast";
-        generateStoryButton.disabled = true;
-        generateStoryButton.textContent = "Generating...";
-        issuesEl.textContent = "AI generation running...";
+        reportEditorIssue(
+            `AI generation running (${variantCount} variant(s))… This can take several minutes. Ensure Ollama is running and tinyllama is pulled.`
+        );
 
         const response = await fetch(`${backendBase}/api/ai/generate-case`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 variantCount,
-                qualityMode,
                 seedBase: Date.now()
             })
         });
-        const payload = await response.json();
+        const payload = (await response.json()) as { error?: string; generatedCount?: number; generatedIds?: string[] };
         if (!response.ok) {
             throw new Error(payload.error ?? `AI generation failed with HTTP ${response.status}`);
         }
         const ids = (payload.generatedIds ?? []).join(", ");
-        issuesEl.textContent = `Generated ${payload.generatedCount ?? 0} story variant(s): ${ids}`;
+        reportEditorIssue(`Generated ${payload.generatedCount ?? 0} story variant(s): ${ids}`);
     } catch (error) {
-        issuesEl.textContent = `AI generation failed: ${(error as Error).message}`;
+        reportEditorIssue(`AI generation failed: ${(error as Error).message}`);
     } finally {
         generateStoryButton.disabled = false;
         generateStoryButton.textContent = "Generate Story (AI)";

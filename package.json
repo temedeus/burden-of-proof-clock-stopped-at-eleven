@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:editor": "vite --open /editor.html",
-    "dev:editor:backend": "node --watch scripts/editor-backend.mjs",
+    "dev:editor:backend": "tsx watch scripts/editor-backend.mjs",
     "dev:editor:full": "concurrently \"pnpm dev:editor:backend\" \"pnpm dev:editor\"",
     "docker:up": "docker compose --profile full up --build",
     "docker:down": "docker compose --profile full down",
@@ -14,7 +14,7 @@
     "docker:ollama:down": "docker compose --profile ollama down",
     "docker:clean": "docker compose --profile ollama --profile full down -v --remove-orphans",
     "build": "tsc",
-    "validate": "node scripts/validate-content.mjs",
+    "validate": "tsx scripts/validate-content.mjs",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -24,6 +24,7 @@
   "packageManager": "pnpm@10.27.0",
   "devDependencies": {
     "concurrently": "^9.2.1",
+    "tsx": "^4.20.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.0"
   }

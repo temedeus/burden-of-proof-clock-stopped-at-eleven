@@ -10,7 +10,7 @@
         "story": "generated/stories/story_20260517063110_01.json"
       },
       "qualityTier": "local",
-      "isValid": true
+      "isValid": false
     }
   ]
 }

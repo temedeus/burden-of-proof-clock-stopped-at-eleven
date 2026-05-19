@@ -62,6 +62,7 @@ const saveAllButton = document.getElementById("save-all-btn") as HTMLButtonEleme
 const exportButton = document.getElementById("export-btn") as HTMLButtonElement;
 const reloadBackendButton = document.getElementById("reload-backend-btn") as HTMLButtonElement;
 const aiVariantCountInput = document.getElementById("ai-variant-count") as HTMLInputElement;
+const aiReplaceStoriesInput = document.getElementById("ai-replace-stories") as HTMLInputElement;
 const generateStoryButton = document.getElementById("generate-story-btn") as HTMLButtonElement;
 
 const dirtyRooms = new Set<string>();
@@ -857,8 +858,9 @@ async function generateStoryWithAI(): Promise<void> {
         setBackendStatus(true, true);
 
         const variantCount = Math.max(1, Math.min(20, Number(aiVariantCountInput.value || "1")));
+        const replaceExisting = aiReplaceStoriesInput.checked;
         reportEditorIssue(
-            `AI generation running (${variantCount} variant(s))… This can take several minutes. Ensure Ollama is running and ministral-3:3b is pulled.`
+            `AI generation running (${variantCount} variant(s)${replaceExisting ? ", replacing existing" : ""})… This can take several minutes. Ensure Ollama is running and ministral-3:3b is pulled.`
         );
 
         const response = await fetch(`${backendBase}/api/ai/generate-case`, {
@@ -866,15 +868,28 @@ async function generateStoryWithAI(): Promise<void> {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 variantCount,
+                replaceExisting,
                 seedBase: Date.now()
             })
         });
-        const payload = (await response.json()) as { error?: string; generatedCount?: number; generatedIds?: string[] };
+        const payload = (await response.json()) as {
+            error?: string;
+            generatedCount?: number;
+            generatedIds?: string[];
+            replacedExisting?: boolean;
+            removedCount?: number;
+            archivedTo?: string | null;
+        };
         if (!response.ok) {
             throw new Error(payload.error ?? `AI generation failed with HTTP ${response.status}`);
         }
         const ids = (payload.generatedIds ?? []).join(", ");
-        reportEditorIssue(`Generated ${payload.generatedCount ?? 0} story variant(s): ${ids}`);
+        let message = `Generated ${payload.generatedCount ?? 0} story variant(s): ${ids}`;
+        if (payload.replacedExisting && (payload.removedCount ?? 0) > 0) {
+            message += `\nReplaced ${payload.removedCount} previous variant(s).`;
+            if (payload.archivedTo) message += ` Archived to ${payload.archivedTo}.`;
+        }
+        reportEditorIssue(message);
     } catch (error) {
         reportEditorIssue(`AI generation failed: ${(error as Error).message}`);
     } finally {

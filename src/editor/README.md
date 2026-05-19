@@ -108,6 +108,8 @@ With Docker: `docker compose restart editor-backend`
 
 In the editor, use **Generate Story (AI)** and set the variant count. Uses **Ministral 3B** (`ministral-3:3b`) by default — Mistral’s smallest local model (~3 GB download, ~4 GB RAM while running).
 
+**Replace existing stories** (checked by default): archives previous variants to `src/data/story/generated/stories/archive/<timestamp>/`, clears the manifest, then writes only the newly generated variants. Uncheck to append new variants alongside existing ones.
+
 Output:
 
 - `src/data/story/generated/stories/*.json`
@@ -171,7 +173,7 @@ curl -s http://localhost:11434/api/tags
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET/PUT/POST/DELETE` | `/api/rooms` | Room CRUD |
-| `POST` | `/api/ai/generate-case` | Generate story variants |
+| `POST` | `/api/ai/generate-case` | Generate story variants (`replaceExisting: true` clears/archives old ones first) |
 | `POST` | `/api/ai/preview-case` | Dry-run generation (no writes) |
 | `GET` | `/api/ai/stories` | Read story manifest |
 | `DELETE` | `/api/ai/stories/:id` | Remove a variant |
@@ -351,7 +353,7 @@ From the repo root:
 pnpm validate
 ```
 
-Checks rooms, NPC placement (each NPC exactly once globally), furniture/sprite references, exit links, and generated story manifest consistency when story files exist. Shared rules live in `packages/content-schema`.
+Checks rooms, NPC placement (each NPC exactly once globally), furniture/sprite references, exit links, and **generated stories** (manifest files, `StoryCasePacket` shape, room/NPC/clue ID cross-references). Updates `isValid` on manifest entries when story validation result changes. Shared rules live in `packages/content-schema`.
 
 ---
 

@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, readdir, rename, rm, writeFile, copyFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
+import { isStoryCasePacketValid, validateStoryCasePacket } from "../packages/content-schema/src/validateStory.ts";
 
 const PORT = Number(process.env.EDITOR_BACKEND_PORT ?? 8787);
 const ROOT = process.cwd();
@@ -228,43 +229,12 @@ function parseModelJson(content) {
     }
 }
 
-function validateCasePacket(packet, context) {
-    const issues = [];
-    const roomIds = new Set(Object.keys(context.rooms));
-    const npcIds = new Set(Object.keys(context.npcs));
-    const clueIds = new Set(Object.keys(context.clues));
-
-    if (!packet || typeof packet !== "object") issues.push("Packet is not an object.");
-    if (!packet.title) issues.push("Missing title.");
-    if (!packet.victim?.roomId || !roomIds.has(packet.victim.roomId)) issues.push("Victim roomId missing/invalid.");
-
-    const suspectNpcIds = new Set();
-    for (const suspect of packet.suspects ?? []) {
-        if (!npcIds.has(suspect.npcId)) issues.push(`Invalid suspect npcId '${suspect.npcId}'.`);
-        if (suspectNpcIds.has(suspect.npcId)) issues.push(`Duplicate suspect npcId '${suspect.npcId}'.`);
-        suspectNpcIds.add(suspect.npcId);
-    }
-
-    for (const entry of packet.roomNarratives ?? []) {
-        if (!roomIds.has(entry.roomId)) issues.push(`Invalid roomNarratives roomId '${entry.roomId}'.`);
-    }
-    for (const assignment of packet.clueAssignments ?? []) {
-        if (!clueIds.has(assignment.clueId)) issues.push(`Invalid clueAssignments clueId '${assignment.clueId}'.`);
-        if (!roomIds.has(assignment.roomId)) issues.push(`Invalid clueAssignments roomId '${assignment.roomId}'.`);
-    }
-    const seenDialogNpcs = new Set();
-    for (const dialog of packet.npcDialogOverrides ?? []) {
-        if (!npcIds.has(dialog.npcId)) issues.push(`Invalid npcDialogOverrides npcId '${dialog.npcId}'.`);
-        if (seenDialogNpcs.has(dialog.npcId)) issues.push(`Duplicate npcDialogOverrides npcId '${dialog.npcId}'.`);
-        seenDialogNpcs.add(dialog.npcId);
-        for (const condition of dialog.conditions ?? []) {
-            if (condition.requiresClue && !clueIds.has(condition.requiresClue)) {
-                issues.push(`Invalid requiresClue '${condition.requiresClue}' for npc '${dialog.npcId}'.`);
-            }
-        }
-    }
-
-    return issues;
+function storyValidationContext(context) {
+    return {
+        roomIds: Object.keys(context.rooms),
+        npcIds: Object.keys(context.npcs),
+        clueIds: Object.keys(context.clues)
+    };
 }
 
 async function ensureStoryDirs() {
@@ -289,16 +259,62 @@ async function backupFileIfExists(filePath) {
     }
 }
 
-async function writeStoryArtifacts(storyItems) {
+async function listStoryJsonFiles() {
+    await ensureStoryDirs();
+    try {
+        const entries = await readdir(STORY_FILES_DIR, { withFileTypes: true });
+        return entries.filter((entry) => entry.isFile() && entry.name.endsWith(".json")).map((entry) => entry.name);
+    } catch {
+        return [];
+    }
+}
+
+/** Removes all generated story files and resets the manifest. Optionally archives first. */
+async function clearGeneratedStories({ archive = true } = {}) {
+    await ensureStoryDirs();
+    const storyFiles = await listStoryJsonFiles();
+    const manifest = await readStoryManifest();
+    const hasStories = storyFiles.length > 0 || (manifest.stories ?? []).length > 0;
+    let archiveDir = null;
+
+    if (archive && hasStories) {
+        const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+        archiveDir = join(STORY_FILES_DIR, "archive", stamp);
+        await mkdir(archiveDir, { recursive: true });
+        try {
+            await copyFile(STORY_MANIFEST_FILE, join(archiveDir, "story_manifest.json"));
+        } catch {
+            // no manifest yet
+        }
+        for (const fileName of storyFiles) {
+            await copyFile(join(STORY_FILES_DIR, fileName), join(archiveDir, fileName));
+        }
+    }
+
+    for (const fileName of storyFiles) {
+        await rm(join(STORY_FILES_DIR, fileName), { force: true });
+    }
+
+    await backupFileIfExists(STORY_MANIFEST_FILE);
+    await writeFile(STORY_MANIFEST_FILE, JSON.stringify({ version: 1, stories: [] }, null, 2) + "\n", "utf8");
+    return {
+        removedCount: storyFiles.length,
+        archiveDir: archiveDir ? relative(ROOT, archiveDir) : null
+    };
+}
+
+async function writeStoryArtifacts(storyItems, worldContext) {
     await ensureStoryDirs();
     const manifest = await readStoryManifest();
     const existingById = new Map((manifest.stories ?? []).map((s) => [s.id, s]));
+    const validationCtx = storyValidationContext(worldContext);
 
     for (const item of storyItems) {
         if (!safeStoryId(item.id)) throw new Error(`Invalid story id '${item.id}'.`);
         const filePath = storyPath(item.id);
         await backupFileIfExists(filePath);
         await writeFile(filePath, JSON.stringify(item.payload, null, 2) + "\n", "utf8");
+        const isValid = isStoryCasePacketValid(item.id, item.payload, validationCtx);
         existingById.set(item.id, {
             id: item.id,
             title: item.payload.title ?? item.id,
@@ -306,7 +322,7 @@ async function writeStoryArtifacts(storyItems) {
             createdAt: item.createdAt,
             files: { story: `generated/stories/${item.id}.json` },
             qualityTier: item.qualityTier,
-            isValid: true
+            isValid
         });
     }
 
@@ -319,7 +335,7 @@ async function writeStoryArtifacts(storyItems) {
     return nextManifest;
 }
 
-async function generateStories({ variantCount = 1, seedBase = Date.now(), dryRun = false }) {
+async function generateStories({ variantCount = 1, seedBase = Date.now(), dryRun = false, replaceExisting = false }) {
     await assertOllamaModelAvailable();
     const rooms = await readRooms();
     const npcs = await readNpcs();
@@ -327,10 +343,12 @@ async function generateStories({ variantCount = 1, seedBase = Date.now(), dryRun
     const clues = await readClues();
     const context = { rooms, npcs, furniture, clues };
     const model = AI_MODEL;
+    const validationCtx = storyValidationContext(context);
 
     const generated = [];
     for (let i = 0; i < variantCount; i++) {
         const seed = Number(seedBase) + i;
+        const storyId = createStoryId(i);
         const prompt = buildAiPrompt(context, seed);
         let parsed = null;
         let lastErr = null;
@@ -339,9 +357,9 @@ async function generateStories({ variantCount = 1, seedBase = Date.now(), dryRun
             try {
                 const raw = await callOllama({ model, prompt, seed: seed + attempt });
                 parsed = parseModelJson(raw);
-                const issues = validateCasePacket(parsed, context);
+                const issues = validateStoryCasePacket(storyId, parsed, validationCtx);
                 if (issues.length > 0) {
-                    throw new Error(`Validation failed: ${issues.join("; ")}`);
+                    throw new Error(`Validation failed: ${issues.map((issue) => issue.message).join("; ")}`);
                 }
                 break;
             } catch (error) {
@@ -351,7 +369,7 @@ async function generateStories({ variantCount = 1, seedBase = Date.now(), dryRun
         if (!parsed) throw lastErr ?? new Error("Failed to generate case packet.");
 
         generated.push({
-            id: createStoryId(i),
+            id: storyId,
             seed,
             qualityTier: "local",
             createdAt: new Date().toISOString(),
@@ -360,10 +378,15 @@ async function generateStories({ variantCount = 1, seedBase = Date.now(), dryRun
     }
 
     if (dryRun) {
-        return { generated, manifest: null };
+        return { generated, manifest: null, cleared: null };
     }
-    const manifest = await writeStoryArtifacts(generated);
-    return { generated, manifest };
+
+    let cleared = null;
+    if (replaceExisting) {
+        cleared = await clearGeneratedStories({ archive: true });
+    }
+    const manifest = await writeStoryArtifacts(generated, context);
+    return { generated, manifest, cleared };
 }
 
 const server = createServer(async (req, res) => {
@@ -403,11 +426,15 @@ const server = createServer(async (req, res) => {
             const payload = await readBody(req);
             const variantCount = Math.max(1, Math.min(20, Number(payload.variantCount ?? 1)));
             const seedBase = Number(payload.seedBase ?? Date.now());
-            const result = await generateStories({ variantCount, seedBase, dryRun: false });
+            const replaceExisting = Boolean(payload.replaceExisting);
+            const result = await generateStories({ variantCount, seedBase, dryRun: false, replaceExisting });
             sendJson(res, 200, {
                 ok: true,
                 generatedCount: result.generated.length,
                 generatedIds: result.generated.map((g) => g.id),
+                replacedExisting: replaceExisting,
+                archivedTo: result.cleared?.archiveDir ?? null,
+                removedCount: result.cleared?.removedCount ?? 0,
                 manifest: result.manifest
             });
             return;

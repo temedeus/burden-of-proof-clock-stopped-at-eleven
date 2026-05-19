@@ -1,14 +1,6 @@
 import { Room } from "../world/Room";
 import { Interactable } from "../world/Interactable";
-import {
-    createLibrary,
-    createHall,
-    createStudy,
-    createKitchen,
-    createGarden,
-    createCourtyard,
-    createDining
-} from "../world/Rooms";
+import { createRoomFromConfig } from "../world/Rooms";
 import {Input} from "./Input";
 import { Player, PlayerSpriteName } from "../entities/Player";
 import {NPC} from "../entities/NPC";
@@ -20,7 +12,11 @@ import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
 import { renderInventoryPanel } from "./InventoryPanel";
 import { renderClueNotification } from "./ClueNotification";
 import { loadGameContent } from "../content/loadGameContent";
-import type { NPCConfig, RoomConfig } from "@cse/content-schema";
+import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
+import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
+import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
+import { normalizeStoryPacket } from "@cse/content-schema";
+import type { NPCConfig, NPCDialogConfig, RoomConfig, StoryCasePacket } from "@cse/content-schema";
 
 type GameState = "playing" | "interacting" | "inventory" | "victory";
 
@@ -91,9 +87,7 @@ function furnitureActorFromInteractable(obj: Interactable): DepthActor {
     };
 }
 
-const MURDERER_NPC_ID = "cook";
 const POLICE_NPC_IDS = ["police", "police2"];
-const REQUIRED_CLUES_FOR_ACCUSATION = ["torn_page"];
 
 export type Difficulty = "easy" | "medium" | "hard";
 
@@ -122,7 +116,9 @@ export class Game {
     private input: Input;
     private rooms: Record<string, Room>;
     private currentRoom: Room;
-    private npcDialogs: Record<string, any> = {};
+    private npcDialogs: Record<string, NPCDialogConfig> = {};
+    private activeStory: ActiveStory | null = null;
+    private clueCatalog: ClueCatalog = buildClueCatalog();
 
     private player: Player;
 
@@ -172,26 +168,61 @@ export class Game {
         const w = Math.floor(ctx.canvas.width / TILE_SIZE);
         const h = Math.floor(ctx.canvas.height / TILE_SIZE);
 
-        this.rooms = {
-            library: createLibrary(w, h),
-            hall: createHall(w, h),
-            study: createStudy(w, h),
-            kitchen: createKitchen(w, h),
-            garden: createGarden(w, h),
-            courtyard: createCourtyard(w, h),
-            dining: createDining(w, h)
-        };
+        this.rooms = Object.fromEntries(
+            Object.entries(this.content.rooms).map(([id, config]) => [
+                id,
+                createRoomFromConfig(config, w, h)
+            ])
+        );
 
-        // Load NPC configs and initialize NPCs
+        const resolved = resolveActiveStory();
+        if (resolved) {
+            const seed = resolved.casePacket.victim?.time?.length ?? Date.now();
+            const casePacket = normalizeStoryPacket(
+                resolved.casePacket as StoryCasePacket,
+                this.content.rooms,
+                Object.keys(this.content.npcs),
+                seed
+            );
+            this.activeStory = { ...resolved, casePacket };
+            this.clueCatalog = buildClueCatalog(this.activeStory.casePacket.generatedClues);
+            applyStoryToRooms(this.rooms, this.activeStory.casePacket);
+            if (this.debugMode) {
+                console.log(`Active story: ${this.activeStory.id} — ${this.activeStory.title}`);
+                console.log(`Culprit: ${this.getMurdererNpcId()}, clues: ${this.getRequiredClueIds().join(", ")}`);
+            }
+        } else if (this.debugMode) {
+            console.log("No generated story loaded; using default NPC dialog and clues.");
+        }
+
         this.loadNPCs();
 
-        // Load spritesheet
         spriteLoader.load().catch(err => {
             console.error('Failed to load spritesheet:', err);
         });
 
         this.currentRoom = this.rooms.library;
-        this.startRoomTitleBanner("library");
+        if (this.activeStory) {
+            this.showTitleBanner(this.activeStory.title);
+        } else {
+            this.startRoomTitleBanner("library");
+        }
+    }
+
+    getActiveStoryId(): string | null {
+        return this.activeStory?.id ?? null;
+    }
+
+    getActiveStoryTitle(): string | null {
+        return this.activeStory?.title ?? null;
+    }
+
+    private getMurdererNpcId(): string {
+        return getMurdererNpcId(this.activeStory?.casePacket ?? null);
+    }
+
+    private getRequiredClueIds(): string[] {
+        return getRequiredClueIds(this.activeStory?.casePacket ?? null);
     }
 
     private getRoomDisplayTitle(roomId: string): string {
@@ -199,18 +230,22 @@ export class Game {
     }
 
     private startRoomTitleBanner(roomId: string): void {
-        this.roomTitleBanner = {
-            title: this.getRoomDisplayTitle(roomId),
-            elapsed: 0
-        };
+        this.showTitleBanner(this.getRoomDisplayTitle(roomId));
+    }
+
+    private showTitleBanner(title: string): void {
+        this.roomTitleBanner = { title, elapsed: 0 };
     }
 
     private loadNPCs() {
         const npcConfigs: Record<string, NPCConfig> = this.content.npcs;
 
-        for (const [id, config] of Object.entries(npcConfigs)) {
-            this.npcDialogs[id] = config.dialog;
-        }
+        const baseDialogs = Object.fromEntries(
+            Object.entries(npcConfigs).map(([id, config]) => [id, config.dialog])
+        );
+        this.npcDialogs = this.activeStory
+            ? applyStoryDialogOverrides(baseDialogs, this.activeStory.casePacket)
+            : baseDialogs;
 
         const roomConfigs: Record<string, { config: RoomConfig; room: Room }> = {
             library: { config: this.content.rooms.library, room: this.rooms.library },
@@ -248,7 +283,7 @@ export class Game {
     /** Returns the murderer NPC from whichever room he's in, or null */
     private getMurderer(): NPC | null {
         for (const room of Object.values(this.rooms)) {
-            const found = room.npcs.find((n) => n.id === MURDERER_NPC_ID);
+            const found = room.npcs.find((n) => n.id === this.getMurdererNpcId());
             if (found) return found;
         }
         return null;
@@ -290,7 +325,7 @@ export class Game {
         const room = this.currentRoom;
 
         // Ensure murderer is in this room (only if they're in another room)
-        const murdererRoom = this.getRoomContainingNPC(MURDERER_NPC_ID);
+        const murdererRoom = this.getRoomContainingNPC(this.getMurdererNpcId());
         let spawnExitIndex = 0;
         if (murdererRoom !== room) {
             const exit = room.exits[0];
@@ -428,8 +463,8 @@ export class Game {
                         this.clueNotification = { clueId: result.clues[0] };
                     }
                     if (
-                        result.speakerId === MURDERER_NPC_ID &&
-                        REQUIRED_CLUES_FOR_ACCUSATION.every((c) => this.clueSystem.hasClue(c))
+                        result.speakerId === this.getMurdererNpcId() &&
+                        this.getRequiredClueIds().every((c) => this.clueSystem.hasClue(c))
                     ) {
                         this.accusedMurderer = true;
                         this.redBlinkRemaining = 3;
@@ -586,7 +621,7 @@ export class Game {
 
     render(ctx: CanvasRenderingContext2D) {
         if (this.state === "inventory") {
-            renderInventoryPanel(ctx, this.clueSystem);
+            renderInventoryPanel(ctx, this.clueSystem, this.clueCatalog);
             return;
         }
 
@@ -666,7 +701,7 @@ export class Game {
         }
 
         if (this.clueNotification) {
-            renderClueNotification(ctx, this.clueNotification.clueId);
+            renderClueNotification(ctx, this.clueNotification.clueId, this.clueCatalog);
         }
 
         if (this.roomTitleBanner) {

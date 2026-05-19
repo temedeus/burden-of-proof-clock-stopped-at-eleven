@@ -1,13 +1,15 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, readdir, rename, rm, writeFile, copyFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
+import { normalizeStoryPacket } from "../packages/content-schema/src/normalizeStory.ts";
+import { STORY_CLUE_COUNT } from "../packages/content-schema/src/story.ts";
 import { isStoryCasePacketValid, validateStoryCasePacket } from "../packages/content-schema/src/validateStory.ts";
 
 const PORT = Number(process.env.EDITOR_BACKEND_PORT ?? 8787);
 const ROOT = process.cwd();
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
 const AI_MODEL = process.env.AI_MODEL ?? process.env.AI_MODEL_DEFAULT ?? "ministral-3:3b";
-const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120000);
+const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 600000);
 const AI_MAX_RETRIES = Number(process.env.AI_MAX_RETRIES ?? 1);
 
 const ROOMS_DIR = join(ROOT, "src", "data", "rooms");
@@ -110,20 +112,46 @@ function createStoryId(index) {
     return `story_${stamp}_${String(index + 1).padStart(2, "0")}`;
 }
 
-function buildAiPrompt(input, seed) {
+function buildCompactAiInput(context) {
+    const roomIds = Object.keys(context.rooms);
+    const npcIds = Object.keys(context.npcs);
+    const roomGraph = roomIds.map((roomId) => {
+        const room = context.rooms[roomId];
+        const furnitureCounts = new Map();
+        const furniture = (room.furniture ?? []).map((placement) => {
+            const furnitureIndex = furnitureCounts.get(placement.furnitureId) ?? 0;
+            furnitureCounts.set(placement.furnitureId, furnitureIndex + 1);
+            return {
+                furnitureId: placement.furnitureId,
+                furnitureIndex,
+                x: placement.x,
+                y: placement.y
+            };
+        });
+        return {
+            roomId,
+            exitsTo: (room.exits ?? []).map((exit) => exit.targetRoom),
+            npcs: (room.npcs ?? []).map((placement) => placement.npcId),
+            furniture
+        };
+    });
+    return { roomIds, npcIds, roomGraph };
+}
+
+function buildAiPrompt(context, seed) {
+    const input = buildCompactAiInput(context);
     return `
 You are generating a murder-mystery game story pack in strict JSON.
-Use ONLY existing ids from input:
-- room ids
-- npc ids
-- clue ids
+Use ONLY roomIds, npcIds, and furnitureIds from input (placed NPCs and furniture from the level editor).
 
 Rules:
 1) Output valid JSON only, no markdown.
-2) Keep every NPC placed exactly once in narrative roles.
-3) Keep clues grounded to existing clue ids.
-4) Ensure story is coherent with room graph and NPC presence.
-5) Keep content concise and game-ready.
+2) Pick culpritNpcId as one npcId who committed the murder (not police).
+3) Create exactly ${STORY_CLUE_COUNT} generatedClues with unique ids (snake_case).
+4) Create exactly ${STORY_CLUE_COUNT} clueAssignments placing each clue on furniture (use furnitureId + furnitureIndex from input).
+5) Include every npcId in suspects and npcDialogOverrides.
+6) roomNarratives: one short summary per roomId that has furniture.
+7) Dialog lines short (1-3 sentences). Some conditions may use requiresClue from your generatedClues.
 
 Seed: ${seed}
 
@@ -131,16 +159,12 @@ JSON shape:
 {
   "title": "string",
   "victim": {"name":"string","roomId":"existingRoomId","time":"string"},
+  "culpritNpcId": "existingNpcId",
   "suspects":[{"npcId":"existingNpcId","motive":"string","opportunity":"string","alibi":"string"}],
   "roomNarratives":[{"roomId":"existingRoomId","summary":"string"}],
-  "clueAssignments":[{"clueId":"existingClueId","roomId":"existingRoomId","hint":"string"}],
-  "npcDialogOverrides":[
-    {
-      "npcId":"existingNpcId",
-      "default":"string",
-      "conditions":[{"requiresClue":"existingClueId","dialog":"string"}]
-    }
-  ]
+  "generatedClues":[{"id":"clue_id","name":"string","description":"string"}],
+  "clueAssignments":[{"clueId":"clue_id","roomId":"existingRoomId","furnitureId":"existingFurnitureId","furnitureIndex":0,"hint":"examine text"}],
+  "npcDialogOverrides":[{"npcId":"existingNpcId","default":"string","conditions":[{"requiresClue":"clue_id","dialog":"string"}]}]
 }
 
 Input:
@@ -174,6 +198,10 @@ async function assertOllamaModelAvailable() {
             `Model '${AI_MODEL}' not found. Installed: ${installed.join(", ")}. Run: ollama pull ${AI_MODEL}`
         );
     }
+}
+
+function isAbortError(error) {
+    return error?.name === "AbortError" || /aborted/i.test(String(error?.message ?? error));
 }
 
 async function callOllama({ model, prompt, seed }) {
@@ -211,6 +239,14 @@ async function callOllama({ model, prompt, seed }) {
         const content = payload?.message?.content;
         if (typeof content !== "string") throw new Error("Ollama response missing message content.");
         return content;
+    } catch (error) {
+        if (isAbortError(error)) {
+            const seconds = Math.round(AI_TIMEOUT_MS / 1000);
+            throw new Error(
+                `Ollama request timed out after ${seconds}s. Increase AI_TIMEOUT_MS or wait for the model to finish loading.`
+            );
+        }
+        throw error;
     } finally {
         clearTimeout(timeout);
     }
@@ -229,11 +265,18 @@ function parseModelJson(content) {
     }
 }
 
-function storyValidationContext(context) {
+function storyValidationContext(context, packet = null) {
+    const clueIds = Object.keys(context.clues);
+    if (packet?.generatedClues) {
+        for (const clue of packet.generatedClues) {
+            if (clue?.id) clueIds.push(clue.id);
+        }
+    }
     return {
         roomIds: Object.keys(context.rooms),
         npcIds: Object.keys(context.npcs),
-        clueIds: Object.keys(context.clues)
+        clueIds,
+        rooms: context.rooms
     };
 }
 
@@ -307,13 +350,12 @@ async function writeStoryArtifacts(storyItems, worldContext) {
     await ensureStoryDirs();
     const manifest = await readStoryManifest();
     const existingById = new Map((manifest.stories ?? []).map((s) => [s.id, s]));
-    const validationCtx = storyValidationContext(worldContext);
-
     for (const item of storyItems) {
         if (!safeStoryId(item.id)) throw new Error(`Invalid story id '${item.id}'.`);
         const filePath = storyPath(item.id);
         await backupFileIfExists(filePath);
         await writeFile(filePath, JSON.stringify(item.payload, null, 2) + "\n", "utf8");
+        const validationCtx = storyValidationContext(worldContext, item.payload);
         const isValid = isStoryCasePacketValid(item.id, item.payload, validationCtx);
         existingById.set(item.id, {
             id: item.id,
@@ -343,7 +385,7 @@ async function generateStories({ variantCount = 1, seedBase = Date.now(), dryRun
     const clues = await readClues();
     const context = { rooms, npcs, furniture, clues };
     const model = AI_MODEL;
-    const validationCtx = storyValidationContext(context);
+    const npcIds = Object.keys(context.npcs);
 
     const generated = [];
     for (let i = 0; i < variantCount; i++) {
@@ -356,7 +398,8 @@ async function generateStories({ variantCount = 1, seedBase = Date.now(), dryRun
         for (let attempt = 0; attempt <= AI_MAX_RETRIES; attempt++) {
             try {
                 const raw = await callOllama({ model, prompt, seed: seed + attempt });
-                parsed = parseModelJson(raw);
+                parsed = normalizeStoryPacket(parseModelJson(raw), context.rooms, npcIds, seed + attempt);
+                const validationCtx = storyValidationContext(context, parsed);
                 const issues = validateStoryCasePacket(storyId, parsed, validationCtx);
                 if (issues.length > 0) {
                     throw new Error(`Validation failed: ${issues.map((issue) => issue.message).join("; ")}`);

@@ -1,23 +1,14 @@
 import { ClueSystem } from "../systems/ClueSystem";
-import cluesData from "../data/clues.json";
-
-interface ClueData {
-    name: string;
-    description: string;
-}
-
-interface CluesData {
-    [key: string]: ClueData;
-}
+import { buildClueCatalog, getClueDisplay, type ClueCatalog } from "../content/clueCatalog";
 
 /**
  * Render the inventory panel showing collected clues
  */
 export function renderInventoryPanel(
     ctx: CanvasRenderingContext2D,
-    clueSystem: ClueSystem
+    clueSystem: ClueSystem,
+    catalog: ClueCatalog = buildClueCatalog()
 ): void {
-    const cluesDataTyped = cluesData as CluesData;
     const clues = clueSystem.getAllClues();
 
     // Dark overlay
@@ -56,23 +47,16 @@ export function renderInventoryPanel(
     } else {
         let yOffset = panelY + 80;
         clues.forEach((clueId, index) => {
-            const clue = cluesDataTyped[clueId];
-            if (clue) {
-                ctx.fillStyle = "#ffd700";
-                ctx.font = "bold 18px serif";
-                ctx.fillText(`${index + 1}. ${clue.name}`, panelX + 30, yOffset);
+            const clue = getClueDisplay(catalog, clueId);
+            ctx.fillStyle = "#ffd700";
+            ctx.font = "bold 18px serif";
+            ctx.fillText(`${index + 1}. ${clue.name}`, panelX + 30, yOffset);
 
-                ctx.fillStyle = "#ccc";
-                ctx.font = "14px serif";
-                ctx.fillText(clue.description, panelX + 30, yOffset + 25);
+            ctx.fillStyle = "#ccc";
+            ctx.font = "14px serif";
+            ctx.fillText(clue.description, panelX + 30, yOffset + 25);
 
-                yOffset += 60;
-            } else {
-                ctx.fillStyle = "#ffd700";
-                ctx.font = "bold 18px serif";
-                ctx.fillText(`${index + 1}. ${clueId}`, panelX + 30, yOffset);
-                yOffset += 40;
-            }
+            yOffset += 60;
         });
     }
 

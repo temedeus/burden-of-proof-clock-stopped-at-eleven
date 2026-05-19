@@ -82,7 +82,10 @@ async function validateGeneratedStories(roomsById, npcsById, cluesById) {
             continue;
         }
 
-        const storyIssues = validateStoryCasePacket(story.id, packet, storyContext);
+        const storyIssues = validateStoryCasePacket(story.id, packet, {
+            ...storyContext,
+            rooms: roomsById
+        });
         issues.push(...storyIssues);
 
         const isValid = storyIssues.length === 0;

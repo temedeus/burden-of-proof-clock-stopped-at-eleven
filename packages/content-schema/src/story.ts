@@ -16,11 +16,24 @@ export interface RoomNarrative {
     summary: string;
 }
 
+export interface GeneratedClue {
+    id: string;
+    name: string;
+    description: string;
+}
+
 export interface ClueAssignment {
     clueId: string;
     roomId: string;
+    /** Furniture type id (matches placement.furnitureId / interactable id). */
+    furnitureId?: string;
+    /** Which instance when the same furnitureId appears multiple times in a room (0-based). */
+    furnitureIndex?: number;
     hint: string;
 }
+
+/** Number of clues the player should find before accusing the culprit. */
+export const STORY_CLUE_COUNT = 5;
 
 export interface NPCDialogOverride {
     npcId: string;
@@ -34,8 +47,12 @@ export interface NPCDialogOverride {
 export interface StoryCasePacket {
     title: string;
     victim: StoryVictim;
+    /** NPC id of the murderer (must be placed in the world). */
+    culpritNpcId: string;
     suspects: StorySuspect[];
     roomNarratives: RoomNarrative[];
+    /** Exactly {@link STORY_CLUE_COUNT} clues for this case. */
+    generatedClues: GeneratedClue[];
     clueAssignments: ClueAssignment[];
     npcDialogOverrides: NPCDialogOverride[];
 }

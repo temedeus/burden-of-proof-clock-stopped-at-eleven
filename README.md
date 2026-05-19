@@ -32,6 +32,14 @@ Optional debug mode: `http://localhost:5173/?debug=true`
 
 Debug overlays show collision boundaries, interaction targets, and reach lines. Reload without `?debug=true` to disable.
 
+### Generated stories (AI-authored)
+
+If you have valid entries in `src/data/story/generated/story_manifest.json`, the game picks one at random when you start a new game, applies NPC dialog overrides, places **5 clues** on editor-placed furniture, and sets the murderer from the story. Force a specific variant:
+
+`http://localhost:5173/?story=story_20260519065445_01`
+
+Run `pnpm validate` after editing rooms or regenerating stories. With no valid manifest entries, the game uses default NPC dialog from `src/data/npcs/`.
+
 ---
 
 ## Content validation

@@ -1,24 +1,14 @@
-import cluesData from "../data/clues.json";
-
-interface ClueData {
-    name: string;
-    description: string;
-}
-
-interface CluesData {
-    [key: string]: ClueData;
-}
+import { buildClueCatalog, getClueDisplay, type ClueCatalog } from "../content/clueCatalog";
 
 /**
  * Render the clue found notification overlay
  */
 export function renderClueNotification(
     ctx: CanvasRenderingContext2D,
-    clueId: string
+    clueId: string,
+    catalog: ClueCatalog = buildClueCatalog()
 ): void {
-    const cluesDataTyped = cluesData as CluesData;
-    const clue = cluesDataTyped[clueId];
-    const clueName = clue ? clue.name : clueId;
+    const clueName = getClueDisplay(catalog, clueId).name;
 
     const notifWidth = 300;
     const notifHeight = 80;

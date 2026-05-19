@@ -110,6 +110,8 @@ In the editor, use **Generate Story (AI)** and set the variant count. Uses **Min
 
 **Replace existing stories** (checked by default): archives previous variants to `src/data/story/generated/stories/archive/<timestamp>/`, clears the manifest, then writes only the newly generated variants. Uncheck to append new variants alongside existing ones.
 
+Story generation reads **current room JSON** (NPC and furniture placements from the editor), creates **5 case-specific clues** (`generatedClues`), assigns each to a furniture piece (`clueAssignments` with `furnitureId` + `furnitureIndex`), and picks a `culpritNpcId`. The game places those clues on furniture at runtime and requires all 5 before you can accuse the culprit.
+
 Output:
 
 - `src/data/story/generated/stories/*.json`
@@ -123,9 +125,22 @@ Requires Ollama at `http://localhost:11434` (local install or Docker stack below
 |----------|---------|-------------|
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API base URL |
 | `AI_MODEL` | `ministral-3:3b` | Ollama model name (`AI_MODEL_DEFAULT` also accepted) |
+| `AI_TIMEOUT_MS` | `600000` (10 min) | Max wait per Ollama request |
 | `EDITOR_BACKEND_PORT` | `8787` | Backend listen port |
 
 In Docker, `OLLAMA_BASE_URL` is set to `http://ollama:11434` for the backend service.
+
+### Troubleshooting: `This operation was aborted` / timeout
+
+The backend aborts Ollama calls after `AI_TIMEOUT_MS` (default **10 minutes**). Local models can be slow on first run.
+
+```bash
+AI_TIMEOUT_MS=900000 pnpm dev:editor:backend
+```
+
+If using `tsx watch`, saving files restarts the backend and can abort an in-flight generation — wait until generation finishes before editing backend files.
+
+Watch Ollama progress: `docker compose logs ollama -f` (look for a long `POST /api/chat` until `200`).
 
 ### Troubleshooting: `Ollama request failed` / HTTP 500
 

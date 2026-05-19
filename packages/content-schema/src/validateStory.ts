@@ -1,10 +1,13 @@
-import type { StoryCasePacket } from "./story";
+import { listFurnitureSlots } from "./normalizeStory";
+import type { RoomConfig } from "./rooms";
+import { STORY_CLUE_COUNT, type StoryCasePacket } from "./story";
 import type { ValidationIssue } from "./validate";
 
 export interface StoryValidationContext {
     roomIds: Iterable<string>;
     npcIds: Iterable<string>;
     clueIds: Iterable<string>;
+    rooms?: Record<string, RoomConfig>;
 }
 
 function toIdSet(ids: Iterable<string>): Set<string> {
@@ -21,6 +24,9 @@ function validateStoryShape(packet: Record<string, unknown>, storyId: string): V
 
     if (!isNonEmptyString(packet.title)) {
         issues.push({ roomId: scope, message: "Missing or invalid title." });
+    }
+    if (!isNonEmptyString(packet.culpritNpcId)) {
+        issues.push({ roomId: scope, message: "Missing culpritNpcId." });
     }
 
     const victim = packet.victim;
@@ -39,6 +45,9 @@ function validateStoryShape(packet: Record<string, unknown>, storyId: string): V
     if (!Array.isArray(packet.roomNarratives)) {
         issues.push({ roomId: scope, message: "roomNarratives must be an array." });
     }
+    if (!Array.isArray(packet.generatedClues)) {
+        issues.push({ roomId: scope, message: "generatedClues must be an array." });
+    }
     if (!Array.isArray(packet.clueAssignments)) {
         issues.push({ roomId: scope, message: "clueAssignments must be an array." });
     }
@@ -47,6 +56,24 @@ function validateStoryShape(packet: Record<string, unknown>, storyId: string): V
     }
 
     return issues;
+}
+
+function furnitureSlotExists(
+    rooms: Record<string, RoomConfig>,
+    roomId: string,
+    furnitureId: string,
+    furnitureIndex: number
+): boolean {
+    const room = rooms[roomId];
+    if (!room) return false;
+    let count = 0;
+    for (const placement of room.furniture ?? []) {
+        if (placement.furnitureId === furnitureId) {
+            if (count === furnitureIndex) return true;
+            count++;
+        }
+    }
+    return false;
 }
 
 /**
@@ -70,8 +97,39 @@ export function validateStoryCasePacket(
 
     const roomIds = toIdSet(context.roomIds);
     const npcIds = toIdSet(context.npcIds);
-    const clueIds = toIdSet(context.clueIds);
+    const baseClueIds = toIdSet(context.clueIds);
     const p = packet as StoryCasePacket;
+    const rooms = context.rooms ?? {};
+
+    const generatedClueIds = new Set<string>();
+    if ((p.generatedClues ?? []).length !== STORY_CLUE_COUNT) {
+        issues.push({
+            roomId: storyId,
+            message: `generatedClues must have exactly ${STORY_CLUE_COUNT} entries.`
+        });
+    }
+    for (const clue of p.generatedClues ?? []) {
+        if (!isNonEmptyString(clue.id)) {
+            issues.push({ roomId: storyId, message: "generatedClue missing id." });
+            continue;
+        }
+        if (generatedClueIds.has(clue.id)) {
+            issues.push({ roomId: storyId, message: `Duplicate generatedClue id '${clue.id}'.` });
+        }
+        generatedClueIds.add(clue.id);
+        if (!isNonEmptyString(clue.name)) {
+            issues.push({ roomId: storyId, message: `generatedClue '${clue.id}' missing name.` });
+        }
+        if (!isNonEmptyString(clue.description)) {
+            issues.push({ roomId: storyId, message: `generatedClue '${clue.id}' missing description.` });
+        }
+    }
+
+    const allClueIds = new Set([...baseClueIds, ...generatedClueIds]);
+
+    if (!npcIds.has(p.culpritNpcId)) {
+        issues.push({ roomId: storyId, message: `Invalid culpritNpcId '${p.culpritNpcId}'.` });
+    }
 
     if (!roomIds.has(p.victim.roomId)) {
         issues.push({ roomId: storyId, message: `Invalid victim roomId '${p.victim.roomId}'.` });
@@ -100,13 +158,49 @@ export function validateStoryCasePacket(
         }
     }
 
+    const assignedClueIds = new Set<string>();
+    if ((p.clueAssignments ?? []).length !== STORY_CLUE_COUNT) {
+        issues.push({
+            roomId: storyId,
+            message: `clueAssignments must have exactly ${STORY_CLUE_COUNT} entries.`
+        });
+    }
     for (const assignment of p.clueAssignments ?? []) {
-        if (!clueIds.has(assignment.clueId)) {
+        if (!allClueIds.has(assignment.clueId)) {
             issues.push({ roomId: storyId, message: `Invalid clueAssignments clueId '${assignment.clueId}'.` });
         }
+        if (assignedClueIds.has(assignment.clueId)) {
+            issues.push({ roomId: storyId, message: `Duplicate clueAssignments clueId '${assignment.clueId}'.` });
+        }
+        assignedClueIds.add(assignment.clueId);
         if (!roomIds.has(assignment.roomId)) {
             issues.push({ roomId: storyId, message: `Invalid clueAssignments roomId '${assignment.roomId}'.` });
         }
+        if (assignment.furnitureId) {
+            const index = assignment.furnitureIndex ?? 0;
+            if (Object.keys(rooms).length > 0 && !furnitureSlotExists(rooms, assignment.roomId, assignment.furnitureId, index)) {
+                issues.push({
+                    roomId: storyId,
+                    message: `clue '${assignment.clueId}' references missing furniture '${assignment.furnitureId}' (#${index}) in room '${assignment.roomId}'.`
+                });
+            }
+        }
+        if (!isNonEmptyString(assignment.hint)) {
+            issues.push({ roomId: storyId, message: `clueAssignments for '${assignment.clueId}' missing hint.` });
+        }
+    }
+
+    for (const clueId of generatedClueIds) {
+        if (!assignedClueIds.has(clueId)) {
+            issues.push({ roomId: storyId, message: `generatedClue '${clueId}' has no clueAssignment.` });
+        }
+    }
+
+    if (Object.keys(rooms).length > 0 && listFurnitureSlots(rooms).length < STORY_CLUE_COUNT) {
+        issues.push({
+            roomId: storyId,
+            message: `World has fewer than ${STORY_CLUE_COUNT} furniture placements; cannot place all clues.`
+        });
     }
 
     const seenDialogNpcs = new Set<string>();
@@ -122,7 +216,7 @@ export function validateStoryCasePacket(
             issues.push({ roomId: storyId, message: `NPC '${dialog.npcId}' override missing default dialog.` });
         }
         for (const condition of dialog.conditions ?? []) {
-            if (condition.requiresClue && !clueIds.has(condition.requiresClue)) {
+            if (condition.requiresClue && !allClueIds.has(condition.requiresClue)) {
                 issues.push({
                     roomId: storyId,
                     message: `Invalid requiresClue '${condition.requiresClue}' for npc '${dialog.npcId}'.`

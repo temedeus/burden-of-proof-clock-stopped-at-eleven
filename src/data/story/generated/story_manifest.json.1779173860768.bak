@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "stories": [
+    {
+      "id": "story_20260517063110_01",
+      "title": "story_20260517063110_01",
+      "seed": 1778999308572,
+      "createdAt": "2026-05-17T06:31:10.979Z",
+      "files": {
+        "story": "generated/stories/story_20260517063110_01.json"
+      },
+      "qualityTier": "local",
+      "isValid": false
+    }
+  ]
+}

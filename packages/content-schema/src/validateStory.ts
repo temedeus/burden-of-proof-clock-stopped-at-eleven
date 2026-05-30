@@ -1,6 +1,6 @@
 import { listFurnitureSlots } from "./normalizeStory";
 import type { RoomConfig } from "./rooms";
-import { STORY_CLUE_COUNT, type StoryCasePacket } from "./story";
+import { MIN_STORY_CLUE_COUNT, type StoryCasePacket } from "./story";
 import type { ValidationIssue } from "./validate";
 
 export interface StoryValidationContext {
@@ -102,10 +102,11 @@ export function validateStoryCasePacket(
     const rooms = context.rooms ?? {};
 
     const generatedClueIds = new Set<string>();
-    if ((p.generatedClues ?? []).length !== STORY_CLUE_COUNT) {
+    const clueCount = (p.generatedClues ?? []).length;
+    if (clueCount < MIN_STORY_CLUE_COUNT) {
         issues.push({
             roomId: storyId,
-            message: `generatedClues must have exactly ${STORY_CLUE_COUNT} entries.`
+            message: `generatedClues must have at least ${MIN_STORY_CLUE_COUNT} entry.`
         });
     }
     for (const clue of p.generatedClues ?? []) {
@@ -159,10 +160,10 @@ export function validateStoryCasePacket(
     }
 
     const assignedClueIds = new Set<string>();
-    if ((p.clueAssignments ?? []).length !== STORY_CLUE_COUNT) {
+    if ((p.clueAssignments ?? []).length !== clueCount) {
         issues.push({
             roomId: storyId,
-            message: `clueAssignments must have exactly ${STORY_CLUE_COUNT} entries.`
+            message: `clueAssignments must have the same number of entries as generatedClues (${clueCount}).`
         });
     }
     for (const assignment of p.clueAssignments ?? []) {
@@ -196,10 +197,10 @@ export function validateStoryCasePacket(
         }
     }
 
-    if (Object.keys(rooms).length > 0 && listFurnitureSlots(rooms).length < STORY_CLUE_COUNT) {
+    if (Object.keys(rooms).length > 0 && clueCount > 0 && listFurnitureSlots(rooms).length < clueCount) {
         issues.push({
             roomId: storyId,
-            message: `World has fewer than ${STORY_CLUE_COUNT} furniture placements; cannot place all clues.`
+            message: `World has fewer furniture placements (${listFurnitureSlots(rooms).length}) than clues (${clueCount}).`
         });
     }
 

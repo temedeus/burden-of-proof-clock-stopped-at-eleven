@@ -22,8 +22,8 @@ pnpm dev:editor           # terminal 2
 ## Workflow
 
 1. **Rooms** — Place furniture, NPCs, and doors on the canvas. Save rooms to disk (`Save Room` / `Save All`).
-2. **Story** — Edit the title, pick the **culprit** NPC, define **5 clues** (id, name, description).
-3. **Assign clues** — Select furniture on the canvas, choose a clue, write an **examine hint**, click **Apply to selected furniture**.
+2. **Story** — Title, culprit, validate, and save.
+3. **Clues tab** — Choose a clue from the dropdown (or add/remove clues). Set id/name/description, **room**, **furniture**, and examine hint for that clue.
 4. **Validate & save** — `Validate Story`, then `Save Story`. Each save archives the previous `active.json` under `stories/archive/<timestamp>/` and removes any other story JSON in `stories/`. Run `pnpm validate` from the repo root.
 5. **Playtest** — **Play story in game** → `http://localhost:5173/?story=active`
 

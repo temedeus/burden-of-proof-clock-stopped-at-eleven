@@ -41,9 +41,11 @@ const modeTargetBadge = document.getElementById("mode-target-badge") as HTMLDivE
 const tabFurniture = document.getElementById("tab-furniture") as HTMLButtonElement;
 const tabNpc = document.getElementById("tab-npc") as HTMLButtonElement;
 const tabDoors = document.getElementById("tab-doors") as HTMLButtonElement;
+const tabClues = document.getElementById("tab-clues") as HTMLButtonElement;
 const furnitureSection = document.getElementById("furniture-section") as HTMLDivElement;
 const npcSection = document.getElementById("npc-section") as HTMLDivElement;
 const doorsSection = document.getElementById("doors-section") as HTMLDivElement;
+const cluesSection = document.getElementById("clues-section") as HTMLDivElement;
 const furnitureSelect = document.getElementById("furniture-select") as HTMLSelectElement;
 const addFurnitureButton = document.getElementById("add-furniture-btn") as HTMLButtonElement;
 const deleteSelectedFurnitureButton = document.getElementById("delete-selected-furniture-btn") as HTMLButtonElement;
@@ -71,11 +73,6 @@ const caseEditor = new CaseEditor(
         workingRooms,
         npcIds: Object.keys(content.npcs),
         clueCatalogIds: Object.keys(cluesCatalog),
-        getSelectedFurniture: () => {
-            const roomId = roomSelect.value;
-            if (!roomId || selectedFurnitureIndex == null) return null;
-            return { roomId, listIndex: selectedFurnitureIndex };
-        },
         reportIssue: (message) => {
             issuesEl.textContent = message;
         },
@@ -99,7 +96,13 @@ let currentRoomId = "";
 let selectedFurnitureIndex: number | null = null;
 let selectedNpcIndex: number | null = null;
 let selectedDoorIndex: number | null = null;
-let editTarget: "furniture" | "npc" | "doors" = "furniture";
+type EditTarget = "furniture" | "npc" | "doors" | "clues";
+let editTarget: EditTarget = "furniture";
+
+/** Clues tab selects furniture on the canvas but does not add/delete layout objects. */
+function canvasInteractionTarget(): "furniture" | "npc" | "doors" {
+    return editTarget === "clues" ? "furniture" : editTarget;
+}
 let activeDrag:
     | { kind: "furniture"; index: number; offsetX: number; offsetY: number }
     | { kind: "npc"; index: number; offsetX: number; offsetY: number }
@@ -154,20 +157,37 @@ function refreshDoorTargetOptions(): void {
     }
 }
 
-function setEditTarget(target: "furniture" | "npc" | "doors"): void {
+function setEditTarget(target: EditTarget): void {
     editTarget = target;
     tabFurniture.classList.toggle("active", target === "furniture");
     tabNpc.classList.toggle("active", target === "npc");
     tabDoors.classList.toggle("active", target === "doors");
+    tabClues.classList.toggle("active", target === "clues");
     furnitureSection.classList.toggle("active", target === "furniture");
     npcSection.classList.toggle("active", target === "npc");
     doorsSection.classList.toggle("active", target === "doors");
+    cluesSection.classList.toggle("active", target === "clues");
+    if (target === "clues") {
+        toolSelect.value = "select";
+        doorPlacementArmed = false;
+        doorPlacementStartTile = null;
+        doorGhost = null;
+        caseEditor.onRoomsUpdated();
+        notifyFurnitureSelection();
+    }
     updateModeTargetBadge();
 }
 
 function updateModeTargetBadge(): void {
     const modeLabel = toolSelect.value.charAt(0).toUpperCase() + toolSelect.value.slice(1);
-    const targetLabel = editTarget === "furniture" ? "Furniture" : editTarget === "npc" ? "NPCs" : "Doors";
+    const targetLabel =
+        editTarget === "furniture"
+            ? "Furniture"
+            : editTarget === "npc"
+              ? "NPCs"
+              : editTarget === "doors"
+                ? "Doors"
+                : "Clues";
     const armed = doorPlacementArmed ? " | Door placement armed" : "";
     modeTargetBadge.textContent = `Mode: ${modeLabel} | Target: ${targetLabel}${armed}${selectionBadgeExtra}`;
 }
@@ -602,7 +622,7 @@ function updateCanvasCursor(tileX: number, tileY: number): void {
             canvas.style.cursor = "grabbing";
             return;
         }
-        const target = editTarget;
+        const target = canvasInteractionTarget();
         const hasHoverTarget =
             (target === "furniture" && hitTestFurniture(room, tileX, tileY) >= 0) ||
             (target === "npc" && hitTestNpc(room, tileX, tileY) >= 0) ||
@@ -918,10 +938,16 @@ canvas.addEventListener("pointerdown", (event) => {
     if (!room) return;
     const tile = getMouseTile(event, room);
     const tool = toolSelect.value as ToolMode;
-    const target = editTarget;
+    const target = canvasInteractionTarget();
     const furnitureHit = hitTestFurniture(room, tile.x, tile.y);
     const npcHit = hitTestNpc(room, tile.x, tile.y);
     const doorHit = hitTestDoor(room, tile.x, tile.y);
+    if (editTarget === "clues" && tool !== "select") {
+        toolSelect.value = "select";
+        issuesEl.textContent = "Clues tab: edit clues in the panel. Switch to Furniture/NPCs/Doors to change the layout.";
+        updateModeTargetBadge();
+        return;
+    }
     if (tool === "delete") {
         let deletedByClick = false;
         if (target === "furniture" && furnitureHit >= 0) {
@@ -986,12 +1012,16 @@ canvas.addEventListener("pointerdown", (event) => {
         }
         return;
     }
-    if (tool === "select" && target === "furniture") {
+    if (tool === "select" && (target === "furniture" || editTarget === "clues")) {
         selectedFurnitureIndex = furnitureHit >= 0 ? furnitureHit : null;
         selectedNpcIndex = null;
         selectedDoorIndex = null;
         notifyFurnitureSelection();
-        if (furnitureHit >= 0) {
+        if (editTarget === "clues" && furnitureHit < 0) {
+            activeDrag = null;
+            return;
+        }
+        if (furnitureHit >= 0 && editTarget !== "clues") {
             canvas.setPointerCapture(event.pointerId);
             const rect = getPlacementRect(room, room.furniture[furnitureHit]);
             if (rect) {
@@ -1044,7 +1074,7 @@ canvas.addEventListener("pointerdown", (event) => {
     } else if (tool === "select") {
         // Clicking empty space clears selection in current target.
         if (target === "doors") selectedDoorIndex = null;
-        if (target === "furniture") {
+        if (target === "furniture" || editTarget === "clues") {
             selectedFurnitureIndex = null;
             notifyFurnitureSelection();
         }
@@ -1188,6 +1218,7 @@ toolSelect.addEventListener("change", () => updateModeTargetBadge());
 tabFurniture.addEventListener("click", () => setEditTarget("furniture"));
 tabNpc.addEventListener("click", () => setEditTarget("npc"));
 tabDoors.addEventListener("click", () => setEditTarget("doors"));
+tabClues.addEventListener("click", () => setEditTarget("clues"));
 window.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && doorPlacementArmed) {
         doorPlacementArmed = false;

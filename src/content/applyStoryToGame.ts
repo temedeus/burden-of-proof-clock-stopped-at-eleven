@@ -1,4 +1,4 @@
-import { STORY_CLUE_COUNT, type StoryCasePacket } from "@cse/content-schema";
+import type { StoryCasePacket } from "@cse/content-schema";
 import type { Room } from "../world/Room";
 import type { Interactable } from "../world/Interactable";
 
@@ -57,7 +57,7 @@ export function applyStoryToRooms(rooms: Record<string, Room>, story: StoryCaseP
 
 export function getRequiredClueIds(story: StoryCasePacket | null): string[] {
     if (!story) return ["torn_page"];
-    return (story.generatedClues ?? []).slice(0, STORY_CLUE_COUNT).map((clue) => clue.id);
+    return (story.generatedClues ?? []).map((clue) => clue.id);
 }
 
 export function getMurdererNpcId(story: StoryCasePacket | null): string {

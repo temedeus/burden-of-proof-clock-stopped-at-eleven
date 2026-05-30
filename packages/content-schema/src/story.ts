@@ -32,8 +32,11 @@ export interface ClueAssignment {
     hint: string;
 }
 
-/** Number of clues the player should find before accusing the culprit. */
+/** Default clue count for new stories (editor may add or remove clues). */
 export const STORY_CLUE_COUNT = 5;
+
+/** Minimum clues required for a valid case. */
+export const MIN_STORY_CLUE_COUNT = 1;
 
 /** Single authored story file id (`src/data/story/generated/stories/<id>.json`). */
 export const ACTIVE_STORY_ID = "active";
@@ -54,7 +57,7 @@ export interface StoryCasePacket {
     culpritNpcId: string;
     suspects: StorySuspect[];
     roomNarratives: RoomNarrative[];
-    /** Exactly {@link STORY_CLUE_COUNT} clues for this case. */
+    /** Case clues (player must find all before accusing the culprit). */
     generatedClues: GeneratedClue[];
     clueAssignments: ClueAssignment[];
     npcDialogOverrides: NPCDialogOverride[];

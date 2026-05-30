@@ -1,28 +1,78 @@
 import type { ClueAssignment, GeneratedClue, RoomConfig, StoryCasePacket } from "@cse/content-schema";
-import { ACTIVE_STORY_ID, STORY_CLUE_COUNT, validateStoryCasePacket } from "@cse/content-schema";
+import { ACTIVE_STORY_ID, MIN_STORY_CLUE_COUNT, validateStoryCasePacket } from "@cse/content-schema";
 
 export interface CaseEditorDeps {
     backendBase: string;
     workingRooms: Record<string, RoomConfig>;
     npcIds: string[];
     clueCatalogIds: string[];
-    getSelectedFurniture: () => { roomId: string; listIndex: number } | null;
     reportIssue: (message: string) => void;
     onSelectionBadgeExtra: (extra: string) => void;
+}
+
+interface FurnitureOption {
+    furnitureId: string;
+    furnitureIndex: number;
+    label: string;
+}
+
+function furnitureOptionsForRoom(room: RoomConfig | undefined): FurnitureOption[] {
+    if (!room) return [];
+    const counts = new Map<string, number>();
+    const options: FurnitureOption[] = [];
+    for (const placement of room.furniture ?? []) {
+        const furnitureIndex = counts.get(placement.furnitureId) ?? 0;
+        counts.set(placement.furnitureId, furnitureIndex + 1);
+        const suffix = furnitureIndex > 0 ? ` #${furnitureIndex}` : "";
+        options.push({
+            furnitureId: placement.furnitureId,
+            furnitureIndex,
+            label: `${placement.furnitureId}${suffix}`
+        });
+    }
+    return options;
+}
+
+function encodeFurnitureValue(furnitureId: string, furnitureIndex: number): string {
+    return `${furnitureId}|${furnitureIndex}`;
+}
+
+function decodeFurnitureValue(value: string): { furnitureId: string; furnitureIndex: number } | null {
+    if (!value) return null;
+    const [furnitureId, indexPart] = value.split("|");
+    if (!furnitureId) return null;
+    const furnitureIndex = Number(indexPart);
+    if (!Number.isFinite(furnitureIndex) || furnitureIndex < 0) return null;
+    return { furnitureId, furnitureIndex };
+}
+
+function uniqueClueId(base: string, existing: Set<string>): string {
+    let id = base.replace(/[^a-z0-9_]/gi, "_").toLowerCase() || "clue";
+    let candidate = id;
+    let n = 2;
+    while (existing.has(candidate)) {
+        candidate = `${id}_${n}`;
+        n++;
+    }
+    return candidate;
 }
 
 export class CaseEditor {
     private workingCase: StoryCasePacket | null = null;
     private caseDirty = false;
+    private formBuilt = false;
+    private selectedClueIndex = 0;
 
     private readonly storyStatusEl: HTMLParagraphElement;
     private readonly caseTitleInput: HTMLInputElement;
     private readonly caseCulpritSelect: HTMLSelectElement;
-    private readonly caseCluesRoot: HTMLDivElement;
-    private readonly furnitureClueSelect: HTMLSelectElement;
-    private readonly furnitureHintInput: HTMLTextAreaElement;
+    private readonly clueSelect: HTMLSelectElement;
+    private readonly clueEditorRoot: HTMLDivElement;
     private readonly playCaseLink: HTMLAnchorElement;
     private readonly caseDirtyStatus: HTMLParagraphElement;
+
+    private roomSelect!: HTMLSelectElement;
+    private furnitureSelect!: HTMLSelectElement;
 
     constructor(
         private readonly deps: CaseEditorDeps,
@@ -31,15 +81,21 @@ export class CaseEditor {
         this.storyStatusEl = root.querySelector("#story-status") as HTMLParagraphElement;
         this.caseTitleInput = root.querySelector("#case-title") as HTMLInputElement;
         this.caseCulpritSelect = root.querySelector("#case-culprit") as HTMLSelectElement;
-        this.caseCluesRoot = root.querySelector("#case-clues") as HTMLDivElement;
-        this.furnitureClueSelect = root.querySelector("#furniture-clue-select") as HTMLSelectElement;
-        this.furnitureHintInput = root.querySelector("#furniture-clue-hint") as HTMLTextAreaElement;
+        this.clueSelect = root.querySelector("#clue-select") as HTMLSelectElement;
+        this.clueEditorRoot = root.querySelector("#clue-editor") as HTMLDivElement;
         this.playCaseLink = root.querySelector("#play-case-link") as HTMLAnchorElement;
         this.caseDirtyStatus = root.querySelector("#case-dirty-status") as HTMLParagraphElement;
 
         root.querySelector("#validate-case-btn")?.addEventListener("click", () => this.validateCase());
         root.querySelector("#save-case-btn")?.addEventListener("click", () => void this.saveCase());
-        root.querySelector("#apply-furniture-clue-btn")?.addEventListener("click", () => this.applyFurnitureClue());
+        root.querySelector("#add-clue-btn")?.addEventListener("click", () => this.addClue());
+        root.querySelector("#remove-clue-btn")?.addEventListener("click", () => this.removeClue());
+
+        this.clueSelect.addEventListener("change", () => {
+            this.syncCurrentClueFromForm();
+            this.selectedClueIndex = this.clueSelect.selectedIndex;
+            this.loadCurrentClueIntoForm();
+        });
 
         this.caseTitleInput.addEventListener("input", () => {
             if (!this.workingCase) return;
@@ -53,7 +109,6 @@ export class CaseEditor {
             this.markCaseDirty();
         });
 
-        this.buildClueFormSkeleton();
         this.refreshCulpritOptions();
     }
 
@@ -69,24 +124,291 @@ export class CaseEditor {
         await this.loadStory();
     }
 
-    private buildClueFormSkeleton(): void {
-        this.caseCluesRoot.innerHTML = "";
-        for (let i = 0; i < STORY_CLUE_COUNT; i++) {
-            const block = document.createElement("div");
-            block.className = "case-clue-row";
-            block.innerHTML = `
-                <label>Clue ${i + 1} id</label>
-                <input type="text" data-clue-field="id" data-clue-index="${i}" />
-                <label>Name</label>
-                <input type="text" data-clue-field="name" data-clue-index="${i}" />
-                <label>Description</label>
-                <input type="text" data-clue-field="description" data-clue-index="${i}" />
-            `;
-            this.caseCluesRoot.appendChild(block);
-            for (const input of block.querySelectorAll("input")) {
-                input.addEventListener("input", () => this.syncCluesFromForm());
+    onRoomsUpdated(): void {
+        if (!this.formBuilt) return;
+        this.refreshRoomSelect();
+        this.refreshFurnitureSelect();
+    }
+
+    onFurnitureSelected(roomId: string, listIndex: number | null): void {
+        if (listIndex == null || !this.workingCase) {
+            this.deps.onSelectionBadgeExtra("");
+            return;
+        }
+        const room = this.deps.workingRooms[roomId];
+        const placement = room?.furniture[listIndex];
+        if (!placement || !room) return;
+
+        const furnitureIndex = CaseEditor.furnitureInstanceIndex(room, listIndex);
+        const clueId = (this.workingCase.clueAssignments ?? []).find(
+            (a) =>
+                a.roomId === roomId &&
+                a.furnitureId === placement.furnitureId &&
+                (a.furnitureIndex ?? 0) === furnitureIndex
+        )?.clueId;
+
+        const clueName =
+            clueId &&
+            (this.workingCase.generatedClues ?? []).find((c) => c.id === clueId)?.name;
+        this.deps.onSelectionBadgeExtra(
+            clueName
+                ? ` · has clue: ${clueName}`
+                : ` · ${placement.furnitureId} (no clue here)`
+        );
+    }
+
+    static furnitureInstanceIndex(room: RoomConfig, listIndex: number): number {
+        const placement = room.furniture[listIndex];
+        if (!placement) return 0;
+        let count = 0;
+        for (let i = 0; i < listIndex; i++) {
+            if (room.furniture[i].furnitureId === placement.furnitureId) count++;
+        }
+        return count;
+    }
+
+    private ensureClueForm(): void {
+        if (this.formBuilt || !this.clueEditorRoot) return;
+
+        const roomIds = Object.keys(this.deps.workingRooms).sort();
+        const roomOptions = roomIds.length
+            ? roomIds.map((id) => `<option value="${id}">${id}</option>`).join("")
+            : '<option value="">— no rooms —</option>';
+
+        this.clueEditorRoot.innerHTML = `
+            <label>Id</label>
+            <input type="text" id="clue-field-id" />
+            <label>Name (inventory)</label>
+            <input type="text" id="clue-field-name" />
+            <label>Description</label>
+            <textarea id="clue-field-description"></textarea>
+            <label>Room</label>
+            <select id="clue-field-room">${roomOptions}</select>
+            <label>Furniture in room</label>
+            <select id="clue-field-furniture"></select>
+            <label>Examine hint</label>
+            <textarea id="clue-field-hint" placeholder="Shown when examining this object"></textarea>
+        `;
+
+        this.roomSelect = this.clueEditorRoot.querySelector("#clue-field-room") as HTMLSelectElement;
+        this.furnitureSelect = this.clueEditorRoot.querySelector("#clue-field-furniture") as HTMLSelectElement;
+
+        this.roomSelect.addEventListener("change", () => {
+            this.refreshFurnitureSelect();
+            this.syncCurrentClueFromForm();
+        });
+
+        for (const id of ["clue-field-id", "clue-field-name", "clue-field-description", "clue-field-hint"]) {
+            const el = this.clueEditorRoot.querySelector(`#${id}`);
+            el?.addEventListener("input", () => this.syncCurrentClueFromForm());
+        }
+        this.furnitureSelect.addEventListener("change", () => this.syncCurrentClueFromForm());
+
+        this.formBuilt = true;
+    }
+
+    private getClues(): GeneratedClue[] {
+        return this.workingCase?.generatedClues ?? [];
+    }
+
+    private ensureWorkingClueArrays(): void {
+        if (!this.workingCase) return;
+        if (!this.workingCase.generatedClues) this.workingCase.generatedClues = [];
+        if (!this.workingCase.clueAssignments) this.workingCase.clueAssignments = [];
+    }
+
+    private refreshClueSelect(): void {
+        const clues = this.getClues();
+        const prevIndex = this.selectedClueIndex;
+        this.clueSelect.innerHTML = "";
+        for (let i = 0; i < clues.length; i++) {
+            const clue = clues[i];
+            const option = document.createElement("option");
+            option.value = String(i);
+            option.textContent = `${i + 1}. ${clue.name || clue.id || "Unnamed"}`;
+            this.clueSelect.appendChild(option);
+        }
+        if (clues.length === 0) {
+            const option = document.createElement("option");
+            option.textContent = "— no clues —";
+            this.clueSelect.appendChild(option);
+            return;
+        }
+        this.selectedClueIndex = Math.min(prevIndex, clues.length - 1);
+        this.clueSelect.selectedIndex = this.selectedClueIndex;
+    }
+
+    private refreshRoomSelect(): void {
+        if (!this.formBuilt) return;
+        const roomIds = Object.keys(this.deps.workingRooms).sort();
+        const prev = this.roomSelect.value;
+        this.roomSelect.innerHTML =
+            roomIds.length === 0
+                ? '<option value="">— no rooms —</option>'
+                : roomIds.map((id) => `<option value="${id}">${id}</option>`).join("");
+        if (prev && roomIds.includes(prev)) this.roomSelect.value = prev;
+        else if (roomIds[0]) this.roomSelect.value = roomIds[0];
+        this.refreshFurnitureSelect();
+    }
+
+    private refreshFurnitureSelect(): void {
+        if (!this.formBuilt) return;
+        const roomId = this.roomSelect.value;
+        const room = this.deps.workingRooms[roomId];
+        const options = furnitureOptionsForRoom(room);
+        const prev = this.furnitureSelect.value;
+
+        if (options.length === 0) {
+            this.furnitureSelect.innerHTML = '<option value="">— no furniture —</option>';
+            return;
+        }
+
+        this.furnitureSelect.innerHTML = options
+            .map(
+                (o) =>
+                    `<option value="${encodeFurnitureValue(o.furnitureId, o.furnitureIndex)}">${o.label}</option>`
+            )
+            .join("");
+
+        if (prev && [...this.furnitureSelect.options].some((o) => o.value === prev)) {
+            this.furnitureSelect.value = prev;
+        } else {
+            this.furnitureSelect.value = encodeFurnitureValue(options[0].furnitureId, options[0].furnitureIndex);
+        }
+    }
+
+    private loadCurrentClueIntoForm(): void {
+        if (!this.workingCase || !this.formBuilt) return;
+        const clues = this.getClues();
+        const clue = clues[this.selectedClueIndex];
+        const assignment =
+            (this.workingCase.clueAssignments ?? []).find((a) => a.clueId === clue?.id) ??
+            this.workingCase.clueAssignments?.[this.selectedClueIndex];
+
+        const idEl = this.clueEditorRoot.querySelector("#clue-field-id") as HTMLInputElement;
+        const nameEl = this.clueEditorRoot.querySelector("#clue-field-name") as HTMLInputElement;
+        const descEl = this.clueEditorRoot.querySelector("#clue-field-description") as HTMLTextAreaElement;
+        const hintEl = this.clueEditorRoot.querySelector("#clue-field-hint") as HTMLTextAreaElement;
+
+        idEl.value = clue?.id ?? "";
+        nameEl.value = clue?.name ?? "";
+        descEl.value = clue?.description ?? "";
+        hintEl.value = assignment?.hint ?? "";
+
+        if (assignment?.roomId && [...this.roomSelect.options].some((o) => o.value === assignment.roomId)) {
+            this.roomSelect.value = assignment.roomId;
+        }
+        this.refreshFurnitureSelect();
+
+        if (assignment?.furnitureId) {
+            const value = encodeFurnitureValue(assignment.furnitureId, assignment.furnitureIndex ?? 0);
+            if ([...this.furnitureSelect.options].some((o) => o.value === value)) {
+                this.furnitureSelect.value = value;
             }
         }
+    }
+
+    private syncCurrentClueFromForm(): void {
+        if (!this.workingCase || !this.formBuilt) return;
+        this.ensureWorkingClueArrays();
+
+        const clues = this.workingCase.generatedClues;
+        const assignments = this.workingCase.clueAssignments;
+        if (this.selectedClueIndex < 0 || this.selectedClueIndex >= clues.length) return;
+
+        const idEl = this.clueEditorRoot.querySelector("#clue-field-id") as HTMLInputElement;
+        const nameEl = this.clueEditorRoot.querySelector("#clue-field-name") as HTMLInputElement;
+        const descEl = this.clueEditorRoot.querySelector("#clue-field-description") as HTMLTextAreaElement;
+        const hintEl = this.clueEditorRoot.querySelector("#clue-field-hint") as HTMLTextAreaElement;
+
+        const existingIds = new Set(clues.map((c, i) => (i === this.selectedClueIndex ? "" : c.id)).filter(Boolean));
+        const rawId = idEl.value.trim();
+        const id = rawId
+            ? uniqueClueId(rawId, existingIds)
+            : uniqueClueId(`clue_${this.selectedClueIndex + 1}`, existingIds);
+
+        const clue: GeneratedClue = {
+            id,
+            name: nameEl.value.trim() || `Clue ${this.selectedClueIndex + 1}`,
+            description: descEl.value.trim() || "Something seems out of place."
+        };
+        clues[this.selectedClueIndex] = clue;
+
+        const furniture = decodeFurnitureValue(this.furnitureSelect.value);
+        const roomId = this.roomSelect.value || Object.keys(this.deps.workingRooms)[0] || "hall";
+
+        assignments[this.selectedClueIndex] = {
+            clueId: clue.id,
+            roomId,
+            furnitureId: furniture?.furnitureId,
+            furnitureIndex: furniture?.furnitureIndex ?? 0,
+            hint: hintEl.value.trim() || "Something here relates to the case…"
+        };
+
+        const option = this.clueSelect.options[this.selectedClueIndex];
+        if (option) {
+            option.textContent = `${this.selectedClueIndex + 1}. ${clue.name || clue.id}`;
+        }
+        this.markCaseDirty();
+    }
+
+    private syncAllCluesFromForm(): void {
+        this.syncCurrentClueFromForm();
+    }
+
+    private addClue(): void {
+        if (!this.workingCase) {
+            this.deps.reportIssue("Story not loaded.");
+            return;
+        }
+        this.syncCurrentClueFromForm();
+        this.ensureWorkingClueArrays();
+
+        const existingIds = new Set(this.workingCase.generatedClues.map((c) => c.id));
+        const n = this.workingCase.generatedClues.length + 1;
+        const id = uniqueClueId(`clue_${n}`, existingIds);
+        const defaultRoomId = Object.keys(this.deps.workingRooms)[0] ?? "hall";
+        const room = this.deps.workingRooms[defaultRoomId];
+        const firstFurniture = furnitureOptionsForRoom(room)[0];
+
+        this.workingCase.generatedClues.push({
+            id,
+            name: `Clue ${n}`,
+            description: "Describe what the player discovers."
+        });
+        this.workingCase.clueAssignments.push({
+            clueId: id,
+            roomId: defaultRoomId,
+            furnitureId: firstFurniture?.furnitureId,
+            furnitureIndex: firstFurniture?.furnitureIndex ?? 0,
+            hint: "Something here relates to the case…"
+        });
+
+        this.selectedClueIndex = this.workingCase.generatedClues.length - 1;
+        this.refreshClueSelect();
+        this.loadCurrentClueIntoForm();
+        this.markCaseDirty();
+        this.deps.reportIssue(`Added clue '${id}'.`);
+    }
+
+    private removeClue(): void {
+        if (!this.workingCase) return;
+        this.syncCurrentClueFromForm();
+
+        if (this.workingCase.generatedClues.length <= MIN_STORY_CLUE_COUNT) {
+            this.deps.reportIssue(`Keep at least ${MIN_STORY_CLUE_COUNT} clue.`);
+            return;
+        }
+
+        const removed = this.workingCase.generatedClues[this.selectedClueIndex]?.id;
+        this.workingCase.generatedClues.splice(this.selectedClueIndex, 1);
+        this.workingCase.clueAssignments.splice(this.selectedClueIndex, 1);
+        this.selectedClueIndex = Math.min(this.selectedClueIndex, this.workingCase.generatedClues.length - 1);
+
+        this.refreshClueSelect();
+        this.loadCurrentClueIntoForm();
+        this.markCaseDirty();
+        this.deps.reportIssue(`Removed clue '${removed}'.`);
     }
 
     private refreshCulpritOptions(): void {
@@ -119,7 +441,8 @@ export class CaseEditor {
 
     private updateStoryStatus(): void {
         const title = this.workingCase?.title?.trim() || "Untitled";
-        this.storyStatusEl.textContent = `Editing: ${title}`;
+        const count = this.getClues().length;
+        this.storyStatusEl.textContent = `Editing: ${title} (${count} clue${count === 1 ? "" : "s"})`;
     }
 
     private updatePlayLink(): void {
@@ -143,190 +466,47 @@ export class CaseEditor {
     }
 
     private fillFormFromCase(packet: StoryCasePacket): void {
+        this.workingCase = packet;
+        this.ensureClueForm();
+        this.refreshRoomSelect();
+
         this.caseTitleInput.value = packet.title ?? "";
         this.caseCulpritSelect.value = packet.culpritNpcId ?? "";
-        const clues = packet.generatedClues ?? [];
-        for (let i = 0; i < STORY_CLUE_COUNT; i++) {
-            const clue = clues[i];
-            for (const field of ["id", "name", "description"] as const) {
-                const input = this.caseCluesRoot.querySelector(
-                    `input[data-clue-index="${i}"][data-clue-field="${field}"]`
-                ) as HTMLInputElement | null;
-                if (input) input.value = clue?.[field] ?? "";
-            }
-        }
-        this.refreshFurnitureClueOptions();
-        this.updateStoryStatus();
-    }
 
-    private syncCluesFromForm(): void {
-        if (!this.workingCase) return;
-        const generatedClues: GeneratedClue[] = [];
-        for (let i = 0; i < STORY_CLUE_COUNT; i++) {
-            const id = (
-                this.caseCluesRoot.querySelector(`input[data-clue-index="${i}"][data-clue-field="id"]`) as HTMLInputElement
-            ).value.trim();
-            const name = (
-                this.caseCluesRoot.querySelector(`input[data-clue-index="${i}"][data-clue-field="name"]`) as HTMLInputElement
-            ).value.trim();
-            const description = (
-                this.caseCluesRoot.querySelector(
-                    `input[data-clue-index="${i}"][data-clue-field="description"]`
-                ) as HTMLInputElement
-            ).value.trim();
-            generatedClues.push({
-                id: id || `clue_${i + 1}`,
-                name: name || `Clue ${i + 1}`,
-                description: description || "Something seems out of place."
-            });
-        }
-        this.workingCase.generatedClues = generatedClues;
-        this.reconcileAssignmentsAfterClueIdChange();
-        this.markCaseDirty();
-        this.refreshFurnitureClueOptions();
-    }
-
-    private reconcileAssignmentsAfterClueIdChange(): void {
-        if (!this.workingCase) return;
-        const clues = this.workingCase.generatedClues ?? [];
-        const assignments = this.workingCase.clueAssignments ?? [];
-        const byIndex = new Map<number, ClueAssignment>();
-        for (let i = 0; i < assignments.length; i++) {
-            byIndex.set(i, assignments[i]);
-        }
-        this.workingCase.clueAssignments = clues.map((clue, index) => {
-            const prev = byIndex.get(index) ?? assignments.find((a) => a.clueId === clue.id);
-            return {
-                clueId: clue.id,
-                roomId: prev?.roomId ?? Object.keys(this.deps.workingRooms)[0] ?? "hall",
-                furnitureId: prev?.furnitureId,
-                furnitureIndex: prev?.furnitureIndex ?? 0,
-                hint: prev?.hint ?? "Something here relates to the case…"
-            };
-        });
-    }
-
-    private refreshFurnitureClueOptions(): void {
-        const selected = this.furnitureClueSelect.value;
-        this.furnitureClueSelect.innerHTML = '<option value="">— none —</option>';
-        for (const clue of this.workingCase?.generatedClues ?? []) {
-            const option = document.createElement("option");
-            option.value = clue.id;
-            option.textContent = `${clue.id} — ${clue.name}`;
-            this.furnitureClueSelect.appendChild(option);
-        }
-        if (selected && [...this.furnitureClueSelect.options].some((o) => o.value === selected)) {
-            this.furnitureClueSelect.value = selected;
-        }
-    }
-
-    static furnitureInstanceIndex(room: RoomConfig, listIndex: number): number {
-        const placement = room.furniture[listIndex];
-        if (!placement) return 0;
-        let count = 0;
-        for (let i = 0; i < listIndex; i++) {
-            if (room.furniture[i].furnitureId === placement.furnitureId) count++;
-        }
-        return count;
-    }
-
-    onFurnitureSelected(roomId: string, listIndex: number | null): void {
-        if (listIndex == null || !this.workingCase) {
-            this.deps.onSelectionBadgeExtra("");
-            this.furnitureClueSelect.value = "";
-            this.furnitureHintInput.value = "";
-            return;
-        }
-        const room = this.deps.workingRooms[roomId];
-        if (!room) return;
-        const placement = room.furniture[listIndex];
-        if (!placement) return;
-        const furnitureIndex = CaseEditor.furnitureInstanceIndex(room, listIndex);
-        const assignment = (this.workingCase.clueAssignments ?? []).find(
-            (a) =>
-                a.roomId === roomId &&
-                a.furnitureId === placement.furnitureId &&
-                (a.furnitureIndex ?? 0) === furnitureIndex
-        );
-        const assignedClue = assignment?.clueId ?? "";
-        this.refreshFurnitureClueOptions();
-        this.furnitureClueSelect.value = assignedClue;
-        this.furnitureHintInput.value = assignment?.hint ?? "";
-        const label = assignedClue ? ` · clue: ${assignedClue}` : "";
-        this.deps.onSelectionBadgeExtra(
-            ` · ${placement.furnitureId} #${furnitureIndex}${label}`
-        );
-    }
-
-    applyFurnitureClue(): void {
-        if (!this.workingCase) {
-            this.deps.reportIssue("Story not loaded.");
-            return;
-        }
-        const selection = this.deps.getSelectedFurniture();
-        if (!selection) {
-            this.deps.reportIssue("Select a furniture piece on the canvas first.");
-            return;
-        }
-        const { roomId, listIndex } = selection;
-        const room = this.deps.workingRooms[roomId];
-        const placement = room?.furniture[listIndex];
-        if (!room || !placement) return;
-
-        const clueId = this.furnitureClueSelect.value;
-        const hint = this.furnitureHintInput.value.trim();
-        const furnitureIndex = CaseEditor.furnitureInstanceIndex(room, listIndex);
-
-        if (!clueId) {
-            this.deps.reportIssue("Pick a clue to assign.");
-            return;
-        }
-        if (!hint) {
-            this.deps.reportIssue("Enter an examine hint for this clue.");
-            return;
-        }
-
-        const slotAssignment: ClueAssignment = {
-            clueId,
-            roomId,
-            furnitureId: placement.furnitureId,
-            furnitureIndex,
-            hint
-        };
-        const byClueId = new Map(
-            (this.workingCase.clueAssignments ?? []).map((assignment) => [assignment.clueId, assignment])
-        );
-        byClueId.set(clueId, slotAssignment);
-        const clues = this.workingCase.generatedClues ?? [];
-        this.workingCase.clueAssignments = clues.map(
-            (clue) =>
-                byClueId.get(clue.id) ?? {
-                    clueId: clue.id,
-                    roomId,
-                    furnitureId: placement.furnitureId,
+        if ((packet.generatedClues ?? []).length === 0) {
+            this.workingCase.generatedClues = [
+                { id: "clue_1", name: "Clue 1", description: "Something seems out of place." }
+            ];
+            this.workingCase.clueAssignments = [
+                {
+                    clueId: "clue_1",
+                    roomId: Object.keys(this.deps.workingRooms)[0] ?? "hall",
+                    furnitureId: "table",
                     furnitureIndex: 0,
-                    hint: "Assign this clue to furniture in the editor."
+                    hint: "Something here relates to the case…"
                 }
-        );
+            ];
+        }
 
-        this.markCaseDirty();
-        this.onFurnitureSelected(roomId, listIndex);
-        this.deps.reportIssue(`Assigned '${clueId}' to ${placement.furnitureId} #${furnitureIndex} in ${roomId}.`);
+        this.selectedClueIndex = 0;
+        this.refreshClueSelect();
+        this.loadCurrentClueIntoForm();
+        this.updateStoryStatus();
     }
 
     validateCase(): boolean {
         if (!this.workingCase) {
-            this.deps.reportIssue("Story not loaded.");
+            this.deps.reportIssue("Story not loaded — start the editor backend (pnpm dev:editor:backend).");
             return false;
         }
-        this.syncCluesFromForm();
+        this.syncAllCluesFromForm();
         const issues = validateStoryCasePacket(
             ACTIVE_STORY_ID,
             this.workingCase,
             this.storyContext(this.workingCase)
         );
         if (issues.length === 0) {
-            this.deps.reportIssue("Story is valid.");
+            this.deps.reportIssue(`Story is valid (${this.getClues().length} clues).`);
             return true;
         }
         this.deps.reportIssue(issues.map((issue) => `[${issue.roomId}] ${issue.message}`).join("\n"));
@@ -338,12 +518,16 @@ export class CaseEditor {
             const response = await fetch(`${this.deps.backendBase}/api/story`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const payload = (await response.json()) as { packet: StoryCasePacket };
-            this.workingCase = payload.packet;
-            this.fillFormFromCase(this.workingCase);
+            this.fillFormFromCase(payload.packet);
             this.clearCaseDirty();
             this.updatePlayLink();
         } catch {
-            this.deps.reportIssue("Could not load story. Start: pnpm dev:editor:backend");
+            this.ensureClueForm();
+            this.refreshRoomSelect();
+            this.deps.reportIssue(
+                "Could not load story. Run: pnpm dev:editor:backend — then reload."
+            );
+            this.storyStatusEl.textContent = "Story not loaded";
         }
     }
 
@@ -352,7 +536,7 @@ export class CaseEditor {
             this.deps.reportIssue("Story not loaded.");
             return;
         }
-        this.syncCluesFromForm();
+        this.syncAllCluesFromForm();
         this.workingCase.title = this.caseTitleInput.value.trim() || "Untitled";
         this.workingCase.culpritNpcId = this.caseCulpritSelect.value;
         try {
@@ -370,7 +554,9 @@ export class CaseEditor {
             if (!response.ok) throw new Error(payload.error ?? `HTTP ${response.status}`);
             this.clearCaseDirty();
             this.updateStoryStatus();
-            let message = payload.isValid ? "Story saved (valid)." : "Story saved but validation failed.";
+            let message = payload.isValid
+                ? `Story saved (valid, ${this.getClues().length} clues).`
+                : "Story saved but validation failed.";
             if (payload.archivedTo) {
                 message += `\nPrevious version archived to ${payload.archivedTo}.`;
             }

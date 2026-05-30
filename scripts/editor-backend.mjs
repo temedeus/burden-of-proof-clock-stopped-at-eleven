@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, readdir, rename, rm, writeFile, copyFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
-import { ACTIVE_STORY_ID, STORY_CLUE_COUNT } from "../packages/content-schema/src/story.ts";
+import { ACTIVE_STORY_ID } from "../packages/content-schema/src/story.ts";
 import { isStoryCasePacketValid, validateStoryCasePacket } from "../packages/content-schema/src/validateStory.ts";
 
 const PORT = Number(process.env.EDITOR_BACKEND_PORT ?? 8787);
@@ -123,11 +123,13 @@ function blankCasePacket(npcIds, defaultRoomId = "hall") {
             alibi: "Claims to have been elsewhere."
         }));
 
-    const generatedClues = Array.from({ length: STORY_CLUE_COUNT }, (_, i) => ({
-        id: `clue_${i + 1}`,
-        name: `Clue ${i + 1}`,
-        description: "Describe what the player discovers."
-    }));
+    const generatedClues = [
+        {
+            id: "clue_1",
+            name: "Clue 1",
+            description: "Describe what the player discovers."
+        }
+    ];
 
     return {
         title: "New Case",

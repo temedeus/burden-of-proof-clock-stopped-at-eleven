@@ -15,8 +15,7 @@ import { loadGameContent } from "../content/loadGameContent";
 import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
 import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
-import { normalizeStoryPacket } from "@cse/content-schema";
-import type { NPCConfig, NPCDialogConfig, RoomConfig, StoryCasePacket } from "@cse/content-schema";
+import type { NPCConfig, NPCDialogConfig, RoomConfig } from "@cse/content-schema";
 
 type GameState = "playing" | "interacting" | "inventory" | "victory";
 
@@ -177,14 +176,7 @@ export class Game {
 
         const resolved = resolveActiveStory();
         if (resolved) {
-            const seed = resolved.casePacket.victim?.time?.length ?? Date.now();
-            const casePacket = normalizeStoryPacket(
-                resolved.casePacket as StoryCasePacket,
-                this.content.rooms,
-                Object.keys(this.content.npcs),
-                seed
-            );
-            this.activeStory = { ...resolved, casePacket };
+            this.activeStory = resolved;
             this.clueCatalog = buildClueCatalog(this.activeStory.casePacket.generatedClues);
             applyStoryToRooms(this.rooms, this.activeStory.casePacket);
             if (this.debugMode) {

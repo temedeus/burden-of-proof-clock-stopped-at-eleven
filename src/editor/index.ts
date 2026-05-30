@@ -1,5 +1,7 @@
 import type { NPCConfig, RoomConfig, FurniturePlacement } from "@cse/content-schema";
 import { validateRooms } from "@cse/content-schema";
+import { CaseEditor } from "./caseEditor";
+import cluesCatalog from "../data/clues.json";
 import { createRoomFromConfig } from "../world/Rooms";
 import { TILE_SIZE } from "../world/constants";
 import { spriteLoader } from "../assets/SpriteLoader";
@@ -61,9 +63,29 @@ const saveJsonButton = document.getElementById("save-json-btn") as HTMLButtonEle
 const saveAllButton = document.getElementById("save-all-btn") as HTMLButtonElement;
 const exportButton = document.getElementById("export-btn") as HTMLButtonElement;
 const reloadBackendButton = document.getElementById("reload-backend-btn") as HTMLButtonElement;
-const aiVariantCountInput = document.getElementById("ai-variant-count") as HTMLInputElement;
-const aiReplaceStoriesInput = document.getElementById("ai-replace-stories") as HTMLInputElement;
-const generateStoryButton = document.getElementById("generate-story-btn") as HTMLButtonElement;
+
+let selectionBadgeExtra = "";
+const caseEditor = new CaseEditor(
+    {
+        backendBase,
+        workingRooms,
+        npcIds: Object.keys(content.npcs),
+        clueCatalogIds: Object.keys(cluesCatalog),
+        getSelectedFurniture: () => {
+            const roomId = roomSelect.value;
+            if (!roomId || selectedFurnitureIndex == null) return null;
+            return { roomId, listIndex: selectedFurnitureIndex };
+        },
+        reportIssue: (message) => {
+            issuesEl.textContent = message;
+        },
+        onSelectionBadgeExtra: (extra) => {
+            selectionBadgeExtra = extra;
+            updateModeTargetBadge();
+        }
+    },
+    document
+);
 
 const dirtyRooms = new Set<string>();
 const furnitureById: Record<string, FurnitureConfig> = {
@@ -147,7 +169,12 @@ function updateModeTargetBadge(): void {
     const modeLabel = toolSelect.value.charAt(0).toUpperCase() + toolSelect.value.slice(1);
     const targetLabel = editTarget === "furniture" ? "Furniture" : editTarget === "npc" ? "NPCs" : "Doors";
     const armed = doorPlacementArmed ? " | Door placement armed" : "";
-    modeTargetBadge.textContent = `Mode: ${modeLabel} | Target: ${targetLabel}${armed}`;
+    modeTargetBadge.textContent = `Mode: ${modeLabel} | Target: ${targetLabel}${armed}${selectionBadgeExtra}`;
+}
+
+function notifyFurnitureSelection(): void {
+    const roomId = roomSelect.value;
+    caseEditor.onFurnitureSelected(roomId, selectedFurnitureIndex);
 }
 
 function resolvePosition(value: number | "center" | "top" | "bottom", dimension: number): number {
@@ -292,18 +319,12 @@ function refreshRoomOptions() {
     else roomSelect.value = Object.keys(workingRooms)[0] ?? "";
 }
 
-let backendHasAi = false;
-
-function setBackendStatus(online: boolean, aiEnabled?: boolean): void {
-    const ai = online ? (aiEnabled ?? backendHasAi) : false;
-    backendHasAi = ai;
+function setBackendStatus(online: boolean): void {
     if (!online) {
         backendStatusEl.textContent = "Backend: offline (using in-memory rooms only)";
         return;
     }
-    backendStatusEl.textContent = ai
-        ? "Backend: online (rooms + AI)"
-        : "Backend: online (rooms only — restart backend for AI: pnpm dev:editor:backend)";
+    backendStatusEl.textContent = "Backend: online (rooms + cases)";
 }
 
 function setDirtyStatus(): void {
@@ -321,21 +342,6 @@ function markDirty(roomId: string): void {
 function clearDirty(roomId: string): void {
     dirtyRooms.delete(roomId);
     setDirtyStatus();
-}
-
-async function probeBackendFeatures(): Promise<boolean> {
-    try {
-        const health = await fetch(`${backendBase}/health`);
-        if (!health.ok) return false;
-        const payload = (await health.json()) as { features?: string[] };
-        if (Array.isArray(payload.features) && payload.features.includes("ai")) {
-            return true;
-        }
-        const stories = await fetch(`${backendBase}/api/ai/stories`);
-        return stories.ok;
-    } catch {
-        return false;
-    }
 }
 
 function reportEditorIssue(message: string): void {
@@ -356,8 +362,8 @@ async function fetchRoomsFromBackend(force = false): Promise<boolean> {
         Object.assign(workingRooms, payload.rooms);
         dirtyRooms.clear();
         setDirtyStatus();
-        const aiEnabled = await probeBackendFeatures();
-        setBackendStatus(true, aiEnabled);
+        setBackendStatus(true);
+        await caseEditor.bootstrap();
         refreshRoomOptions();
         renderSelectedRoom();
         return true;
@@ -395,6 +401,7 @@ function renderSelectedRoom() {
     selectedFurnitureIndex = null;
     selectedNpcIndex = null;
     selectedDoorIndex = null;
+    notifyFurnitureSelection();
     doorPlacementArmed = false;
     doorPlacementStartTile = null;
     doorGhost = null;
@@ -637,6 +644,7 @@ function deleteSelectedFurniture(): void {
     if (selectedFurnitureIndex < 0 || selectedFurnitureIndex >= room.furniture.length) return;
     room.furniture.splice(selectedFurnitureIndex, 1);
     selectedFurnitureIndex = null;
+    notifyFurnitureSelection();
     markDirty(room.id);
     syncTextareaFromRoom(room.id);
 }
@@ -843,61 +851,6 @@ async function saveAllRooms(): Promise<void> {
     }
 }
 
-async function generateStoryWithAI(): Promise<void> {
-    generateStoryButton.disabled = true;
-    generateStoryButton.textContent = "Generating...";
-    try {
-        reportEditorIssue("Checking AI backend...");
-        const aiEnabled = await probeBackendFeatures();
-        if (!aiEnabled) {
-            setBackendStatus(true, false);
-            throw new Error(
-                "AI routes not available. Restart the backend: pnpm dev:editor:backend — or: docker compose restart editor-backend"
-            );
-        }
-        setBackendStatus(true, true);
-
-        const variantCount = Math.max(1, Math.min(20, Number(aiVariantCountInput.value || "1")));
-        const replaceExisting = aiReplaceStoriesInput.checked;
-        reportEditorIssue(
-            `AI generation running (${variantCount} variant(s)${replaceExisting ? ", replacing existing" : ""})… This can take several minutes. Ensure Ollama is running and ministral-3:3b is pulled.`
-        );
-
-        const response = await fetch(`${backendBase}/api/ai/generate-case`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                variantCount,
-                replaceExisting,
-                seedBase: Date.now()
-            })
-        });
-        const payload = (await response.json()) as {
-            error?: string;
-            generatedCount?: number;
-            generatedIds?: string[];
-            replacedExisting?: boolean;
-            removedCount?: number;
-            archivedTo?: string | null;
-        };
-        if (!response.ok) {
-            throw new Error(payload.error ?? `AI generation failed with HTTP ${response.status}`);
-        }
-        const ids = (payload.generatedIds ?? []).join(", ");
-        let message = `Generated ${payload.generatedCount ?? 0} story variant(s): ${ids}`;
-        if (payload.replacedExisting && (payload.removedCount ?? 0) > 0) {
-            message += `\nReplaced ${payload.removedCount} previous variant(s).`;
-            if (payload.archivedTo) message += ` Archived to ${payload.archivedTo}.`;
-        }
-        reportEditorIssue(message);
-    } catch (error) {
-        reportEditorIssue(`AI generation failed: ${(error as Error).message}`);
-    } finally {
-        generateStoryButton.disabled = false;
-        generateStoryButton.textContent = "Generate Story (AI)";
-    }
-}
-
 async function createRoom() {
     const newId = window.prompt("New room id (e.g. attic):");
     if (!newId) return;
@@ -1037,6 +990,7 @@ canvas.addEventListener("pointerdown", (event) => {
         selectedFurnitureIndex = furnitureHit >= 0 ? furnitureHit : null;
         selectedNpcIndex = null;
         selectedDoorIndex = null;
+        notifyFurnitureSelection();
         if (furnitureHit >= 0) {
             canvas.setPointerCapture(event.pointerId);
             const rect = getPlacementRect(room, room.furniture[furnitureHit]);
@@ -1090,7 +1044,10 @@ canvas.addEventListener("pointerdown", (event) => {
     } else if (tool === "select") {
         // Clicking empty space clears selection in current target.
         if (target === "doors") selectedDoorIndex = null;
-        if (target === "furniture") selectedFurnitureIndex = null;
+        if (target === "furniture") {
+            selectedFurnitureIndex = null;
+            notifyFurnitureSelection();
+        }
         if (target === "npc") selectedNpcIndex = null;
         activeDrag = null;
     }
@@ -1199,7 +1156,6 @@ saveJsonButton.addEventListener("click", () => { void saveCurrentJson(); });
 saveAllButton.addEventListener("click", () => { void saveAllRooms(); });
 exportButton.addEventListener("click", exportRoomsJson);
 reloadBackendButton.addEventListener("click", () => { void fetchRoomsFromBackend(); });
-generateStoryButton.addEventListener("click", () => { void generateStoryWithAI(); });
 addFurnitureButton.addEventListener("click", addSelectedFurnitureAtCenter);
 deleteSelectedFurnitureButton.addEventListener("click", deleteSelectedFurniture);
 addNpcButton.addEventListener("click", addSelectedNpcAtCenter);

@@ -3,19 +3,73 @@
   "width": 20,
   "height": 15,
   "furniture": [
-    {"furnitureId": "table", "x": "center", "y": "center", "anchor": "center"},
-    {"furnitureId": "bookshelves", "x": 1, "y": 1, "anchor": "top-left"},
-    {"furnitureId": "bookshelves", "x": 2, "y": 1, "anchor": "top-left"},
-    {"furnitureId": "bookshelves", "x": 3, "y": 1, "anchor": "top-left", "clues": ["torn_page"], "description": "Rows of leather-bound volumes. Some seem recently disturbed."},
-    {"furnitureId": "bookshelves", "x": 4, "y": 1, "anchor": "top-left"},
-    {"furnitureId": "bookshelves", "x": 5, "y": 1, "anchor": "top-left"}
+    {
+      "furnitureId": "table",
+      "x": "center",
+      "y": "center",
+      "anchor": "center"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 1,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 2,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 3,
+      "y": 1,
+      "anchor": "top-left",
+      "clues": [
+        "torn_page"
+      ],
+      "description": "Rows of leather-bound volumes. Some seem recently disturbed."
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 4,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 5,
+      "y": 1,
+      "anchor": "top-left"
+    }
   ],
   "exits": [
-    {"x": "center", "y": "bottom", "targetRoom": "hall", "spawnX": "center", "spawnY": 1},
-    {"x": "bottom", "y": "center", "targetRoom": "study", "spawnX": 1, "spawnY": "center"}
+    {
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "hall",
+      "spawnX": "center",
+      "spawnY": 1
+    },
+    {
+      "x": "bottom",
+      "y": "center",
+      "targetRoom": "study",
+      "spawnX": 1,
+      "spawnY": "center"
+    }
   ],
   "npcs": [
-    {"npcId": "butler", "x": 5, "y": 3},
-    {"npcId": "baron", "x": 12, "y": 8}
+    {
+      "npcId": "butler",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "npcId": "baron",
+      "x": 12,
+      "y": 8
+    }
   ]
 }

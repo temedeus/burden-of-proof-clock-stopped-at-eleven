@@ -1,6 +1,7 @@
 export * from "./rooms";
 export * from "./npcs";
 export * from "./sprites";
+export * from "./placement";
 export * from "./validate";
 export * from "./validateStory";
 export * from "./normalizeStory";

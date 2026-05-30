@@ -3,11 +3,32 @@
   "width": 20,
   "height": 15,
   "furniture": [
-    {"furnitureId": "fireplace", "x": "center", "y": 3, "anchor": "center"},
-    {"furnitureId": "carpet", "x": "center", "y": 8, "anchor": "center"},
-    {"furnitureId": "dining_table", "x": "center", "y": 8, "anchor": "center"}
+    {
+      "furnitureId": "fireplace",
+      "x": "center",
+      "y": 3,
+      "anchor": "center"
+    },
+    {
+      "furnitureId": "carpet",
+      "x": "center",
+      "y": 8,
+      "anchor": "center"
+    },
+    {
+      "furnitureId": "dining_table",
+      "x": "center",
+      "y": 8,
+      "anchor": "center"
+    }
   ],
   "exits": [
-    {"x": 0, "y": "center", "targetRoom": "study", "spawnX": 17, "spawnY": "center"}
+    {
+      "x": 0,
+      "y": "center",
+      "targetRoom": "study",
+      "spawnX": 17,
+      "spawnY": "center"
+    }
   ]
 }

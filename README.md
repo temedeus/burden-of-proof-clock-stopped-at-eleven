@@ -18,7 +18,7 @@
 |------|---------|-----|
 | **Game** | `pnpm dev` | `http://localhost:5173/` |
 
-For the level editor and AI story backend (local or Docker), see **[src/editor/README.md](src/editor/README.md)**.
+For the level editor and case authoring backend, see **[src/editor/README.md](src/editor/README.md)**.
 
 ---
 
@@ -32,13 +32,13 @@ Optional debug mode: `http://localhost:5173/?debug=true`
 
 Debug overlays show collision boundaries, interaction targets, and reach lines. Reload without `?debug=true` to disable.
 
-### Generated stories (AI-authored)
+### Cases (authored in the editor)
 
-If you have valid entries in `src/data/story/generated/story_manifest.json`, the game picks one at random when you start a new game, applies NPC dialog overrides, places **5 clues** on editor-placed furniture, and sets the murderer from the story. Force a specific variant:
+When `src/data/story/generated/story_manifest.json` has valid entries, the game picks a case at random, applies clues to furniture, NPC dialog overrides, and the configured culprit. Force a specific case:
 
-`http://localhost:5173/?story=story_20260519065445_01`
+`http://localhost:5173/?story=default`
 
-Run `pnpm validate` after editing rooms or regenerating stories. With no valid manifest entries, the game uses default NPC dialog from `src/data/npcs/`.
+Run `pnpm validate` after editing rooms or cases. With no valid manifest entries, the game uses default NPC dialog from `src/data/npcs/`.
 
 ---
 
@@ -48,10 +48,10 @@ Run `pnpm validate` after editing rooms or regenerating stories. With no valid m
 pnpm validate
 ```
 
-Validates game content (rooms, NPCs, furniture, generated stories). Used during authoring; see [src/editor/README.md](src/editor/README.md) for details.
+Validates rooms, NPC placement, furniture references, and case files. See [src/editor/README.md](src/editor/README.md) for details.
 
 ---
 
 ## Deployment
 
-Ship only the game runtime and static data (`src/data/**`). Editor, AI backend, and Ollama are development tools — see [src/editor/README.md](src/editor/README.md).
+Ship only the game runtime and static data (`src/data/**`). The editor and file backend are development tools — see [src/editor/README.md](src/editor/README.md).

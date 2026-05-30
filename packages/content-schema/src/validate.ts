@@ -1,3 +1,4 @@
+import { getGameTileGridSize, isFurniturePlacementInBounds } from "./placement";
 import type { NPCConfig } from "./npcs";
 import type { RoomConfig } from "./rooms";
 import { VALID_SPRITE_NAMES } from "./sprites";
@@ -7,6 +8,8 @@ interface FurnitureConfig {
     width: number;
     height: number;
     spriteName?: string;
+    collisionRowsFromBottom?: number;
+    walkableDecor?: boolean;
 }
 
 export interface ValidationIssue {
@@ -93,6 +96,8 @@ export function validateRooms(
             }
         }
 
+        const tileGrid = getGameTileGridSize(room);
+
         for (const placement of room.furniture ?? []) {
             const furniture = furnitureById[placement.furnitureId];
             if (!furniture) {
@@ -108,12 +113,10 @@ export function validateRooms(
             if (!isPositionToken(placement.y)) {
                 issues.push({ roomId: room.id, message: `Furniture '${placement.furnitureId}' has invalid y token.` });
             }
-            const x = typeof placement.x === "number" ? placement.x : Math.floor(room.width / 2);
-            const y = resolvePosition(placement.y, room.height);
-            if (x < 0 || x >= room.width || y < 0 || y >= room.height) {
+            if (!isFurniturePlacementInBounds(placement, furniture, tileGrid.width, tileGrid.height)) {
                 issues.push({
                     roomId: room.id,
-                    message: `Furniture '${placement.furnitureId}' placement resolves out of room bounds.`
+                    message: `Furniture '${placement.furnitureId}' placement has no footprint inside the room (edge props like gates may extend past the anchor tile).`
                 });
             }
             if (furniture.spriteName && !VALID_SPRITES.has(furniture.spriteName)) {

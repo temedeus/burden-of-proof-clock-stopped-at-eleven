@@ -18,6 +18,10 @@
     .mode-section { display: none; }
     .mode-section.active { display: block; }
     .status-badge { margin: 6px 0 8px 0; padding: 6px 8px; border-radius: 6px; background: #1f2f3a; border: 1px solid #365066; color: #d7ecff; font-size: 13px; }
+    .case-clue-row { margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #333; }
+    .case-clue-row label { display: block; font-size: 12px; color: #aaa; margin-top: 4px; }
+    #furniture-clue-hint { height: 64px; }
+    #play-case-link { display: inline-block; margin-bottom: 8px; color: #8ec8ff; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -34,15 +38,25 @@
       <button id="validate-all-btn">Validate All Rooms</button>
       <button id="export-btn">Export Rooms JSON</button>
       <button id="reload-backend-btn">Reload Rooms From Backend</button>
-      <h4>AI Story Generation</h4>
-      <label for="ai-variant-count">Variant count</label>
-      <input id="ai-variant-count" type="number" min="1" max="20" value="1" />
-      <label>
-        <input id="ai-replace-stories" type="checkbox" checked />
-        Replace existing stories
-      </label>
-      <button id="generate-story-btn">Generate Story (AI)</button>
       <p id="backend-status">Backend: checking...</p>
+      <h4>Case</h4>
+      <select id="case-select"></select>
+      <button id="new-case-btn" type="button">New Case</button>
+      <button id="delete-case-btn" type="button">Delete Case</button>
+      <p id="case-dirty-status">Case: —</p>
+      <label for="case-title">Title</label>
+      <input id="case-title" type="text" placeholder="Case title" />
+      <label for="case-culprit">Culprit (NPC)</label>
+      <select id="case-culprit"></select>
+      <div id="case-clues"></div>
+      <label for="furniture-clue-select">Clue on selected furniture</label>
+      <select id="furniture-clue-select"></select>
+      <label for="furniture-clue-hint">Examine hint</label>
+      <textarea id="furniture-clue-hint" placeholder="Text shown when examining this object"></textarea>
+      <button id="apply-furniture-clue-btn" type="button">Apply to selected furniture</button>
+      <button id="validate-case-btn" type="button">Validate Case</button>
+      <button id="save-case-btn" type="button">Save Case</button>
+      <a id="play-case-link" href="#" target="_blank" rel="noopener">Play case in game</a>
       <p id="dirty-status">Unsaved changes: none</p>
       <h4>Canvas Tools</h4>
       <select id="tool-select">

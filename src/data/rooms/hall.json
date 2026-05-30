@@ -3,19 +3,68 @@
   "width": 20,
   "height": 15,
   "furniture": [
-    {"furnitureId": "bookshelves", "x": 1, "y": 1, "anchor": "top-left"},
-    {"furnitureId": "bookshelves", "x": 2, "y": 1, "anchor": "top-left"},
-    {"furnitureId": "bookshelves", "x": 3, "y": 1, "anchor": "top-left"}
+    {
+      "furnitureId": "bookshelves",
+      "x": 1,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 2,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 3,
+      "y": 1,
+      "anchor": "top-left"
+    }
   ],
   "exits": [
-    {"x": "center", "y": "top", "targetRoom": "library", "spawnX": "center", "spawnY": "bottom-3"},
-    {"x": "bottom", "y": "center", "targetRoom": "kitchen", "spawnX": 1, "spawnY": "center"},
-    {"x": "center", "y": "bottom", "targetRoom": "garden", "spawnX": "center", "spawnY": 2}
+    {
+      "x": "center",
+      "y": "top",
+      "targetRoom": "library",
+      "spawnX": "center",
+      "spawnY": "bottom-3"
+    },
+    {
+      "x": "bottom",
+      "y": "center",
+      "targetRoom": "kitchen",
+      "spawnX": 1,
+      "spawnY": "center"
+    },
+    {
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "garden",
+      "spawnX": "center",
+      "spawnY": 2
+    }
   ],
   "npcs": [
-    {"npcId": "maid", "x": 8, "y": 7},
-    {"npcId": "cook", "x": 14, "y": 10},
-    {"npcId": "baroness", "x": 4, "y": 5},
-    {"npcId": "police", "x": 10, "y": 3}
+    {
+      "npcId": "maid",
+      "x": 8,
+      "y": 7
+    },
+    {
+      "npcId": "cook",
+      "x": 14,
+      "y": 10
+    },
+    {
+      "npcId": "baroness",
+      "x": 4,
+      "y": 5
+    },
+    {
+      "npcId": "police",
+      "x": 10,
+      "y": 3
+    }
   ]
 }

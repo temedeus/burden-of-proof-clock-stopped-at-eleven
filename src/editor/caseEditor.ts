@@ -1,11 +1,5 @@
-import type {
-    ClueAssignment,
-    GeneratedClue,
-    RoomConfig,
-    StoryCasePacket,
-    StoryManifest
-} from "@cse/content-schema";
-import { STORY_CLUE_COUNT, validateStoryCasePacket } from "@cse/content-schema";
+import type { ClueAssignment, GeneratedClue, RoomConfig, StoryCasePacket } from "@cse/content-schema";
+import { ACTIVE_STORY_ID, STORY_CLUE_COUNT, validateStoryCasePacket } from "@cse/content-schema";
 
 export interface CaseEditorDeps {
     backendBase: string;
@@ -18,12 +12,10 @@ export interface CaseEditorDeps {
 }
 
 export class CaseEditor {
-    private manifest: StoryManifest = { version: 1, stories: [] };
-    private activeCaseId = "";
     private workingCase: StoryCasePacket | null = null;
     private caseDirty = false;
 
-    private readonly caseSelect: HTMLSelectElement;
+    private readonly storyStatusEl: HTMLParagraphElement;
     private readonly caseTitleInput: HTMLInputElement;
     private readonly caseCulpritSelect: HTMLSelectElement;
     private readonly caseCluesRoot: HTMLDivElement;
@@ -36,7 +28,7 @@ export class CaseEditor {
         private readonly deps: CaseEditorDeps,
         root: ParentNode
     ) {
-        this.caseSelect = root.querySelector("#case-select") as HTMLSelectElement;
+        this.storyStatusEl = root.querySelector("#story-status") as HTMLParagraphElement;
         this.caseTitleInput = root.querySelector("#case-title") as HTMLInputElement;
         this.caseCulpritSelect = root.querySelector("#case-culprit") as HTMLSelectElement;
         this.caseCluesRoot = root.querySelector("#case-clues") as HTMLDivElement;
@@ -45,8 +37,6 @@ export class CaseEditor {
         this.playCaseLink = root.querySelector("#play-case-link") as HTMLAnchorElement;
         this.caseDirtyStatus = root.querySelector("#case-dirty-status") as HTMLParagraphElement;
 
-        root.querySelector("#new-case-btn")?.addEventListener("click", () => void this.createCase());
-        root.querySelector("#delete-case-btn")?.addEventListener("click", () => void this.deleteCase());
         root.querySelector("#validate-case-btn")?.addEventListener("click", () => this.validateCase());
         root.querySelector("#save-case-btn")?.addEventListener("click", () => void this.saveCase());
         root.querySelector("#apply-furniture-clue-btn")?.addEventListener("click", () => this.applyFurnitureClue());
@@ -54,6 +44,7 @@ export class CaseEditor {
         this.caseTitleInput.addEventListener("input", () => {
             if (!this.workingCase) return;
             this.workingCase.title = this.caseTitleInput.value;
+            this.updateStoryStatus();
             this.markCaseDirty();
         });
         this.caseCulpritSelect.addEventListener("change", () => {
@@ -61,14 +52,13 @@ export class CaseEditor {
             this.workingCase.culpritNpcId = this.caseCulpritSelect.value;
             this.markCaseDirty();
         });
-        this.caseSelect.addEventListener("change", () => void this.loadSelectedCase());
 
         this.buildClueFormSkeleton();
         this.refreshCulpritOptions();
     }
 
     getActiveCaseId(): string {
-        return this.activeCaseId;
+        return ACTIVE_STORY_ID;
     }
 
     isCaseDirty(): boolean {
@@ -76,7 +66,7 @@ export class CaseEditor {
     }
 
     async bootstrap(): Promise<void> {
-        await this.reloadManifest();
+        await this.loadStory();
     }
 
     private buildClueFormSkeleton(): void {
@@ -114,9 +104,7 @@ export class CaseEditor {
     }
 
     private setCaseDirtyStatus(): void {
-        this.caseDirtyStatus.textContent = this.caseDirty
-            ? "Case: unsaved changes"
-            : "Case: saved";
+        this.caseDirtyStatus.textContent = this.caseDirty ? "Story: unsaved changes" : "Story: saved";
     }
 
     private markCaseDirty(): void {
@@ -127,6 +115,16 @@ export class CaseEditor {
     private clearCaseDirty(): void {
         this.caseDirty = false;
         this.setCaseDirtyStatus();
+    }
+
+    private updateStoryStatus(): void {
+        const title = this.workingCase?.title?.trim() || "Untitled";
+        this.storyStatusEl.textContent = `Editing: ${title}`;
+    }
+
+    private updatePlayLink(): void {
+        this.playCaseLink.href = `http://localhost:5173/?story=${ACTIVE_STORY_ID}`;
+        this.playCaseLink.textContent = `Play “${this.workingCase?.title ?? "story"}” in game`;
     }
 
     private storyContext(packet: StoryCasePacket | null = null) {
@@ -144,34 +142,6 @@ export class CaseEditor {
         };
     }
 
-    private refreshCaseSelect(): void {
-        const selected = this.caseSelect.value;
-        this.caseSelect.innerHTML = "";
-        for (const entry of this.manifest.stories ?? []) {
-            const option = document.createElement("option");
-            option.value = entry.id;
-            const valid = entry.isValid === false ? " (invalid)" : "";
-            option.textContent = `${entry.title ?? entry.id}${valid}`;
-            this.caseSelect.appendChild(option);
-        }
-        if (selected && (this.manifest.stories ?? []).some((s) => s.id === selected)) {
-            this.caseSelect.value = selected;
-        } else if (this.manifest.stories?.[0]) {
-            this.caseSelect.value = this.manifest.stories[0].id;
-        }
-        this.updatePlayLink();
-    }
-
-    private updatePlayLink(): void {
-        if (!this.activeCaseId) {
-            this.playCaseLink.href = "#";
-            this.playCaseLink.textContent = "Play case (save & pick a case first)";
-            return;
-        }
-        this.playCaseLink.href = `http://localhost:5173/?story=${encodeURIComponent(this.activeCaseId)}`;
-        this.playCaseLink.textContent = `Play “${this.workingCase?.title ?? this.activeCaseId}” in game`;
-    }
-
     private fillFormFromCase(packet: StoryCasePacket): void {
         this.caseTitleInput.value = packet.title ?? "";
         this.caseCulpritSelect.value = packet.culpritNpcId ?? "";
@@ -186,6 +156,7 @@ export class CaseEditor {
             }
         }
         this.refreshFurnitureClueOptions();
+        this.updateStoryStatus();
     }
 
     private syncCluesFromForm(): void {
@@ -289,7 +260,7 @@ export class CaseEditor {
 
     applyFurnitureClue(): void {
         if (!this.workingCase) {
-            this.deps.reportIssue("No case loaded.");
+            this.deps.reportIssue("Story not loaded.");
             return;
         }
         const selection = this.deps.getSelectedFurniture();
@@ -344,114 +315,48 @@ export class CaseEditor {
     }
 
     validateCase(): boolean {
-        if (!this.workingCase || !this.activeCaseId) {
-            this.deps.reportIssue("No case loaded.");
+        if (!this.workingCase) {
+            this.deps.reportIssue("Story not loaded.");
             return false;
         }
         this.syncCluesFromForm();
         const issues = validateStoryCasePacket(
-            this.activeCaseId,
+            ACTIVE_STORY_ID,
             this.workingCase,
             this.storyContext(this.workingCase)
         );
         if (issues.length === 0) {
-            this.deps.reportIssue(`Case '${this.activeCaseId}' is valid.`);
+            this.deps.reportIssue("Story is valid.");
             return true;
         }
-        this.deps.reportIssue(
-            issues.map((issue) => `[${issue.roomId}] ${issue.message}`).join("\n")
-        );
+        this.deps.reportIssue(issues.map((issue) => `[${issue.roomId}] ${issue.message}`).join("\n"));
         return false;
     }
 
-    async reloadManifest(): Promise<void> {
+    async loadStory(): Promise<void> {
         try {
-            const response = await fetch(`${this.deps.backendBase}/api/cases`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const payload = (await response.json()) as { manifest: StoryManifest };
-            this.manifest = payload.manifest ?? { version: 1, stories: [] };
-            this.refreshCaseSelect();
-            if (!this.activeCaseId && this.manifest.stories?.[0]) {
-                this.caseSelect.value = this.manifest.stories[0].id;
-                await this.loadSelectedCase();
-            }
-        } catch {
-            this.deps.reportIssue("Could not load cases from backend. Start: pnpm dev:editor:backend");
-        }
-    }
-
-    async loadSelectedCase(): Promise<void> {
-        const caseId = this.caseSelect.value;
-        if (!caseId) return;
-        if (this.caseDirty) {
-            const proceed = window.confirm("Case has unsaved changes. Discard and load another?");
-            if (!proceed) {
-                this.caseSelect.value = this.activeCaseId;
-                return;
-            }
-        }
-        try {
-            const response = await fetch(`${this.deps.backendBase}/api/cases/${caseId}`);
+            const response = await fetch(`${this.deps.backendBase}/api/story`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const payload = (await response.json()) as { packet: StoryCasePacket };
-            this.activeCaseId = caseId;
             this.workingCase = payload.packet;
             this.fillFormFromCase(this.workingCase);
             this.clearCaseDirty();
             this.updatePlayLink();
-        } catch (error) {
-            this.deps.reportIssue(`Failed to load case: ${(error as Error).message}`);
-        }
-    }
-
-    async createCase(): Promise<void> {
-        try {
-            const response = await fetch(`${this.deps.backendBase}/api/cases`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
-            const payload = (await response.json()) as { id?: string; error?: string };
-            if (!response.ok) throw new Error(payload.error ?? `HTTP ${response.status}`);
-            await this.reloadManifest();
-            if (payload.id) {
-                this.caseSelect.value = payload.id;
-                await this.loadSelectedCase();
-            }
-            this.deps.reportIssue(`Created case '${payload.id}'.`);
-        } catch (error) {
-            this.deps.reportIssue(`Create case failed: ${(error as Error).message}`);
-        }
-    }
-
-    async deleteCase(): Promise<void> {
-        if (!this.activeCaseId) return;
-        if (!window.confirm(`Delete case '${this.activeCaseId}'?`)) return;
-        try {
-            const response = await fetch(`${this.deps.backendBase}/api/cases/${this.activeCaseId}`, {
-                method: "DELETE"
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            this.activeCaseId = "";
-            this.workingCase = null;
-            this.caseDirty = false;
-            await this.reloadManifest();
-            this.deps.reportIssue("Case deleted.");
-        } catch (error) {
-            this.deps.reportIssue(`Delete failed: ${(error as Error).message}`);
+        } catch {
+            this.deps.reportIssue("Could not load story. Start: pnpm dev:editor:backend");
         }
     }
 
     async saveCase(): Promise<void> {
-        if (!this.workingCase || !this.activeCaseId) {
-            this.deps.reportIssue("No case loaded.");
+        if (!this.workingCase) {
+            this.deps.reportIssue("Story not loaded.");
             return;
         }
         this.syncCluesFromForm();
-        this.workingCase.title = this.caseTitleInput.value.trim() || this.activeCaseId;
+        this.workingCase.title = this.caseTitleInput.value.trim() || "Untitled";
         this.workingCase.culpritNpcId = this.caseCulpritSelect.value;
         try {
-            const response = await fetch(`${this.deps.backendBase}/api/cases/${this.activeCaseId}`, {
+            const response = await fetch(`${this.deps.backendBase}/api/story`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ packet: this.workingCase })
@@ -460,18 +365,22 @@ export class CaseEditor {
                 error?: string;
                 isValid?: boolean;
                 issues?: Array<{ message: string; roomId: string }>;
+                archivedTo?: string | null;
             };
             if (!response.ok) throw new Error(payload.error ?? `HTTP ${response.status}`);
             this.clearCaseDirty();
-            await this.reloadManifest();
-            if (payload.isValid) {
-                this.deps.reportIssue(`Saved case '${this.activeCaseId}' (valid).`);
-            } else {
-                const msgs = (payload.issues ?? []).map((i) => i.message).join("; ");
-                this.deps.reportIssue(`Saved case '${this.activeCaseId}' but validation failed: ${msgs}`);
+            this.updateStoryStatus();
+            let message = payload.isValid ? "Story saved (valid)." : "Story saved but validation failed.";
+            if (payload.archivedTo) {
+                message += `\nPrevious version archived to ${payload.archivedTo}.`;
             }
+            if (!payload.isValid) {
+                const msgs = (payload.issues ?? []).map((i) => i.message).join("; ");
+                message += ` ${msgs}`;
+            }
+            this.deps.reportIssue(message);
         } catch (error) {
-            this.deps.reportIssue(`Save case failed: ${(error as Error).message}`);
+            this.deps.reportIssue(`Save story failed: ${(error as Error).message}`);
         }
     }
 }

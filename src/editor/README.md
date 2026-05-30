@@ -22,31 +22,26 @@ pnpm dev:editor           # terminal 2
 ## Workflow
 
 1. **Rooms** — Place furniture, NPCs, and doors on the canvas. Save rooms to disk (`Save Room` / `Save All`).
-2. **Case** — In the Case panel, edit the title, pick the **culprit** NPC, define **5 clues** (id, name, description).
+2. **Story** — Edit the title, pick the **culprit** NPC, define **5 clues** (id, name, description).
 3. **Assign clues** — Select furniture on the canvas, choose a clue, write an **examine hint**, click **Apply to selected furniture**.
-4. **Validate & save** — `Validate Case`, then `Save Case`. Run `pnpm validate` from the repo root.
-5. **Playtest** — Use the **Play case in game** link, or open `http://localhost:5173/?story=<caseId>`.
+4. **Validate & save** — `Validate Story`, then `Save Story`. Each save archives the previous `active.json` under `stories/archive/<timestamp>/` and removes any other story JSON in `stories/`. Run `pnpm validate` from the repo root.
+5. **Playtest** — **Play story in game** → `http://localhost:5173/?story=active`
 
-Cases are stored under:
+The game uses one story file:
 
-- `src/data/story/generated/stories/<caseId>.json`
-- `src/data/story/generated/story_manifest.json`
-
-A starter case ships as `default.json`.
+- `src/data/story/generated/stories/active.json`
+- `src/data/story/generated/story_manifest.json` (single entry, id `active`)
 
 ## Backend API
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/health` | `{ ok, features: ["rooms","cases"] }` |
+| `GET` | `/health` | `{ ok, features: ["rooms","story"] }` |
 | `GET` | `/api/rooms` | Load all room JSON |
 | `PUT` | `/api/rooms/:id` | Save one room |
 | `POST` | `/api/rooms/sync` | Save all rooms from editor |
-| `GET` | `/api/cases` | Case manifest |
-| `GET` | `/api/cases/:id` | Load case packet |
-| `PUT` | `/api/cases/:id` | Save case (updates manifest `isValid`) |
-| `POST` | `/api/cases` | Create new case from template |
-| `DELETE` | `/api/cases/:id` | Remove case |
+| `GET` | `/api/story` | Load the active story packet |
+| `PUT` | `/api/story` | Save story (archive previous, purge other story files) |
 
 Implementation: `scripts/editor-backend.mjs`.
 

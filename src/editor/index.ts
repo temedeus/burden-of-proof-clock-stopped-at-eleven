@@ -324,7 +324,7 @@ function setBackendStatus(online: boolean): void {
         backendStatusEl.textContent = "Backend: offline (using in-memory rooms only)";
         return;
     }
-    backendStatusEl.textContent = "Backend: online (rooms + cases)";
+    backendStatusEl.textContent = "Backend: online (rooms + story)";
 }
 
 function setDirtyStatus(): void {

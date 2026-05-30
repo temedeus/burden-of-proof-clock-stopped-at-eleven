@@ -34,9 +34,9 @@ Debug overlays show collision boundaries, interaction targets, and reach lines. 
 
 ### Cases (authored in the editor)
 
-When `src/data/story/generated/story_manifest.json` has valid entries, the game picks a case at random, applies clues to furniture, NPC dialog overrides, and the configured culprit. Force a specific case:
+When `src/data/story/generated/stories/active.json` is valid, the game loads that story (clues on furniture, dialog overrides, culprit). Optional URL override (same file):
 
-`http://localhost:5173/?story=default`
+`http://localhost:5173/?story=active`
 
 Run `pnpm validate` after editing rooms or cases. With no valid manifest entries, the game uses default NPC dialog from `src/data/npcs/`.
 

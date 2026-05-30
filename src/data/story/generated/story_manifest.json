@@ -2,12 +2,12 @@
   "version": 1,
   "stories": [
     {
-      "id": "default",
+      "id": "active",
       "title": "Clock Stopped at Eleven",
       "seed": 0,
       "createdAt": "2026-05-19T12:00:00.000Z",
       "files": {
-        "story": "generated/stories/default.json"
+        "story": "generated/stories/active.json"
       },
       "qualityTier": "authored",
       "isValid": true

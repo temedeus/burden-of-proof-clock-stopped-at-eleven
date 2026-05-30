@@ -1,6 +1,6 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { validateRooms, validateStoryCasePacket } from "../packages/content-schema/src/index.ts";
+import { ACTIVE_STORY_ID, validateRooms, validateStoryCasePacket } from "../packages/content-schema/src/index.ts";
 
 const ROOT = process.cwd();
 const ROOMS_DIR = join(ROOT, "src", "data", "rooms");
@@ -95,16 +95,34 @@ async function validateGeneratedStories(roomsById, npcsById, cluesById) {
         }
     }
 
+    const manifestIds = new Set((manifest.stories ?? []).map((s) => s.id));
+    if (manifestIds.size > 1) {
+        issues.push({
+            roomId: "global",
+            message: `Manifest must list only '${ACTIVE_STORY_ID}'; found: ${[...manifestIds].join(", ")}.`
+        });
+    }
+
     try {
         const storyFiles = (await readdir(STORY_FILES_DIR)).filter((f) => f.endsWith(".json"));
         for (const fileName of storyFiles) {
             const id = fileName.replace(".json", "");
+            if (id !== ACTIVE_STORY_ID) {
+                issues.push({
+                    roomId: id,
+                    message: `Extra story file '${fileName}' (only '${ACTIVE_STORY_ID}.json' should exist; save story in editor to purge).`
+                });
+                continue;
+            }
             if (!seen.has(id)) {
                 issues.push({ roomId: id, message: `Story file '${fileName}' is not listed in manifest.` });
             }
         }
+        if (!storyFiles.includes(`${ACTIVE_STORY_ID}.json`)) {
+            issues.push({ roomId: ACTIVE_STORY_ID, message: "Active story file is missing." });
+        }
     } catch {
-        // No stories directory yet.
+        issues.push({ roomId: ACTIVE_STORY_ID, message: "Stories directory missing." });
     }
 
     if (manifestDirty) {

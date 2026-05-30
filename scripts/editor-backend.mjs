@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, readdir, rename, rm, writeFile, copyFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
-import { STORY_CLUE_COUNT } from "../packages/content-schema/src/story.ts";
+import { join, relative, resolve } from "node:path";
+import { ACTIVE_STORY_ID, STORY_CLUE_COUNT } from "../packages/content-schema/src/story.ts";
 import { isStoryCasePacketValid, validateStoryCasePacket } from "../packages/content-schema/src/validateStory.ts";
 
 const PORT = Number(process.env.EDITOR_BACKEND_PORT ?? 8787);
@@ -13,7 +13,9 @@ const FURNITURE_DIR = join(ROOT, "src", "data", "furniture");
 const CLUES_FILE = join(ROOT, "src", "data", "clues.json");
 const STORY_DIR = join(ROOT, "src", "data", "story", "generated");
 const STORY_FILES_DIR = join(STORY_DIR, "stories");
+const STORY_ARCHIVE_DIR = join(STORY_FILES_DIR, "archive");
 const STORY_MANIFEST_FILE = join(STORY_DIR, "story_manifest.json");
+const LEGACY_STORY_ID = "default";
 
 function sendJson(res, statusCode, payload) {
     res.writeHead(statusCode, {
@@ -29,16 +31,12 @@ function safeRoomId(roomId) {
     return /^[a-z0-9_-]+$/i.test(roomId);
 }
 
-function safeCaseId(caseId) {
-    return /^[a-z0-9_-]+$/i.test(caseId);
-}
-
 function roomPath(roomId) {
     return resolve(ROOMS_DIR, `${roomId}.json`);
 }
 
-function casePath(caseId) {
-    return resolve(STORY_FILES_DIR, `${caseId}.json`);
+function storyPath(storyId) {
+    return resolve(STORY_FILES_DIR, `${storyId}.json`);
 }
 
 async function readJson(filePath) {
@@ -95,11 +93,6 @@ async function readBody(req) {
     return data.length ? JSON.parse(data) : {};
 }
 
-function createCaseId() {
-    const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
-    return `case_${stamp}`;
-}
-
 function storyValidationContext(rooms, npcs, clues, packet = null) {
     const clueIds = Object.keys(clues);
     if (packet?.generatedClues) {
@@ -117,23 +110,7 @@ function storyValidationContext(rooms, npcs, clues, packet = null) {
 
 async function ensureStoryDirs() {
     await mkdir(STORY_FILES_DIR, { recursive: true });
-}
-
-async function readStoryManifest() {
-    await ensureStoryDirs();
-    try {
-        return await readJson(STORY_MANIFEST_FILE);
-    } catch {
-        return { version: 1, stories: [] };
-    }
-}
-
-async function backupFileIfExists(filePath) {
-    try {
-        await copyFile(filePath, `${filePath}.${Date.now()}.bak`);
-    } catch {
-        // ignore missing file
-    }
+    await mkdir(STORY_ARCHIVE_DIR, { recursive: true });
 }
 
 function blankCasePacket(npcIds, defaultRoomId = "hall") {
@@ -173,38 +150,100 @@ function blankCasePacket(npcIds, defaultRoomId = "hall") {
     };
 }
 
-async function upsertManifestEntry(caseId, packet, seed = 0) {
-    const manifest = await readStoryManifest();
+async function readActiveStoryPacket() {
+    await ensureStoryDirs();
+    try {
+        return await readJson(storyPath(ACTIVE_STORY_ID));
+    } catch {
+        try {
+            return await readJson(storyPath(LEGACY_STORY_ID));
+        } catch {
+            const npcs = await readNpcs();
+            const rooms = await readRooms();
+            const defaultRoomId = Object.keys(rooms)[0] ?? "hall";
+            return blankCasePacket(Object.keys(npcs), defaultRoomId);
+        }
+    }
+}
+
+async function archiveCurrentActiveStory() {
+    const activePath = storyPath(ACTIVE_STORY_ID);
+    try {
+        await readFile(activePath);
+    } catch {
+        try {
+            await readFile(storyPath(LEGACY_STORY_ID));
+        } catch {
+            return null;
+        }
+    }
+
+    const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+    const archiveDir = join(STORY_ARCHIVE_DIR, stamp);
+    await mkdir(archiveDir, { recursive: true });
+
+    try {
+        await copyFile(activePath, join(archiveDir, `${ACTIVE_STORY_ID}.json`));
+    } catch {
+        await copyFile(storyPath(LEGACY_STORY_ID), join(archiveDir, `${LEGACY_STORY_ID}.json`));
+    }
+
+    try {
+        await copyFile(STORY_MANIFEST_FILE, join(archiveDir, "story_manifest.json"));
+    } catch {
+        // no manifest yet
+    }
+
+    return relative(ROOT, archiveDir);
+}
+
+async function purgeNonActiveStoryFiles() {
+    await ensureStoryDirs();
+    const entries = await readdir(STORY_FILES_DIR, { withFileTypes: true });
+    for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+        const storyId = entry.name.replace(/\.json$/, "");
+        if (storyId !== ACTIVE_STORY_ID) {
+            await rm(join(STORY_FILES_DIR, entry.name), { force: true });
+        }
+    }
+}
+
+async function writeActiveManifest(packet) {
     const rooms = await readRooms();
     const npcs = await readNpcs();
     const clues = await readClues();
     const validationCtx = storyValidationContext(rooms, npcs, clues, packet);
-    const isValid = isStoryCasePacketValid(caseId, packet, validationCtx);
-
-    const existing = (manifest.stories ?? []).filter((s) => s.id !== caseId);
-    existing.push({
-        id: caseId,
-        title: packet.title ?? caseId,
-        seed,
-        createdAt: new Date().toISOString(),
-        files: { story: `generated/stories/${caseId}.json` },
-        qualityTier: "authored",
-        isValid
-    });
-    existing.sort((a, b) => a.id.localeCompare(b.id));
-
-    await backupFileIfExists(STORY_MANIFEST_FILE);
-    await writeFile(STORY_MANIFEST_FILE, JSON.stringify({ version: 1, stories: existing }, null, 2) + "\n", "utf8");
-    return { manifest: { version: 1, stories: existing }, isValid, issues: validateStoryCasePacket(caseId, packet, validationCtx) };
+    const isValid = isStoryCasePacketValid(ACTIVE_STORY_ID, packet, validationCtx);
+    const manifest = {
+        version: 1,
+        stories: [
+            {
+                id: ACTIVE_STORY_ID,
+                title: packet.title ?? ACTIVE_STORY_ID,
+                seed: 0,
+                createdAt: new Date().toISOString(),
+                files: { story: `generated/stories/${ACTIVE_STORY_ID}.json` },
+                qualityTier: "authored",
+                isValid
+            }
+        ]
+    };
+    await writeFile(STORY_MANIFEST_FILE, JSON.stringify(manifest, null, 2) + "\n", "utf8");
+    return {
+        manifest,
+        isValid,
+        issues: validateStoryCasePacket(ACTIVE_STORY_ID, packet, validationCtx)
+    };
 }
 
-async function writeCase(caseId, packet) {
-    if (!safeCaseId(caseId)) throw new Error(`Invalid case id '${caseId}'.`);
+async function saveActiveStory(packet) {
+    const archivedTo = await archiveCurrentActiveStory();
     await ensureStoryDirs();
-    const filePath = casePath(caseId);
-    await backupFileIfExists(filePath);
-    await writeFile(filePath, JSON.stringify(packet, null, 2) + "\n", "utf8");
-    return upsertManifestEntry(caseId, packet);
+    await writeFile(storyPath(ACTIVE_STORY_ID), JSON.stringify(packet, null, 2) + "\n", "utf8");
+    await purgeNonActiveStoryFiles();
+    const result = await writeActiveManifest(packet);
+    return { ...result, archivedTo };
 }
 
 const server = createServer(async (req, res) => {
@@ -218,7 +257,7 @@ const server = createServer(async (req, res) => {
         }
 
         if (req.method === "GET" && pathname === "/health") {
-            sendJson(res, 200, { ok: true, features: ["rooms", "cases"] });
+            sendJson(res, 200, { ok: true, features: ["rooms", "story"] });
             return;
         }
 
@@ -232,67 +271,31 @@ const server = createServer(async (req, res) => {
             return;
         }
 
-        if (req.method === "GET" && pathname === "/api/cases") {
-            const manifest = await readStoryManifest();
-            sendJson(res, 200, { manifest });
+        if (req.method === "GET" && pathname === "/api/story") {
+            const packet = await readActiveStoryPacket();
+            const manifest = await readJson(STORY_MANIFEST_FILE).catch(() => ({
+                version: 1,
+                stories: []
+            }));
+            sendJson(res, 200, { id: ACTIVE_STORY_ID, packet, manifest });
             return;
         }
 
-        if (req.method === "GET" && pathname.startsWith("/api/cases/")) {
-            const caseId = pathname.replace("/api/cases/", "");
-            if (!safeCaseId(caseId)) {
-                sendJson(res, 400, { error: "Invalid case id." });
-                return;
-            }
-            try {
-                const packet = await readJson(casePath(caseId));
-                sendJson(res, 200, { id: caseId, packet });
-            } catch {
-                sendJson(res, 404, { error: "Case not found." });
-            }
-            return;
-        }
-
-        if (req.method === "POST" && pathname === "/api/cases") {
-            const payload = await readBody(req);
-            const caseId = payload.id && safeCaseId(payload.id) ? payload.id : createCaseId();
-            const npcs = await readNpcs();
-            const rooms = await readRooms();
-            const defaultRoomId = Object.keys(rooms)[0] ?? "hall";
-            const packet = payload.packet ?? blankCasePacket(Object.keys(npcs), defaultRoomId);
-            const result = await writeCase(caseId, packet);
-            sendJson(res, 200, { ok: true, id: caseId, ...result });
-            return;
-        }
-
-        if (req.method === "PUT" && pathname.startsWith("/api/cases/")) {
-            const caseId = pathname.replace("/api/cases/", "");
-            if (!safeCaseId(caseId)) {
-                sendJson(res, 400, { error: "Invalid case id." });
-                return;
-            }
+        if (req.method === "PUT" && pathname === "/api/story") {
             const payload = await readBody(req);
             const packet = payload.packet;
             if (!packet || typeof packet !== "object") {
                 sendJson(res, 400, { error: "Missing packet payload." });
                 return;
             }
-            const result = await writeCase(caseId, packet);
-            sendJson(res, 200, { ok: true, id: caseId, ...result });
-            return;
-        }
-
-        if (req.method === "DELETE" && pathname.startsWith("/api/cases/")) {
-            const caseId = pathname.replace("/api/cases/", "");
-            if (!safeCaseId(caseId)) {
-                sendJson(res, 400, { error: "Invalid case id." });
-                return;
-            }
-            const manifest = await readStoryManifest();
-            const nextStories = (manifest.stories ?? []).filter((s) => s.id !== caseId);
-            await rm(casePath(caseId), { force: true });
-            await writeFile(STORY_MANIFEST_FILE, JSON.stringify({ version: 1, stories: nextStories }, null, 2) + "\n", "utf8");
-            sendJson(res, 200, { ok: true });
+            const result = await saveActiveStory(packet);
+            sendJson(res, 200, {
+                ok: true,
+                id: ACTIVE_STORY_ID,
+                isValid: result.isValid,
+                issues: result.issues,
+                archivedTo: result.archivedTo
+            });
             return;
         }
 

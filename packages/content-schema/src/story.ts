@@ -35,6 +35,9 @@ export interface ClueAssignment {
 /** Number of clues the player should find before accusing the culprit. */
 export const STORY_CLUE_COUNT = 5;
 
+/** Single authored story file id (`src/data/story/generated/stories/<id>.json`). */
+export const ACTIVE_STORY_ID = "active";
+
 export interface NPCDialogOverride {
     npcId: string;
     default: string;

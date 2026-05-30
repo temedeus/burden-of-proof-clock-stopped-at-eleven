@@ -1,4 +1,4 @@
-import type { NPCDialogConfig, StoryCasePacket, StoryManifest } from "@cse/content-schema";
+import { ACTIVE_STORY_ID, type NPCDialogConfig, type StoryCasePacket, type StoryManifest } from "@cse/content-schema";
 import storyManifestJson from "../data/story/generated/story_manifest.json";
 
 const storyModules = import.meta.glob("../data/story/generated/stories/*.json", { eager: true });
@@ -49,19 +49,20 @@ export function pickActiveStory(
         };
     };
 
-    if (requestedId) {
-        const entry = playable.find((s) => s.id === requestedId);
-        if (entry) {
-            const picked = tryPick(entry);
-            if (picked) return picked;
-        }
-        console.warn(`[story] Requested story '${requestedId}' not found or invalid; picking at random.`);
-    }
+    const normalizedRequest =
+        requestedId === "default" ? ACTIVE_STORY_ID : requestedId;
+    const resolvedId =
+        normalizedRequest && playable.some((s) => s.id === normalizedRequest)
+            ? normalizedRequest
+            : ACTIVE_STORY_ID;
 
-    const shuffled = [...playable].sort(() => Math.random() - 0.5);
-    for (const entry of shuffled) {
-        const picked = tryPick(entry);
-        if (picked) return picked;
+    const preferred =
+        playable.find((s) => s.id === resolvedId) ??
+        playable.find((s) => s.id === ACTIVE_STORY_ID) ??
+        playable[0];
+
+    if (preferred) {
+        return tryPick(preferred);
     }
     return null;
 }

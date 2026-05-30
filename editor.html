@@ -39,11 +39,9 @@
       <button id="export-btn">Export Rooms JSON</button>
       <button id="reload-backend-btn">Reload Rooms From Backend</button>
       <p id="backend-status">Backend: checking...</p>
-      <h4>Case</h4>
-      <select id="case-select"></select>
-      <button id="new-case-btn" type="button">New Case</button>
-      <button id="delete-case-btn" type="button">Delete Case</button>
-      <p id="case-dirty-status">Case: —</p>
+      <h4>Story</h4>
+      <p id="story-status" class="status-badge">Editing: —</p>
+      <p id="case-dirty-status">Story: —</p>
       <label for="case-title">Title</label>
       <input id="case-title" type="text" placeholder="Case title" />
       <label for="case-culprit">Culprit (NPC)</label>
@@ -54,8 +52,8 @@
       <label for="furniture-clue-hint">Examine hint</label>
       <textarea id="furniture-clue-hint" placeholder="Text shown when examining this object"></textarea>
       <button id="apply-furniture-clue-btn" type="button">Apply to selected furniture</button>
-      <button id="validate-case-btn" type="button">Validate Case</button>
-      <button id="save-case-btn" type="button">Save Case</button>
+      <button id="validate-case-btn" type="button">Validate Story</button>
+      <button id="save-case-btn" type="button">Save Story</button>
       <a id="play-case-link" href="#" target="_blank" rel="noopener">Play case in game</a>
       <p id="dirty-status">Unsaved changes: none</p>
       <h4>Canvas Tools</h4>

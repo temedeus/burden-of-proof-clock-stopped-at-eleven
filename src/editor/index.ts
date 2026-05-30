@@ -1,5 +1,5 @@
 import type { NPCConfig, RoomConfig, FurniturePlacement } from "@cse/content-schema";
-import { validateRooms } from "@cse/content-schema";
+import { ACTIVE_STORY_ID, validateRooms } from "@cse/content-schema";
 import { CaseEditor } from "./caseEditor";
 import cluesCatalog from "../data/clues.json";
 import { createRoomFromConfig } from "../world/Rooms";
@@ -339,12 +339,36 @@ function refreshRoomOptions() {
     else roomSelect.value = Object.keys(workingRooms)[0] ?? "";
 }
 
-function setBackendStatus(online: boolean): void {
+async function probeBackendStoryApi(): Promise<"story" | "legacy" | "missing"> {
+    try {
+        const health = await fetch(`${backendBase}/health`);
+        if (!health.ok) return "missing";
+        const features = (await health.json()) as { features?: string[] };
+        if (features.features?.includes("story")) return "story";
+        if (features.features?.includes("cases")) return "legacy";
+        const story = await fetch(`${backendBase}/api/story`);
+        if (story.ok) return "story";
+        const legacy = await fetch(`${backendBase}/api/cases/${ACTIVE_STORY_ID}`);
+        if (legacy.ok) return "legacy";
+        return "missing";
+    } catch {
+        return "missing";
+    }
+}
+
+async function setBackendStatus(online: boolean): Promise<void> {
     if (!online) {
-        backendStatusEl.textContent = "Backend: offline (using in-memory rooms only)";
+        backendStatusEl.textContent = "Backend: offline (rooms in memory; story needs backend)";
         return;
     }
-    backendStatusEl.textContent = "Backend: online (rooms + story)";
+    const storyApi = await probeBackendStoryApi();
+    if (storyApi === "story") {
+        backendStatusEl.textContent = "Backend: online (rooms + story)";
+    } else if (storyApi === "legacy") {
+        backendStatusEl.textContent = "Backend: online (old API — restart: pnpm dev:editor:backend)";
+    } else {
+        backendStatusEl.textContent = "Backend: online (rooms only — restart backend for story)";
+    }
 }
 
 function setDirtyStatus(): void {
@@ -382,13 +406,13 @@ async function fetchRoomsFromBackend(force = false): Promise<boolean> {
         Object.assign(workingRooms, payload.rooms);
         dirtyRooms.clear();
         setDirtyStatus();
-        setBackendStatus(true);
+        void setBackendStatus(true);
         await caseEditor.bootstrap();
         refreshRoomOptions();
         renderSelectedRoom();
         return true;
     } catch {
-        setBackendStatus(false);
+        void         void setBackendStatus(false);
         return false;
     }
 }
@@ -833,12 +857,12 @@ async function saveCurrentJson() {
         }
         workingRooms[selected] = parsed;
         await saveRoomToBackend(selected, parsed);
-        setBackendStatus(true);
+        void setBackendStatus(true);
         clearDirty(selected);
         issuesEl.textContent = `Saved room '${selected}' to backend and workspace state.`;
     } catch (error) {
         issuesEl.textContent = `Save failed: ${(error as Error).message}`;
-        setBackendStatus(false);
+        void setBackendStatus(false);
     }
 }
 
@@ -863,10 +887,10 @@ async function saveAllRooms(): Promise<void> {
         if (!response.ok) throw new Error(`Save all failed with HTTP ${response.status}.`);
         dirtyRooms.clear();
         setDirtyStatus();
-        setBackendStatus(true);
+        void setBackendStatus(true);
         issuesEl.textContent = "Saved all rooms to backend.";
     } catch (error) {
-        setBackendStatus(false);
+        void setBackendStatus(false);
         issuesEl.textContent = `Save all failed: ${(error as Error).message}`;
     }
 }
@@ -1186,6 +1210,9 @@ saveJsonButton.addEventListener("click", () => { void saveCurrentJson(); });
 saveAllButton.addEventListener("click", () => { void saveAllRooms(); });
 exportButton.addEventListener("click", exportRoomsJson);
 reloadBackendButton.addEventListener("click", () => { void fetchRoomsFromBackend(); });
+document.getElementById("reload-story-btn")?.addEventListener("click", () => {
+    void caseEditor.loadStory();
+});
 addFurnitureButton.addEventListener("click", addSelectedFurnitureAtCenter);
 deleteSelectedFurnitureButton.addEventListener("click", deleteSelectedFurniture);
 addNpcButton.addEventListener("click", addSelectedNpcAtCenter);

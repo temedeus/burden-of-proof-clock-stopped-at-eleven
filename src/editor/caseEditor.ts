@@ -1,5 +1,6 @@
 import type { ClueAssignment, GeneratedClue, RoomConfig, StoryCasePacket } from "@cse/content-schema";
 import { ACTIVE_STORY_ID, MIN_STORY_CLUE_COUNT, validateStoryCasePacket } from "@cse/content-schema";
+import activeStoryFallback from "../data/story/generated/stories/active.json";
 
 export interface CaseEditorDeps {
     backendBase: string;
@@ -513,21 +514,50 @@ export class CaseEditor {
         return false;
     }
 
+    private async fetchStoryFromBackend(): Promise<StoryCasePacket> {
+        const storyRes = await fetch(`${this.deps.backendBase}/api/story`);
+        if (storyRes.ok) {
+            const payload = (await storyRes.json()) as { packet: StoryCasePacket };
+            if (payload.packet) return payload.packet;
+        }
+
+        const legacyRes = await fetch(`${this.deps.backendBase}/api/cases/${ACTIVE_STORY_ID}`);
+        if (legacyRes.ok) {
+            const payload = (await legacyRes.json()) as { packet: StoryCasePacket };
+            if (payload.packet) return payload.packet;
+        }
+
+        const status = storyRes.status === 404 ? " (backend may need restart: pnpm dev:editor:backend)" : "";
+        throw new Error(`Story API failed: /api/story ${storyRes.status}, /api/cases/${ACTIVE_STORY_ID} ${legacyRes.status}${status}`);
+    }
+
     async loadStory(): Promise<void> {
         try {
-            const response = await fetch(`${this.deps.backendBase}/api/story`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const payload = (await response.json()) as { packet: StoryCasePacket };
-            this.fillFormFromCase(payload.packet);
+            const packet = await this.fetchStoryFromBackend();
+            this.fillFormFromCase(packet);
             this.clearCaseDirty();
             this.updatePlayLink();
-        } catch {
-            this.ensureClueForm();
-            this.refreshRoomSelect();
-            this.deps.reportIssue(
-                "Could not load story. Run: pnpm dev:editor:backend — then reload."
-            );
-            this.storyStatusEl.textContent = "Story not loaded";
+        } catch (error) {
+            try {
+                const packet = activeStoryFallback as StoryCasePacket;
+                this.ensureClueForm();
+                this.fillFormFromCase(packet);
+                this.markCaseDirty();
+                this.updatePlayLink();
+                const detail = error instanceof Error ? error.message : String(error);
+                this.deps.reportIssue(
+                    `Loaded story from active.json (read-only until backend works).\n${detail}\n\nRun: pnpm dev:editor:backend`
+                );
+            } catch {
+                this.ensureClueForm();
+                this.refreshRoomSelect();
+                this.deps.reportIssue(
+                    error instanceof Error
+                        ? error.message
+                        : "Could not load story. Run: pnpm dev:editor:backend"
+                );
+                this.storyStatusEl.textContent = "Story not loaded";
+            }
         }
     }
 
@@ -540,18 +570,31 @@ export class CaseEditor {
         this.workingCase.title = this.caseTitleInput.value.trim() || "Untitled";
         this.workingCase.culpritNpcId = this.caseCulpritSelect.value;
         try {
-            const response = await fetch(`${this.deps.backendBase}/api/story`, {
+            const body = JSON.stringify({ packet: this.workingCase });
+            let response = await fetch(`${this.deps.backendBase}/api/story`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ packet: this.workingCase })
+                body
             });
+            if (response.status === 404) {
+                response = await fetch(`${this.deps.backendBase}/api/cases/${ACTIVE_STORY_ID}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body
+                });
+            }
             const payload = (await response.json()) as {
                 error?: string;
                 isValid?: boolean;
                 issues?: Array<{ message: string; roomId: string }>;
                 archivedTo?: string | null;
             };
-            if (!response.ok) throw new Error(payload.error ?? `HTTP ${response.status}`);
+            if (!response.ok) {
+                throw new Error(
+                    payload.error ??
+                        `HTTP ${response.status} — restart backend: pnpm dev:editor:backend`
+                );
+            }
             this.clearCaseDirty();
             this.updateStoryStatus();
             let message = payload.isValid

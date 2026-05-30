@@ -259,7 +259,7 @@ const server = createServer(async (req, res) => {
         }
 
         if (req.method === "GET" && pathname === "/health") {
-            sendJson(res, 200, { ok: true, features: ["rooms", "story"] });
+            sendJson(res, 200, { ok: true, features: ["rooms", "story", "cases"] });
             return;
         }
 
@@ -284,6 +284,40 @@ const server = createServer(async (req, res) => {
         }
 
         if (req.method === "PUT" && pathname === "/api/story") {
+            const payload = await readBody(req);
+            const packet = payload.packet;
+            if (!packet || typeof packet !== "object") {
+                sendJson(res, 400, { error: "Missing packet payload." });
+                return;
+            }
+            const result = await saveActiveStory(packet);
+            sendJson(res, 200, {
+                ok: true,
+                id: ACTIVE_STORY_ID,
+                isValid: result.isValid,
+                issues: result.issues,
+                archivedTo: result.archivedTo
+            });
+            return;
+        }
+
+        // Legacy aliases (older editor-backend process compatibility)
+        if (req.method === "GET" && pathname === "/api/cases") {
+            const manifest = await readJson(STORY_MANIFEST_FILE).catch(() => ({
+                version: 1,
+                stories: []
+            }));
+            sendJson(res, 200, { manifest });
+            return;
+        }
+
+        if (req.method === "GET" && pathname === `/api/cases/${ACTIVE_STORY_ID}`) {
+            const packet = await readActiveStoryPacket();
+            sendJson(res, 200, { id: ACTIVE_STORY_ID, packet });
+            return;
+        }
+
+        if (req.method === "PUT" && pathname === `/api/cases/${ACTIVE_STORY_ID}`) {
             const payload = await readBody(req);
             const packet = payload.packet;
             if (!packet || typeof packet !== "object") {

@@ -7,6 +7,7 @@ import { spriteLoader } from "./assets/SpriteLoader";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
+ctx.imageSmoothingEnabled = false;
 
 type AppScreen = "main_menu" | "playing" | "pause_menu" | "settings" | "game_over" | "intro";
 

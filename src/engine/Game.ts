@@ -374,9 +374,9 @@ export class Game {
         // When timer <= 0, key check is done in index.ts so we don't miss the key
     }
 
-    /** True when victory screen is showing and we're waiting for the user to press a key to return to menu */
+    /** True when victory overlay is done and we're waiting for the user to press a key to return to menu */
     isWaitingForVictoryInput(): boolean {
-        return this.victoryPhase;
+        return this.victoryPhase && this.victoryTimer <= 0;
     }
 
     /** Call when user presses key to leave victory screen (called from main loop in index.ts) */

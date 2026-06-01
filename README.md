@@ -30,7 +30,7 @@ pnpm dev
 
 Optional debug mode: `http://localhost:5173/?debug=true`
 
-Debug overlays show collision boundaries, interaction targets, and reach lines. Reload without `?debug=true` to disable.
+Debug overlays show collision boundaries, interaction targets, and reach lines. Clue objects are highlighted in **amber** (uncollected) or **gray** (already in inventory), with clue ids labeled on the tile. Reload without `?debug=true` to disable.
 
 ### Cases (authored in the editor)
 

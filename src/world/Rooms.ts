@@ -76,7 +76,7 @@ function placeFurniture(
     placement: FurniturePlacement
 ): Interactable {
     const interactable: Interactable = {
-        id: furniture.id,
+        id: placement.furnitureId,
         name: furniture.name,
         description: placement.description ?? furniture.description,
         tiles: [],

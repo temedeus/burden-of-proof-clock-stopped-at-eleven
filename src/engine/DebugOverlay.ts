@@ -1,6 +1,7 @@
 import { TILE_SIZE } from "../world/constants";
 import { Player } from "../entities/Player";
 import { Room } from "../world/Room";
+import type { ClueSystem } from "../systems/ClueSystem";
 
 /**
  * Check if debug mode is enabled via URL params (?debug=true or ?debug=1)
@@ -10,13 +11,19 @@ export function isDebugMode(): boolean {
     return urlParams.get("debug") === "true" || urlParams.get("debug") === "1";
 }
 
+function clueCollected(clueSystem: ClueSystem | undefined, clueIds: string[]): boolean {
+    if (!clueSystem || clueIds.length === 0) return false;
+    return clueIds.every((id) => clueSystem.hasClue(id));
+}
+
 /**
- * Render collision and interaction debug overlay
+ * Render collision, interaction, and clue-placement debug overlay
  */
 export function renderDebugOverlay(
     ctx: CanvasRenderingContext2D,
     player: Player,
-    currentRoom: Room
+    currentRoom: Room,
+    clueSystem?: ClueSystem
 ): void {
     // Draw player collision box (red outline)
     ctx.strokeStyle = "#ff0000";
@@ -78,6 +85,45 @@ export function renderDebugOverlay(
         for (const tile of obj.tiles) {
             ctx.strokeRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
+    }
+
+    // Clue placements (amber = uncollected, gray = collected)
+    for (const obj of currentRoom.interactables) {
+        const clueIds = obj.clues ?? [];
+        if (clueIds.length === 0 || obj.tiles.length === 0) continue;
+
+        const collected = clueCollected(clueSystem, clueIds);
+        ctx.fillStyle = collected ? "rgba(140, 140, 140, 0.45)" : "rgba(255, 200, 0, 0.45)";
+        for (const tile of obj.tiles) {
+            ctx.fillRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+
+        ctx.strokeStyle = collected ? "#aaaaaa" : "#ffcc00";
+        ctx.lineWidth = 2;
+        if (collected) {
+            ctx.setLineDash([4, 4]);
+        }
+        for (const tile of obj.tiles) {
+            ctx.strokeRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+        ctx.setLineDash([]);
+
+        const minX = Math.min(...obj.tiles.map((t) => t.x));
+        const maxX = Math.max(...obj.tiles.map((t) => t.x));
+        const minY = Math.min(...obj.tiles.map((t) => t.y));
+        const maxY = Math.max(...obj.tiles.map((t) => t.y));
+        const labelX = ((minX + maxX + 1) / 2) * TILE_SIZE;
+        const labelY = minY * TILE_SIZE + 10;
+        const label = clueIds.join(", ");
+
+        ctx.font = "11px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.strokeText(label, labelX, labelY);
+        ctx.fillStyle = collected ? "#dddddd" : "#fff8dc";
+        ctx.fillText(label, labelX, labelY);
     }
 
     // Draw interaction target tile (yellow highlight)

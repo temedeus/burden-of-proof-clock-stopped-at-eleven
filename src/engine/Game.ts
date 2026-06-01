@@ -161,7 +161,9 @@ export class Game {
         this.player = new Player("player", 64, 64, options?.playerSprite ?? "female_detective");
         this.debugMode = isDebugMode();
         if (this.debugMode) {
-            console.log("🐛 Debug mode enabled! Collision and interaction areas will be visible.");
+            console.log(
+                "🐛 Debug mode: red=player, blue=NPC, green=furniture, amber=clue (gray when collected), yellow=interact target"
+            );
         }
 
         const w = Math.floor(ctx.canvas.width / TILE_SIZE);
@@ -667,7 +669,7 @@ export class Game {
             .forEach((a) => a.render(ctx));
 
         if (this.debugMode) {
-            renderDebugOverlay(ctx, this.player, this.currentRoom);
+            renderDebugOverlay(ctx, this.player, this.currentRoom, this.clueSystem);
         }
 
         if (this.message) {

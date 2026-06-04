@@ -63,27 +63,28 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     }),
 
     grass: tile32((ctx) => {
-        grid(ctx, 0, 0, 2, [
-            "oooooooooooooooo",
-            "oDgDgDgDgDgDgDgDo",
-            "ogGgGgGgGgGgGgGo",
-            "oDgGgDgGgDgGgDgGo",
-            "ogGgGgGgGgGgGgGo",
-            "oGgDgGgDgGgDgGgDo",
-            "ogGgGgGgGgGgGgGo",
-            "oDgGgDgGgDgGgDgGo",
-            "ogGgGgGgGgGgGgGo",
-            "oGgDgGgDgGgDgGgDo",
-            "ogGgGgGgGgGgGgGo",
-            "oDgGgDgGgDgGgDgGo",
-            "ogGgGgGgGgGgGgGo",
-            "oGgDgGgDgGgDgGgDo",
-            "ogGgGgGgGgGgGgGo",
-            "oooooooooooooooo"
-        ], C);
-        r(ctx, 4, 4, 2, 4, P.grassHi);
-        r(ctx, 22, 18, 2, 6, P.grassHi);
-        r(ctx, 14, 10, 2, 2, P.grassHi);
+        // Uniform fill — no outline ring so repeated tiles blend
+        r(ctx, 0, 0, 32, 32, P.grass);
+        const tufts: [number, number, number, number, string][] = [
+            [2, 3, 2, 3, P.grassLight],
+            [8, 6, 1, 4, P.grassHi],
+            [14, 2, 3, 2, P.grassDark],
+            [19, 9, 2, 5, P.grassLight],
+            [25, 4, 1, 3, P.grassHi],
+            [5, 14, 4, 2, P.grassLight],
+            [13, 12, 2, 4, P.grassDark],
+            [22, 15, 3, 2, P.grassLight],
+            [28, 11, 2, 3, P.grassHi],
+            [1, 22, 3, 2, P.grassDark],
+            [10, 20, 2, 5, P.grassLight],
+            [17, 24, 1, 2, P.grassHi],
+            [24, 21, 4, 2, P.grassLight],
+            [7, 27, 2, 3, P.grassDark],
+            [15, 18, 2, 2, P.grassHi]
+        ];
+        for (const [x, y, w, h, color] of tufts) {
+            r(ctx, x, y, w, h, color);
+        }
     }),
 
     gravel: tile32((ctx) => {

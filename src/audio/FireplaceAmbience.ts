@@ -3,7 +3,9 @@ import { isMuteSounds } from "../engine/Settings";
 import type { Room } from "../world/Room";
 
 const LOOP_SECONDS = 3;
-const MASTER_GAIN = 0.011;
+const BED_GAIN = 0.01;
+/** Crackles use their own bus so they read over the quiet bed */
+const CRACKLE_BUS_GAIN = 0.09;
 
 /** True if room layout includes a fireplace interactable (follows level data). */
 export function roomHasFireplace(room: Room): boolean {
@@ -19,8 +21,10 @@ export class FireplaceAmbience {
     private activeRoomId: string | null = null;
     private sources: AudioBufferSourceNode[] = [];
     private crackleTimeout: ReturnType<typeof setTimeout> | null = null;
+    private pendingTimeouts: ReturnType<typeof setTimeout>[] = [];
     private nodes: {
-        master: GainNode;
+        bedMaster: GainNode;
+        crackleMaster: GainNode;
         filter: BiquadFilterNode;
         lfo: OscillatorNode;
         lfoGain: GainNode;
@@ -41,12 +45,16 @@ export class FireplaceAmbience {
         }
 
         this.stop();
-        this.start();
         this.activeRoomId = room.id;
+        this.start();
     }
 
     stop(): void {
         this.activeRoomId = null;
+        for (const id of this.pendingTimeouts) {
+            clearTimeout(id);
+        }
+        this.pendingTimeouts = [];
         if (this.crackleTimeout !== null) {
             clearTimeout(this.crackleTimeout);
             this.crackleTimeout = null;
@@ -69,14 +77,28 @@ export class FireplaceAmbience {
         }
     }
 
+    private queueTimeout(fn: () => void, ms: number): void {
+        const id = setTimeout(() => {
+            this.pendingTimeouts = this.pendingTimeouts.filter((t) => t !== id);
+            fn();
+        }, ms);
+        this.pendingTimeouts.push(id);
+    }
+
     private start(): void {
         const ctx = getAudioContext();
-        if (!ctx) return;
+        if (!ctx) {
+            this.activeRoomId = null;
+            return;
+        }
 
         const t = ctx.currentTime;
 
-        const master = ctx.createGain();
-        master.gain.value = MASTER_GAIN;
+        const bedMaster = ctx.createGain();
+        bedMaster.gain.value = BED_GAIN;
+
+        const crackleMaster = ctx.createGain();
+        crackleMaster.gain.value = CRACKLE_BUS_GAIN;
 
         const filter = ctx.createBiquadFilter();
         filter.type = "lowpass";
@@ -97,34 +119,40 @@ export class FireplaceAmbience {
         loop.buffer = buffer;
         loop.loop = true;
         loop.connect(filter);
-        filter.connect(master);
-        master.connect(ctx.destination);
+        filter.connect(bedMaster);
+        bedMaster.connect(ctx.destination);
+        crackleMaster.connect(ctx.destination);
         loop.start(t);
         this.sources.push(loop);
 
-        this.nodes = { master, filter, lfo, lfoGain };
+        this.nodes = { bedMaster, crackleMaster, filter, lfo, lfoGain };
 
+        this.queueTimeout(() => this.playCrackle(1), 120);
         this.scheduleCrackle();
     }
 
     /** Irregular random crackles (not a steady tick). */
     private scheduleCrackle(): void {
         if (this.activeRoomId === null) return;
-        const delay = 600 + Math.random() * 2200;
+        const delay = 280 + Math.random() * 1100;
         this.crackleTimeout = setTimeout(() => {
             this.crackleTimeout = null;
             if (this.activeRoomId === null) return;
 
             this.playCrackle();
-            if (Math.random() < 0.4) {
-                setTimeout(() => this.playCrackle(0.85), 35 + Math.random() * 90);
+            if (Math.random() < 0.55) {
+                this.queueTimeout(() => this.playCrackle(0.9), 25 + Math.random() * 70);
             }
-            if (Math.random() < 0.12) {
-                setTimeout(() => this.playCrackle(0.7), 120 + Math.random() * 150);
+            if (Math.random() < 0.25) {
+                this.queueTimeout(() => this.playCrackle(0.75), 90 + Math.random() * 120);
+            }
+            if (Math.random() < 0.15) {
+                this.queueTimeout(() => this.playCrackle(0.6), 180 + Math.random() * 200);
             }
 
             this.scheduleCrackle();
         }, delay);
+        this.pendingTimeouts.push(this.crackleTimeout);
     }
 
     private createBrownNoiseBuffer(ctx: AudioContext, seconds: number): AudioBuffer {
@@ -145,13 +173,34 @@ export class FireplaceAmbience {
         if (!ctx || !this.nodes) return;
 
         const t = ctx.currentTime;
-        const dur = 0.03 + Math.random() * 0.09;
+        const dur = 0.04 + Math.random() * 0.12;
+        const out = this.nodes.crackleMaster;
+        const peak = (0.45 + Math.random() * 0.45) * volumeScale;
 
-        const sampleCount = Math.floor(ctx.sampleRate * dur);
+        this.playCrackleLayer(ctx, out, t, dur, peak, 1200 + Math.random() * 1400, 1.2);
+        if (Math.random() > 0.35) {
+            this.playCrackleLayer(ctx, out, t, dur * 0.7, peak * 0.55, 2800 + Math.random() * 2000, 0.8);
+        }
+        if (Math.random() > 0.6) {
+            const clickDur = 0.012 + Math.random() * 0.02;
+            this.playCrackleLayer(ctx, out, t, clickDur, peak * 0.7, 3500 + Math.random() * 1500, 2.5);
+        }
+    }
+
+    private playCrackleLayer(
+        ctx: AudioContext,
+        dest: GainNode,
+        t: number,
+        dur: number,
+        peak: number,
+        centerHz: number,
+        q: number
+    ): void {
+        const sampleCount = Math.max(8, Math.floor(ctx.sampleRate * dur));
         const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
         const samples = buffer.getChannelData(0);
         for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * (0.2 + Math.random() * 0.15)));
+            const env = Math.exp(-i / (sampleCount * 0.22));
             samples[i] = (Math.random() * 2 - 1) * env;
         }
 
@@ -160,19 +209,19 @@ export class FireplaceAmbience {
 
         const popFilter = ctx.createBiquadFilter();
         popFilter.type = "bandpass";
-        popFilter.frequency.value = 700 + Math.random() * 900;
-        popFilter.Q.value = 0.6 + Math.random() * 0.6;
+        popFilter.frequency.value = centerHz;
+        popFilter.Q.value = q;
 
         const popGain = ctx.createGain();
-        const peak = (0.035 + Math.random() * 0.04) * volumeScale;
-        popGain.gain.setValueAtTime(peak, t);
+        popGain.gain.setValueAtTime(0.0001, t);
+        popGain.gain.linearRampToValueAtTime(peak, t + 0.004);
         popGain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
 
         noise.connect(popFilter);
         popFilter.connect(popGain);
-        popGain.connect(this.nodes.master);
+        popGain.connect(dest);
         noise.start(t);
-        noise.stop(t + dur);
+        noise.stop(t + dur + 0.01);
     }
 }
 

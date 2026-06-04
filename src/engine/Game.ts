@@ -15,6 +15,8 @@ import { loadGameContent } from "../content/loadGameContent";
 import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
 import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
+import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
+import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { clueSounds } from "../audio/ClueSounds";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import type { NPCConfig, NPCDialogConfig, RoomConfig } from "@cse/content-schema";
@@ -23,7 +25,10 @@ type GameState = "playing" | "interacting" | "inventory" | "victory";
 
 type DepthActor = { y: number; height: number; render(ctx: CanvasRenderingContext2D): void };
 
-function furnitureActorFromInteractable(obj: Interactable): DepthActor {
+function furnitureActorFromInteractable(
+    obj: Interactable,
+    getAnimTime: () => number
+): DepthActor {
     const minX = Math.min(...obj.tiles.map((t) => t.x));
     const maxX = Math.max(...obj.tiles.map((t) => t.x));
     const minY = Math.min(...obj.tiles.map((t) => t.y));
@@ -83,7 +88,11 @@ function furnitureActorFromInteractable(obj: Interactable): DepthActor {
         y: sortY,
         height: sortH,
         render: (ctx: CanvasRenderingContext2D) => {
-            spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
+            if (spriteName === "fireplace") {
+                drawFireplaceAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
+            } else {
+                spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
+            }
         }
     };
 }
@@ -150,6 +159,7 @@ export class Game {
 
     /** Centered room name; fades in and out over `ROOM_TITLE_DURATION` seconds */
     private roomTitleBanner: { title: string; elapsed: number } | null = null;
+    private decorAnimTime = 0;
 
     constructor(
         private ctx: CanvasRenderingContext2D,
@@ -198,6 +208,7 @@ export class Game {
         });
 
         this.currentRoom = this.rooms.library;
+        this.syncFireplaceAmbience();
         if (this.activeStory) {
             this.showTitleBanner(this.activeStory.title);
         } else {
@@ -412,6 +423,8 @@ export class Game {
     }
 
     update(dt: number) {
+        this.decorAnimTime += dt;
+
         if (this.roomTitleBanner) {
             this.roomTitleBanner.elapsed += dt;
             if (this.roomTitleBanner.elapsed >= ROOM_TITLE_DURATION) {
@@ -532,6 +545,10 @@ export class Game {
         }
     }
 
+    private syncFireplaceAmbience(): void {
+        fireplaceAmbience.syncForRoom(this.currentRoom);
+    }
+
     private checkRoomTransition() {
         if (this.roomTransitionCooldown > 0) return;
 
@@ -586,6 +603,7 @@ export class Game {
                 const nextRoom = this.rooms[exit.targetRoom];
 
                 this.currentRoom = nextRoom;
+                this.syncFireplaceAmbience();
                 this.player.x = exit.spawnX * TILE_SIZE;
                 this.player.y = exit.spawnY * TILE_SIZE;
                 this.roomTransitionCooldown = 0.65;
@@ -658,7 +676,7 @@ export class Game {
         const rugActors: DepthActor[] = [];
         const furnitureActors: DepthActor[] = [];
         for (const obj of this.currentRoom.interactables) {
-            const actor = furnitureActorFromInteractable(obj);
+            const actor = furnitureActorFromInteractable(obj, () => this.decorAnimTime);
             if (obj.walkableDecor) {
                 rugActors.push(actor);
             } else {

@@ -1,5 +1,6 @@
 import { P } from "./palette";
 import { grid, r } from "./pixel";
+import { drawFireplaceStone } from "./fireplace";
 import type { ProceduralSpriteDef } from "./types";
 
 /** Single place setting: plate, cutlery, goblet, garnish */
@@ -61,23 +62,7 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 48,
         nativeHeight: 56,
         draw(ctx) {
-            // Mantle & surround
-            r(ctx, 0, 4, 48, 10, P.stoneHi);
-            r(ctx, 2, 12, 44, 6, P.stoneLight);
-            r(ctx, 4, 16, 40, 38, P.stone);
-            r(ctx, 6, 18, 36, 34, P.stoneLight);
-
-            // Hearth opening (arched feel via stepped top)
-            r(ctx, 10, 22, 28, 28, P.shadow);
-            r(ctx, 12, 24, 24, 24, P.black);
-            r(ctx, 14, 20, 20, 4, P.shadow);
-
-            // Log pile
-            r(ctx, 14, 38, 20, 6, P.woodDark);
-            r(ctx, 16, 36, 8, 4, P.wood);
-            r(ctx, 26, 36, 8, 4, P.woodLight);
-
-            // Fire (organic pixel flames, not nested boxes)
+            drawFireplaceStone(ctx);
             const fireC = { y: P.fireYellow, o: P.fireOrange, r: P.fireRed, k: P.black };
             grid(ctx, 14, 24, 2, [
                 "...ror...",
@@ -88,10 +73,6 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
                 "..oyoyo..",
                 "...oyo..."
             ], fireC);
-
-            // Iron grate line
-            r(ctx, 12, 44, 24, 2, P.stoneHi);
-            r(ctx, 4, 52, 40, 4, P.stone);
         }
     },
 

@@ -2,6 +2,9 @@ import { P } from "./palette";
 import { r } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
 
+export type CharacterFacing = "down" | "up" | "right";
+export type CharacterPose = "idle" | "walk_a" | "walk_b";
+
 export interface HumanoidStyle {
     coat: string;
     coatLight: string;
@@ -14,71 +17,174 @@ export interface HumanoidStyle {
     accent?: string;
 }
 
-function drawHumanoid(ctx: CanvasRenderingContext2D, s: HumanoidStyle): void {
+/** Leg Y offsets per pose (left leg, right leg) and optional body bob */
+function poseOffsets(pose: CharacterPose): {
+    leftLegY: number;
+    rightLegY: number;
+    bodyBob: number;
+    leftArmY: number;
+    rightArmY: number;
+} {
+    switch (pose) {
+        case "walk_a":
+            return { leftLegY: 26, rightLegY: 22, bodyBob: 1, leftArmY: 14, rightArmY: 10 };
+        case "walk_b":
+            return { leftLegY: 22, rightLegY: 26, bodyBob: 1, leftArmY: 10, rightArmY: 14 };
+        default:
+            return { leftLegY: 24, rightLegY: 24, bodyBob: 0, leftArmY: 12, rightArmY: 12 };
+    }
+}
+
+function drawHumanoidFront(
+    ctx: CanvasRenderingContext2D,
+    s: HumanoidStyle,
+    pose: CharacterPose
+): void {
     const skin = s.skin ?? P.skin;
     const pants = s.pants ?? P.shadow;
     const shoes = s.shoes ?? P.black;
+    const o = poseOffsets(pose);
+    const by = o.bodyBob;
 
-    // Head
-    r(ctx, 12, 2, 8, 8, skin);
-    r(ctx, 12, 2, 8, 2, s.hair);
-    r(ctx, 11, 3, 2, 4, s.hair);
-    r(ctx, 19, 3, 2, 4, s.hair);
-    r(ctx, 14, 6, 2, 2, P.black);
-    r(ctx, 18, 6, 2, 2, P.black);
+    r(ctx, 12, 2 + by, 8, 8, skin);
+    r(ctx, 12, 2 + by, 8, 2, s.hair);
+    r(ctx, 11, 3 + by, 2, 4, s.hair);
+    r(ctx, 19, 3 + by, 2, 4, s.hair);
+    r(ctx, 14, 6 + by, 2, 2, P.black);
+    r(ctx, 18, 6 + by, 2, 2, P.black);
 
     if (s.hat) {
-        r(ctx, 10, 0, 12, 4, s.hat);
-        r(ctx, 8, 2, 16, 2, s.hat);
-        if (s.hatBand) r(ctx, 10, 3, 12, 1, s.hatBand);
+        r(ctx, 10, 0 + by, 12, 4, s.hat);
+        r(ctx, 8, 2 + by, 16, 2, s.hat);
+        if (s.hatBand) r(ctx, 10, 3 + by, 12, 1, s.hatBand);
     }
 
-    // Body / coat
-    r(ctx, 10, 10, 12, 14, s.coat);
-    r(ctx, 11, 11, 10, 4, s.coatLight);
-    if (s.accent) r(ctx, 14, 14, 4, 6, s.accent);
+    r(ctx, 10, 10 + by, 12, 14, s.coat);
+    r(ctx, 11, 11 + by, 10, 4, s.coatLight);
+    if (s.accent) r(ctx, 14, 14 + by, 4, 6, s.accent);
 
-    // Arms
-    r(ctx, 6, 12, 4, 12, s.coat);
-    r(ctx, 22, 12, 4, 12, s.coat);
-    r(ctx, 6, 20, 4, 4, skin);
-    r(ctx, 22, 20, 4, 4, skin);
+    r(ctx, 6, o.leftArmY + by, 4, 12, s.coat);
+    r(ctx, 22, o.rightArmY + by, 4, 12, s.coat);
+    r(ctx, 6, 20 + by, 4, 4, skin);
+    r(ctx, 22, 20 + by, 4, 4, skin);
 
-    // Legs
-    r(ctx, 11, 24, 4, 10, pants);
-    r(ctx, 17, 24, 4, 10, pants);
-    r(ctx, 10, 32, 6, 4, shoes);
-    r(ctx, 16, 32, 6, 4, shoes);
+    r(ctx, 11, o.leftLegY + by, 4, 8, pants);
+    r(ctx, 17, o.rightLegY + by, 4, 8, pants);
+    r(ctx, 10, 34 + by, 6, 4, shoes);
+    r(ctx, 16, 34 + by, 6, 4, shoes);
 
-    // Outline touches
-    r(ctx, 10, 10, 1, 14, P.outline);
-    r(ctx, 21, 10, 1, 14, P.outline);
+    r(ctx, 10, 10 + by, 1, 14, P.outline);
+    r(ctx, 21, 10 + by, 1, 14, P.outline);
 }
+
+function drawHumanoidBack(
+    ctx: CanvasRenderingContext2D,
+    s: HumanoidStyle,
+    pose: CharacterPose
+): void {
+    const pants = s.pants ?? P.shadow;
+    const shoes = s.shoes ?? P.black;
+    const o = poseOffsets(pose);
+    const by = o.bodyBob;
+
+    r(ctx, 10, 0 + by, 12, 6, s.hair);
+    r(ctx, 11, 4 + by, 10, 6, s.hair);
+    r(ctx, 10, 10 + by, 12, 15, s.coat);
+    r(ctx, 11, 12 + by, 10, 8, s.coatLight);
+
+    r(ctx, 8, o.leftArmY + by, 3, 10, s.coat);
+    r(ctx, 21, o.rightArmY + by, 3, 10, s.coat);
+
+    r(ctx, 11, o.leftLegY + by, 4, 8, pants);
+    r(ctx, 17, o.rightLegY + by, 4, 8, pants);
+    r(ctx, 10, 34 + by, 6, 4, shoes);
+    r(ctx, 16, 34 + by, 6, 4, shoes);
+}
+
+function drawHumanoidSide(
+    ctx: CanvasRenderingContext2D,
+    s: HumanoidStyle,
+    pose: CharacterPose
+): void {
+    const skin = s.skin ?? P.skin;
+    const pants = s.pants ?? P.shadow;
+    const shoes = s.shoes ?? P.black;
+    const o = poseOffsets(pose);
+    const by = o.bodyBob;
+
+    r(ctx, 14, 2 + by, 8, 8, skin);
+    r(ctx, 16, 2 + by, 6, 3, s.hair);
+    r(ctx, 18, 6 + by, 2, 2, P.black);
+
+    if (s.hat) {
+        r(ctx, 12, 0 + by, 12, 4, s.hat);
+        if (s.hatBand) r(ctx, 14, 3 + by, 8, 1, s.hatBand);
+    }
+
+    r(ctx, 12, 10 + by, 10, 14, s.coat);
+    r(ctx, 13, 12 + by, 6, 5, s.coatLight);
+    if (s.accent) r(ctx, 14, 16 + by, 3, 5, s.accent);
+
+    const frontArmY = pose === "walk_a" ? 10 : pose === "walk_b" ? 16 : 12;
+    r(ctx, 20, frontArmY + by, 4, 10, s.coat);
+    r(ctx, 21, 18 + by, 3, 4, skin);
+    r(ctx, 8, 14 + by, 3, 8, s.coat);
+
+    const nearLegX = pose === "walk_a" ? 18 : 14;
+    const farLegX = pose === "walk_a" ? 14 : 18;
+    r(ctx, farLegX, o.rightLegY + by, 4, 8, pants);
+    r(ctx, nearLegX, o.leftLegY + by, 5, 8, pants);
+    r(ctx, 13, 34 + by, 8, 4, shoes);
+}
+
+/** Draw one animation frame (bake facing `right`; mirror for `left` at render time) */
+export function drawHumanoidFrame(
+    ctx: CanvasRenderingContext2D,
+    s: HumanoidStyle,
+    facing: CharacterFacing,
+    pose: CharacterPose
+): void {
+    r(ctx, 0, 0, 32, 40, P.transparent);
+    switch (facing) {
+        case "up":
+            drawHumanoidBack(ctx, s, pose);
+            break;
+        case "right":
+            drawHumanoidSide(ctx, s, pose);
+            break;
+        default:
+            drawHumanoidFront(ctx, s, pose);
+    }
+}
+
+export const PLAYER_CHARACTER_STYLES: Record<string, HumanoidStyle> = {
+    female_detective: {
+        coat: P.coatBrown,
+        coatLight: P.coatBrownLight,
+        hair: P.brickDark,
+        accent: P.red
+    },
+    male_detective: {
+        coat: P.coatNavy,
+        coatLight: P.coatNavyLight,
+        hair: P.black,
+        accent: P.gold
+    }
+};
 
 function humanoid(style: HumanoidStyle): ProceduralSpriteDef {
     return {
         nativeWidth: 32,
         nativeHeight: 40,
         draw(ctx) {
-            r(ctx, 0, 0, 32, 40, P.transparent);
-            drawHumanoid(ctx, style);
+            drawHumanoidFrame(ctx, style, "down", "idle");
         }
     };
 }
 
 export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
-    female_detective: humanoid({
-        coat: P.coatBrown,
-        coatLight: P.coatBrownLight,
-        hair: P.brickDark,
-        accent: P.red
-    }),
-    male_detective: humanoid({
-        coat: P.coatNavy,
-        coatLight: P.coatNavyLight,
-        hair: P.black,
-        accent: P.gold
-    }),
+    female_detective: humanoid(PLAYER_CHARACTER_STYLES.female_detective),
+    male_detective: humanoid(PLAYER_CHARACTER_STYLES.male_detective),
     baron: humanoid({
         coat: P.black,
         coatLight: P.shadow,

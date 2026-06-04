@@ -4,17 +4,22 @@ import { TILE_SIZE } from "../world/constants";
 import { TileMap } from "../world/TileMap";
 import { NPC } from "./NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
+import type { CharacterPose } from "../assets/procedural/characters";
 
 export type Facing = "up" | "down" | "left" | "right";
 
 export type PlayerSpriteName = "male_detective" | "female_detective";
+
+export const WALK_ANIM_FPS = 8;
 
 export class Player extends Entity {
     speed = 180;
     width = TILE_SIZE * 2;
     height = TILE_SIZE * 2;
     facing: Facing = "down";
-    private spriteName: string;
+    isMoving = false;
+    private animTime = 0;
+    private spriteName: PlayerSpriteName;
 
     constructor(id: string, x: number, y: number, spriteName: PlayerSpriteName = "female_detective") {
         super(id, x, y);
@@ -34,6 +39,13 @@ export class Player extends Entity {
         else if (dx < 0) this.facing = "left";
         else if (dy > 0) this.facing = "down";
         else if (dy < 0) this.facing = "up";
+
+        this.isMoving = dx !== 0 || dy !== 0;
+        if (this.isMoving) {
+            this.animTime += dt;
+        } else {
+            this.animTime = 0;
+        }
 
         const moveX = dx * this.speed * dt;
         const moveY = dy * this.speed * dt;
@@ -120,8 +132,22 @@ export class Player extends Entity {
         return false;
     }
 
+    private getPose(): CharacterPose {
+        if (!this.isMoving) return "idle";
+        return Math.floor(this.animTime * WALK_ANIM_FPS) % 2 === 0 ? "walk_a" : "walk_b";
+    }
+
     render(ctx: CanvasRenderingContext2D) {
-        spriteLoader.drawSprite(ctx, this.spriteName, this.x, this.y, this.width, this.height);
+        spriteLoader.drawCharacterFrame(
+            ctx,
+            this.spriteName,
+            this.facing,
+            this.getPose(),
+            this.x,
+            this.y,
+            this.width,
+            this.height
+        );
     }
 
     getInteractionPoint(): { x: number; y: number } {

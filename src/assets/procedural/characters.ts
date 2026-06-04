@@ -176,7 +176,6 @@ function drawHumanoidSide(
 
     r(ctx, 20, 12 + by, 4, 10, s.coat);
     r(ctx, 21, 18 + by, 3, 4, skin);
-    r(ctx, 8, 14 + by, 3, 8, s.coat);
 
     // Far leg (behind) — thinner, higher, muted pant tone
     r(ctx, legs.farX, legs.farY + by, 3, 6, pantsFar);

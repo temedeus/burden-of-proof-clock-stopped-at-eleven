@@ -15,6 +15,7 @@ import { loadGameContent } from "../content/loadGameContent";
 import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
 import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
+import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import type { NPCConfig, NPCDialogConfig, RoomConfig } from "@cse/content-schema";
 
 type GameState = "playing" | "interacting" | "inventory" | "victory";
@@ -424,6 +425,7 @@ export class Game {
         }
 
         if (this.input.wasPressed("escape")) {
+            talkSounds.stopDialogue();
             this.onMenuRequest?.();
             return;
         }
@@ -469,8 +471,17 @@ export class Game {
                         result.speakerId && POLICE_NPC_IDS.includes(result.speakerId) &&
                         this.accusedMurderer
                     ) {
+                        talkSounds.stopDialogue();
                         this.startVictorySequence(result.speakerId);
                         return;
+                    }
+                    if (result.speakerId && result.speaker) {
+                        const npcCfg = this.content.npcs[result.speakerId];
+                        const spokenLine = extractSpokenLine(result.description, result.speaker);
+                        talkSounds.startDialogue(
+                            inferVoiceGender(result.speakerId, npcCfg?.spriteName),
+                            spokenLine
+                        );
                     }
                     this.state = "interacting";
                 }
@@ -501,6 +512,7 @@ export class Game {
                 if (npc.isChasing()) {
                     npc.updateChase(dt, playerCenterX, playerCenterY, this.currentRoom.map);
                     if (this.npcOverlapsPlayer(npc)) {
+                        talkSounds.stopDialogue();
                         this.onGameOver?.();
                         return;
                     }
@@ -510,6 +522,7 @@ export class Game {
             this.checkRoomTransition();
         } else if (this.state === "interacting") {
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
+                talkSounds.stopDialogue();
                 this.message = null;
                 this.clueNotification = null; // Clear clue notification on dismiss
                 this.state = "playing";

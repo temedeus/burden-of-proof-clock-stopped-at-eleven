@@ -5,6 +5,7 @@ import { TileMap } from "../world/TileMap";
 import { NPC } from "./NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
 import type { CharacterPose } from "../assets/procedural/characters";
+import { footstepSounds } from "../audio/FootstepSounds";
 
 export type Facing = "up" | "down" | "left" | "right";
 
@@ -46,6 +47,7 @@ export class Player extends Entity {
         } else {
             this.animTime = 0;
         }
+        footstepSounds.updateWalkAnim(this.animTime, this.isMoving);
 
         const moveX = dx * this.speed * dt;
         const moveY = dy * this.speed * dt;

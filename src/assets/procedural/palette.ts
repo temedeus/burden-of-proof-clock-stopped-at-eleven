@@ -15,6 +15,12 @@ export const P = {
     woodLight: "#8b5e3c",
     woodHi: "#b8845a",
 
+    /** Side-view legs/feet — warm tones, not near-black */
+    pantsSide: "#5c5048",
+    pantsSideFar: "#4e4640",
+    shoeBrown: "#5a4030",
+    shoeBrownHi: "#7a5a42",
+
     /** Floor — low contrast so tiles blend when repeated */
     floorPlank: "#665040",
     floorSeam: "#5e4a3c",

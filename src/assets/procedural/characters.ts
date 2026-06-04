@@ -42,7 +42,8 @@ function drawHumanoidFront(
 ): void {
     const skin = s.skin ?? P.skin;
     const pants = s.pants ?? P.shadow;
-    const shoes = s.shoes ?? P.black;
+    const shoe = s.shoes ?? P.shoeBrown;
+    const shoeHi = P.shoeBrownHi;
     const o = poseOffsets(pose);
     const by = o.bodyBob;
 
@@ -70,8 +71,7 @@ function drawHumanoidFront(
 
     r(ctx, 11, o.leftLegY + by, 4, 8, pants);
     r(ctx, 17, o.rightLegY + by, 4, 8, pants);
-    r(ctx, 10, 34 + by, 6, 4, shoes);
-    r(ctx, 16, 34 + by, 6, 4, shoes);
+    drawFrontShoes(ctx, o.leftLegY, o.rightLegY, by, shoe, shoeHi);
 
     r(ctx, 10, 10 + by, 1, 14, P.outline);
     r(ctx, 21, 10 + by, 1, 14, P.outline);
@@ -83,7 +83,8 @@ function drawHumanoidBack(
     pose: CharacterPose
 ): void {
     const pants = s.pants ?? P.shadow;
-    const shoes = s.shoes ?? P.black;
+    const shoe = s.shoes ?? P.shoeBrown;
+    const shoeHi = P.shoeBrownHi;
     const o = poseOffsets(pose);
     const by = o.bodyBob;
 
@@ -97,8 +98,53 @@ function drawHumanoidBack(
 
     r(ctx, 11, o.leftLegY + by, 4, 8, pants);
     r(ctx, 17, o.rightLegY + by, 4, 8, pants);
-    r(ctx, 10, 34 + by, 6, 4, shoes);
-    r(ctx, 16, 34 + by, 6, 4, shoes);
+    drawFrontShoes(ctx, o.leftLegY, o.rightLegY, by, shoe, shoeHi);
+}
+
+/** Side-view leg positions: near (front) vs far (back) leg + foot */
+function sideLegLayout(pose: CharacterPose): {
+    farX: number;
+    farY: number;
+    nearX: number;
+    nearY: number;
+    nearToeX: number;
+} {
+    switch (pose) {
+        case "walk_a":
+            return { farX: 14, farY: 24, nearX: 16, nearY: 27, nearToeX: 20 };
+        case "walk_b":
+            return { farX: 15, farY: 27, nearX: 17, nearY: 24, nearToeX: 19 };
+        default:
+            return { farX: 15, farY: 25, nearX: 16, nearY: 25, nearToeX: 18 };
+    }
+}
+
+function drawFoot(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    shoe: string,
+    shoeHi: string
+): void {
+    r(ctx, x, y, w, h, shoe);
+    r(ctx, x + w - 2, y, 2, 1, shoeHi);
+}
+
+/** Front/back: one shoe under a leg with gap between left and right */
+function drawFrontShoes(
+    ctx: CanvasRenderingContext2D,
+    leftLegY: number,
+    rightLegY: number,
+    by: number,
+    shoe: string,
+    shoeHi: string
+): void {
+    const leftFootY = leftLegY + 8 + by;
+    const rightFootY = rightLegY + 8 + by;
+    drawFoot(ctx, 10, leftFootY, 4, 3, shoe, shoeHi);
+    drawFoot(ctx, 19, rightFootY, 4, 3, shoe, shoeHi);
 }
 
 function drawHumanoidSide(
@@ -107,10 +153,13 @@ function drawHumanoidSide(
     pose: CharacterPose
 ): void {
     const skin = s.skin ?? P.skin;
-    const pants = s.pants ?? P.shadow;
-    const shoes = s.shoes ?? P.black;
+    const pants = s.pants ?? P.pantsSide;
+    const pantsFar = P.pantsSideFar;
+    const shoe = s.shoes ?? P.shoeBrown;
+    const shoeHi = P.shoeBrownHi;
     const o = poseOffsets(pose);
     const by = o.bodyBob;
+    const legs = sideLegLayout(pose);
 
     r(ctx, 14, 2 + by, 8, 8, skin);
     r(ctx, 16, 2 + by, 6, 3, s.hair);
@@ -125,16 +174,22 @@ function drawHumanoidSide(
     r(ctx, 13, 12 + by, 6, 5, s.coatLight);
     if (s.accent) r(ctx, 14, 16 + by, 3, 5, s.accent);
 
-    const frontArmY = pose === "walk_a" ? 10 : pose === "walk_b" ? 16 : 12;
-    r(ctx, 20, frontArmY + by, 4, 10, s.coat);
+    r(ctx, 20, 12 + by, 4, 10, s.coat);
     r(ctx, 21, 18 + by, 3, 4, skin);
     r(ctx, 8, 14 + by, 3, 8, s.coat);
 
-    const nearLegX = pose === "walk_a" ? 18 : 14;
-    const farLegX = pose === "walk_a" ? 14 : 18;
-    r(ctx, farLegX, o.rightLegY + by, 4, 8, pants);
-    r(ctx, nearLegX, o.leftLegY + by, 5, 8, pants);
-    r(ctx, 13, 34 + by, 8, 4, shoes);
+    // Far leg (behind) — thinner, higher, muted pant tone
+    r(ctx, legs.farX, legs.farY + by, 3, 6, pantsFar);
+    drawFoot(ctx, legs.farX, legs.farY + 6 + by, 3, 3, shoe, shoeHi);
+
+    // Near leg (front) — separate foot, toe toward facing direction when walking
+    r(ctx, legs.nearX, legs.nearY + by, 4, 7, pants);
+    if (pose === "idle") {
+        drawFoot(ctx, legs.nearX, legs.nearY + 7 + by, 4, 3, shoe, shoeHi);
+    } else {
+        drawFoot(ctx, legs.nearToeX - 3, legs.nearY + 7 + by, 4, 3, shoe, shoeHi);
+        r(ctx, legs.nearToeX - 1, legs.nearY + 8 + by, 2, 2, shoeHi);
+    }
 }
 
 /** Draw one animation frame (bake facing `right`; mirror for `left` at render time) */

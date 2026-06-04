@@ -16,7 +16,9 @@ import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../cont
 import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
 import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
+import { drawFountainAnimated } from "../assets/procedural/fountain";
 import { fireplaceAmbience } from "../audio/FireplaceAmbience";
+import { gardenAmbience } from "../audio/GardenAmbience";
 import { clueSounds } from "../audio/ClueSounds";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import type { NPCConfig, NPCDialogConfig, RoomConfig } from "@cse/content-schema";
@@ -47,6 +49,7 @@ function furnitureActorFromInteractable(
     }
 
     const isFireplace = spriteName === "fireplace";
+    const isFountain = spriteName === "fountain";
     const decorW = obj.drawWidthTiles;
     const decorH = obj.drawHeightTiles;
     const hasDecorDraw = decorW != null && decorH != null;
@@ -81,8 +84,8 @@ function furnitureActorFromInteractable(
         drawY = minY * TILE_SIZE;
     }
 
-    const sortY = hasDecorDraw || isFireplace ? drawY : minY * TILE_SIZE;
-    const sortH = hasDecorDraw || isFireplace ? drawH : heightTiles * TILE_SIZE;
+    const sortY = hasDecorDraw || isFireplace || isFountain ? drawY : minY * TILE_SIZE;
+    const sortH = hasDecorDraw || isFireplace || isFountain ? drawH : heightTiles * TILE_SIZE;
 
     return {
         y: sortY,
@@ -90,6 +93,8 @@ function furnitureActorFromInteractable(
         render: (ctx: CanvasRenderingContext2D) => {
             if (spriteName === "fireplace") {
                 drawFireplaceAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
+            } else if (spriteName === "fountain") {
+                drawFountainAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
             } else {
                 spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
             }
@@ -208,7 +213,7 @@ export class Game {
         });
 
         this.currentRoom = this.rooms.library;
-        this.syncFireplaceAmbience();
+        this.syncRoomAmbience();
         if (this.activeStory) {
             this.showTitleBanner(this.activeStory.title);
         } else {
@@ -545,8 +550,9 @@ export class Game {
         }
     }
 
-    private syncFireplaceAmbience(): void {
+    private syncRoomAmbience(): void {
         fireplaceAmbience.syncForRoom(this.currentRoom);
+        gardenAmbience.syncForRoom(this.currentRoom);
     }
 
     private checkRoomTransition() {
@@ -603,7 +609,7 @@ export class Game {
                 const nextRoom = this.rooms[exit.targetRoom];
 
                 this.currentRoom = nextRoom;
-                this.syncFireplaceAmbience();
+                this.syncRoomAmbience();
                 this.player.x = exit.spawnX * TILE_SIZE;
                 this.player.y = exit.spawnY * TILE_SIZE;
                 this.roomTransitionCooldown = 0.65;

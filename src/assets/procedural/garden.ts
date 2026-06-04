@@ -1,4 +1,5 @@
 import { P } from "./palette";
+import { drawFountainStone } from "./fountain";
 import { grid, r } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
 
@@ -15,15 +16,7 @@ export const GARDEN_SPRITES: Record<string, ProceduralSpriteDef> = {
     fountain: {
         nativeWidth: 48,
         nativeHeight: 52,
-        draw(ctx) {
-            r(ctx, 8, 40, 32, 10, P.stone);
-            r(ctx, 12, 32, 24, 10, P.stoneLight);
-            r(ctx, 20, 16, 8, 18, P.stone);
-            r(ctx, 18, 8, 12, 10, P.stoneLight);
-            r(ctx, 4, 44, 40, 6, P.water);
-            r(ctx, 8, 46, 32, 3, P.waterLight);
-            r(ctx, 22, 4, 4, 6, P.waterHi);
-        }
+        draw: drawFountainStone
     },
 
     tree: {

@@ -49,24 +49,17 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     }),
 
     floor: tile32((ctx) => {
-        grid(ctx, 0, 0, 2, [
-            "oooooooooooooooo",
-            "odWdWdWdWdWdWdWo",
-            "oWdWdWdWdWdWdWdWo",
-            "odWdWdWdWdWdWdWo",
-            "oWdWdWdWdWdWdWdWo",
-            "odWdWdWdWdWdWdWo",
-            "oWdWdWdWdWdWdWdWo",
-            "odWdWdWdWdWdWdWo",
-            "oWdWdWdWdWdWdWdWo",
-            "odWdWdWdWdWdWdWo",
-            "oWdWdWdWdWdWdWdWo",
-            "odWdWdWdWdWdWdWo",
-            "oWdWdWdWdWdWdWdWo",
-            "odWdWdWdWdWdWdWo",
-            "oWdWdWdWdWdWdWdWo",
-            "oooooooooooooooo"
-        ], C);
+        // Near-uniform wood — avoids loud checkerboard when tiles repeat
+        r(ctx, 0, 0, 32, 32, P.floorPlank);
+        for (let y = 7; y < 32; y += 8) {
+            r(ctx, 0, y, 32, 1, P.floorSeam);
+        }
+        const grain: [number, number][] = [
+            [5, 3], [14, 11], [23, 5], [9, 19], [27, 14], [17, 25], [3, 22]
+        ];
+        for (const [x, y] of grain) {
+            r(ctx, x, y, 1, 1, P.floorGrain);
+        }
     }),
 
     grass: tile32((ctx) => {

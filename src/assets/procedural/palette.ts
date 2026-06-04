@@ -15,6 +15,23 @@ export const P = {
     woodLight: "#8b5e3c",
     woodHi: "#b8845a",
 
+    /** Floor — low contrast so tiles blend when repeated */
+    floorPlank: "#665040",
+    floorSeam: "#5e4a3c",
+    floorGrain: "#6c5546",
+
+    /** Rug — cool plum so it reads apart from wood furniture */
+    carpetPlum: "#4a2848",
+    carpetPlumLight: "#6a3a62",
+    carpetBorder: "#8a5a30",
+
+    silver: "#b8c0c8",
+    silverDark: "#889098",
+    wine: "#6a2848",
+    foodBrown: "#8a5830",
+    foodGreen: "#4a6838",
+    candle: "#f0e8c0",
+
     stone: "#5a5a62",
     stoneLight: "#8a8a94",
     stoneHi: "#b0b0bc",

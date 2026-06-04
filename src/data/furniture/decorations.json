@@ -155,10 +155,11 @@
     "name": "Fireplace",
     "description": "Cold ashes fill the hearth.",
     "width": 5,
-    "height": 1,
+    "height": 7,
     "drawWidth": 6,
     "drawHeight": 7,
     "renderAnchor": "bottom",
+    "collisionRowsFromTop": 4,
     "spriteName": "fireplace"
   },
   "kitchen_table": {

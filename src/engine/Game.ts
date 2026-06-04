@@ -15,6 +15,7 @@ import { loadGameContent } from "../content/loadGameContent";
 import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
 import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
+import { clueSounds } from "../audio/ClueSounds";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import type { NPCConfig, NPCDialogConfig, RoomConfig } from "@cse/content-schema";
 
@@ -456,6 +457,7 @@ export class Game {
                 if (result) {
                     this.message = result.description;
                     if (result.clues.length > 0) {
+                        clueSounds.playFound();
                         this.clueNotification = { clueId: result.clues[0] };
                     }
                     if (

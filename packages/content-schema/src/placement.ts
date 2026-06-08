@@ -8,6 +8,8 @@ export interface FurnitureBoundsConfig {
     width: number;
     height: number;
     collisionRowsFromBottom?: number;
+    /** Solid rows from the top of the footprint (e.g. tall fireplace mantle). */
+    collisionRowsFromTop?: number;
     walkableDecor?: boolean;
 }
 
@@ -57,13 +59,22 @@ export function isFurniturePlacementInBounds(
         return false;
     }
 
-    const collisionRows =
-        furniture.collisionRowsFromBottom != null
-            ? Math.min(Math.max(1, furniture.collisionRowsFromBottom), furniture.height)
-            : furniture.height;
-    const collisionStartY = startY + furniture.height - collisionRows;
+    let collisionStartY: number;
+    let collisionEndY: number;
+    if (furniture.collisionRowsFromTop != null) {
+        const rows = Math.min(Math.max(1, furniture.collisionRowsFromTop), furniture.height);
+        collisionStartY = startY;
+        collisionEndY = startY + rows;
+    } else {
+        const collisionRows =
+            furniture.collisionRowsFromBottom != null
+                ? Math.min(Math.max(1, furniture.collisionRowsFromBottom), furniture.height)
+                : furniture.height;
+        collisionStartY = startY + furniture.height - collisionRows;
+        collisionEndY = startY + furniture.height;
+    }
 
-    for (let tileY = collisionStartY; tileY < startY + furniture.height; tileY++) {
+    for (let tileY = collisionStartY; tileY < collisionEndY; tileY++) {
         for (let tileX = startX; tileX < startX + furniture.width; tileX++) {
             if (tileX >= 0 && tileX < gridWidth && tileY >= 0 && tileY < gridHeight) {
                 return true;

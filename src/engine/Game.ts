@@ -15,13 +15,22 @@ import { loadGameContent } from "../content/loadGameContent";
 import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
 import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
+import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
+import { drawFountainAnimated } from "../assets/procedural/fountain";
+import { fireplaceAmbience } from "../audio/FireplaceAmbience";
+import { gardenAmbience } from "../audio/GardenAmbience";
+import { clueSounds } from "../audio/ClueSounds";
+import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import type { NPCConfig, NPCDialogConfig, RoomConfig } from "@cse/content-schema";
 
 type GameState = "playing" | "interacting" | "inventory" | "victory";
 
 type DepthActor = { y: number; height: number; render(ctx: CanvasRenderingContext2D): void };
 
-function furnitureActorFromInteractable(obj: Interactable): DepthActor {
+function furnitureActorFromInteractable(
+    obj: Interactable,
+    getAnimTime: () => number
+): DepthActor {
     const minX = Math.min(...obj.tiles.map((t) => t.x));
     const maxX = Math.max(...obj.tiles.map((t) => t.x));
     const minY = Math.min(...obj.tiles.map((t) => t.y));
@@ -40,6 +49,7 @@ function furnitureActorFromInteractable(obj: Interactable): DepthActor {
     }
 
     const isFireplace = spriteName === "fireplace";
+    const isFountain = spriteName === "fountain";
     const decorW = obj.drawWidthTiles;
     const decorH = obj.drawHeightTiles;
     const hasDecorDraw = decorW != null && decorH != null;
@@ -74,14 +84,20 @@ function furnitureActorFromInteractable(obj: Interactable): DepthActor {
         drawY = minY * TILE_SIZE;
     }
 
-    const sortY = hasDecorDraw || isFireplace ? drawY : minY * TILE_SIZE;
-    const sortH = hasDecorDraw || isFireplace ? drawH : heightTiles * TILE_SIZE;
+    const sortY = hasDecorDraw || isFireplace || isFountain ? drawY : minY * TILE_SIZE;
+    const sortH = hasDecorDraw || isFireplace || isFountain ? drawH : heightTiles * TILE_SIZE;
 
     return {
         y: sortY,
         height: sortH,
         render: (ctx: CanvasRenderingContext2D) => {
-            spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
+            if (spriteName === "fireplace") {
+                drawFireplaceAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
+            } else if (spriteName === "fountain") {
+                drawFountainAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
+            } else {
+                spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
+            }
         }
     };
 }
@@ -148,6 +164,7 @@ export class Game {
 
     /** Centered room name; fades in and out over `ROOM_TITLE_DURATION` seconds */
     private roomTitleBanner: { title: string; elapsed: number } | null = null;
+    private decorAnimTime = 0;
 
     constructor(
         private ctx: CanvasRenderingContext2D,
@@ -196,6 +213,7 @@ export class Game {
         });
 
         this.currentRoom = this.rooms.library;
+        this.syncRoomAmbience();
         if (this.activeStory) {
             this.showTitleBanner(this.activeStory.title);
         } else {
@@ -374,9 +392,9 @@ export class Game {
         // When timer <= 0, key check is done in index.ts so we don't miss the key
     }
 
-    /** True when victory screen is showing and we're waiting for the user to press a key to return to menu */
+    /** True when victory overlay is done and we're waiting for the user to press a key to return to menu */
     isWaitingForVictoryInput(): boolean {
-        return this.victoryPhase;
+        return this.victoryPhase && this.victoryTimer <= 0;
     }
 
     /** Call when user presses key to leave victory screen (called from main loop in index.ts) */
@@ -410,6 +428,8 @@ export class Game {
     }
 
     update(dt: number) {
+        this.decorAnimTime += dt;
+
         if (this.roomTitleBanner) {
             this.roomTitleBanner.elapsed += dt;
             if (this.roomTitleBanner.elapsed >= ROOM_TITLE_DURATION) {
@@ -424,6 +444,7 @@ export class Game {
         }
 
         if (this.input.wasPressed("escape")) {
+            talkSounds.stopDialogue();
             this.onMenuRequest?.();
             return;
         }
@@ -454,6 +475,7 @@ export class Game {
                 if (result) {
                     this.message = result.description;
                     if (result.clues.length > 0) {
+                        clueSounds.playFound();
                         this.clueNotification = { clueId: result.clues[0] };
                     }
                     if (
@@ -469,8 +491,17 @@ export class Game {
                         result.speakerId && POLICE_NPC_IDS.includes(result.speakerId) &&
                         this.accusedMurderer
                     ) {
+                        talkSounds.stopDialogue();
                         this.startVictorySequence(result.speakerId);
                         return;
+                    }
+                    if (result.speakerId && result.speaker) {
+                        const npcCfg = this.content.npcs[result.speakerId];
+                        const spokenLine = extractSpokenLine(result.description, result.speaker);
+                        talkSounds.startDialogue(
+                            inferVoiceGender(result.speakerId, npcCfg?.spriteName),
+                            spokenLine
+                        );
                     }
                     this.state = "interacting";
                 }
@@ -501,6 +532,7 @@ export class Game {
                 if (npc.isChasing()) {
                     npc.updateChase(dt, playerCenterX, playerCenterY, this.currentRoom.map);
                     if (this.npcOverlapsPlayer(npc)) {
+                        talkSounds.stopDialogue();
                         this.onGameOver?.();
                         return;
                     }
@@ -510,11 +542,17 @@ export class Game {
             this.checkRoomTransition();
         } else if (this.state === "interacting") {
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
+                talkSounds.stopDialogue();
                 this.message = null;
                 this.clueNotification = null; // Clear clue notification on dismiss
                 this.state = "playing";
             }
         }
+    }
+
+    private syncRoomAmbience(): void {
+        fireplaceAmbience.syncForRoom(this.currentRoom);
+        gardenAmbience.syncForRoom(this.currentRoom);
     }
 
     private checkRoomTransition() {
@@ -571,6 +609,7 @@ export class Game {
                 const nextRoom = this.rooms[exit.targetRoom];
 
                 this.currentRoom = nextRoom;
+                this.syncRoomAmbience();
                 this.player.x = exit.spawnX * TILE_SIZE;
                 this.player.y = exit.spawnY * TILE_SIZE;
                 this.roomTransitionCooldown = 0.65;
@@ -643,7 +682,7 @@ export class Game {
         const rugActors: DepthActor[] = [];
         const furnitureActors: DepthActor[] = [];
         for (const obj of this.currentRoom.interactables) {
-            const actor = furnitureActorFromInteractable(obj);
+            const actor = furnitureActorFromInteractable(obj, () => this.decorAnimTime);
             if (obj.walkableDecor) {
                 rugActors.push(actor);
             } else {

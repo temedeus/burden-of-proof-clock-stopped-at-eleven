@@ -30,6 +30,8 @@ interface FurnitureConfig {
     renderAnchor?: "center" | "bottom";
     /** If set, only the bottom N rows (full `width`) are solid; upper rows stay walkable (e.g. fountain base). */
     collisionRowsFromBottom?: number;
+    /** If set, only the top N rows are solid; lower rows stay walkable (e.g. fireplace mantle). */
+    collisionRowsFromTop?: number;
     /** Render only: no tile blocking (e.g. floor carpet). */
     walkableDecor?: boolean;
 }
@@ -112,13 +114,22 @@ function placeFurniture(
         return interactable;
     }
 
-    const collisionRows =
-        furniture.collisionRowsFromBottom != null
-            ? Math.min(Math.max(1, furniture.collisionRowsFromBottom), furniture.height)
-            : furniture.height;
-    const collisionStartY = startY + furniture.height - collisionRows;
+    let collisionStartY: number;
+    let collisionEndY: number;
+    if (furniture.collisionRowsFromTop != null) {
+        const rows = Math.min(Math.max(1, furniture.collisionRowsFromTop), furniture.height);
+        collisionStartY = startY;
+        collisionEndY = startY + rows;
+    } else {
+        const collisionRows =
+            furniture.collisionRowsFromBottom != null
+                ? Math.min(Math.max(1, furniture.collisionRowsFromBottom), furniture.height)
+                : furniture.height;
+        collisionStartY = startY + furniture.height - collisionRows;
+        collisionEndY = startY + furniture.height;
+    }
 
-    for (let tileY = collisionStartY; tileY < startY + furniture.height; tileY++) {
+    for (let tileY = collisionStartY; tileY < collisionEndY; tileY++) {
         for (let x = 0; x < furniture.width; x++) {
             const tileX = startX + x;
 

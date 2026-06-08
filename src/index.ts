@@ -7,6 +7,7 @@ import { spriteLoader } from "./assets/SpriteLoader";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
+ctx.imageSmoothingEnabled = false;
 
 type AppScreen = "main_menu" | "playing" | "pause_menu" | "settings" | "game_over" | "intro";
 
@@ -34,10 +35,7 @@ spriteLoader.load().then(() => {
             // Handle victory return-to-menu in main loop so we reliably catch the key
             if (
                 game.isWaitingForVictoryInput() &&
-                (sharedInput.wasPressed("escape") ||
-                    sharedInput.wasPressed("enter") ||
-                    sharedInput.wasPressed(" ") ||
-                    sharedInput.wasPressed("e"))
+                (sharedInput.wasPressed("escape") || sharedInput.wasPressed("enter"))
             ) {
                 game.returnToMenuFromVictory();
             }

@@ -1,6 +1,7 @@
 import { Input } from "./Input";
 import { loadSettings, setMuteSounds } from "./Settings";
 import { spriteLoader } from "../assets/SpriteLoader";
+import { isTouchDevice } from "./platform";
 
 export type MenuScreen = "main" | "difficulty" | "character_select" | "pause" | "settings" | "game_over";
 
@@ -38,6 +39,62 @@ export class Menu {
 
     getScreen(): MenuScreen {
         return this.screen;
+    }
+
+    /** Handle a tap on the canvas (canvas pixel coordinates). */
+    handlePointer(x: number, y: number): MenuAction | null {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        if (this.screen === "character_select") {
+            const centerX = w / 2;
+            const sideOffset = 140;
+            if (x < centerX - sideOffset / 2) {
+                this.selectedIndex = 0;
+                return null;
+            }
+            if (x > centerX + sideOffset / 2) {
+                this.selectedIndex = 1;
+                return null;
+            }
+            if (y > h * 0.75) {
+                return this.activateItem(this.getMenuItems()[this.selectedIndex]);
+            }
+            return null;
+        }
+
+        const layout = this.getListLayout(h);
+        if (!layout) return null;
+
+        const halfLine = layout.lineHeight / 2;
+        for (let i = 0; i < layout.count; i++) {
+            const itemY = layout.startY + i * layout.lineHeight;
+            if (y >= itemY - halfLine && y <= itemY + halfLine) {
+                this.selectedIndex = i;
+                return this.activateItem(this.getMenuItems()[i]);
+            }
+        }
+        return null;
+    }
+
+    private getListLayout(h: number): { startY: number; lineHeight: number; count: number } | null {
+        const items = this.getMenuItems();
+        if (items.length === 0) return null;
+
+        switch (this.screen) {
+            case "main":
+                return { startY: h * 0.42, lineHeight: 44, count: items.length };
+            case "difficulty":
+                return { startY: h * 0.4, lineHeight: 44, count: items.length };
+            case "pause":
+                return { startY: h * 0.42, lineHeight: 44, count: items.length };
+            case "settings":
+                return { startY: h * 0.42, lineHeight: 44, count: items.length };
+            case "game_over":
+                return { startY: h * 0.52, lineHeight: 44, count: items.length };
+            default:
+                return null;
+        }
     }
 
     update(): MenuAction {
@@ -198,17 +255,7 @@ export class Menu {
             return;
         }
 
-        const title =
-            this.screen === "difficulty"
-                ? "Select Difficulty"
-                : this.screen === "game_over"
-                  ? "Game Over"
-                  : "Paused";
-
-        if (this.screen === "character_select") {
-            ctx.textAlign = "left";
-            return;
-        }
+        const title = this.screen === "difficulty" ? "Select Difficulty" : "Paused";
 
         ctx.fillStyle = MENU_ACCENT;
         ctx.font = "bold 36px serif";
@@ -216,14 +263,7 @@ export class Menu {
         ctx.fillText(title, w / 2, h * 0.28);
 
         const items = this.getMenuItems();
-        const startY =
-            this.screen === "difficulty"
-                ? h * 0.4
-                : this.screen === "character_select"
-                  ? h * 0.4
-                  : this.screen === "game_over"
-                    ? h * 0.5
-                    : h * 0.42;
+        const startY = this.screen === "difficulty" ? h * 0.4 : h * 0.42;
         const lineHeight = 44;
 
         ctx.font = "22px serif";
@@ -259,7 +299,10 @@ export class Menu {
 
         ctx.font = "18px serif";
         ctx.fillStyle = TEXT_COLOR;
-        ctx.fillText("← → to choose    Enter to confirm    Esc to back", centerX, h * 0.28);
+        const charHint = isTouchDevice()
+            ? "Tap a character    Tap below to confirm"
+            : "← → to choose    Enter to confirm    Esc to back";
+        ctx.fillText(charHint, centerX, h * 0.28);
 
         const female = characters[0];
         const male = characters[1];
@@ -280,7 +323,8 @@ export class Menu {
 
         ctx.fillStyle = TEXT_COLOR;
         ctx.font = "16px serif";
-        ctx.fillText("Press Enter to play", centerX, h * 0.88);
+        const playHint = isTouchDevice() ? "Tap below to play" : "Press Enter to play";
+        ctx.fillText(playHint, centerX, h * 0.88);
         ctx.textAlign = "left";
     }
 

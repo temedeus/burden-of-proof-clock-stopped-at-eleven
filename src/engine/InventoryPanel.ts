@@ -1,5 +1,6 @@
 import { ClueSystem } from "../systems/ClueSystem";
 import { buildClueCatalog, getClueDisplay, type ClueCatalog } from "../content/clueCatalog";
+import { isTouchDevice } from "./platform";
 
 /**
  * Render the inventory panel showing collected clues
@@ -64,5 +65,8 @@ export function renderInventoryPanel(
     ctx.fillStyle = "#888";
     ctx.font = "14px serif";
     ctx.textAlign = "center";
-    ctx.fillText("Press I to close", ctx.canvas.width / 2, panelY + panelHeight - 30);
+    const closeHint = isTouchDevice()
+        ? "Tap Inventory or press I to close"
+        : "Press I to close";
+    ctx.fillText(closeHint, ctx.canvas.width / 2, panelY + panelHeight - 30);
 }

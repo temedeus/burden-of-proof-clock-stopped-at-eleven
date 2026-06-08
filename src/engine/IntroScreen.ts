@@ -1,5 +1,6 @@
 import { Input } from "./Input";
 import { spriteLoader } from "../assets/SpriteLoader";
+import { isTouchDevice } from "./platform";
 
 export type PlayerSpriteName = "female_detective" | "male_detective";
 
@@ -73,10 +74,15 @@ export class IntroScreen {
         ctx.fillStyle = "rgba(255,255,255,0.7)";
         ctx.font = "18px serif";
         ctx.textAlign = "center";
+        const touch = isTouchDevice();
         if (isLastSlide) {
-            ctx.fillText("Press Enter or Space to begin investigation", w / 2, promptY);
+            const hint = touch
+                ? "Tap to begin investigation"
+                : "Press Enter or Space to begin investigation";
+            ctx.fillText(hint, w / 2, promptY);
         } else {
-            ctx.fillText("Press Enter or Space to continue", w / 2, promptY);
+            const hint = touch ? "Tap to continue" : "Press Enter or Space to continue";
+            ctx.fillText(hint, w / 2, promptY);
         }
 
         const progress = `${this.slideIndex + 1} / ${this.totalSlides}`;

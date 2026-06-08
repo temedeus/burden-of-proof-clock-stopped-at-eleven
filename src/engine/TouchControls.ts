@@ -5,7 +5,8 @@ const ROTATE_HINT_KEY = "clock-stopped-at-eleven-rotate-hint-dismissed";
 
 export class TouchControls {
     private active = false;
-    private pointerIds = new Map<string, number>();
+    private pointerKeys = new Map<number, string[]>();
+    private keyRefCount = new Map<string, number>();
 
     constructor(
         private input: Input,
@@ -28,33 +29,68 @@ export class TouchControls {
         this.root.hidden = !visible;
     }
 
+    private getButtonKeys(btn: HTMLButtonElement): string[] {
+        if (btn.dataset.keys) {
+            return btn.dataset.keys.split(",").map((k) => k.trim()).filter(Boolean);
+        }
+        if (btn.dataset.key) {
+            return [btn.dataset.key];
+        }
+        return [];
+    }
+
+    private pressKey(key: string): void {
+        const count = this.keyRefCount.get(key) ?? 0;
+        if (count === 0) {
+            this.input.setVirtualDown(key, true);
+        }
+        this.keyRefCount.set(key, count + 1);
+    }
+
+    private releaseKey(key: string): void {
+        const count = this.keyRefCount.get(key) ?? 0;
+        if (count <= 1) {
+            this.keyRefCount.delete(key);
+            this.input.setVirtualDown(key, false);
+        } else {
+            this.keyRefCount.set(key, count - 1);
+        }
+    }
+
     private bindButtons(): void {
-        const buttons = this.root.querySelectorAll<HTMLButtonElement>(".touch-btn[data-key]");
+        const buttons = this.root.querySelectorAll<HTMLButtonElement>(".touch-btn[data-key], .touch-btn[data-keys]");
 
         for (const btn of buttons) {
-            const key = btn.dataset.key;
-            if (!key) continue;
+            const keys = this.getButtonKeys(btn);
+            if (keys.length === 0) continue;
             const isTap = btn.dataset.tap === "true";
 
             const onDown = (e: PointerEvent) => {
                 e.preventDefault();
-                if (this.pointerIds.has(key)) return;
-                this.pointerIds.set(key, e.pointerId);
+                if (this.pointerKeys.has(e.pointerId)) return;
+                this.pointerKeys.set(e.pointerId, keys);
                 btn.setPointerCapture(e.pointerId);
                 btn.classList.add("active");
                 if (isTap) {
-                    this.input.tapVirtual(key);
+                    for (const key of keys) {
+                        this.input.tapVirtual(key);
+                    }
                 } else {
-                    this.input.setVirtualDown(key, true);
+                    for (const key of keys) {
+                        this.pressKey(key);
+                    }
                 }
             };
 
             const onUp = (e: PointerEvent) => {
-                if (this.pointerIds.get(key) !== e.pointerId) return;
-                this.pointerIds.delete(key);
+                const held = this.pointerKeys.get(e.pointerId);
+                if (!held) return;
+                this.pointerKeys.delete(e.pointerId);
                 btn.classList.remove("active");
                 if (!isTap) {
-                    this.input.setVirtualDown(key, false);
+                    for (const key of held) {
+                        this.releaseKey(key);
+                    }
                 }
             };
 

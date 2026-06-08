@@ -1,0 +1,27 @@
+on:
+  push:
+    branches: [main]
+
+jobs:
+  publish:
+    runs-on: codeberg-small
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: npm install -g pnpm@10
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+        env:
+          VITE_BASE: /burden-of-proof-clock-stopped-at-eleven/
+
+      - uses: https://codeberg.org/git-pages/action@v2
+        with:
+          site: https://temedeus.codeberg.page/burden-of-proof-clock-stopped-at-eleven/
+          token: ${{ forge.token }}
+          source: dist/

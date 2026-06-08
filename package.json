@@ -11,7 +11,8 @@
     "docker:up": "docker compose --profile full up --build",
     "docker:down": "docker compose --profile full down",
     "docker:clean": "docker compose --profile full down -v --remove-orphans",
-    "build": "tsc",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "validate": "tsx scripts/validate-content.mjs",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"

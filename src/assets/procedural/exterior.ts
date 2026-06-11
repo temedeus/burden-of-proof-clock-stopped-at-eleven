@@ -1,19 +1,60 @@
 import { P } from "./palette";
-import { r } from "./pixel";
+import { grid, r } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
 
 export const EXTERIOR_SPRITES: Record<string, ProceduralSpriteDef> = {
     manor_gate: {
-        nativeWidth: 48,
-        nativeHeight: 40,
+        nativeWidth: 96,
+        nativeHeight: 64,
         draw(ctx) {
-            r(ctx, 4, 0, 6, 40, P.stone);
-            r(ctx, 38, 0, 6, 40, P.stone);
-            r(ctx, 4, 0, 40, 6, P.stoneLight);
-            r(ctx, 14, 8, 20, 32, P.black);
-            r(ctx, 16, 10, 16, 28, P.woodDark);
-            r(ctx, 18, 12, 12, 24, P.wood);
-            r(ctx, 28, 20, 4, 4, P.gold);
+            // Stone gate posts
+            r(ctx, 2, 0, 16, 64, P.stone);
+            r(ctx, 78, 0, 16, 64, P.stone);
+            r(ctx, 2, 0, 16, 8, P.stoneLight);
+            r(ctx, 78, 0, 16, 8, P.stoneLight);
+            r(ctx, 0, 0, 2, 64, P.stoneHi);
+            r(ctx, 94, 0, 2, 64, P.stoneHi);
+            r(ctx, 4, 10, 4, 44, P.stoneLight);
+            r(ctx, 88, 10, 4, 44, P.stoneLight);
+
+            // Gravel path through the opening (top-down)
+            r(ctx, 18, 50, 60, 14, P.gravel);
+            r(ctx, 22, 52, 52, 10, P.gravelLight);
+
+            // Stone threshold across the base
+            r(ctx, 0, 58, 96, 6, P.stone);
+            r(ctx, 18, 58, 60, 2, P.stoneLight);
+
+            // Wrought-iron rails (horizontal, seen from above)
+            r(ctx, 18, 10, 60, 3, P.silverDark);
+            r(ctx, 18, 10, 60, 1, P.silver);
+            r(ctx, 18, 22, 60, 2, P.silverDark);
+            r(ctx, 18, 34, 60, 2, P.silverDark);
+            r(ctx, 18, 44, 60, 3, P.silverDark);
+
+            // Vertical bars between posts
+            for (let x = 22; x <= 70; x += 6) {
+                r(ctx, x, 12, 2, 36, P.silverDark);
+                r(ctx, x, 12, 1, 36, P.silver);
+            }
+
+            // Decorative arch / finial along the top rail
+            grid(ctx, 40, 4, 2, [
+                "...ss...",
+                "..slls..",
+                ".slllls.",
+                "slllllls"
+            ], { s: P.silverDark, l: P.silver });
+
+            // Hinges and latch hardware on the posts
+            r(ctx, 14, 26, 5, 6, P.goldDark);
+            r(ctx, 77, 26, 5, 6, P.goldDark);
+            r(ctx, 44, 28, 8, 4, P.gold);
+            r(ctx, 46, 30, 4, 2, P.goldDark);
+
+            // Spear-point finials on post caps
+            r(ctx, 8, 0, 4, 4, P.silver);
+            r(ctx, 84, 0, 4, 4, P.silver);
         }
     },
 

@@ -88,27 +88,31 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     }),
 
     gravel: tile32((ctx) => {
-        grid(ctx, 0, 0, 2, [
-            "oooooooooooooooo",
-            "ovVvVvVvVvVvVvVvo",
-            "oVvVvVvVvVvVvVvVvo",
-            "ovVvVvVvVvVvVvVvvo",
-            "oVvVvVvVvVvVvVvVvo",
-            "ovVvVvVvVvVvVvVvvo",
-            "oVvVvVvVvVvVvVvVvo",
-            "ovVvVvVvVvVvVvVvvo",
-            "oVvVvVvVvVvVvVvVvo",
-            "ovVvVvVvVvVvVvVvvo",
-            "oVvVvVvVvVvVvVvVvo",
-            "ovVvVvVvVvVvVvVvvo",
-            "oVvVvVvVvVvVvVvVvo",
-            "ovVvVvVvVvVvVvVvvo",
-            "oVvVvVvVvVvVvVvVvo",
-            "oooooooooooooooo"
-        ], { ...C, v: P.gravel, V: P.gravelLight });
-        r(ctx, 6, 8, 2, 2, P.gravelDark);
-        r(ctx, 18, 14, 2, 2, P.gravelDark);
-        r(ctx, 12, 20, 2, 2, P.gravelDark);
+        // Uniform fill — no outline ring so path tiles blend with each other and grass edges
+        r(ctx, 0, 0, 32, 32, P.gravel);
+        const pebbles: [number, number, number, number, string][] = [
+            [2, 4, 2, 2, P.gravelLight],
+            [9, 2, 3, 2, P.gravelDark],
+            [16, 6, 2, 3, P.gravelLight],
+            [23, 3, 2, 2, P.gravelDark],
+            [28, 8, 2, 2, P.gravelLight],
+            [5, 12, 2, 2, P.gravelDark],
+            [13, 11, 3, 2, P.gravelLight],
+            [20, 14, 2, 2, P.gravelDark],
+            [26, 17, 3, 2, P.gravelLight],
+            [1, 19, 2, 2, P.gravelLight],
+            [8, 22, 2, 3, P.gravelDark],
+            [15, 20, 2, 2, P.gravelLight],
+            [22, 24, 3, 2, P.gravelDark],
+            [27, 21, 2, 2, P.gravelLight],
+            [4, 27, 2, 2, P.gravelDark],
+            [12, 26, 2, 2, P.gravelLight],
+            [18, 28, 3, 2, P.gravelDark],
+            [25, 27, 2, 2, P.gravelLight]
+        ];
+        for (const [x, y, w, h, color] of pebbles) {
+            r(ctx, x, y, w, h, color);
+        }
     }),
 
     door: {

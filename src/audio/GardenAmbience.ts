@@ -5,7 +5,7 @@ import type { Room } from "../world/Room";
 const FOUNTAIN_LOOP_SEC = 4;
 const FOUNTAIN_BED_GAIN = 0.014;
 const FOUNTAIN_SPLASH_BUS_GAIN = 0.06;
-const BIRD_GAIN = 0.11;
+const BIRD_GAIN = 0.085;
 
 const OUTDOOR_ROOM_IDS = new Set(["garden", "courtyard"]);
 
@@ -257,27 +257,34 @@ export class GardenAmbience {
         const t = ctx.currentTime;
         const noteCount = 2 + Math.floor(Math.random() * 3);
         let at = t;
-        const baseHz = 2200 + Math.random() * 1800;
+        const baseHz = 1100 + Math.random() * 1000;
+
+        const toneFilter = ctx.createBiquadFilter();
+        toneFilter.type = "lowpass";
+        toneFilter.frequency.value = 2100 + Math.random() * 500;
+        toneFilter.Q.value = 0.45;
+        toneFilter.connect(ctx.destination);
 
         for (let i = 0; i < noteCount; i++) {
             const osc = ctx.createOscillator();
             osc.type = "sine";
-            const mult = 1 + (Math.random() - 0.5) * 0.35;
-            osc.frequency.value = baseHz * mult * (i > 0 ? 1.12 + Math.random() * 0.2 : 1);
+            const mult = 1 + (Math.random() - 0.5) * 0.25;
+            osc.frequency.value = baseHz * mult * (i > 0 ? 1.08 + Math.random() * 0.14 : 1);
 
             const gain = ctx.createGain();
-            const dur = 0.04 + Math.random() * 0.07;
-            const peak = BIRD_GAIN * volumeScale * (0.7 + Math.random() * 0.3);
+            const dur = 0.06 + Math.random() * 0.1;
+            const attack = 0.02 + Math.random() * 0.02;
+            const peak = BIRD_GAIN * volumeScale * (0.65 + Math.random() * 0.25);
             gain.gain.setValueAtTime(0.0001, at);
-            gain.gain.linearRampToValueAtTime(peak, at + 0.008);
+            gain.gain.linearRampToValueAtTime(peak, at + attack);
             gain.gain.exponentialRampToValueAtTime(0.0001, at + dur);
 
             osc.connect(gain);
-            gain.connect(ctx.destination);
+            gain.connect(toneFilter);
             osc.start(at);
-            osc.stop(at + dur + 0.02);
+            osc.stop(at + dur + 0.03);
 
-            at += dur * 0.55 + 0.03 + Math.random() * 0.08;
+            at += dur * 0.5 + 0.04 + Math.random() * 0.1;
         }
     }
 }

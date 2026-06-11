@@ -4,12 +4,9 @@ import { grid, r } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
 
 const leafC = {
-    o: P.outline,
     d: P.leafDark,
     l: P.leaf,
-    L: P.leafLight,
-    t: P.woodDark,
-    w: P.wood
+    L: P.leafLight
 };
 
 export const GARDEN_SPRITES: Record<string, ProceduralSpriteDef> = {
@@ -23,19 +20,50 @@ export const GARDEN_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 48,
         nativeHeight: 64,
         draw(ctx) {
-            r(ctx, 20, 40, 8, 24, P.woodDark);
-            r(ctx, 18, 38, 12, 4, P.wood);
-            grid(ctx, 4, 0, 2, [
-                "....dddddddd....",
-                "..ddlllllldd..",
-                ".dlllllllllld.",
-                "dlllllllllllld",
-                "dlllllllllllld",
-                ".dlllllllllld.",
-                "..dlllllllld..",
-                "....llllll...."
+            // Trunk — tapered with bark variation
+            r(ctx, 22, 44, 4, 20, P.woodDark);
+            r(ctx, 20, 42, 8, 6, P.wood);
+            r(ctx, 21, 48, 2, 12, P.woodLight);
+            r(ctx, 25, 50, 1, 8, P.woodDark);
+
+            // Lower canopy lobe (wide)
+            grid(ctx, 0, 22, 2, [
+                "......dddddd......",
+                "....ddlllllldd....",
+                "...dlllllllllld...",
+                "..dlllllllllllld..",
+                ".dlllllllllllllld.",
+                ".dlllllllllllllld.",
+                "..dlllllllllllld..",
+                "...dlllllllllld...",
+                "....ddlllllldd....",
+                "......dddddd......"
             ], leafC);
-            r(ctx, 20, 8, 8, 8, P.leafLight);
+
+            // Upper canopy lobe (offset for asymmetry)
+            grid(ctx, 10, 2, 2, [
+                "....dddddd......",
+                "..ddlllllldd....",
+                ".dlllllllllld.",
+                "dlllllllllllld",
+                "dlllllllllllld",
+                ".dlllllllllld.",
+                "..ddlllllldd....",
+                "....dddddd......"
+            ], leafC);
+
+            // Side foliage puff
+            grid(ctx, 0, 12, 2, [
+                "..dddd..",
+                "dlllld.",
+                "dlllld.",
+                "..dd...."
+            ], leafC);
+
+            // Sunlit highlights
+            r(ctx, 16, 8, 4, 3, P.leafLight);
+            r(ctx, 28, 18, 3, 3, P.leafLight);
+            r(ctx, 10, 28, 3, 2, P.leafLight);
         }
     },
 
@@ -43,10 +71,36 @@ export const GARDEN_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 32,
         nativeHeight: 24,
         draw(ctx) {
-            r(ctx, 2, 8, 28, 14, P.leaf);
-            r(ctx, 4, 4, 24, 12, P.leafLight);
-            r(ctx, 8, 6, 16, 10, P.leafDark);
-            r(ctx, 14, 18, 4, 6, P.leafDark);
+            // Irregular shrub mass — no hard rectangular blocks
+            grid(ctx, 0, 2, 2, [
+                "......dddddd......",
+                "....ddlllllldd....",
+                "...dlllllllllld...",
+                "..dlllllllllllld..",
+                ".dlllllllllllllld.",
+                ".dlllllllllllllld.",
+                "..dlllllllllllld..",
+                "...dlllllllllld...",
+                "....ddlllllldd....",
+                "......dddddd......"
+            ], leafC);
+
+            // Secondary lobe for depth
+            grid(ctx, 14, 0, 2, [
+                "..dddd..",
+                ".dlllld.",
+                "dlllllld",
+                ".dlllld.",
+                "..dddd.."
+            ], leafC);
+
+            // Ground shadow / base
+            r(ctx, 6, 18, 20, 4, P.leafDark);
+            r(ctx, 10, 16, 12, 3, P.leaf);
+
+            // Highlights
+            r(ctx, 8, 6, 3, 2, P.leafLight);
+            r(ctx, 20, 8, 2, 2, P.leafLight);
         }
     },
 

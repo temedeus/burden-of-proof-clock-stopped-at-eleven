@@ -134,8 +134,19 @@
     "description": "A closed wrought-iron gate. It does not open from this side.",
     "width": 3,
     "height": 1,
-    "drawWidth": 6,
-    "drawHeight": 4,
+    "drawWidth": 4,
+    "drawHeight": 3,
+    "renderAnchor": "bottom",
+    "spriteName": "manor_gate"
+  },
+  "gate_courtyard_south": {
+    "id": "gate_courtyard_south",
+    "name": "Courtyard gate",
+    "description": "A closed wrought-iron gate leading out of the estate.",
+    "width": 3,
+    "height": 1,
+    "drawWidth": 4,
+    "drawHeight": 3,
     "renderAnchor": "bottom",
     "spriteName": "manor_gate"
   },

@@ -9,7 +9,9 @@ export const TILE_TO_SPRITE: Record<number, string> = {
     2: 'floor',
     3: 'door',
     4: 'grass',
-    5: 'gravel'
+    5: 'gravel',
+    6: 'fence',
+    7: 'fence_post'
 };
 
 export enum SpriteId {

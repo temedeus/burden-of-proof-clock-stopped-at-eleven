@@ -135,11 +135,15 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 32,
         nativeHeight: 32,
         draw(ctx) {
-            r(ctx, 2, 10, 28, 6, P.wood);
-            r(ctx, 2, 10, 28, 2, P.woodLight);
-            r(ctx, 6, 16, 4, 14, P.woodDark);
-            r(ctx, 22, 16, 4, 14, P.woodDark);
-            r(ctx, 0, 8, 32, 2, P.outline);
+            r(ctx, 2, 10, 28, 8, P.woodLight);
+            r(ctx, 2, 10, 28, 2, P.woodHi);
+            r(ctx, 2, 16, 28, 2, P.woodDark);
+            r(ctx, 2, 10, 2, 8, P.woodHi);
+            r(ctx, 28, 10, 2, 8, P.woodDark);
+            r(ctx, 6, 18, 4, 12, P.woodDark);
+            r(ctx, 22, 18, 4, 12, P.woodDark);
+            r(ctx, 7, 18, 2, 2, P.wood);
+            r(ctx, 23, 18, 2, 2, P.wood);
         }
     },
 

@@ -1,6 +1,15 @@
 import {Room} from "./Room";
 import {TileMap} from "./TileMap";
-import {TILE_DOOR, TILE_FLOOR, TILE_FURNITURE, TILE_GRASS, TILE_GRAVEL, TILE_WALL} from "./TileTypes";
+import {
+    TILE_DOOR,
+    TILE_FENCE,
+    TILE_FENCE_POST,
+    TILE_FLOOR,
+    TILE_FURNITURE,
+    TILE_GRASS,
+    TILE_GRAVEL,
+    TILE_WALL
+} from "./TileTypes";
 import {Interactable} from "./Interactable";
 import {NPC} from "../entities/NPC";
 import {TILE_SIZE} from "./constants";
@@ -143,6 +152,26 @@ function placeFurniture(
     return interactable;
 }
 
+function applySouthFenceBorder(
+    tiles: number[],
+    roomWidth: number,
+    roomHeight: number,
+    gateCenterX: number,
+    gateWidthTiles: number
+): void {
+    const bottomY = roomHeight - 1;
+    const gateRadius = Math.floor(gateWidthTiles / 2);
+
+    for (let x = 0; x < roomWidth; x++) {
+        const idx = bottomY * roomWidth + x;
+        if (Math.abs(x - gateCenterX) <= gateRadius) {
+            tiles[idx] = TILE_GRAVEL;
+            continue;
+        }
+        tiles[idx] = x === 0 || x === roomWidth - 1 ? TILE_FENCE_POST : TILE_FENCE;
+    }
+}
+
 function applyGravelPath(
     tiles: number[],
     roomWidth: number,
@@ -190,17 +219,30 @@ export function createRoomFromConfig(config: RoomConfig, width?: number, height?
         applyGravelPath(tiles, roomWidth, roomHeight, config.gravelPath);
     }
 
+    if (config.southFenceBorder) {
+        const gateCx = config.gravelPath
+            ? resolvePosition(config.gravelPath.centerX, "width", roomWidth)
+            : Math.floor(roomWidth / 2);
+        const gateW = config.gravelPath?.widthTiles ?? 3;
+        applySouthFenceBorder(tiles, roomWidth, roomHeight, gateCx, gateW);
+    }
+
     /** Terrain before props; used to draw grass/gravel under transparent furniture sprites */
     const terrainBeforeFurniture = tiles.slice();
 
-    // Bottom wall gate sits on gravel path: underlay gravel where wall meets path (replacing wall tiles next)
-    if (config.gravelPath) {
-        const cx = resolvePosition(config.gravelPath.centerX, "width", roomWidth);
+    // Underlay for bottom gate / fence row (room floor under fence, gravel in gate gap)
+    if (config.southFenceBorder || config.gravelPath) {
+        const cx = config.gravelPath
+            ? resolvePosition(config.gravelPath.centerX, "width", roomWidth)
+            : Math.floor(roomWidth / 2);
         const bottomY = roomHeight - 1;
-        for (let dx = -1; dx <= 1; dx++) {
-            const x = cx + dx;
-            if (x >= 1 && x < roomWidth - 1) {
-                terrainBeforeFurniture[bottomY * roomWidth + x] = TILE_GRAVEL;
+        const gateRadius = Math.floor((config.gravelPath?.widthTiles ?? 3) / 2);
+        for (let x = 0; x < roomWidth; x++) {
+            const idx = bottomY * roomWidth + x;
+            if (Math.abs(x - cx) <= gateRadius) {
+                terrainBeforeFurniture[idx] = TILE_GRAVEL;
+            } else if (config.southFenceBorder) {
+                terrainBeforeFurniture[idx] = baseFloor;
             }
         }
     }

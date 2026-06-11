@@ -5,7 +5,9 @@ import {
     TILE_DOOR,
     TILE_FLOOR,
     TILE_GRASS,
-    TILE_GRAVEL
+    TILE_GRAVEL,
+    TILE_FENCE,
+    TILE_FENCE_POST
 } from "./TileTypes";
 import { NPC } from "../entities/NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
@@ -28,7 +30,12 @@ export class TileMap {
         }
 
         const tile = this.tiles[ty * this.width + tx];
-        if (tile === TILE_WALL || tile === TILE_FURNITURE) {
+        if (
+            tile === TILE_WALL ||
+            tile === TILE_FURNITURE ||
+            tile === TILE_FENCE ||
+            tile === TILE_FENCE_POST
+        ) {
             return true;
         }
 
@@ -96,7 +103,11 @@ export class TileMap {
                             ? 'gravel'
                             : tile === TILE_FURNITURE
                               ? this.spriteUnderFurniture(x, y)
-                              : TILE_TO_SPRITE[tile];
+                              : tile === TILE_FENCE
+                                ? 'fence'
+                                : tile === TILE_FENCE_POST
+                                  ? 'fence_post'
+                                  : TILE_TO_SPRITE[tile];
                 
                 if (spriteName) {
                     // Render sprite from spritesheet (will be scaled to TILE_SIZE)

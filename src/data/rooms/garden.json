@@ -8,6 +8,7 @@
     "widthTiles": 3,
     "centerX": "center"
   },
+  "southFenceBorder": true,
   "furniture": [
     {
       "furnitureId": "pond",

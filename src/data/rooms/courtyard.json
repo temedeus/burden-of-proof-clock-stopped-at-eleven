@@ -3,12 +3,13 @@
   "width": 20,
   "height": 15,
   "floorTile": "gravel",
+  "southFenceBorder": true,
   "furniture": [
     {
-      "furnitureId": "manor_gate",
-      "x": 11,
-      "y": 16,
-      "anchor": "top-left"
+      "furnitureId": "gate_courtyard_south",
+      "x": "center",
+      "y": "bottom",
+      "anchor": "center"
     },
     {
       "furnitureId": "manor_building",

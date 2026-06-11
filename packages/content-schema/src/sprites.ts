@@ -29,6 +29,8 @@ export const VALID_SPRITE_NAMES = [
     "pond",
     "grass",
     "gravel",
+    "fence",
+    "fence_post",
     "manor_gate",
     "manor_building",
     "fireplace",

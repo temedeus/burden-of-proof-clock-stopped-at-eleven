@@ -36,6 +36,8 @@ export interface RoomConfig {
     height: number;
     floorTile?: "floor" | "grass" | "gravel";
     gravelPath?: GravelPathConfig;
+    /** Replace the south wall row with iron fence tiles (gate gap from gravel path). */
+    southFenceBorder?: boolean;
     furniture: FurniturePlacement[];
     exits: ExitConfig[];
     npcs?: NPCPlacement[];

@@ -6,3 +6,7 @@ export const TILE_DOOR = 3;
 export const TILE_GRASS = 4;
 /** Outdoor gravel path (spritesheet4: gravel) */
 export const TILE_GRAVEL = 5;
+/** Wrought-iron fence segment (matches garden gate) */
+export const TILE_FENCE = 6;
+/** Stone fence post at fence corners */
+export const TILE_FENCE_POST = 7;

@@ -10,6 +10,17 @@ export function isTouchDevice(): boolean {
     return touchDevice;
 }
 
+/** Enable touch UI on desktop via `?simulateMobile=true` or `?simulateMobile=1`. */
+export function isSimulateMobile(): boolean {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("simulateMobile") === "true" || urlParams.get("simulateMobile") === "1";
+}
+
+/** True when touch controls and mobile UI hints should be shown. */
+export function shouldShowTouchControls(): boolean {
+    return isTouchDevice() || isSimulateMobile();
+}
+
 /** Map a screen pointer position to canvas pixel coordinates. */
 export function clientToCanvas(
     canvas: HTMLCanvasElement,

@@ -17,16 +17,16 @@
     <div id="game-stage">
       <canvas id="game" width="800" height="600"></canvas>
       <div id="touch-controls" hidden>
-        <div class="touch-dpad" aria-label="Movement controls">
-          <button type="button" class="touch-btn" data-keys="arrowup,arrowleft" aria-label="Northwest">↖</button>
-          <button type="button" class="touch-btn" data-key="arrowup" aria-label="Up">↑</button>
-          <button type="button" class="touch-btn" data-keys="arrowup,arrowright" aria-label="Northeast">↗</button>
-          <button type="button" class="touch-btn" data-key="arrowleft" aria-label="Left">←</button>
-          <span class="touch-btn empty"></span>
-          <button type="button" class="touch-btn" data-key="arrowright" aria-label="Right">→</button>
-          <button type="button" class="touch-btn" data-keys="arrowdown,arrowleft" aria-label="Southwest">↙</button>
-          <button type="button" class="touch-btn" data-key="arrowdown" aria-label="Down">↓</button>
-          <button type="button" class="touch-btn" data-keys="arrowdown,arrowright" aria-label="Southeast">↘</button>
+        <div class="touch-dpad" aria-label="Movement controls — drag across sectors">
+          <span class="touch-btn" data-sector="5" aria-hidden="true">↖</span>
+          <span class="touch-btn" data-sector="6" aria-hidden="true">↑</span>
+          <span class="touch-btn" data-sector="7" aria-hidden="true">↗</span>
+          <span class="touch-btn" data-sector="4" aria-hidden="true">←</span>
+          <span class="touch-btn empty" aria-hidden="true"></span>
+          <span class="touch-btn" data-sector="0" aria-hidden="true">→</span>
+          <span class="touch-btn" data-sector="3" aria-hidden="true">↙</span>
+          <span class="touch-btn" data-sector="2" aria-hidden="true">↓</span>
+          <span class="touch-btn" data-sector="1" aria-hidden="true">↘</span>
         </div>
         <div class="touch-actions" aria-label="Action controls">
           <button type="button" class="touch-btn wide" data-key="e" data-tap="true" aria-label="Interact">E</button>

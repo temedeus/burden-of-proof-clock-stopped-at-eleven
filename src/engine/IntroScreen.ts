@@ -1,6 +1,6 @@
 import { Input } from "./Input";
 import { spriteLoader } from "../assets/SpriteLoader";
-import { isTouchDevice } from "./platform";
+import { shouldShowTouchControls } from "./platform";
 
 export type PlayerSpriteName = "female_detective" | "male_detective";
 
@@ -74,7 +74,7 @@ export class IntroScreen {
         ctx.fillStyle = "rgba(255,255,255,0.7)";
         ctx.font = "18px serif";
         ctx.textAlign = "center";
-        const touch = isTouchDevice();
+        const touch = shouldShowTouchControls();
         if (isLastSlide) {
             const hint = touch
                 ? "Tap to begin investigation"

@@ -75,15 +75,16 @@ body {
   grid-template-columns: 52px 52px 52px;
   grid-template-rows: 52px 52px 52px;
   gap: 4px;
-  pointer-events: none;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: pointer;
 }
 
 .touch-dpad .touch-btn {
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .touch-dpad .touch-btn.empty {
-  pointer-events: none;
   visibility: hidden;
 }
 

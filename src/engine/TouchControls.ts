@@ -1,23 +1,49 @@
 import { Input } from "./Input";
-import { isTouchDevice } from "./platform";
+import { isSimulateMobile, isTouchDevice, shouldShowTouchControls } from "./platform";
 
 const ROTATE_HINT_KEY = "clock-stopped-at-eleven-rotate-hint-dismissed";
 
+const MOVEMENT_KEYS = ["arrowup", "arrowdown", "arrowleft", "arrowright"] as const;
+
+/** Eight compass sectors (E, SE, S, SW, W, NW, N, NE) from atan2 angle. */
+const SECTOR_KEYS: readonly (readonly string[])[] = [
+    ["arrowright"],
+    ["arrowdown", "arrowright"],
+    ["arrowdown"],
+    ["arrowdown", "arrowleft"],
+    ["arrowleft"],
+    ["arrowup", "arrowleft"],
+    ["arrowup"],
+    ["arrowup", "arrowright"]
+];
+
 export class TouchControls {
     private active = false;
-    private pointerKeys = new Map<number, string[]>();
-    private keyRefCount = new Map<string, number>();
+    private dpadEl: HTMLElement | null = null;
+    private dpadPointerId: number | null = null;
+    private dpadSector: number | null = null;
+    private dpadActiveKeys = new Set<string>();
+    private sectorButtons: HTMLElement[] = [];
 
     constructor(
         private input: Input,
         private root: HTMLElement
     ) {
-        if (!isTouchDevice()) return;
+        if (!shouldShowTouchControls()) return;
 
         this.active = true;
         this.root.hidden = false;
-        this.bindButtons();
+        this.dpadEl = this.root.querySelector(".touch-dpad");
+        this.sectorButtons = Array.from(
+            this.root.querySelectorAll<HTMLElement>(".touch-dpad [data-sector]")
+        );
+        this.bindDpad();
+        this.bindActionButtons();
         this.setupRotateHint();
+
+        if (isSimulateMobile()) {
+            console.log("📱 simulateMobile: touch controls enabled for desktop testing");
+        }
     }
 
     isActive(): boolean {
@@ -29,69 +55,106 @@ export class TouchControls {
         this.root.hidden = !visible;
     }
 
-    private getButtonKeys(btn: HTMLButtonElement): string[] {
-        if (btn.dataset.keys) {
-            return btn.dataset.keys.split(",").map((k) => k.trim()).filter(Boolean);
-        }
-        if (btn.dataset.key) {
-            return [btn.dataset.key];
-        }
-        return [];
+    private bindDpad(): void {
+        if (!this.dpadEl) return;
+
+        const onDown = (e: PointerEvent) => {
+            if (this.dpadPointerId !== null) return;
+            e.preventDefault();
+            this.dpadPointerId = e.pointerId;
+            this.dpadEl!.setPointerCapture(e.pointerId);
+            this.updateDpadFromPointer(e.clientX, e.clientY);
+        };
+
+        const onMove = (e: PointerEvent) => {
+            if (this.dpadPointerId !== e.pointerId) return;
+            e.preventDefault();
+            this.updateDpadFromPointer(e.clientX, e.clientY);
+        };
+
+        const onEnd = (e: PointerEvent) => {
+            if (this.dpadPointerId !== e.pointerId) return;
+            this.dpadPointerId = null;
+            this.clearDpad();
+        };
+
+        this.dpadEl.addEventListener("pointerdown", onDown, { passive: false });
+        this.dpadEl.addEventListener("pointermove", onMove, { passive: false });
+        this.dpadEl.addEventListener("pointerup", onEnd);
+        this.dpadEl.addEventListener("pointercancel", onEnd);
+        this.dpadEl.addEventListener("lostpointercapture", onEnd);
     }
 
-    private pressKey(key: string): void {
-        const count = this.keyRefCount.get(key) ?? 0;
-        if (count === 0) {
-            this.input.setVirtualDown(key, true);
+    private updateDpadFromPointer(clientX: number, clientY: number): void {
+        if (!this.dpadEl) return;
+
+        const rect = this.dpadEl.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = clientX - cx;
+        const dy = clientY - cy;
+        const dist = Math.hypot(dx, dy);
+        const deadRadius = Math.min(rect.width, rect.height) * 0.14;
+
+        let sector: number | null = null;
+        if (dist >= deadRadius) {
+            let angle = Math.atan2(dy, dx);
+            if (angle < 0) angle += Math.PI * 2;
+            sector = Math.floor((angle + Math.PI / 8) / (Math.PI / 4)) % 8;
         }
-        this.keyRefCount.set(key, count + 1);
+
+        if (sector === this.dpadSector) return;
+
+        this.dpadSector = sector;
+        const keys = sector === null ? [] : [...SECTOR_KEYS[sector]];
+        this.syncDpadKeys(keys);
+        this.highlightSector(sector);
     }
 
-    private releaseKey(key: string): void {
-        const count = this.keyRefCount.get(key) ?? 0;
-        if (count <= 1) {
-            this.keyRefCount.delete(key);
-            this.input.setVirtualDown(key, false);
-        } else {
-            this.keyRefCount.set(key, count - 1);
+    private syncDpadKeys(keys: string[]): void {
+        const next = new Set(keys);
+        for (const key of MOVEMENT_KEYS) {
+            if (this.dpadActiveKeys.has(key) && !next.has(key)) {
+                this.input.setVirtualDown(key, false);
+            }
+            if (!this.dpadActiveKeys.has(key) && next.has(key)) {
+                this.input.setVirtualDown(key, true);
+            }
+        }
+        this.dpadActiveKeys = next;
+    }
+
+    private clearDpad(): void {
+        this.syncDpadKeys([]);
+        this.dpadSector = null;
+        this.highlightSector(null);
+    }
+
+    private highlightSector(sector: number | null): void {
+        for (const btn of this.sectorButtons) {
+            const s = btn.dataset.sector;
+            btn.classList.toggle("active", s !== undefined && sector !== null && Number(s) === sector);
         }
     }
 
-    private bindButtons(): void {
-        const buttons = this.root.querySelectorAll<HTMLButtonElement>(".touch-btn[data-key], .touch-btn[data-keys]");
+    private bindActionButtons(): void {
+        const buttons = this.root.querySelectorAll<HTMLButtonElement>(
+            ".touch-actions .touch-btn[data-key]"
+        );
 
         for (const btn of buttons) {
-            const keys = this.getButtonKeys(btn);
-            if (keys.length === 0) continue;
-            const isTap = btn.dataset.tap === "true";
+            const key = btn.dataset.key;
+            if (!key) continue;
 
             const onDown = (e: PointerEvent) => {
                 e.preventDefault();
-                if (this.pointerKeys.has(e.pointerId)) return;
-                this.pointerKeys.set(e.pointerId, keys);
                 btn.setPointerCapture(e.pointerId);
                 btn.classList.add("active");
-                if (isTap) {
-                    for (const key of keys) {
-                        this.input.tapVirtual(key);
-                    }
-                } else {
-                    for (const key of keys) {
-                        this.pressKey(key);
-                    }
-                }
+                this.input.tapVirtual(key);
             };
 
             const onUp = (e: PointerEvent) => {
-                const held = this.pointerKeys.get(e.pointerId);
-                if (!held) return;
-                this.pointerKeys.delete(e.pointerId);
                 btn.classList.remove("active");
-                if (!isTap) {
-                    for (const key of held) {
-                        this.releaseKey(key);
-                    }
-                }
             };
 
             btn.addEventListener("pointerdown", onDown, { passive: false });
@@ -102,6 +165,8 @@ export class TouchControls {
     }
 
     private setupRotateHint(): void {
+        if (!isTouchDevice() || isSimulateMobile()) return;
+
         const hint = document.getElementById("rotate-hint");
         const dismiss = document.getElementById("rotate-hint-dismiss");
         if (!hint || !dismiss) return;

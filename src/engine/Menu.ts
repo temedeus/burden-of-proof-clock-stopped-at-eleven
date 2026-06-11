@@ -1,7 +1,7 @@
 import { Input } from "./Input";
 import { loadSettings, setMuteSounds } from "./Settings";
 import { spriteLoader } from "../assets/SpriteLoader";
-import { isTouchDevice } from "./platform";
+import { shouldShowTouchControls } from "./platform";
 
 export type MenuScreen = "main" | "difficulty" | "character_select" | "pause" | "settings" | "game_over";
 
@@ -299,7 +299,7 @@ export class Menu {
 
         ctx.font = "18px serif";
         ctx.fillStyle = TEXT_COLOR;
-        const charHint = isTouchDevice()
+        const charHint = shouldShowTouchControls()
             ? "Tap a character    Tap below to confirm"
             : "← → to choose    Enter to confirm    Esc to back";
         ctx.fillText(charHint, centerX, h * 0.28);
@@ -323,7 +323,7 @@ export class Menu {
 
         ctx.fillStyle = TEXT_COLOR;
         ctx.font = "16px serif";
-        const playHint = isTouchDevice() ? "Tap below to play" : "Press Enter to play";
+        const playHint = shouldShowTouchControls() ? "Tap below to play" : "Press Enter to play";
         ctx.fillText(playHint, centerX, h * 0.88);
         ctx.textAlign = "left";
     }

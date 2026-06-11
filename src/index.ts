@@ -5,7 +5,7 @@ import { Menu, MenuAction } from "./engine/Menu";
 import { Input } from "./engine/Input";
 import { IntroScreen } from "./engine/IntroScreen";
 import { TouchControls } from "./engine/TouchControls";
-import { clientToCanvas, isTouchDevice } from "./engine/platform";
+import { clientToCanvas, isSimulateMobile, shouldShowTouchControls } from "./engine/platform";
 import { unlockAudio } from "./audio/audioContext";
 import { spriteLoader } from "./assets/SpriteLoader";
 
@@ -43,12 +43,12 @@ function setupAudioUnlock(): void {
 }
 
 function setupCanvasPointer(): void {
-    if (!isTouchDevice()) return;
+    if (!shouldShowTouchControls()) return;
 
     canvas.addEventListener(
         "pointerdown",
         (e) => {
-            if (e.pointerType !== "touch") return;
+            if (e.pointerType !== "touch" && !isSimulateMobile()) return;
             unlockAudio();
             const { x, y } = clientToCanvas(canvas, e.clientX, e.clientY);
 

@@ -1,0 +1,16 @@
+{
+  "id": "stable",
+  "width": 20,
+  "height": 15,
+  "floorTile": "gravel",
+  "furniture": [],
+  "exits": [
+    {
+      "x": 0,
+      "y": "center",
+      "targetRoom": "courtyard",
+      "spawnX": 17,
+      "spawnY": "center"
+    }
+  ]
+}

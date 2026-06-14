@@ -1,0 +1,15 @@
+{
+  "id": "wine_cellar",
+  "width": 20,
+  "height": 15,
+  "furniture": [],
+  "exits": [
+    {
+      "x": 0,
+      "y": "center",
+      "targetRoom": "cellar_storage",
+      "spawnX": 17,
+      "spawnY": "center"
+    }
+  ]
+}

@@ -46,16 +46,16 @@
   ],
   "exits": [
     {
-      "x": "center",
-      "y": "bottom",
+      "x": 0,
+      "y": "center",
       "targetRoom": "hall",
-      "spawnX": "center",
-      "spawnY": 1
+      "spawnX": 17,
+      "spawnY": "center"
     },
     {
       "x": "bottom",
       "y": "center",
-      "targetRoom": "study",
+      "targetRoom": "hidden_room",
       "spawnX": 1,
       "spawnY": "center"
     }

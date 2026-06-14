@@ -1,0 +1,22 @@
+{
+  "id": "guest_room_a",
+  "width": 20,
+  "height": 15,
+  "furniture": [],
+  "exits": [
+    {
+      "x": "bottom",
+      "y": "center",
+      "targetRoom": "landing",
+      "spawnX": 1,
+      "spawnY": "center"
+    },
+    {
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "bathroom_a",
+      "spawnX": "center",
+      "spawnY": 1
+    }
+  ]
+}

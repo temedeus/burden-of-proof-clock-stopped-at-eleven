@@ -49,16 +49,18 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     }),
 
     floor: tile32((ctx) => {
-        // Near-uniform wood — avoids loud checkerboard when tiles repeat
-        r(ctx, 0, 0, 32, 32, P.floorPlank);
-        for (let y = 7; y < 32; y += 8) {
-            r(ctx, 0, y, 32, 1, P.floorSeam);
+        // Horizontal planks — tiles seamlessly; no checkerboard
+        for (let row = 0; row < 4; row++) {
+            const y = row * 8;
+            r(ctx, 0, y, 32, 7, row % 2 === 0 ? P.floorPlank : P.floorPlankAlt);
+            r(ctx, 0, y + 7, 32, 1, P.floorSeam);
         }
-        const grain: [number, number][] = [
-            [5, 3], [14, 11], [23, 5], [9, 19], [27, 14], [17, 25], [3, 22]
+        // Occasional grain knots (sparse, low contrast)
+        const knots: [number, number][] = [
+            [6, 5], [19, 2], [27, 13], [11, 21], [4, 26], [22, 25]
         ];
-        for (const [x, y] of grain) {
-            r(ctx, x, y, 1, 1, P.floorGrain);
+        for (const [kx, ky] of knots) {
+            r(ctx, kx, ky, 2, 1, P.floorGrain);
         }
     }),
 

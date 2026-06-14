@@ -43,7 +43,20 @@ const ROOM_DISPLAY_TITLES: Record<string, string> = {
     kitchen: "Kitchen",
     garden: "Garden",
     courtyard: "Courtyard",
-    dining: "Dining Room"
+    dining: "Dining Room",
+    hidden_room: "Hidden Room",
+    stable: "Stable",
+    landing: "Landing",
+    guest_room_a: "Guest Room A",
+    guest_room_b: "Guest Room B",
+    bathroom_a: "Bathroom A",
+    bathroom_b: "Bathroom B",
+    master_bedroom: "Master Bedroom",
+    maid_room: "Maid Room",
+    attic: "Attic",
+    cellar_storage: "Cellar Storage",
+    wine_cellar: "Wine Cellar",
+    secret_tunnel: "Secret Tunnel"
 };
 
 const ROOM_TITLE_DURATION = 2;
@@ -509,12 +522,12 @@ export class Game {
             }
             
             if (overlapsDoor) {
+                const fromRoomId = this.currentRoom.id;
                 const nextRoom = this.rooms[exit.targetRoom];
 
                 this.currentRoom = nextRoom;
                 this.syncRoomAmbience();
-                this.player.x = exit.spawnX * TILE_SIZE;
-                this.player.y = exit.spawnY * TILE_SIZE;
+                this.placePlayerAfterRoomTransition(fromRoomId, nextRoom, exit.spawnX, exit.spawnY);
                 this.roomTransitionCooldown = 0.65;
                 this.startRoomTitleBanner(exit.targetRoom);
 
@@ -522,12 +535,42 @@ export class Game {
                 const chef = this.getMurderer();
                 if (chef?.isChasing()) {
                     this.murdererSpawnsIn = DIFFICULTY_CONFIG[this.difficulty].murdererSpawnsIn;
-                    this.murdererSpawnX = exit.spawnX * TILE_SIZE;
-                    this.murdererSpawnY = exit.spawnY * TILE_SIZE;
+                    this.murdererSpawnX = this.player.x;
+                    this.murdererSpawnY = this.player.y;
                 }
 
                 return;
             }
+        }
+    }
+
+    /** Spawn after a door transition, inset from the reciprocal entry door so 2×2 player won't bounce back. */
+    private placePlayerAfterRoomTransition(
+        fromRoomId: string,
+        nextRoom: Room,
+        spawnX: number,
+        spawnY: number
+    ): void {
+        this.player.x = spawnX * TILE_SIZE;
+        this.player.y = spawnY * TILE_SIZE;
+
+        const entryExit = nextRoom.exits.find((e) => e.targetRoom === fromRoomId);
+        if (!entryExit) return;
+
+        const insetTiles = 3;
+        const roomW = nextRoom.map.width;
+        const roomH = nextRoom.map.height;
+
+        if (entryExit.y === 0) {
+            this.player.y = Math.max(this.player.y, insetTiles * TILE_SIZE);
+        } else if (entryExit.y === roomH - 1) {
+            this.player.y = Math.min(this.player.y, (roomH - 1 - insetTiles) * TILE_SIZE);
+        }
+
+        if (entryExit.x === 0) {
+            this.player.x = Math.max(this.player.x, insetTiles * TILE_SIZE);
+        } else if (entryExit.x === roomW - 1) {
+            this.player.x = Math.min(this.player.x, (roomW - 1 - insetTiles) * TILE_SIZE);
         }
     }
 

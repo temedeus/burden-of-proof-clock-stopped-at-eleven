@@ -16,6 +16,12 @@
       "x": 1,
       "y": 6,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "staircase",
+      "x": 12,
+      "y": "bottom",
+      "anchor": "center"
     }
   ],
   "exits": [
@@ -25,6 +31,20 @@
       "targetRoom": "kitchen",
       "spawnX": "center",
       "spawnY": "bottom-2"
+    },
+    {
+      "x": "bottom",
+      "y": "center",
+      "targetRoom": "stable",
+      "spawnX": 1,
+      "spawnY": "center"
+    },
+    {
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "cellar_storage",
+      "spawnX": "center",
+      "spawnY": 2
     }
   ]
 }

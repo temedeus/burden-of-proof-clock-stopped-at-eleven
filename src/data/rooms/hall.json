@@ -20,29 +20,42 @@
       "x": 3,
       "y": 1,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "staircase",
+      "x": 12,
+      "y": 2,
+      "anchor": "center"
     }
   ],
   "exits": [
     {
-      "x": "center",
-      "y": "top",
-      "targetRoom": "library",
-      "spawnX": "center",
-      "spawnY": "bottom-3"
+      "x": 0,
+      "y": "center",
+      "targetRoom": "dining",
+      "spawnX": 17,
+      "spawnY": "center"
     },
     {
       "x": "bottom",
       "y": "center",
-      "targetRoom": "kitchen",
+      "targetRoom": "library",
       "spawnX": 1,
       "spawnY": "center"
     },
     {
       "x": "center",
       "y": "bottom",
-      "targetRoom": "garden",
+      "targetRoom": "study",
       "spawnX": "center",
-      "spawnY": 2
+      "spawnY": 1
+    },
+    {
+      "x": "center",
+      "y": "top",
+      "targetRoom": "landing",
+      "spawnX": "center",
+      "spawnY": "bottom-3"
     }
   ],
   "npcs": [

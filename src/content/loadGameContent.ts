@@ -8,13 +8,8 @@ import workerManConfig from "../data/npcs/worker_man.json";
 import workerBoyConfig from "../data/npcs/worker_boy.json";
 import policeConfig from "../data/npcs/police.json";
 import police2Config from "../data/npcs/police2.json";
-import libraryConfig from "../data/rooms/library.json";
-import hallConfig from "../data/rooms/hall.json";
-import studyConfig from "../data/rooms/study.json";
-import kitchenConfig from "../data/rooms/kitchen.json";
-import gardenConfig from "../data/rooms/garden.json";
-import courtyardConfig from "../data/rooms/courtyard.json";
-import diningConfig from "../data/rooms/dining.json";
+
+const roomModules = import.meta.glob("../data/rooms/*.json", { eager: true });
 
 export interface GameContent {
     rooms: Record<string, RoomConfig>;
@@ -22,16 +17,14 @@ export interface GameContent {
 }
 
 export function loadGameContent(): GameContent {
+    const rooms: Record<string, RoomConfig> = {};
+    for (const mod of Object.values(roomModules)) {
+        const config = (mod as { default: RoomConfig }).default;
+        rooms[config.id] = config;
+    }
+
     return {
-        rooms: {
-            library: libraryConfig as RoomConfig,
-            hall: hallConfig as RoomConfig,
-            study: studyConfig as RoomConfig,
-            kitchen: kitchenConfig as RoomConfig,
-            garden: gardenConfig as RoomConfig,
-            courtyard: courtyardConfig as RoomConfig,
-            dining: diningConfig as RoomConfig
-        },
+        rooms,
         npcs: {
             butler: butlerConfig as NPCConfig,
             maid: maidConfig as NPCConfig,

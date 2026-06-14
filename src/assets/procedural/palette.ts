@@ -22,9 +22,10 @@ export const P = {
     shoeBrownHi: "#7a5a42",
 
     /** Floor — low contrast so tiles blend when repeated */
-    floorPlank: "#665040",
-    floorSeam: "#5e4a3c",
-    floorGrain: "#6c5546",
+    floorPlank: "#5c4838",
+    floorPlankAlt: "#544032",
+    floorSeam: "#443428",
+    floorGrain: "#685040",
 
     /** Rug — cool plum so it reads apart from wood furniture */
     carpetPlum: "#4a2848",

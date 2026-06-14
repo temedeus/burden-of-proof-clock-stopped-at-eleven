@@ -1,0 +1,15 @@
+{
+  "id": "bathroom_b",
+  "width": 20,
+  "height": 15,
+  "furniture": [],
+  "exits": [
+    {
+      "x": "center",
+      "y": "top",
+      "targetRoom": "guest_room_b",
+      "spawnX": "center",
+      "spawnY": "bottom-2"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "cellar_storage",
+  "width": 20,
+  "height": 15,
+  "furniture": [
+    {
+      "furnitureId": "staircase",
+      "x": 12,
+      "y": 2,
+      "anchor": "center"
+    }
+  ],
+  "exits": [
+    {
+      "x": "center",
+      "y": "top",
+      "targetRoom": "courtyard",
+      "spawnX": "center",
+      "spawnY": "bottom-3"
+    },
+    {
+      "x": "bottom",
+      "y": "center",
+      "targetRoom": "wine_cellar",
+      "spawnX": 1,
+      "spawnY": "center"
+    },
+    {
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "secret_tunnel",
+      "spawnX": "center",
+      "spawnY": 1
+    }
+  ]
+}

@@ -37,5 +37,6 @@ export enum SpriteId {
     KitchenTable = "kitchen_table",
     BoozeTable = "booze_table",
     DrinkingChair = "drinking_chair",
+    Staircase = "staircase",
     Carpet = "carpet"
 }

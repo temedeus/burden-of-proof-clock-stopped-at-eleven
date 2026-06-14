@@ -24,11 +24,25 @@
   ],
   "exits": [
     {
-      "x": 0,
+      "x": "bottom",
       "y": "center",
-      "targetRoom": "study",
-      "spawnX": 17,
+      "targetRoom": "hall",
+      "spawnX": 1,
       "spawnY": "center"
+    },
+    {
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "kitchen",
+      "spawnX": "center",
+      "spawnY": 1
+    },
+    {
+      "x": "center",
+      "y": "top",
+      "targetRoom": "garden",
+      "spawnX": "center",
+      "spawnY": "bottom-2"
     }
   ]
 }

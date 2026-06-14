@@ -224,6 +224,18 @@
     "renderAnchor": "bottom",
     "spriteName": "dining_table"
   },
+  "staircase": {
+    "id": "staircase",
+    "name": "Staircase",
+    "description": "Stone steps leading to another floor.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 4,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "walkableDecor": true,
+    "spriteName": "staircase"
+  },
   "carpet": {
     "id": "carpet",
     "name": "Carpet",

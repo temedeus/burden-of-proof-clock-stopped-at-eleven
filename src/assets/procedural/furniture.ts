@@ -226,6 +226,33 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    staircase: {
+        nativeWidth: 32,
+        nativeHeight: 32,
+        draw(ctx) {
+            // Top-down view — even treads, same width (reads correctly against a wall)
+            const sx = 4;
+            const sw = 24;
+            const stepCount = 6;
+            const sh = 4;
+            const top = 32 - stepCount * sh;
+
+            for (let i = 0; i < stepCount; i++) {
+                const y = top + i * sh;
+                r(ctx, sx, y, sw, sh - 1, P.stoneLight);
+                r(ctx, sx, y, sw, 1, P.stoneHi);
+                r(ctx, sx + 1, y + sh - 2, sw - 2, 1, P.stone);
+            }
+
+            r(ctx, 2, top, 2, stepCount * sh, P.woodDark);
+            r(ctx, 28, top, 2, stepCount * sh, P.woodDark);
+            r(ctx, 2, top, 2, 2, P.woodHi);
+            r(ctx, 28, top, 2, 2, P.woodHi);
+            r(ctx, 3, 26, 3, 4, P.wood);
+            r(ctx, 26, 26, 3, 4, P.wood);
+        }
+    },
+
     carpet: {
         nativeWidth: 48,
         nativeHeight: 32,

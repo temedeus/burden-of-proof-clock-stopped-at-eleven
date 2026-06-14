@@ -7,7 +7,7 @@ const FOUNTAIN_BED_GAIN = 0.014;
 const FOUNTAIN_SPLASH_BUS_GAIN = 0.06;
 const BIRD_GAIN = 0.085;
 
-const OUTDOOR_ROOM_IDS = new Set(["garden", "courtyard"]);
+const OUTDOOR_ROOM_IDS = new Set(["garden", "courtyard", "stable"]);
 
 export function roomHasFountain(room: Room): boolean {
     return room.interactables.some(

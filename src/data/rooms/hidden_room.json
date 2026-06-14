@@ -1,0 +1,22 @@
+{
+  "id": "hidden_room",
+  "width": 20,
+  "height": 15,
+  "furniture": [],
+  "exits": [
+    {
+      "x": 0,
+      "y": "center",
+      "targetRoom": "library",
+      "spawnX": 17,
+      "spawnY": "center"
+    },
+    {
+      "x": "center",
+      "y": "top",
+      "targetRoom": "secret_tunnel",
+      "spawnX": "center",
+      "spawnY": "bottom-2"
+    }
+  ]
+}

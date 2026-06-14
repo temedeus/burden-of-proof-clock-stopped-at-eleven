@@ -38,6 +38,7 @@ export const VALID_SPRITE_NAMES = [
     "kitchen_table",
     "booze_table",
     "drinking_chair",
+    "staircase",
     "carpet"
 ] as const;
 

@@ -1,6 +1,6 @@
 import { Room } from "../world/Room";
-import { Interactable } from "../world/Interactable";
 import { createRoomFromConfig } from "../world/Rooms";
+import { renderRoomScene, spawnRoomNpcs } from "../render/roomScene";
 import {Input} from "./Input";
 import { Player, PlayerSpriteName } from "../entities/Player";
 import {NPC} from "../entities/NPC";
@@ -15,8 +15,6 @@ import { loadGameContent } from "../content/loadGameContent";
 import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
 import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
-import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
-import { drawFountainAnimated } from "../assets/procedural/fountain";
 import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { gardenAmbience } from "../audio/GardenAmbience";
 import { clueSounds } from "../audio/ClueSounds";
@@ -24,83 +22,6 @@ import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSo
 import type { NPCConfig, NPCDialogConfig, RoomConfig } from "@cse/content-schema";
 
 type GameState = "playing" | "interacting" | "inventory" | "victory";
-
-type DepthActor = { y: number; height: number; render(ctx: CanvasRenderingContext2D): void };
-
-function furnitureActorFromInteractable(
-    obj: Interactable,
-    getAnimTime: () => number
-): DepthActor {
-    const minX = Math.min(...obj.tiles.map((t) => t.x));
-    const maxX = Math.max(...obj.tiles.map((t) => t.x));
-    const minY = Math.min(...obj.tiles.map((t) => t.y));
-    const maxY = Math.max(...obj.tiles.map((t) => t.y));
-
-    const widthTiles = maxX - minX + 1;
-    const heightTiles = maxY - minY + 1;
-
-    let spriteName = "table";
-    if (obj.spriteName) {
-        spriteName = obj.spriteName;
-    } else if (obj.id === "shelves" || obj.id === "bookshelves") {
-        spriteName = "bookshelf";
-    } else if (obj.id === "table") {
-        spriteName = "table";
-    }
-
-    const isFireplace = spriteName === "fireplace";
-    const isFountain = spriteName === "fountain";
-    const decorW = obj.drawWidthTiles;
-    const decorH = obj.drawHeightTiles;
-    const hasDecorDraw = decorW != null && decorH != null;
-
-    let drawW: number;
-    let drawH: number;
-    let drawX: number;
-    let drawY: number;
-
-    if (isFireplace && !hasDecorDraw) {
-        drawW = TILE_SIZE * 3;
-        drawH = TILE_SIZE;
-        drawX = minX * TILE_SIZE;
-        drawY = minY * TILE_SIZE;
-    } else if (hasDecorDraw) {
-        drawW = decorW * TILE_SIZE;
-        drawH = decorH * TILE_SIZE;
-        const footW = widthTiles * TILE_SIZE;
-        const footH = heightTiles * TILE_SIZE;
-        const baseX = minX * TILE_SIZE + (footW - drawW) / 2;
-        if (obj.renderAnchor === "bottom") {
-            drawX = baseX;
-            drawY = (maxY + 1) * TILE_SIZE - drawH;
-        } else {
-            drawX = baseX;
-            drawY = minY * TILE_SIZE + (footH - drawH) / 2;
-        }
-    } else {
-        drawW = widthTiles * TILE_SIZE;
-        drawH = heightTiles * TILE_SIZE;
-        drawX = minX * TILE_SIZE;
-        drawY = minY * TILE_SIZE;
-    }
-
-    const sortY = hasDecorDraw || isFireplace || isFountain ? drawY : minY * TILE_SIZE;
-    const sortH = hasDecorDraw || isFireplace || isFountain ? drawH : heightTiles * TILE_SIZE;
-
-    return {
-        y: sortY,
-        height: sortH,
-        render: (ctx: CanvasRenderingContext2D) => {
-            if (spriteName === "fireplace") {
-                drawFireplaceAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
-            } else if (spriteName === "fountain") {
-                drawFountainAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
-            } else {
-                spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
-            }
-        }
-    };
-}
 
 const POLICE_NPC_IDS = ["police", "police2"];
 
@@ -270,26 +191,8 @@ export class Game {
         };
 
         for (const { config, room } of Object.values(roomConfigs)) {
-            if (!config.npcs) continue;
-            for (const npcPlacement of config.npcs) {
-                const npcConfig = npcConfigs[npcPlacement.npcId];
-                if (npcConfig) {
-                    const npcX = this.resolveNPCPosition(npcPlacement.x, "width", config.width) * TILE_SIZE;
-                    const npcY = this.resolveNPCPosition(npcPlacement.y, "height", config.height) * TILE_SIZE;
-                    room.npcs.push(
-                        new NPC(npcConfig.id, npcX, npcY, npcConfig.name, npcConfig.role, npcConfig.spriteName)
-                    );
-                }
-            }
+            spawnRoomNpcs(room, config, npcConfigs);
         }
-    }
-
-    private resolveNPCPosition(value: number | "center" | "top" | "bottom", dimension: "width" | "height", roomDimension: number): number {
-        if (typeof value === "number") return value;
-        if (value === "center") return Math.floor(roomDimension / 2);
-        if (value === "top") return 1;
-        if (value === "bottom") return roomDimension - 2;
-        return 1;
     }
 
     /** Returns the murderer NPC from whichever room he's in, or null */
@@ -658,54 +561,10 @@ export class Game {
             return;
         }
 
-        ctx.fillStyle = "#222";
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-        this.currentRoom.map.render(ctx);
-
-        // Render doors as single sprite spanning 3 tiles (horizontal or vertical)
-        for (const exit of this.currentRoom.exits) {
-            const isTopOrBottom = exit.y === 0 || exit.y === this.currentRoom.map.height - 1;
-            if (isTopOrBottom) {
-                const x = (exit.x - 1) * TILE_SIZE;
-                const y = exit.y * TILE_SIZE;
-                spriteLoader.drawSprite(ctx, 'door', x, y, TILE_SIZE * 3, TILE_SIZE);
-            } else {
-                // Vertical door: extend bounds slightly to cover floor visible at edges
-                const x = exit.x * TILE_SIZE - 1;
-                const y = (exit.y - 1) * TILE_SIZE - 1;
-                spriteLoader.drawSprite(ctx, 'door', x, y, TILE_SIZE + 2, TILE_SIZE * 3 + 2);
-            }
-        }
-
-        // Walkable floor decals (rugs): no collision; drawn under entities so transparency still reads as floor.
-        const rugActors: DepthActor[] = [];
-        const furnitureActors: DepthActor[] = [];
-        for (const obj of this.currentRoom.interactables) {
-            const actor = furnitureActorFromInteractable(obj, () => this.decorAnimTime);
-            if (obj.walkableDecor) {
-                rugActors.push(actor);
-            } else {
-                furnitureActors.push(actor);
-            }
-        }
-
-        rugActors
-            .slice()
-            .sort((a, b) => a.y + a.height - (b.y + b.height))
-            .forEach((a) => a.render(ctx));
-
-        // Furniture, NPCs, and player — Y-sort so nearer screen-bottom draws on top.
-        const actors: DepthActor[] = [
-            ...furnitureActors,
-            ...this.currentRoom.npcs,
-            this.player
-        ];
-
-        actors
-            .slice()
-            .sort((a, b) => a.y + a.height - (b.y + b.height))
-            .forEach((a) => a.render(ctx));
+        renderRoomScene(ctx, this.currentRoom, {
+            getAnimTime: () => this.decorAnimTime,
+            extraActors: [this.player]
+        });
 
         if (this.debugMode) {
             renderDebugOverlay(ctx, this.player, this.currentRoom, this.clueSystem);

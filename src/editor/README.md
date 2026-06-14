@@ -61,6 +61,20 @@ pnpm docker:down
 pnpm docker:clean   # removes editor_node_modules volume
 ```
 
+## Source layout
+
+| Module | Responsibility |
+|--------|----------------|
+| `index.ts` | Bootstrap: DOM wiring, tabs, startup (~350 lines) |
+| `caseEditor.ts` | Story/clue form, story API |
+| `roomBackend.ts` | Rooms HTTP, backend health |
+| `roomEditor.ts` | Room CRUD, JSON textarea, dirty tracking |
+| `types.ts` | Shared types (`FurnitureConfig`, `EditTarget`) |
+| `canvas/RoomCanvas.ts` | Render loop, selection, pointer input |
+| `canvas/hitTest.ts` | Placement rects, hit tests |
+| `canvas/doorPlacement.ts` | Door ghost, wall snap, spawn pairing |
+| `../render/roomScene.ts` | Shared room painting (game + editor preview) |
+
 ## Game vs editor
 
 | | Game | Editor |

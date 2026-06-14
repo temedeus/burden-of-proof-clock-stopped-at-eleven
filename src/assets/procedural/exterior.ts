@@ -73,6 +73,184 @@ export function drawManorGate(ctx: CanvasRenderingContext2D, w: number, h: numbe
     r(ctx, panelX + 8, h - 12, panelW - 16, 8, P.gravelLight);
 }
 
+/** Pointed gothic window with mullion and warm lit glass. */
+function drawGothicWindow(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    lit = true
+): void {
+    r(ctx, x, y, w, h, P.black);
+    r(ctx, x + 1, y + 1, w - 2, h - 2, P.outline);
+    const glass = lit ? P.candle : P.waterDark;
+    const glassHi = lit ? P.gold : P.water;
+    r(ctx, x + 2, y + 3, w - 4, h - 5, glass);
+    r(ctx, x + 3, y + 4, w - 6, 2, glassHi);
+    r(ctx, x + Math.floor(w / 2) - 1, y + 3, 2, h - 5, P.outline);
+    // Pointed arch
+    const archW = Math.max(2, w - 6);
+    const ax = x + 3;
+    for (let i = 0; i < archW / 2; i++) {
+        r(ctx, ax + i, y + 1, 1, 2, P.outline);
+        r(ctx, ax + archW - 1 - i, y + 1, 1, 2, P.outline);
+    }
+    r(ctx, x + Math.floor(w / 2) - 1, y, 2, 2, P.outline);
+}
+
+/** Narrow tower with spire, battlements, and stacked windows. */
+function drawGothicTower(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    bodyTop: number,
+    bodyH: number,
+    bodyW: number
+): void {
+    const spireH = 28;
+    const spireTop = bodyTop - spireH;
+    const cx = x + Math.floor(bodyW / 2);
+
+    // Spire — stepped gothic peak
+    r(ctx, cx - 2, spireTop, 4, spireH, P.stone);
+    r(ctx, cx - 4, spireTop + 6, 8, spireH - 6, P.stoneLight);
+    r(ctx, cx - 6, spireTop + 14, 12, 8, P.stone);
+    r(ctx, cx - 8, spireTop + 20, 16, 6, P.stoneLight);
+    r(ctx, cx - 1, spireTop, 2, 8, P.stoneHi);
+    r(ctx, cx - 3, spireTop + 2, 6, 2, P.goldDark);
+
+    // Tower body — ashlar stone
+    r(ctx, x, bodyTop, bodyW, bodyH, P.stone);
+    r(ctx, x + 2, bodyTop + 2, bodyW - 4, bodyH - 4, P.stoneLight);
+    r(ctx, x, bodyTop, 2, bodyH, P.shadow);
+    r(ctx, x + bodyW - 2, bodyTop, 2, bodyH, P.stoneHi);
+
+    // Battlements
+    for (let i = 0; i < 4; i++) {
+        r(ctx, x + 2 + i * 7, bodyTop - 4, 5, 4, P.stone);
+        r(ctx, x + 3 + i * 7, bodyTop - 4, 3, 2, P.stoneLight);
+    }
+
+    // Three floors of narrow windows
+    const winW = Math.max(8, bodyW - 8);
+    const winX = x + 4;
+    drawGothicWindow(ctx, winX, bodyTop + 10, winW, 14, true);
+    drawGothicWindow(ctx, winX, bodyTop + 30, winW, 14, false);
+    drawGothicWindow(ctx, winX, bodyTop + 50, winW, 14, true);
+}
+
+/** Brick chimney with stone cap. */
+function drawChimney(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+    r(ctx, x, y, w, h, P.brickDark);
+    for (let row = 0; row < Math.floor(h / 5); row++) {
+        for (let col = 0; col < Math.floor(w / 6); col++) {
+            const ox = (row % 2) * 3;
+            r(ctx, x + 1 + col * 6 + ox, y + 2 + row * 5, 5, 4, row % 2 ? P.brick : P.brickLight);
+        }
+    }
+    r(ctx, x - 1, y, w + 2, 4, P.stone);
+    r(ctx, x, y, w, 2, P.stoneLight);
+    r(ctx, x + 1, y - 2, w - 2, 2, P.shadow);
+}
+
+/** Brick course texture on main facade. */
+function drawBrickFacade(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+    r(ctx, x, y, w, h, P.brickDark);
+    r(ctx, x + 2, y + 2, w - 4, h - 4, P.brick);
+    const rows = Math.floor((h - 8) / 8);
+    const cols = Math.floor((w - 8) / 14);
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const ox = (col % 2) * 3;
+            r(ctx, x + 4 + col * 14 + ox, y + 4 + row * 8, 12, 6, row % 2 ? P.brickLight : P.brick);
+        }
+    }
+}
+
+/** Full gothic manor facade (menu + courtyard backdrop). */
+export function drawManorBuilding(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const sx = w / 200;
+    const sy = h / 120;
+    ctx.save();
+    ctx.scale(sx, sy);
+
+    // Night sky
+    r(ctx, 0, 0, 200, 36, P.coatNavy);
+    r(ctx, 0, 0, 200, 12, P.coatNavyLight);
+    r(ctx, 0, 28, 200, 8, P.shadow);
+
+    const bodyTop = 36;
+    const bodyH = 72;
+    const groundY = 108;
+
+    // Side towers
+    drawGothicTower(ctx, 6, bodyTop, bodyH, 30);
+    drawGothicTower(ctx, 164, bodyTop, bodyH, 30);
+
+    // Main central block
+    drawBrickFacade(ctx, 38, bodyTop + 4, 124, bodyH - 4);
+
+    // Stepped gable roof on center
+    r(ctx, 30, 22, 140, 18, P.shadow);
+    r(ctx, 38, 18, 124, 14, P.brickDark);
+    r(ctx, 50, 14, 100, 10, P.outline);
+    r(ctx, 62, 10, 76, 8, P.brickDark);
+    r(ctx, 74, 6, 52, 6, P.shadow);
+    r(ctx, 88, 2, 24, 6, P.outline);
+    r(ctx, 94, 0, 12, 4, P.brickDark);
+
+    // Roof ridge highlight
+    r(ctx, 88, 8, 24, 2, P.brickLight);
+
+    // Chimneys along the roofline
+    drawChimney(ctx, 48, 8, 10, 22);
+    drawChimney(ctx, 95, 4, 12, 26);
+    drawChimney(ctx, 142, 8, 10, 22);
+
+    // Third floor — attic windows under gable
+    for (const wx of [58, 82, 106, 130]) {
+        drawGothicWindow(ctx, wx, bodyTop + 6, 14, 16, wx === 82 || wx === 130);
+    }
+
+    // Second floor
+    for (const wx of [46, 70, 94, 118, 142]) {
+        drawGothicWindow(ctx, wx, bodyTop + 28, 16, 18, wx % 28 === 0);
+    }
+
+    // First floor (above ground storey)
+    for (const wx of [46, 70, 94, 118, 142]) {
+        drawGothicWindow(ctx, wx, bodyTop + 50, 16, 18, true);
+    }
+
+    // Grand entrance — arched double doors
+    const doorX = 82;
+    const doorY = bodyTop + 54;
+    r(ctx, doorX - 6, doorY - 8, 52, 8, P.stone);
+    r(ctx, doorX - 4, doorY - 10, 48, 4, P.stoneLight);
+    r(ctx, doorX, doorY, 40, 30, P.woodDark);
+    r(ctx, doorX + 4, doorY + 4, 14, 24, P.wood);
+    r(ctx, doorX + 22, doorY + 4, 14, 24, P.wood);
+    r(ctx, doorX + 10, doorY + 14, 4, 4, P.gold);
+    r(ctx, doorX + 28, doorY + 14, 4, 4, P.gold);
+    r(ctx, doorX + 2, doorY + 2, 36, 4, P.woodLight);
+    // Stone steps
+    r(ctx, doorX - 8, doorY + 30, 56, 4, P.stone);
+    r(ctx, doorX - 6, doorY + 34, 52, 3, P.stoneLight);
+    r(ctx, doorX - 4, doorY + 37, 48, 2, P.stoneHi);
+
+    // Ground-floor flanking windows
+    drawGothicWindow(ctx, 50, bodyTop + 54, 18, 20, true);
+    drawGothicWindow(ctx, 132, bodyTop + 54, 18, 20, false);
+
+    // Foundation / lawn
+    r(ctx, 0, groundY, 200, 4, P.shadow);
+    r(ctx, 0, groundY + 4, 200, 8, P.grassDark);
+    r(ctx, 0, groundY + 6, 200, 6, P.grass);
+    r(ctx, 0, groundY + 10, 200, 10, P.grassLight);
+
+    ctx.restore();
+}
+
 function tile32(draw: (ctx: CanvasRenderingContext2D) => void): ProceduralSpriteDef {
     return { nativeWidth: 32, nativeHeight: 32, draw: (ctx: CanvasRenderingContext2D) => draw(ctx) };
 }
@@ -100,40 +278,8 @@ export const EXTERIOR_SPRITES: Record<string, ProceduralSpriteDef> = {
     manor_building: {
         nativeWidth: 200,
         nativeHeight: 120,
-        draw(ctx) {
-            r(ctx, 0, 0, 200, 40, P.coatNavy);
-            r(ctx, 0, 30, 200, 10, P.shadow);
-
-            r(ctx, 20, 40, 160, 70, P.brickDark);
-            r(ctx, 24, 44, 152, 62, P.brick);
-            for (let row = 0; row < 6; row++) {
-                for (let col = 0; col < 8; col++) {
-                    const ox = (col % 2) * 2;
-                    r(ctx, 28 + col * 18 + ox, 48 + row * 10, 16, 8, row % 2 ? P.brickLight : P.brick);
-                }
-            }
-
-            r(ctx, 10, 28, 180, 16, P.shadow);
-            r(ctx, 16, 22, 168, 12, P.outline);
-            r(ctx, 30, 16, 140, 10, P.brickDark);
-
-            for (const wx of [44, 88, 132]) {
-                r(ctx, wx, 56, 20, 24, P.black);
-                r(ctx, wx + 2, 58, 16, 20, P.waterLight);
-                r(ctx, wx + 4, 60, 4, 16, P.outline);
-            }
-
-            r(ctx, 88, 78, 32, 32, P.woodDark);
-            r(ctx, 92, 82, 24, 26, P.wood);
-            r(ctx, 108, 92, 4, 4, P.gold);
-
-            r(ctx, 24, 20, 24, 28, P.stone);
-            r(ctx, 152, 20, 24, 28, P.stone);
-            r(ctx, 26, 22, 20, 8, P.stoneLight);
-            r(ctx, 154, 22, 20, 8, P.stoneLight);
-
-            r(ctx, 0, 108, 200, 12, P.grassDark);
-            r(ctx, 0, 110, 200, 10, P.grass);
+        draw(ctx, w = 200, h = 120) {
+            drawManorBuilding(ctx, w, h);
         }
     }
 };

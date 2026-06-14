@@ -53,6 +53,13 @@
       "spawnY": "center"
     },
     {
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "study",
+      "spawnX": "center",
+      "spawnY": 1
+    },
+    {
       "x": "bottom",
       "y": "center",
       "targetRoom": "hidden_room",

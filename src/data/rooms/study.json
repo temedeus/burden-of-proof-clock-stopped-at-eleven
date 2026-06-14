@@ -41,6 +41,13 @@
       "targetRoom": "hall",
       "spawnX": "center",
       "spawnY": "bottom-2"
+    },
+    {
+      "x": "bottom",
+      "y": "center",
+      "targetRoom": "library",
+      "spawnX": 1,
+      "spawnY": "center"
     }
   ],
   "npcs": [

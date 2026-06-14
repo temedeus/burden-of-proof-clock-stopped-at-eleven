@@ -81,9 +81,16 @@
     {
       "x": "center",
       "y": "top",
-      "targetRoom": "dining",
+      "targetRoom": "hall",
       "spawnX": "center",
       "spawnY": "bottom-2"
+    },
+    {
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "dining",
+      "spawnX": "center",
+      "spawnY": 1
     }
   ]
 }

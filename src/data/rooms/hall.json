@@ -46,7 +46,7 @@
     {
       "x": "center",
       "y": "bottom",
-      "targetRoom": "study",
+      "targetRoom": "garden",
       "spawnX": "center",
       "spawnY": 1
     },

@@ -70,7 +70,8 @@ pnpm docker:clean   # removes editor_node_modules volume
 | `roomBackend.ts` | Rooms HTTP, backend health |
 | `roomEditor.ts` | Room CRUD, JSON textarea, dirty tracking |
 | `types.ts` | Shared types (`FurnitureConfig`, `EditTarget`) |
-| `canvas/RoomCanvas.ts` | Render loop, selection, pointer input |
+| `canvas/RoomCanvas.ts` | Render loop, tool dispatch, host for layout handlers |
+| `canvas/layoutTargets/` | Strategy handlers: furniture, npc, doors |
 | `canvas/hitTest.ts` | Placement rects, hit tests |
 | `canvas/doorPlacement.ts` | Door ghost, wall snap, spawn pairing |
 | `../render/roomScene.ts` | Shared room painting (game + editor preview) |

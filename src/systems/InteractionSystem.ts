@@ -1,6 +1,7 @@
 import { Player } from "../entities/Player";
 import { Room } from "../world/Room";
 import { TILE_SIZE } from "../world/constants";
+import { getInteractionTiles, tileBounds } from "../world/interactableTiles";
 import { ClueSystem } from "./ClueSystem";
 import { DialogSystem } from "./DialogSystem";
 import { NPC } from "../entities/NPC";
@@ -68,29 +69,25 @@ export class InteractionSystem {
             }
         }
 
-        // Check interactables - check if furniture is in the direction player is facing and adjacent
+        // Check interactables — target interaction tiles (sprite/examine area), not collision only
         for (const obj of room.interactables) {
-            // Check if target tile overlaps with furniture
-            const targetOverlapsFurniture = obj.tiles.some(t => t.x === x && t.y === y);
-            
+            const interactTiles = getInteractionTiles(obj);
+            const targetOverlapsFurniture = interactTiles.some((t) => t.x === x && t.y === y);
+
             if (targetOverlapsFurniture) {
-                // Calculate player's occupied tiles
                 const playerLeftTile = Math.floor(player.x / TILE_SIZE);
                 const playerRightTile = Math.floor((player.x + player.width) / TILE_SIZE);
                 const playerTopTile = Math.floor(player.y / TILE_SIZE);
                 const playerBottomTile = Math.floor((player.y + player.height) / TILE_SIZE);
-                
-                // Calculate furniture bounding box
-                const furnitureMinX = Math.min(...obj.tiles.map(t => t.x));
-                const furnitureMaxX = Math.max(...obj.tiles.map(t => t.x));
-                const furnitureMinY = Math.min(...obj.tiles.map(t => t.y));
-                const furnitureMaxY = Math.max(...obj.tiles.map(t => t.y));
-                
-                // Check if furniture is adjacent to player (touching or within 1 tile)
-                const horizontalAdjacent = playerRightTile >= furnitureMinX - 1 && playerLeftTile <= furnitureMaxX + 1;
-                const verticalAdjacent = playerBottomTile >= furnitureMinY - 1 && playerTopTile <= furnitureMaxY + 1;
-                
-                // Only interact if adjacent (facing direction already checked via target tile)
+
+                const bounds = tileBounds(interactTiles);
+                if (!bounds) continue;
+
+                const horizontalAdjacent =
+                    playerRightTile >= bounds.minX - 1 && playerLeftTile <= bounds.maxX + 1;
+                const verticalAdjacent =
+                    playerBottomTile >= bounds.minY - 1 && playerTopTile <= bounds.maxY + 1;
+
                 if (horizontalAdjacent && verticalAdjacent) {
                     // Only add clues that haven't been collected yet
                     const newClues: string[] = [];

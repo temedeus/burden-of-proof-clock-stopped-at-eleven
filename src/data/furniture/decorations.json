@@ -159,6 +159,8 @@
     "drawWidth": 12,
     "drawHeight": 6,
     "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 1,
+    "collisionWidth": 4,
     "spriteName": "manor_building"
   },
   "fireplace": {
@@ -171,6 +173,9 @@
     "drawHeight": 7,
     "renderAnchor": "bottom",
     "collisionRowsFromTop": 4,
+    "interactionWidth": 5,
+    "interactionHeight": 2,
+    "interactionOffsetY": -3,
     "spriteName": "fireplace"
   },
   "kitchen_table": {
@@ -182,6 +187,8 @@
     "drawWidth": 8,
     "drawHeight": 4,
     "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 8,
     "spriteName": "kitchen_table"
   },
   "booze_table": {

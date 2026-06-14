@@ -8,6 +8,7 @@ interface FurnitureConfig {
     width: number;
     height: number;
     spriteName?: string;
+    collisionWidth?: number;
     collisionRowsFromBottom?: number;
     collisionRowsFromTop?: number;
     walkableDecor?: boolean;

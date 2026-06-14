@@ -155,14 +155,48 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
 
     kitchen_table: {
         nativeWidth: 64,
-        nativeHeight: 40,
+        nativeHeight: 32,
         draw(ctx) {
-            drawWoodTabletop(ctx, 2, 12, 60, 8);
-            drawTableLegs(ctx, [10, 49], 20, 38);
-            r(ctx, 24, 6, 16, 8, P.stoneLight);
-            r(ctx, 26, 8, 4, 4, P.fireOrange);
-            r(ctx, 34, 8, 4, 4, P.waterLight);
-            r(ctx, 28, 4, 8, 2, P.stone);
+            const topY = 8;
+            const topH = 16;
+
+            // Thick tabletop — two tile rows (y 8–23)
+            r(ctx, 2, topY, 60, topH, P.woodLight);
+            r(ctx, 2, topY, 60, 3, P.woodHi);
+            r(ctx, 2, topY + topH - 4, 60, 4, P.wood);
+            r(ctx, 2, topY, 2, topH, P.woodHi);
+            r(ctx, 60, topY, 2, topH, P.woodDark);
+            r(ctx, 2, topY + topH - 2, 60, 2, P.woodDark);
+            // Wood grain on surface
+            for (const gx of [10, 22, 34, 46, 54]) {
+                r(ctx, gx, topY + 4, 1, 6, P.wood);
+            }
+            r(ctx, 6, topY + 6, 52, 1, P.wood);
+
+            // Apron under tabletop
+            r(ctx, 4, topY + topH, 56, 3, P.wood);
+            r(ctx, 4, topY + topH + 2, 56, 1, P.woodDark);
+
+            // Sturdy legs (front two visible)
+            drawTableLegs(ctx, [8, 51], topY + topH + 3, 31);
+
+            // Kitchen prep items on surface
+            r(ctx, 8, 2, 14, 6, P.stoneLight);
+            r(ctx, 9, 3, 12, 1, P.woodHi);
+            r(ctx, 10, 4, 10, 3, P.cream);
+            r(ctx, 11, 5, 2, 1, P.foodBrown);
+
+            grid(ctx, 28, 1, 1, ["..ss..", ".ssww.", "sswwss", "sswwss", ".ssww.", "..ss.."], {
+                s: P.silver,
+                w: P.white
+            });
+            r(ctx, 30, 4, 4, 2, P.foodGreen);
+
+            r(ctx, 46, 3, 10, 5, P.cream);
+            r(ctx, 47, 2, 8, 2, P.highlight);
+            r(ctx, 48, 4, 6, 3, P.white);
+            r(ctx, 4, topY + 2, 4, 2, P.cream);
+            r(ctx, 56, topY + 3, 3, 2, P.cream);
         }
     },
 

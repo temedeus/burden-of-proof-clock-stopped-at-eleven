@@ -1,6 +1,7 @@
 import { TILE_SIZE } from "../world/constants";
 import { Player } from "../entities/Player";
 import { Room } from "../world/Room";
+import { getInteractionTiles, tileBounds } from "../world/interactableTiles";
 import type { ClueSystem } from "../systems/ClueSystem";
 
 /**
@@ -64,20 +65,19 @@ export function renderDebugOverlay(
         }
     }
 
-    // Draw furniture collision areas (green outline)
+    // Collision tiles (green) — movement blocking only
     for (const obj of currentRoom.interactables) {
-        const minX = Math.min(...obj.tiles.map((t) => t.x));
-        const maxX = Math.max(...obj.tiles.map((t) => t.x));
-        const minY = Math.min(...obj.tiles.map((t) => t.y));
-        const maxY = Math.max(...obj.tiles.map((t) => t.y));
+        if (obj.tiles.length === 0) continue;
+        const bounds = tileBounds(obj.tiles);
+        if (!bounds) continue;
 
         ctx.strokeStyle = "#00ff00";
         ctx.lineWidth = 2;
         ctx.strokeRect(
-            minX * TILE_SIZE,
-            minY * TILE_SIZE,
-            (maxX - minX + 1) * TILE_SIZE,
-            (maxY - minY + 1) * TILE_SIZE
+            bounds.minX * TILE_SIZE,
+            bounds.minY * TILE_SIZE,
+            (bounds.maxX - bounds.minX + 1) * TILE_SIZE,
+            (bounds.maxY - bounds.minY + 1) * TILE_SIZE
         );
 
         ctx.strokeStyle = "#66ff66";
@@ -87,14 +87,31 @@ export function renderDebugOverlay(
         }
     }
 
-    // Clue placements (amber = uncollected, gray = collected)
+    // Interaction tiles (cyan) — examine / clue targeting
+    for (const obj of currentRoom.interactables) {
+        const interactTiles = getInteractionTiles(obj);
+        if (interactTiles.length === 0) continue;
+
+        ctx.fillStyle = "rgba(0, 200, 255, 0.2)";
+        for (const tile of interactTiles) {
+            ctx.fillRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+        ctx.strokeStyle = "#00c8ff";
+        ctx.lineWidth = 1;
+        for (const tile of interactTiles) {
+            ctx.strokeRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+    }
+
+    // Clue placements on interaction area (amber = uncollected, gray = collected)
     for (const obj of currentRoom.interactables) {
         const clueIds = obj.clues ?? [];
-        if (clueIds.length === 0 || obj.tiles.length === 0) continue;
+        const interactTiles = getInteractionTiles(obj);
+        if (clueIds.length === 0 || interactTiles.length === 0) continue;
 
         const collected = clueCollected(clueSystem, clueIds);
         ctx.fillStyle = collected ? "rgba(140, 140, 140, 0.45)" : "rgba(255, 200, 0, 0.45)";
-        for (const tile of obj.tiles) {
+        for (const tile of interactTiles) {
             ctx.fillRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
 
@@ -103,17 +120,15 @@ export function renderDebugOverlay(
         if (collected) {
             ctx.setLineDash([4, 4]);
         }
-        for (const tile of obj.tiles) {
+        for (const tile of interactTiles) {
             ctx.strokeRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
         ctx.setLineDash([]);
 
-        const minX = Math.min(...obj.tiles.map((t) => t.x));
-        const maxX = Math.max(...obj.tiles.map((t) => t.x));
-        const minY = Math.min(...obj.tiles.map((t) => t.y));
-        const maxY = Math.max(...obj.tiles.map((t) => t.y));
-        const labelX = ((minX + maxX + 1) / 2) * TILE_SIZE;
-        const labelY = minY * TILE_SIZE + 10;
+        const bounds = tileBounds(interactTiles);
+        if (!bounds) continue;
+        const labelX = ((bounds.minX + bounds.maxX + 1) / 2) * TILE_SIZE;
+        const labelY = bounds.minY * TILE_SIZE + 10;
         const label = clueIds.join(", ");
 
         ctx.font = "11px monospace";

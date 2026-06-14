@@ -2,7 +2,10 @@ export interface Interactable {
     id: string;
     name: string;
     description: string;
+    /** Tiles that block movement (written to the map as solid furniture). */
     tiles: { x: number; y: number }[];
+    /** Tiles the player can target to examine or collect clues (may cover the full sprite). */
+    interactionTiles?: { x: number; y: number }[];
     clues?: string[];
     /** When set, Game renders this sprite (garden / exterior / interior atlases) instead of id-based mapping */
     spriteName?: string;

@@ -24,6 +24,7 @@ import courtyardConfig from "../data/rooms/courtyard.json";
 import diningConfig from "../data/rooms/dining.json";
 import decorationsConfig from "../data/furniture/decorations.json";
 import type { FurniturePlacement, GravelPathConfig, RoomConfig } from "@cse/content-schema";
+import { getCollisionTileRange } from "@cse/content-schema";
 
 interface FurnitureConfig {
     id: string;
@@ -36,8 +37,15 @@ interface FurnitureConfig {
     /** Draw size in tiles (optional; defaults to width×height). Collision uses width×height only. */
     drawWidth?: number;
     drawHeight?: number;
+    /** Examine/clue area within the draw footprint; defaults to full draw size. */
+    interactionWidth?: number;
+    interactionHeight?: number;
+    interactionOffsetX?: number;
+    interactionOffsetY?: number;
     renderAnchor?: "center" | "bottom";
-    /** If set, only the bottom N rows (full `width`) are solid; upper rows stay walkable (e.g. fountain base). */
+    /** Horizontal extent of collision rows; defaults to `width`, centered on the placement footprint. */
+    collisionWidth?: number;
+    /** If set, only the bottom N rows are solid; upper rows stay walkable (e.g. fountain base). */
     collisionRowsFromBottom?: number;
     /** If set, only the top N rows are solid; lower rows stay walkable (e.g. fireplace mantle). */
     collisionRowsFromTop?: number;
@@ -77,6 +85,58 @@ function resolveSpawnY(
     if (value === "bottom-2") return roomHeight - 3;
     if (value === "bottom-3") return roomHeight - 4;
     return 1;
+}
+
+function buildInteractionTiles(
+    startX: number,
+    startY: number,
+    furniture: FurnitureConfig,
+    roomWidth: number,
+    roomHeight: number
+): { x: number; y: number }[] {
+    const iw = furniture.drawWidth ?? furniture.width;
+    const ih = furniture.drawHeight ?? furniture.height;
+
+    let ix: number;
+    let iy: number;
+    if (furniture.renderAnchor === "bottom") {
+        ix = startX + Math.floor((furniture.width - iw) / 2);
+        iy = startY + furniture.height - ih;
+    } else if (furniture.renderAnchor === "center") {
+        ix = startX + Math.floor((furniture.width - iw) / 2);
+        iy = startY + Math.floor((furniture.height - ih) / 2);
+    } else {
+        ix = startX;
+        iy = startY;
+    }
+
+    const tiles: { x: number; y: number }[] = [];
+    const interactW = furniture.interactionWidth ?? iw;
+    const interactH = furniture.interactionHeight ?? ih;
+    const offsetX = furniture.interactionOffsetX ?? 0;
+    const offsetY = furniture.interactionOffsetY ?? 0;
+
+    let tileStartX: number;
+    let tileStartY: number;
+    if (furniture.renderAnchor === "bottom") {
+        tileStartX = ix + (iw - interactW) + offsetX;
+        tileStartY = iy + ih - interactH + offsetY;
+    } else if (furniture.renderAnchor === "center") {
+        tileStartX = ix + Math.floor((iw - interactW) / 2) + offsetX;
+        tileStartY = iy + Math.floor((ih - interactH) / 2) + offsetY;
+    } else {
+        tileStartX = ix + Math.floor((iw - interactW) / 2) + offsetX;
+        tileStartY = iy + ih - interactH + offsetY;
+    }
+
+    for (let tileY = tileStartY; tileY < tileStartY + interactH; tileY++) {
+        for (let tileX = tileStartX; tileX < tileStartX + interactW; tileX++) {
+            if (tileX >= 0 && tileX < roomWidth && tileY >= 0 && tileY < roomHeight) {
+                tiles.push({ x: tileX, y: tileY });
+            }
+        }
+    }
+    return tiles;
 }
 
 function placeFurniture(
@@ -120,34 +180,23 @@ function placeFurniture(
                 }
             }
         }
+        interactable.interactionTiles = [...interactable.tiles];
         return interactable;
     }
 
-    let collisionStartY: number;
-    let collisionEndY: number;
-    if (furniture.collisionRowsFromTop != null) {
-        const rows = Math.min(Math.max(1, furniture.collisionRowsFromTop), furniture.height);
-        collisionStartY = startY;
-        collisionEndY = startY + rows;
-    } else {
-        const collisionRows =
-            furniture.collisionRowsFromBottom != null
-                ? Math.min(Math.max(1, furniture.collisionRowsFromBottom), furniture.height)
-                : furniture.height;
-        collisionStartY = startY + furniture.height - collisionRows;
-        collisionEndY = startY + furniture.height;
-    }
+    const { startX: collisionStartX, endX: collisionEndX, startY: collisionStartY, endY: collisionEndY } =
+        getCollisionTileRange(startX, startY, furniture);
 
     for (let tileY = collisionStartY; tileY < collisionEndY; tileY++) {
-        for (let x = 0; x < furniture.width; x++) {
-            const tileX = startX + x;
-
+        for (let tileX = collisionStartX; tileX < collisionEndX; tileX++) {
             if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
                 tiles[tileY * width + tileX] = TILE_FURNITURE;
                 interactable.tiles.push({ x: tileX, y: tileY });
             }
         }
     }
+
+    interactable.interactionTiles = buildInteractionTiles(startX, startY, furniture, width, height);
 
     return interactable;
 }

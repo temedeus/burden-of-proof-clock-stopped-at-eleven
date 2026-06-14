@@ -7,10 +7,43 @@ export const GAME_CANVAS_TILE_HEIGHT = 18;
 export interface FurnitureBoundsConfig {
     width: number;
     height: number;
+    /** Horizontal extent of collision rows; defaults to `width`, centered on the placement footprint. */
+    collisionWidth?: number;
     collisionRowsFromBottom?: number;
     /** Solid rows from the top of the footprint (e.g. tall fireplace mantle). */
     collisionRowsFromTop?: number;
     walkableDecor?: boolean;
+}
+
+export function getCollisionTileRange(
+    startX: number,
+    startY: number,
+    furniture: FurnitureBoundsConfig
+): { startX: number; endX: number; startY: number; endY: number } {
+    const collisionW = furniture.collisionWidth ?? furniture.width;
+    const collisionStartX = startX + Math.floor((furniture.width - collisionW) / 2);
+
+    let collisionStartY: number;
+    let collisionEndY: number;
+    if (furniture.collisionRowsFromTop != null) {
+        const rows = Math.min(Math.max(1, furniture.collisionRowsFromTop), furniture.height);
+        collisionStartY = startY;
+        collisionEndY = startY + rows;
+    } else {
+        const collisionRows =
+            furniture.collisionRowsFromBottom != null
+                ? Math.min(Math.max(1, furniture.collisionRowsFromBottom), furniture.height)
+                : furniture.height;
+        collisionStartY = startY + furniture.height - collisionRows;
+        collisionEndY = startY + furniture.height;
+    }
+
+    return {
+        startX: collisionStartX,
+        endX: collisionStartX + collisionW,
+        startY: collisionStartY,
+        endY: collisionEndY
+    };
 }
 
 export function getGameTileGridSize(_room?: RoomConfig): { width: number; height: number } {
@@ -59,23 +92,11 @@ export function isFurniturePlacementInBounds(
         return false;
     }
 
-    let collisionStartY: number;
-    let collisionEndY: number;
-    if (furniture.collisionRowsFromTop != null) {
-        const rows = Math.min(Math.max(1, furniture.collisionRowsFromTop), furniture.height);
-        collisionStartY = startY;
-        collisionEndY = startY + rows;
-    } else {
-        const collisionRows =
-            furniture.collisionRowsFromBottom != null
-                ? Math.min(Math.max(1, furniture.collisionRowsFromBottom), furniture.height)
-                : furniture.height;
-        collisionStartY = startY + furniture.height - collisionRows;
-        collisionEndY = startY + furniture.height;
-    }
+    const { startX: collisionStartX, endX: collisionEndX, startY: collisionStartY, endY: collisionEndY } =
+        getCollisionTileRange(startX, startY, furniture);
 
     for (let tileY = collisionStartY; tileY < collisionEndY; tileY++) {
-        for (let tileX = startX; tileX < startX + furniture.width; tileX++) {
+        for (let tileX = collisionStartX; tileX < collisionEndX; tileX++) {
             if (tileX >= 0 && tileX < gridWidth && tileY >= 0 && tileY < gridHeight) {
                 return true;
             }

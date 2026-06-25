@@ -8,6 +8,9 @@ import { TouchControls } from "./engine/TouchControls";
 import { clientToCanvas, isSimulateMobile, shouldShowTouchControls } from "./engine/platform";
 import { unlockAudio } from "./audio/audioContext";
 import { spriteLoader } from "./assets/SpriteLoader";
+import { validateContentAtStartup } from "./content/validateAtStartup";
+
+validateContentAtStartup();
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;

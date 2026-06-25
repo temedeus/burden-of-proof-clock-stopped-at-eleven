@@ -2,7 +2,8 @@ import type { FurniturePlacement, NPCConfig, RoomConfig } from "@cse/content-sch
 import { createRoomFromConfig } from "../../world/Rooms";
 import { TILE_SIZE } from "../../world/constants";
 import { spriteLoader } from "../../assets/SpriteLoader";
-import { renderRoomScene, spawnRoomNpcs } from "../../render/roomScene";
+import { renderRoomScene } from "../../render/roomScene";
+import { spawnRoomNpcs } from "../../world/npcSpawn";
 import { getPlacementRect, resizeCanvasForRoom } from "./hitTest";
 import { buildDoorGhost, exitFromGhost, spawnForExit, type DoorGhost } from "./doorPlacement";
 import {

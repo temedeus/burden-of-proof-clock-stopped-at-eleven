@@ -1,5 +1,5 @@
 import { TILE_SIZE } from "../../../world/constants";
-import { resolveNpcPlacementTile } from "../../../render/roomScene";
+import { resolveNpcPlacementTile } from "@cse/content-schema";
 import { hitTestNpc } from "../hitTest";
 import type { ActiveDrag, LayoutTargetHandler, LayoutTargetHost, PointerContext } from "./types";
 
@@ -74,8 +74,8 @@ export const npcHandler: LayoutTargetHandler = {
 
         host.capturePointer(ctx.event);
         const npc = ctx.room.npcs[hit];
-        const x = resolveNpcPlacementTile(npc.x, "width", ctx.grid);
-        const y = resolveNpcPlacementTile(npc.y, "height", ctx.grid);
+        const x = resolveNpcPlacementTile(npc.x, ctx.grid.width);
+        const y = resolveNpcPlacementTile(npc.y, ctx.grid.height);
         host.setActiveDrag({
             kind: "npc",
             index: hit,
@@ -104,8 +104,8 @@ export const npcHandler: LayoutTargetHandler = {
         const index = host.getSelectedIndex("npc");
         if (index == null || !room.npcs?.[index]) return;
         const npc = room.npcs[index];
-        const nx = resolveNpcPlacementTile(npc.x, "width", grid);
-        const ny = resolveNpcPlacementTile(npc.y, "height", grid);
+        const nx = resolveNpcPlacementTile(npc.x, grid.width);
+        const ny = resolveNpcPlacementTile(npc.y, grid.height);
         ctx.strokeStyle = "rgba(255, 220, 0, 0.95)";
         ctx.lineWidth = 2;
         ctx.strokeRect(nx * TILE_SIZE + 1, ny * TILE_SIZE + 1, TILE_SIZE * 2 - 2, TILE_SIZE * 2 - 2);

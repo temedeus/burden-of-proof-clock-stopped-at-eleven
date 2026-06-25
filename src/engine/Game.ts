@@ -1,12 +1,18 @@
 import { Room } from "../world/Room";
-import { createRoomFromConfig, setHiddenExitDoorOpen, removeInteractableById, addFurnitureToRoom } from "../world/Rooms";
-import { renderRoomScene, spawnRoomNpcs } from "../render/roomScene";
-import {Input} from "./Input";
+import { createRoomFromConfig } from "../world/Rooms";
+import { renderRoomScene } from "../render/roomScene";
+import { spawnRoomNpcs } from "../world/npcSpawn";
+import { Input } from "./Input";
 import { Player, PlayerSpriteName } from "../entities/Player";
-import {NPC} from "../entities/NPC";
+import { NPC } from "../entities/NPC";
 import { TILE_SIZE, roomViewportOffset } from "../world/constants";
 import { InteractionSystem } from "../systems/InteractionSystem";
 import { ClueSystem } from "../systems/ClueSystem";
+import { RoomTransitionService } from "../systems/RoomTransitionService";
+import { MurdererChaseController, type Difficulty } from "../systems/MurdererChaseController";
+import { VictorySequence } from "../systems/VictorySequence";
+import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
+import { isExitUnlocked, runPuzzleConfirm } from "../puzzles/registry";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
 import { renderInventoryPanel } from "./InventoryPanel";
@@ -19,22 +25,20 @@ import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { gardenAmbience } from "../audio/GardenAmbience";
 import { clueSounds } from "../audio/ClueSounds";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
-import type { NPCConfig, NPCDialogConfig, RoomConfig } from "@cse/content-schema";
+import {
+    createRoomTitleBanner,
+    drawAccusationBlink,
+    drawMessageBox,
+    drawRoomTitleBanner,
+    drawVictoryOverlay,
+    tickRoomTitleBanner,
+    type RoomTitleBanner
+} from "../render/GameHud";
+import type { NPCConfig, NPCDialogConfig } from "@cse/content-schema";
 
 type GameState = "playing" | "interacting" | "confirming" | "inventory" | "victory";
 
 const POLICE_NPC_IDS = ["police", "police2"];
-
-export type Difficulty = "easy" | "medium" | "hard";
-
-const DIFFICULTY_CONFIG: Record<
-    Difficulty,
-    { chaseHeadStart: number; murdererChaseSpeed: number; murdererSpawnsIn: number }
-> = {
-    easy: { chaseHeadStart: 2.5, murdererChaseSpeed: 80, murdererSpawnsIn: 2 },
-    medium: { chaseHeadStart: 1.5, murdererChaseSpeed: 100, murdererSpawnsIn: 1.5 },
-    hard: { chaseHeadStart: 0.5, murdererChaseSpeed: 120, murdererSpawnsIn: 1 }
-};
 
 const ROOM_DISPLAY_TITLES: Record<string, string> = {
     library: "Library",
@@ -59,12 +63,7 @@ const ROOM_DISPLAY_TITLES: Record<string, string> = {
     secret_tunnel: "Secret Tunnel"
 };
 
-const ROOM_TITLE_DURATION = 2;
-const STUDY_SECRET_REVEAL_DURATION = 1.4;
-
-function easeInOutCubic(t: number): number {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
+export type { Difficulty };
 
 export class Game {
     private input: Input;
@@ -75,56 +74,44 @@ export class Game {
     private clueCatalog: ClueCatalog = buildClueCatalog();
 
     private player: Player;
-
     private clueSystem = new ClueSystem();
     private interaction = new InteractionSystem(this.clueSystem);
+    private roomTransitions = new RoomTransitionService();
+    private murdererChase: MurdererChaseController;
+    private victory = new VictorySequence();
+    private studySecret = new StudySecretPuzzle(() => this.rooms.study);
+
     private state: GameState = "playing";
     private message: string | null = null;
     private pendingConfirmation: { id: string; prompt: string } | null = null;
-    private studySecretRevealed = false;
-    private studySecretRevealAnim: { elapsed: number; duration: number; doorOpened: boolean } | null =
-        null;
     private clueNotification: { clueId: string } | null = null;
-    private debugMode: boolean = false;
-    private roomTransitionCooldown = 0;
-    private redBlinkRemaining = 0;
-    private accusedMurderer = false; // set when you accuse cook; murderer chases until you're caught or you talk to police
-    private chaseStartsIn = 0; // seconds until murderer starts chasing (head start after accusation)
-    private murdererSpawnsIn = 0; // after room change: 1.5s before murderer appears in new room
-    private murdererSpawnX = 0;
-    private murdererSpawnY = 0;
-    private difficulty: Difficulty = "medium";
-    private victoryPhase = false;
-    private victoryTimer = 5; // seconds in victory (fade + text); when <= 0 show "press to return"
-    private victoryRoom: Room | null = null; // room where chase happens
-    private victoryPoliceId: string | null = null;
-    /** Door position (pixel center) the murderer runs toward */
-    private victoryDoorTarget: { x: number; y: number } | null = null;
+    private debugMode = false;
     private onMenuRequest?: () => void;
     private onGameOver?: () => void;
     private onVictoryComplete?: () => void;
     private readonly content = loadGameContent();
 
-    /** Centered room name; fades in and out over `ROOM_TITLE_DURATION` seconds */
-    private roomTitleBanner: { title: string; elapsed: number } | null = null;
+    private roomTitleBanner: RoomTitleBanner | null = null;
     private decorAnimTime = 0;
 
     constructor(
         private ctx: CanvasRenderingContext2D,
-        options?: { difficulty?: Difficulty; onMenuRequest?: () => void; onGameOver?: () => void; onVictoryComplete?: () => void; input?: Input; playerSprite?: PlayerSpriteName }
+        options?: {
+            difficulty?: Difficulty;
+            onMenuRequest?: () => void;
+            onGameOver?: () => void;
+            onVictoryComplete?: () => void;
+            input?: Input;
+            playerSprite?: PlayerSpriteName;
+        }
     ) {
-        this.difficulty = options?.difficulty ?? "medium";
+        this.murdererChase = new MurdererChaseController(options?.difficulty ?? "medium");
         this.onMenuRequest = options?.onMenuRequest;
         this.onGameOver = options?.onGameOver;
         this.onVictoryComplete = options?.onVictoryComplete;
         this.input = options?.input ?? new Input();
         this.player = new Player("player", 64, 64, options?.playerSprite ?? "female_detective");
         this.debugMode = isDebugMode();
-        if (this.debugMode) {
-            console.log(
-                "🐛 Debug mode: red=player, blue=NPC, green=furniture, amber=clue (gray when collected), yellow=interact target"
-            );
-        }
 
         this.rooms = Object.fromEntries(
             Object.entries(this.content.rooms).map(([id, config]) => [
@@ -138,27 +125,19 @@ export class Game {
             this.activeStory = resolved;
             this.clueCatalog = buildClueCatalog(this.activeStory.casePacket.generatedClues);
             applyStoryToRooms(this.rooms, this.activeStory.casePacket);
-            if (this.debugMode) {
-                console.log(`Active story: ${this.activeStory.id} — ${this.activeStory.title}`);
-                console.log(`Culprit: ${this.getMurdererNpcId()}, clues: ${this.getRequiredClueIds().join(", ")}`);
-            }
-        } else if (this.debugMode) {
-            console.log("No generated story loaded; using default NPC dialog and clues.");
         }
 
         this.loadNPCs();
-        this.applyStudySecretDoorState();
+        this.studySecret.applyDoorState();
 
-        spriteLoader.load().catch(err => {
-            console.error('Failed to load spritesheet:', err);
-        });
+        spriteLoader.load().catch((err) => console.error("Failed to load spritesheet:", err));
 
         this.currentRoom = this.rooms.library;
         this.syncRoomAmbience();
         if (this.activeStory) {
-            this.showTitleBanner(this.activeStory.title);
+            this.roomTitleBanner = createRoomTitleBanner(this.activeStory.title);
         } else {
-            this.startRoomTitleBanner("library");
+            this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle("library"));
         }
     }
 
@@ -178,21 +157,18 @@ export class Game {
         return getRequiredClueIds(this.activeStory?.casePacket ?? null);
     }
 
+    private getUnlockedIds(): Set<string> {
+        const ids = new Set<string>();
+        if (this.studySecret.revealed) ids.add("study_secret");
+        return ids;
+    }
+
     private getRoomDisplayTitle(roomId: string): string {
         return ROOM_DISPLAY_TITLES[roomId] ?? roomId.charAt(0).toUpperCase() + roomId.slice(1);
     }
 
-    private startRoomTitleBanner(roomId: string): void {
-        this.showTitleBanner(this.getRoomDisplayTitle(roomId));
-    }
-
-    private showTitleBanner(title: string): void {
-        this.roomTitleBanner = { title, elapsed: 0 };
-    }
-
-    private loadNPCs() {
+    private loadNPCs(): void {
         const npcConfigs: Record<string, NPCConfig> = this.content.npcs;
-
         const baseDialogs = Object.fromEntries(
             Object.entries(npcConfigs).map(([id, config]) => [id, config.dialog])
         );
@@ -206,7 +182,6 @@ export class Game {
         }
     }
 
-    /** Returns the murderer NPC from whichever room he's in, or null */
     private getMurderer(): NPC | null {
         for (const room of Object.values(this.rooms)) {
             const found = room.npcs.find((n) => n.id === this.getMurdererNpcId());
@@ -215,7 +190,6 @@ export class Game {
         return null;
     }
 
-    /** Returns the room that contains the given NPC, or null */
     private getRoomContainingNPC(npcId: string): Room | null {
         for (const room of Object.values(this.rooms)) {
             if (room.npcs.some((n) => n.id === npcId)) return room;
@@ -223,13 +197,11 @@ export class Game {
         return null;
     }
 
-    /** Returns the NPC by id from whichever room, or null */
     private getNPCById(npcId: string): NPC | null {
         const room = this.getRoomContainingNPC(npcId);
-        return room ? room.npcs.find((n) => n.id === npcId) ?? null : null;
+        return room ? (room.npcs.find((n) => n.id === npcId) ?? null) : null;
     }
 
-    /** Move an NPC from its current room to target room */
     private moveNPCToRoom(npc: NPC, targetRoom: Room, atX: number, atY: number): void {
         for (const room of Object.values(this.rooms)) {
             const idx = room.npcs.indexOf(npc);
@@ -248,112 +220,31 @@ export class Game {
         const murderer = this.getMurderer();
         if (!police || !murderer) return;
 
-        const room = this.currentRoom;
-
-        // Ensure murderer is in this room (only if they're in another room)
-        const murdererRoom = this.getRoomContainingNPC(this.getMurdererNpcId());
-        let spawnExitIndex = 0;
-        if (murdererRoom !== room) {
-            const exit = room.exits[0];
-            if (exit) {
-                const spawnX = exit.spawnX * TILE_SIZE;
-                const spawnY = exit.spawnY * TILE_SIZE;
-                this.moveNPCToRoom(murderer, room, spawnX, spawnY);
-                spawnExitIndex = 1; // run toward the other door if there is one
-            } else {
-                this.moveNPCToRoom(murderer, room, murderer.x, murderer.y);
-            }
-        }
-
-        // Pick a door for the murderer to run to (use a different exit if we have multiple)
-        const exitIndex = room.exits.length > 1 ? spawnExitIndex % room.exits.length : 0;
-        const exit = room.exits[exitIndex];
-        if (!exit) return;
-        const doorX = exit.x * TILE_SIZE + TILE_SIZE;
-        const doorY = exit.y * TILE_SIZE + TILE_SIZE;
-
-        // Murderer runs toward the door; police chases murderer. Do not move the police.
-        murderer.setChasing(false);
-        murderer.setFleeing(false);
-        murderer.setChasing(true);
-        murderer.setChaseSpeed(75);
-        police.setChasing(true);
-        police.setChaseSpeed(120);
-
-        this.victoryDoorTarget = { x: doorX, y: doorY };
-        this.victoryPhase = true;
-        this.victoryTimer = 2; // short so "press to return" appears quickly
-        this.victoryRoom = room;
-        this.victoryPoliceId = policeId;
+        this.victory.start(
+            police,
+            murderer,
+            this.currentRoom,
+            (npc, room, x, y) => this.moveNPCToRoom(npc, room, x, y),
+            this.getRoomContainingNPC(this.getMurdererNpcId())
+        );
         this.state = "victory";
         this.message = null;
     }
 
-    private updateVictory(dt: number): void {
-        if (this.victoryTimer > 0) {
-            this.victoryTimer -= dt;
-            if (!this.victoryRoom || !this.victoryPoliceId || !this.victoryDoorTarget) return;
-            const murderer = this.getMurderer();
-            const police = this.getNPCById(this.victoryPoliceId);
-            if (murderer && police) {
-                murderer.updateChase(dt, this.victoryDoorTarget.x, this.victoryDoorTarget.y, this.victoryRoom.map);
-                const mcx = murderer.x + murderer.width / 2;
-                const mcy = murderer.y + murderer.height / 2;
-                police.updateChase(dt, mcx, mcy, this.victoryRoom.map);
-            }
-            return;
-        }
-        // When timer <= 0, key check is done in index.ts so we don't miss the key
-    }
-
-    /** True when victory overlay is done and we're waiting for the user to press a key to return to menu */
     isWaitingForVictoryInput(): boolean {
-        return this.victoryPhase && this.victoryTimer <= 0;
+        return this.victory.isWaitingForInput();
     }
 
-    /** Call when user presses key to leave victory screen (called from main loop in index.ts) */
     returnToMenuFromVictory(): void {
         this.onVictoryComplete?.();
     }
 
-    private npcOverlapsPlayer(npc: NPC): boolean {
-        return (
-            this.player.x < npc.x + npc.width &&
-            this.player.x + this.player.width > npc.x &&
-            this.player.y < npc.y + npc.height &&
-            this.player.y + this.player.height > npc.y
-        );
-    }
-
-    /** Move murderer to current room at the stored spawn position (after room change head start) */
-    private spawnMurdererInCurrentRoom(): void {
-        const chef = this.getMurderer();
-        if (!chef) return;
-        for (const room of Object.values(this.rooms)) {
-            const idx = room.npcs.indexOf(chef);
-            if (idx >= 0) {
-                room.npcs.splice(idx, 1);
-                break;
-            }
-        }
-        chef.x = this.murdererSpawnX;
-        chef.y = this.murdererSpawnY;
-        this.currentRoom.npcs.push(chef);
-    }
-
     update(dt: number) {
         this.decorAnimTime += dt;
+        this.roomTitleBanner = tickRoomTitleBanner(this.roomTitleBanner, dt);
 
-        if (this.roomTitleBanner) {
-            this.roomTitleBanner.elapsed += dt;
-            if (this.roomTitleBanner.elapsed >= ROOM_TITLE_DURATION) {
-                this.roomTitleBanner = null;
-            }
-        }
-
-        // Handle victory first so Escape/Enter go to main menu, not pause
         if (this.state === "victory") {
-            this.updateVictory(dt);
+            this.victory.update(dt, () => this.getMurderer(), (id) => this.getNPCById(id));
             return;
         }
 
@@ -368,7 +259,6 @@ export class Game {
             return;
         }
 
-        // Handle inventory toggle
         if (this.input.wasPressed("i")) {
             if (this.state === "inventory") {
                 this.state = "playing";
@@ -380,10 +270,20 @@ export class Game {
 
         if (this.state === "playing") {
             this.player.update(dt, this.input, this.currentRoom.map, this.currentRoom.npcs);
-            this.roomTransitionCooldown = Math.max(0, this.roomTransitionCooldown - dt);
-            this.redBlinkRemaining = Math.max(0, this.redBlinkRemaining - dt);
+            this.roomTransitions.tickCooldown(dt);
 
-            // Check interaction first so talking to police triggers victory before "murderer caught you"
+            const chaseTick = this.murdererChase.tick(dt);
+            if (chaseTick.startChase) {
+                const murderer = this.getMurderer();
+                if (murderer) this.murdererChase.startMurdererChase(murderer);
+            }
+            if (chaseTick.spawnInRoom) {
+                const murderer = this.getMurderer();
+                if (murderer) {
+                    this.murdererChase.spawnMurdererInRoom(murderer, this.currentRoom, this.rooms);
+                }
+            }
+
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
                 const result = this.interaction.interact(
                     this.player,
@@ -407,14 +307,13 @@ export class Game {
                         result.speakerId === this.getMurdererNpcId() &&
                         this.getRequiredClueIds().every((c) => this.clueSystem.hasClue(c))
                     ) {
-                        this.accusedMurderer = true;
-                        this.redBlinkRemaining = 3;
-                        this.chaseStartsIn = DIFFICULTY_CONFIG[this.difficulty].chaseHeadStart;
+                        this.murdererChase.triggerAccusation();
                         this.message = result.description + " Find a police officer!";
                     }
                     if (
-                        result.speakerId && POLICE_NPC_IDS.includes(result.speakerId) &&
-                        this.accusedMurderer
+                        result.speakerId &&
+                        POLICE_NPC_IDS.includes(result.speakerId) &&
+                        this.murdererChase.accusedMurderer
                     ) {
                         talkSounds.stopDialogue();
                         this.startVictorySequence(result.speakerId);
@@ -432,31 +331,12 @@ export class Game {
                 }
             }
 
-            // Murderer chase: after head start he chases player; if he catches you = game over
-            if (this.chaseStartsIn > 0) {
-                this.chaseStartsIn -= dt;
-                if (this.chaseStartsIn <= 0) {
-                    const chef = this.getMurderer();
-                    if (chef) {
-                        chef.setChasing(true);
-                        chef.setChaseSpeed(DIFFICULTY_CONFIG[this.difficulty].murdererChaseSpeed);
-                    }
-                    this.chaseStartsIn = 0;
-                }
-            }
-            if (this.murdererSpawnsIn > 0) {
-                this.murdererSpawnsIn -= dt;
-                if (this.murdererSpawnsIn <= 0) {
-                    this.spawnMurdererInCurrentRoom();
-                    this.murdererSpawnsIn = 0;
-                }
-            }
             const playerCenterX = this.player.x + this.player.width / 2;
             const playerCenterY = this.player.y + this.player.height / 2;
             for (const npc of this.currentRoom.npcs) {
                 if (npc.isChasing()) {
                     npc.updateChase(dt, playerCenterX, playerCenterY, this.currentRoom.map);
-                    if (this.npcOverlapsPlayer(npc)) {
+                    if (this.murdererChase.npcOverlapsPlayer(this.player, npc)) {
                         talkSounds.stopDialogue();
                         this.onGameOver?.();
                         return;
@@ -464,20 +344,28 @@ export class Game {
                 }
             }
 
-            this.checkRoomTransition();
+            this.handleRoomTransition();
         }
 
-        if (this.studySecretRevealAnim) {
-            this.updateStudySecretReveal(dt);
+        const revealResult = this.studySecret.update(dt);
+        if (revealResult?.enterDialog) {
+            this.message = revealResult.message;
+            this.state = "interacting";
         }
 
         if (this.state === "confirming") {
             if (this.input.wasPressed("y") || this.input.wasPressed("enter")) {
                 const pending = this.pendingConfirmation;
                 this.pendingConfirmation = null;
-                if (pending?.id === "study_secret") {
-                    this.startStudySecretReveal();
-                } else {
+                const handled = pending
+                    ? runPuzzleConfirm(pending.id, {
+                          study_secret: () => {
+                              this.studySecret.startReveal();
+                              this.state = "playing";
+                          }
+                      })
+                    : false;
+                if (!handled) {
                     this.state = "playing";
                 }
             } else if (this.input.wasPressed("n")) {
@@ -488,273 +376,49 @@ export class Game {
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
                 talkSounds.stopDialogue();
                 this.message = null;
-                this.clueNotification = null; // Clear clue notification on dismiss
+                this.clueNotification = null;
                 this.state = "playing";
             }
         }
     }
 
-    private applyStudySecretDoorState(): void {
-        setHiddenExitDoorOpen(this.rooms.study, this.studySecretRevealed);
-    }
+    private handleRoomTransition(): void {
+        const unlocked = this.getUnlockedIds();
+        const transition = this.roomTransitions.checkTransition(
+            this.player,
+            this.currentRoom,
+            this.rooms,
+            (exit) => {
+                if (this.studySecret.isExitBlocked(exit.targetRoom)) return true;
+                if (exit.requiresUnlock && !isExitUnlocked(exit.requiresUnlock, unlocked)) {
+                    return true;
+                }
+                return false;
+            }
+        );
 
-    private startStudySecretReveal(): void {
-        if (this.studySecretRevealed || this.studySecretRevealAnim) return;
+        if (!transition) return;
 
-        removeInteractableById(this.rooms.study, "secret_bookshelf");
-        this.studySecretRevealAnim = {
-            elapsed: 0,
-            duration: STUDY_SECRET_REVEAL_DURATION,
-            doorOpened: false
-        };
-        this.state = "playing";
-    }
+        this.currentRoom = transition.nextRoom;
+        this.syncRoomAmbience();
+        this.roomTransitions.placePlayerAfterRoomTransition(
+            this.player,
+            transition.fromRoomId,
+            transition.nextRoom,
+            transition.spawnX,
+            transition.spawnY
+        );
+        this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(transition.targetRoomId));
 
-    private updateStudySecretReveal(dt: number): void {
-        const anim = this.studySecretRevealAnim;
-        if (!anim) return;
-
-        anim.elapsed += dt;
-        const t = Math.min(1, anim.elapsed / anim.duration);
-
-        if (!anim.doorOpened && t >= 0.55) {
-            setHiddenExitDoorOpen(this.rooms.study, true);
-            anim.doorOpened = true;
-        }
-
-        if (anim.elapsed >= anim.duration) {
-            this.finishStudySecretReveal();
-        }
-    }
-
-    private finishStudySecretReveal(): void {
-        if (this.studySecretRevealed) {
-            this.studySecretRevealAnim = null;
-            return;
-        }
-
-        this.studySecretRevealed = true;
-        this.studySecretRevealAnim = null;
-
-        const study = this.rooms.study;
-        for (const x of [9, 10, 14, 15]) {
-            addFurnitureToRoom(study, { furnitureId: "bookshelves", x, y: 1, anchor: "top-left" });
-        }
-        setHiddenExitDoorOpen(study, true);
-
-        this.message = "The bookshelf grinds aside, revealing a hidden passage.";
-        this.state = "interacting";
-    }
-
-    private renderStudySecretReveal(ctx: CanvasRenderingContext2D): void {
-        const anim = this.studySecretRevealAnim;
-        if (!anim || this.currentRoom.id !== "study") return;
-
-        const rawT = Math.min(1, anim.elapsed / anim.duration);
-        const y = TILE_SIZE;
-
-        if (rawT < 0.12) {
-            const nudge = easeInOutCubic(rawT / 0.12) * 3;
-            spriteLoader.drawSprite(
-                ctx,
-                "secret_bookshelf",
-                11 * TILE_SIZE - nudge,
-                y,
-                TILE_SIZE * 3,
-                TILE_SIZE * 2
-            );
-            return;
-        }
-
-        const slideT = easeInOutCubic((rawT - 0.12) / 0.88);
-        const slides: [number, number][] = [
-            [11, 9],
-            [12, 10],
-            [13, 14]
-        ];
-
-        for (const [from, to] of slides) {
-            const x = (from + (to - from) * slideT) * TILE_SIZE;
-            spriteLoader.drawSprite(ctx, "bookshelf", x, y, TILE_SIZE, TILE_SIZE * 2);
-        }
-
-        if (slideT > 0.3) {
-            const fade = Math.min(1, (slideT - 0.3) / 0.7);
-            ctx.save();
-            ctx.globalAlpha = fade;
-            spriteLoader.drawSprite(ctx, "bookshelf", 15 * TILE_SIZE, y, TILE_SIZE, TILE_SIZE * 2);
-            ctx.restore();
+        const murderer = this.getMurderer();
+        if (murderer?.isChasing()) {
+            this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
         }
     }
 
     private syncRoomAmbience(): void {
         fireplaceAmbience.syncForRoom(this.currentRoom);
         gardenAmbience.syncForRoom(this.currentRoom);
-    }
-
-    private checkRoomTransition() {
-        if (this.roomTransitionCooldown > 0) return;
-
-        // Calculate player's occupied tiles (use ceil for right/bottom to match Player collision logic)
-        const playerLeftTile = Math.floor(this.player.x / TILE_SIZE);
-        const playerRightTile = Math.ceil((this.player.x + this.player.width) / TILE_SIZE);
-        const playerTopTile = Math.floor(this.player.y / TILE_SIZE);
-        const playerBottomTile = Math.ceil((this.player.y + this.player.height) / TILE_SIZE);
-
-        for (const exit of this.currentRoom.exits) {
-            if (exit.targetRoom === "hidden_room" && (!this.studySecretRevealed || this.studySecretRevealAnim)) {
-                continue;
-            }
-
-            // Check if player overlaps with door (3 tiles wide/tall)
-            // Determine door orientation: if on top/bottom wall, door is horizontal; if on left/right wall, door is vertical
-            const isTopOrBottom = exit.y === 0 || exit.y === this.currentRoom.map.height - 1;
-            
-            let overlapsDoor = false;
-            
-            if (isTopOrBottom) {
-                // Horizontal door (on top or bottom wall) - 3 tiles wide (exit.x-1, exit.x, exit.x+1)
-                const doorLeft = exit.x - 1;
-                const doorRight = exit.x + 2; // exclusive
-                
-                // Check if player's horizontal range overlaps with door tiles
-                const horizontalOverlap = (
-                    (playerLeftTile < doorRight && playerRightTile > doorLeft)
-                );
-                
-                // Check if player's vertical position overlaps with door row
-                const verticalOverlap = (
-                    (playerTopTile <= exit.y && playerBottomTile >= exit.y)
-                );
-                
-                overlapsDoor = horizontalOverlap && verticalOverlap;
-            } else {
-                // Vertical door (on left or right wall) - 3 tiles tall (exit.y-1, exit.y, exit.y+1)
-                const doorTop = exit.y - 1;
-                const doorBottom = exit.y + 2; // exclusive
-                
-                // Check if player's vertical range overlaps with door tiles
-                const verticalOverlap = (
-                    (playerTopTile < doorBottom && playerBottomTile > doorTop)
-                );
-                
-                // Check if player's horizontal position overlaps with door column
-                const horizontalOverlap = (
-                    (playerLeftTile <= exit.x && playerRightTile > exit.x)
-                );
-                
-                overlapsDoor = horizontalOverlap && verticalOverlap;
-            }
-            
-            if (overlapsDoor) {
-                const fromRoomId = this.currentRoom.id;
-                const nextRoom = this.rooms[exit.targetRoom];
-
-                this.currentRoom = nextRoom;
-                this.syncRoomAmbience();
-                this.placePlayerAfterRoomTransition(fromRoomId, nextRoom, exit.spawnX, exit.spawnY);
-                this.roomTransitionCooldown = 0.65;
-                this.startRoomTitleBanner(exit.targetRoom);
-
-                // If murderer is chasing, give player head start in new room before he spawns at the door
-                const chef = this.getMurderer();
-                if (chef?.isChasing()) {
-                    this.murdererSpawnsIn = DIFFICULTY_CONFIG[this.difficulty].murdererSpawnsIn;
-                    this.murdererSpawnX = this.player.x;
-                    this.murdererSpawnY = this.player.y;
-                }
-
-                return;
-            }
-        }
-    }
-
-    /** Spawn after a door transition, inset from the reciprocal entry door so 2×2 player won't bounce back. */
-    private placePlayerAfterRoomTransition(
-        fromRoomId: string,
-        nextRoom: Room,
-        spawnX: number,
-        spawnY: number
-    ): void {
-        this.player.x = spawnX * TILE_SIZE;
-        this.player.y = spawnY * TILE_SIZE;
-
-        const entryExit = nextRoom.exits.find((e) => e.targetRoom === fromRoomId);
-        if (!entryExit) return;
-
-        const insetTiles = 3;
-        const roomW = nextRoom.map.width;
-        const roomH = nextRoom.map.height;
-
-        if (entryExit.y === 0) {
-            this.player.y = Math.max(this.player.y, insetTiles * TILE_SIZE);
-        } else if (entryExit.y === roomH - 1) {
-            this.player.y = Math.min(this.player.y, (roomH - 1 - insetTiles) * TILE_SIZE);
-        }
-
-        if (entryExit.x === 0) {
-            this.player.x = Math.max(this.player.x, insetTiles * TILE_SIZE);
-        } else if (entryExit.x === roomW - 1) {
-            this.player.x = Math.min(this.player.x, (roomW - 1 - insetTiles) * TILE_SIZE);
-        }
-
-        this.clampPlayerInsideRoom(nextRoom);
-    }
-
-    /** Keep 2×2 player fully inside interior tiles (not on walls). */
-    private clampPlayerInsideRoom(room: Room): void {
-        const minX = TILE_SIZE;
-        const minY = TILE_SIZE;
-        const maxX = (room.map.width - 2) * TILE_SIZE;
-        const maxY = (room.map.height - 2) * TILE_SIZE;
-        this.player.x = Math.min(Math.max(this.player.x, minX), maxX);
-        this.player.y = Math.min(Math.max(this.player.y, minY), maxY);
-    }
-
-    private drawMessageBox(ctx: CanvasRenderingContext2D, text: string): void {
-        ctx.font = "16px serif";
-        ctx.textAlign = "left";
-
-        const boxWidth = Math.floor(ctx.canvas.width / 3);
-        const padding = 12;
-        const lineHeight = 20;
-        const maxTextWidth = boxWidth - padding * 2;
-        const lines = this.wrapDialogText(ctx, text, maxTextWidth);
-        const boxHeight = padding * 2 + lines.length * lineHeight;
-        const boxX = 20;
-        const boxY = ctx.canvas.height - 20 - boxHeight;
-
-        ctx.fillStyle = "rgba(0,0,0,0.78)";
-        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-
-        ctx.fillStyle = "white";
-        for (let i = 0; i < lines.length; i++) {
-            ctx.fillText(lines[i], boxX + padding, boxY + padding + 16 + i * lineHeight);
-        }
-    }
-
-    private wrapDialogText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-        const lines: string[] = [];
-        const paragraphs = text.split("\n");
-
-        for (const paragraph of paragraphs) {
-            const words = paragraph.split(" ");
-            let current = "";
-
-            for (const word of words) {
-                const next = current ? `${current} ${word}` : word;
-                if (ctx.measureText(next).width <= maxWidth) {
-                    current = next;
-                } else {
-                    if (current) lines.push(current);
-                    current = word;
-                }
-            }
-
-            if (current) lines.push(current);
-        }
-
-        return lines.length > 0 ? lines : [text];
     }
 
     render(ctx: CanvasRenderingContext2D) {
@@ -772,7 +436,12 @@ export class Game {
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
         const offset = needsCentering
-            ? roomViewportOffset(ctx.canvas.width, ctx.canvas.height, this.currentRoom.map.width, this.currentRoom.map.height)
+            ? roomViewportOffset(
+                  ctx.canvas.width,
+                  ctx.canvas.height,
+                  this.currentRoom.map.width,
+                  this.currentRoom.map.height
+              )
             : { x: 0, y: 0 };
         ctx.save();
         ctx.translate(offset.x, offset.y);
@@ -783,7 +452,7 @@ export class Game {
             skipClear: needsCentering
         });
 
-        this.renderStudySecretReveal(ctx);
+        this.studySecret.render(ctx, this.currentRoom.id);
 
         if (this.debugMode) {
             renderDebugOverlay(ctx, this.player, this.currentRoom, this.clueSystem);
@@ -792,14 +461,11 @@ export class Game {
         ctx.restore();
 
         if (this.message) {
-            this.drawMessageBox(ctx, this.message);
+            drawMessageBox(ctx, this.message);
         }
 
         if (this.state === "confirming" && this.pendingConfirmation) {
-            this.drawMessageBox(
-                ctx,
-                `${this.pendingConfirmation.prompt}\n\nY — Yes    N — No`
-            );
+            drawMessageBox(ctx, `${this.pendingConfirmation.prompt}\n\nY — Yes    N — No`);
         }
 
         if (this.clueNotification) {
@@ -807,62 +473,13 @@ export class Game {
         }
 
         if (this.roomTitleBanner) {
-            const t = Math.min(this.roomTitleBanner.elapsed, ROOM_TITLE_DURATION);
-            const alpha = Math.sin((t / ROOM_TITLE_DURATION) * Math.PI);
-            if (alpha > 0.01) {
-                ctx.save();
-                ctx.globalAlpha = alpha;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.font = "bold 36px serif";
-                ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-                ctx.strokeStyle = "rgba(0, 0, 0, 0.55)";
-                ctx.lineWidth = 4;
-                const cx = ctx.canvas.width / 2;
-                const cy = ctx.canvas.height / 2;
-                ctx.strokeText(this.roomTitleBanner.title, cx, cy);
-                ctx.fillText(this.roomTitleBanner.title, cx, cy);
-                ctx.restore();
-            }
+            drawRoomTitleBanner(ctx, this.roomTitleBanner);
         }
 
-        // Subtle red blink for 3 seconds after accusing the murderer
-        if (this.redBlinkRemaining > 0) {
-            const intensity = this.redBlinkRemaining / 3;
-            const pulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.008);
-            const alpha = 0.12 * intensity * pulse;
-            ctx.fillStyle = `rgba(180, 0, 0, ${alpha})`;
-            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        }
+        drawAccusationBlink(ctx, this.murdererChase.redBlinkRemaining);
 
-        // Victory: fade in immediately, then congratulations, then "press to return to menu"
-        if (this.victoryPhase) {
-            const elapsed = 2 - this.victoryTimer;
-            // Start fading immediately (full black in ~0.8s)
-            const fadeAlpha = this.victoryTimer <= 0 ? 1 : Math.min(1, elapsed / 0.8);
-            if (fadeAlpha > 0) {
-                ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
-                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-            }
-            // Show text once fade is underway (after ~0.4s)
-            const showText = elapsed >= 0.4 || this.victoryTimer <= 0;
-            if (showText) {
-                const textAlpha = this.victoryTimer <= 0 ? 1 : Math.min(1, (elapsed - 0.4) / 0.3);
-                ctx.save();
-                ctx.globalAlpha = textAlpha;
-                ctx.fillStyle = "#fff";
-                ctx.font = "bold 48px serif";
-                ctx.textAlign = "center";
-                ctx.fillText("Congratulations!", ctx.canvas.width / 2, ctx.canvas.height / 2 - 40);
-                ctx.font = "24px serif";
-                ctx.fillText("The murderer is being apprehended.", ctx.canvas.width / 2, ctx.canvas.height / 2 + 10);
-                if (this.victoryTimer <= 0) {
-                    ctx.font = "20px serif";
-                    ctx.fillStyle = "rgba(255,255,255,0.9)";
-                    ctx.fillText("Press Enter or Escape to return to main menu", ctx.canvas.width / 2, ctx.canvas.height / 2 + 70);
-                }
-                ctx.restore();
-            }
+        if (this.victory.active) {
+            drawVictoryOverlay(ctx, this.victory.timer);
         }
     }
 }

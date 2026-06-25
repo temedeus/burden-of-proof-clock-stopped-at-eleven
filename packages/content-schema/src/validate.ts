@@ -1,18 +1,16 @@
-import { getGameTileGridSize, isFurniturePlacementInBounds } from "./placement";
+import {
+    getGameTileGridSize,
+    isFurniturePlacementInBounds,
+    resolveNpcPlacementTile,
+    resolvePosition,
+    resolveSpawnY
+} from "./placement";
+import type { FurnitureConfig } from "./furniture";
 import type { NPCConfig } from "./npcs";
 import type { RoomConfig } from "./rooms";
 import { VALID_SPRITE_NAMES } from "./sprites";
 
-interface FurnitureConfig {
-    id: string;
-    width: number;
-    height: number;
-    spriteName?: string;
-    collisionWidth?: number;
-    collisionRowsFromBottom?: number;
-    collisionRowsFromTop?: number;
-    walkableDecor?: boolean;
-}
+export type { FurnitureConfig };
 
 export interface ValidationIssue {
     roomId: string;
@@ -38,21 +36,6 @@ function isSpawnYToken(value: unknown): boolean {
 
 function isExitYToken(value: unknown): boolean {
     return typeof value === "string" && VALID_EXIT_Y_TOKENS.has(value);
-}
-
-function resolvePosition(value: number | "center" | "top" | "bottom", roomDimension: number): number {
-    if (typeof value === "number") return value;
-    if (value === "center") return Math.floor(roomDimension / 2);
-    if (value === "top") return 0;
-    return roomDimension - 1;
-}
-
-function resolveSpawnY(value: number | "bottom-1" | "bottom-2" | "bottom-3" | "center", roomHeight: number): number {
-    if (typeof value === "number") return value;
-    if (value === "center") return Math.floor(roomHeight / 2) - 1;
-    if (value === "bottom-1") return roomHeight - 2;
-    if (value === "bottom-2") return roomHeight - 3;
-    return roomHeight - 4;
 }
 
 export function validateRooms(
@@ -154,8 +137,11 @@ export function validateRooms(
             if (!isPositionToken(placement.y)) {
                 issues.push({ roomId: room.id, message: `NPC '${placement.npcId}' has invalid y token.` });
             }
-            const x = typeof placement.x === "number" ? placement.x : Math.floor(room.width / 2);
-            const y = resolvePosition(placement.y, room.height);
+            const x =
+                typeof placement.x === "number"
+                    ? placement.x
+                    : resolveNpcPlacementTile(placement.x, room.width);
+            const y = resolveNpcPlacementTile(placement.y, room.height);
             if (x < 0 || x >= room.width || y < 0 || y >= room.height) {
                 issues.push({
                     roomId: room.id,

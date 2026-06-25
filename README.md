@@ -24,6 +24,8 @@ A pixel-art murder mystery set at Blackwood Manor. Explore rooms, talk to suspec
 
 For the level editor and case authoring backend, see **[src/editor/README.md](src/editor/README.md)**.
 
+For architecture and content authoring overview, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
 ---
 
 ## Game

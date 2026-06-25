@@ -1,43 +1,13 @@
 import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
 import { drawFountainAnimated } from "../assets/procedural/fountain";
 import { spriteLoader } from "../assets/SpriteLoader";
-import { NPC } from "../entities/NPC";
 import { TILE_SIZE } from "../world/constants";
 import { tileBounds } from "../world/interactableTiles";
 import type { Interactable } from "../world/Interactable";
 import type { DoorExit, Room } from "../world/Room";
-import type { NPCConfig, RoomConfig } from "@cse/content-schema";
+import { renderTileMap } from "./tileMapRender";
 
 export type DepthActor = { y: number; height: number; render(ctx: CanvasRenderingContext2D): void };
-
-export function resolveNpcPlacementTile(
-    value: number | "center" | "top" | "bottom",
-    dimension: "width" | "height",
-    grid: { width: number; height: number }
-): number {
-    if (typeof value === "number") return value;
-    if (value === "center") return Math.floor((dimension === "width" ? grid.width : grid.height) / 2);
-    if (value === "top") return 1;
-    return (dimension === "width" ? grid.width : grid.height) - 2;
-}
-
-export function spawnRoomNpcs(
-    room: Room,
-    config: RoomConfig,
-    npcConfigs: Record<string, NPCConfig>
-): void {
-    room.npcs.length = 0;
-    const grid = { width: room.map.width, height: room.map.height };
-    for (const placement of config.npcs ?? []) {
-        const npcConfig = npcConfigs[placement.npcId];
-        if (!npcConfig) continue;
-        const npcX = resolveNpcPlacementTile(placement.x, "width", grid) * TILE_SIZE;
-        const npcY = resolveNpcPlacementTile(placement.y, "height", grid) * TILE_SIZE;
-        room.npcs.push(
-            new NPC(npcConfig.id, npcX, npcY, npcConfig.name, npcConfig.role, npcConfig.spriteName)
-        );
-    }
-}
 
 export function furnitureActorFromInteractable(
     obj: Interactable,
@@ -56,8 +26,6 @@ export function furnitureActorFromInteractable(
         spriteName = obj.spriteName;
     } else if (obj.id === "shelves" || obj.id === "bookshelves") {
         spriteName = "bookshelf";
-    } else if (obj.id === "secret_bookshelf" || obj.spriteName === "secret_bookshelf") {
-        spriteName = "secret_bookshelf";
     } else if (obj.id === "table") {
         spriteName = "table";
     }
@@ -145,16 +113,9 @@ export function exitHasStaircase(room: Room, exit: DoorExit): boolean {
     return false;
 }
 
-const HIDDEN_PASSAGE_PAIRS = new Set([
-    "study:hidden_room",
-    "hidden_room:study",
-    "hidden_room:secret_tunnel",
-    "secret_tunnel:hidden_room"
-]);
-
 export function exitSkipsDoorSprite(room: Room, exit: DoorExit): boolean {
-    if (exitHasStaircase(room, exit)) return true;
-    return HIDDEN_PASSAGE_PAIRS.has(`${room.id}:${exit.targetRoom}`);
+    if (exit.skipDoorSprite) return true;
+    return exitHasStaircase(room, exit);
 }
 
 export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void {
@@ -192,6 +153,7 @@ export interface RenderRoomSceneOptions {
     skipClear?: boolean;
 }
 
+/** Draw order: background → tiles → doors → rugs → furniture/NPCs (depth-sorted). See RenderLayer. */
 export function renderRoomScene(
     ctx: CanvasRenderingContext2D,
     room: Room,
@@ -205,7 +167,7 @@ export function renderRoomScene(
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
 
-    room.map.render(ctx);
+    renderTileMap(ctx, room.map);
     drawDoorSprites(ctx, room);
 
     const rugActors: DepthActor[] = [];

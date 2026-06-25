@@ -1,6 +1,5 @@
 import type { FurniturePlacement, RoomConfig } from "@cse/content-schema";
-import { resolveFurnitureOrigin } from "@cse/content-schema";
-import { resolveNpcPlacementTile } from "../../render/roomScene";
+import { resolveFurnitureOrigin, resolveNpcPlacementTile, resolvePosition } from "@cse/content-schema";
 import { TILE_SIZE } from "../../world/constants";
 
 export type FurnitureBounds = { width: number; height: number };
@@ -24,10 +23,7 @@ export function resolveExitPosition(
     value: number | "center" | "top" | "bottom",
     dimension: number
 ): number {
-    if (typeof value === "number") return value;
-    if (value === "center") return Math.floor(dimension / 2);
-    if (value === "top") return 0;
-    return dimension - 1;
+    return resolvePosition(value, dimension);
 }
 
 export function getPlacementRect(
@@ -66,8 +62,8 @@ export function hitTestNpc(
 ): number {
     for (let i = (room.npcs?.length ?? 0) - 1; i >= 0; i--) {
         const npc = room.npcs![i];
-        const x = resolveNpcPlacementTile(npc.x, "width", grid);
-        const y = resolveNpcPlacementTile(npc.y, "height", grid);
+        const x = resolveNpcPlacementTile(npc.x, grid.width);
+        const y = resolveNpcPlacementTile(npc.y, grid.height);
         if (tileX >= x && tileX <= x + 1 && tileY >= y && tileY <= y + 1) return i;
     }
     return -1;

@@ -4,47 +4,14 @@
  */
 
 export const TILE_TO_SPRITE: Record<number, string> = {
-    0: 'floor',
-    1: 'wall',
-    2: 'floor',
-    3: 'door',
-    4: 'grass',
-    5: 'gravel',
-    6: 'fence',
-    7: 'fence_post',
-    8: 'ceramic',
-    9: 'rock'
+    0: "floor",
+    1: "wall",
+    2: "floor",
+    3: "door",
+    4: "grass",
+    5: "gravel",
+    6: "fence",
+    7: "fence_post",
+    8: "ceramic",
+    9: "rock"
 };
-
-export enum SpriteId {
-    Fountain = "fountain",
-    Tree = "tree",
-    Bush = "bush",
-    PondCornerFlower = "pond_corner_flower",
-    PondCornerPlain = "pond_corner_plain",
-    PondCornerGrass = "pond_corner_grass",
-    PondCornerRock = "pond_corner_rock",
-    WaterReeds = "water_reeds",
-    WaterRipple = "water_ripple",
-    WaterLily = "water_lily",
-    Pond = "pond",
-
-    Grass = "grass",
-    Gravel = "gravel",
-    ManorGate = "manor_gate",
-    ManorBuilding = "manor_building",
-
-    Fireplace = "fireplace",
-    DiningTable = "dining_table",
-    KitchenTable = "kitchen_table",
-    BoozeTable = "booze_table",
-    DrinkingChair = "drinking_chair",
-    Staircase = "staircase",
-    Carpet = "carpet",
-    Ceramic = "ceramic",
-    Rock = "rock",
-    Bathtub = "bathtub",
-    Toilet = "toilet",
-    WaterBoiler = "water_boiler",
-    SecretBookshelf = "secret_bookshelf"
-}

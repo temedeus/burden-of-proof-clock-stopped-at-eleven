@@ -90,14 +90,13 @@ export class InteractionSystem {
                     playerBottomTile >= bounds.minY - 1 && playerTopTile <= bounds.maxY + 1;
 
                 if (horizontalAdjacent && verticalAdjacent) {
-                    if (obj.id === "secret_bookshelf") {
+                    if (obj.interactionType === "confirm" && obj.confirmId && obj.confirmPrompt) {
                         return {
                             description: "",
                             clues: [],
                             confirmation: {
-                                id: "study_secret",
-                                prompt:
-                                    "One volume sits loose on the shelf, almost asking to be pulled. Will you tug it free?"
+                                id: obj.confirmId,
+                                prompt: obj.confirmPrompt
                             }
                         };
                     }

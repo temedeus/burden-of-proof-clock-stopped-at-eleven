@@ -1,6 +1,11 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ACTIVE_STORY_ID, validateRooms, validateStoryCasePacket } from "../packages/content-schema/src/index.ts";
+import {
+    ACTIVE_STORY_ID,
+    buildFurnitureCatalog,
+    validateRooms,
+    validateStoryCasePacket
+} from "../packages/content-schema/src/index.ts";
 
 const ROOT = process.cwd();
 const ROOMS_DIR = join(ROOT, "src", "data", "rooms");
@@ -31,11 +36,7 @@ async function loadFurnitureMap() {
     const table = await readJson(join(ROOT, "src", "data", "furniture", "table.json"));
     const bookshelves = await readJson(join(ROOT, "src", "data", "furniture", "bookshelves.json"));
     const decorations = await readJson(join(ROOT, "src", "data", "furniture", "decorations.json"));
-    return {
-        table,
-        bookshelves,
-        ...decorations
-    };
+    return buildFurnitureCatalog(table, bookshelves, decorations);
 }
 
 async function validateGeneratedStories(roomsById, npcsById, cluesById) {

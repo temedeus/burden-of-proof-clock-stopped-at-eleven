@@ -9,21 +9,14 @@ import {
     syncAllRooms,
     updateBackendStatusLabel
 } from "./roomBackend";
-import type { EditTarget, FurnitureConfig } from "./types";
+import type { EditTarget } from "./types";
 import cluesCatalog from "../data/clues.json";
-import { loadGameContent } from "../content/loadGameContent";
-import tableConfig from "../data/furniture/table.json";
-import bookshelvesConfig from "../data/furniture/bookshelves.json";
-import decorationsConfig from "../data/furniture/decorations.json";
+import { loadFurnitureCatalog, loadGameContent } from "../content/loadGameContent";
 
 const content = loadGameContent();
 const workingRooms: Record<string, RoomConfig> = JSON.parse(JSON.stringify(content.rooms));
 const backendBase = "http://localhost:8787";
-const furnitureById: Record<string, FurnitureConfig> = {
-    table: tableConfig as FurnitureConfig,
-    bookshelves: bookshelvesConfig as FurnitureConfig,
-    ...(decorationsConfig as Record<string, FurnitureConfig>)
-};
+const furnitureById = loadFurnitureCatalog();
 
 const roomSelect = document.getElementById("room-select") as HTMLSelectElement;
 const roomJson = document.getElementById("room-json") as HTMLTextAreaElement;

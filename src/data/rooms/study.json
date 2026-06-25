@@ -53,7 +53,9 @@
       "y": "top",
       "targetRoom": "hidden_room",
       "spawnX": "center",
-      "spawnY": "bottom-2"
+      "spawnY": "bottom-2",
+      "skipDoorSprite": true,
+      "requiresUnlock": "study_secret"
     }
   ],
   "npcs": [

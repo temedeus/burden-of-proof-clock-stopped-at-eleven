@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { mkdir, readFile, readdir, rename, rm, writeFile, copyFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { ACTIVE_STORY_ID } from "../packages/content-schema/src/story.ts";
+import { buildFurnitureCatalog, validateRooms } from "../packages/content-schema/src/index.ts";
 import { isStoryCasePacketValid, validateStoryCasePacket } from "../packages/content-schema/src/validateStory.ts";
 
 const PORT = Number(process.env.EDITOR_BACKEND_PORT ?? 8787);
@@ -66,6 +67,18 @@ async function readNpcs() {
 
 async function readClues() {
     return await readJson(CLUES_FILE);
+}
+
+async function loadFurnitureMap() {
+    const table = await readJson(join(FURNITURE_DIR, "table.json"));
+    const bookshelves = await readJson(join(FURNITURE_DIR, "bookshelves.json"));
+    const decorations = await readJson(join(FURNITURE_DIR, "decorations.json"));
+    return buildFurnitureCatalog(table, bookshelves, decorations);
+}
+
+async function validateRoomPayload(room, allRooms, furnitureById, npcsById) {
+    const roomsList = Object.values({ ...allRooms, [room.id]: room });
+    return validateRooms(roomsList, furnitureById, npcsById);
 }
 
 async function syncRooms(nextRooms) {
@@ -348,6 +361,24 @@ const server = createServer(async (req, res) => {
                 return;
             }
             room.id = roomId;
+            const [allRooms, furnitureById, npcsById] = await Promise.all([
+                readRooms(),
+                loadFurnitureMap(),
+                readNpcs()
+            ]);
+            const issues = await validateRoomPayload(
+                room,
+                { ...allRooms, [roomId]: room },
+                furnitureById,
+                npcsById
+            );
+            if (issues.length > 0) {
+                sendJson(res, 400, {
+                    error: "Room validation failed.",
+                    issues
+                });
+                return;
+            }
             await writeFile(roomPath(roomId), JSON.stringify(room, null, 2) + "\n", "utf8");
             sendJson(res, 200, { ok: true });
             return;

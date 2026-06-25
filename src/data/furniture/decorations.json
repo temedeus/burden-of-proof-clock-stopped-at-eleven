@@ -293,6 +293,9 @@
     "height": 2,
     "drawWidth": 3,
     "drawHeight": 2,
-    "spriteName": "secret_bookshelf"
+    "spriteName": "secret_bookshelf",
+    "interactionType": "confirm",
+    "confirmId": "study_secret",
+    "confirmPrompt": "One volume sits loose on the shelf, almost asking to be pulled. Will you tug it free?"
   }
 }

@@ -8,6 +8,8 @@ export interface DoorExit {
     targetRoom: string;
     spawnX: number;
     spawnY: number;
+    skipDoorSprite?: boolean;
+    requiresUnlock?: string;
 }
 
 export class Room {

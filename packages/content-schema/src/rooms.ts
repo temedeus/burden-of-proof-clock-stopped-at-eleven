@@ -16,6 +16,10 @@ export interface ExitConfig {
     targetRoom: string;
     spawnX: number | "center";
     spawnY: SpawnYToken;
+    /** When true, no door sprite is drawn (hidden passages, staircases). */
+    skipDoorSprite?: boolean;
+    /** Exit is blocked until the named unlock id is satisfied (e.g. `study_secret`). */
+    requiresUnlock?: string;
 }
 
 export interface NPCPlacement {

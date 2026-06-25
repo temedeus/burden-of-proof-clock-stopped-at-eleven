@@ -51,7 +51,7 @@ Implementation: `scripts/editor-backend.mjs`.
 pnpm validate
 ```
 
-Checks room layout, global NPC placement (each NPC once), furniture/sprite references, and case shape (exactly 5 clues and assignments, valid culprit, furniture slots exist). Shared rules live in `packages/content-schema`.
+Checks room layout, global NPC placement (each NPC once), furniture/sprite references, and case shape (valid culprit, furniture slots exist, clue assignments). Shared rules live in `packages/content-schema`.
 
 ## Docker (optional)
 
@@ -69,7 +69,7 @@ pnpm docker:clean   # removes editor_node_modules volume
 | `caseEditor.ts` | Story/clue form, story API |
 | `roomBackend.ts` | Rooms HTTP, backend health |
 | `roomEditor.ts` | Room CRUD, JSON textarea, dirty tracking |
-| `types.ts` | Shared types (`FurnitureConfig`, `EditTarget`) |
+| `types.ts` | Shared editor types (`EditTarget`; re-exports `FurnitureConfig`) |
 | `canvas/RoomCanvas.ts` | Render loop, tool dispatch, host for layout handlers |
 | `canvas/layoutTargets/` | Strategy handlers: furniture, npc, doors |
 | `canvas/hitTest.ts` | Placement rects, hit tests |

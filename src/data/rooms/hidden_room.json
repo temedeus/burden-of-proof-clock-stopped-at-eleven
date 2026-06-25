@@ -10,14 +10,16 @@
       "y": "bottom",
       "targetRoom": "study",
       "spawnX": "center",
-      "spawnY": 2
+      "spawnY": 2,
+      "skipDoorSprite": true
     },
     {
       "x": "center",
       "y": "top",
       "targetRoom": "secret_tunnel",
       "spawnX": "center",
-      "spawnY": "bottom-2"
+      "spawnY": "bottom-2",
+      "skipDoorSprite": true
     }
   ]
 }

@@ -13,5 +13,6 @@
       "@cse/content-schema": ["packages/content-schema/src/index.ts"]
     }
   },
-  "include": ["src", "packages", "scripts"]
+  "include": ["src", "packages", "scripts"],
+  "exclude": ["**/*.test.ts"]
 }

@@ -1,4 +1,4 @@
-import type { FurniturePlacement, RoomConfig } from "./rooms";
+import type { FurniturePlacement, PositionToken, RoomConfig, SpawnYToken } from "./rooms";
 
 /** Default room size for new rooms / game viewport (800×600 at 32px per tile). */
 export const DEFAULT_ROOM_TILE_WIDTH = 25;
@@ -18,6 +18,34 @@ export interface FurnitureBoundsConfig {
     /** Solid rows from the top of the footprint (e.g. tall fireplace mantle). */
     collisionRowsFromTop?: number;
     walkableDecor?: boolean;
+}
+
+/** Resolve furniture/exit anchor tokens to tile coordinates (edge-aligned). */
+export function resolvePosition(value: PositionToken, roomDimension: number): number {
+    if (typeof value === "number") return value;
+    if (value === "center") return Math.floor(roomDimension / 2);
+    if (value === "top") return 0;
+    return roomDimension - 1;
+}
+
+/**
+ * Resolve NPC spawn tile — inset one tile from walls so 2×2 sprites stay inside the room.
+ * Matches runtime spawn and editor hit-testing.
+ */
+export function resolveNpcPlacementTile(value: PositionToken, roomDimension: number): number {
+    if (typeof value === "number") return value;
+    if (value === "center") return Math.floor(roomDimension / 2);
+    if (value === "top") return 1;
+    return roomDimension - 2;
+}
+
+export function resolveSpawnY(value: SpawnYToken, roomHeight: number): number {
+    if (typeof value === "number") return value;
+    if (value === "center") return Math.floor(roomHeight / 2) - 1;
+    if (value === "bottom-1") return roomHeight - 2;
+    if (value === "bottom-2") return roomHeight - 3;
+    if (value === "bottom-3") return roomHeight - 4;
+    return roomHeight - 4;
 }
 
 export function getCollisionTileRange(
@@ -53,13 +81,6 @@ export function getCollisionTileRange(
 
 export function getGameTileGridSize(room: RoomConfig): { width: number; height: number } {
     return { width: room.width, height: room.height };
-}
-
-function resolvePosition(value: number | "center" | "top" | "bottom", roomDimension: number): number {
-    if (typeof value === "number") return value;
-    if (value === "center") return Math.floor(roomDimension / 2);
-    if (value === "top") return 0;
-    return roomDimension - 1;
 }
 
 export function resolveFurnitureOrigin(

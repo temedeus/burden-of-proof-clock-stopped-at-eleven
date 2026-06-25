@@ -117,6 +117,21 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     }),
 
+    ceramic: tile32((ctx) => {
+        const tile = 8;
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 4; col++) {
+                const x = col * tile;
+                const y = row * tile;
+                r(ctx, x, y, tile, tile, (row + col) % 2 === 0 ? P.ceramicLight : P.ceramic);
+                r(ctx, x, y, tile, 1, P.grout);
+                r(ctx, x, y, 1, tile, P.grout);
+            }
+        }
+        r(ctx, 0, 31, 32, 1, P.grout);
+        r(ctx, 31, 0, 1, 32, P.grout);
+    }),
+
     door: {
         nativeWidth: 32,
         nativeHeight: 48,

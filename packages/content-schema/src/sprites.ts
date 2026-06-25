@@ -39,7 +39,11 @@ export const VALID_SPRITE_NAMES = [
     "booze_table",
     "drinking_chair",
     "staircase",
-    "carpet"
+    "carpet",
+    "ceramic",
+    "bathtub",
+    "toilet",
+    "water_boiler"
 ] as const;
 
 export type SpriteName = (typeof VALID_SPRITE_NAMES)[number];

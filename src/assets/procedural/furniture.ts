@@ -279,5 +279,112 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
             r(ctx, 6, 7, 1, 18, P.goldDark);
             r(ctx, 41, 7, 1, 18, P.goldDark);
         }
+    },
+
+    bathtub: {
+        nativeWidth: 96,
+        nativeHeight: 64,
+        draw(ctx) {
+            // Claw-foot tub — top-down oval
+            r(ctx, 8, 12, 80, 40, P.ceramic);
+            r(ctx, 12, 16, 72, 32, P.ceramicLight);
+            r(ctx, 14, 18, 68, 28, P.waterLight);
+            r(ctx, 16, 20, 64, 24, P.water);
+            r(ctx, 8, 12, 80, 4, P.ceramicDark);
+            r(ctx, 8, 48, 80, 4, P.ceramicDark);
+            r(ctx, 8, 12, 4, 40, P.ceramicDark);
+            r(ctx, 84, 12, 4, 40, P.ceramicDark);
+            // Rim highlight
+            r(ctx, 12, 16, 72, 2, P.white);
+            // Claw feet
+            for (const fx of [10, 78]) {
+                r(ctx, fx, 50, 8, 10, P.silver);
+                r(ctx, fx + 1, 58, 6, 2, P.silverDark);
+            }
+            // Tap at head end
+            r(ctx, 44, 10, 8, 6, P.silver);
+            r(ctx, 47, 6, 2, 6, P.silverDark);
+        }
+    },
+
+    toilet: {
+        nativeWidth: 64,
+        nativeHeight: 64,
+        draw(ctx) {
+            const C = {
+                w: P.white,
+                c: P.ceramic,
+                l: P.ceramicLight,
+                d: P.ceramicDark,
+                o: P.outline,
+                b: P.water,
+                B: P.waterDark,
+                m: P.silver
+            };
+
+            // Oval seat ring (opens toward north / into the room)
+            grid(ctx, 6, 2, 2, [
+                "...wwwwwwww...",
+                "..wwccccccww..",
+                ".wwccccccccww.",
+                "wwccccccccccww",
+                "wwccbbbbbbccww",
+                "wwccbbbbbbccww",
+                "wwccccccccccww",
+                ".wwccccccccww.",
+                "..wwccccccww..",
+                "...wwwwwwww..."
+            ], C);
+
+            // Water in the bowl
+            grid(ctx, 16, 10, 2, [
+                "..bbbb..",
+                ".bbbbbb.",
+                "bbbbbbbb",
+                "bbbbbbbb",
+                ".bbbbbb.",
+                "..bbbb.."
+            ], C);
+            r(ctx, 22, 14, 20, 8, P.waterDark);
+
+            // Cistern against the wall (south edge of sprite)
+            r(ctx, 14, 34, 36, 24, P.ceramic);
+            r(ctx, 16, 36, 32, 20, P.ceramicLight);
+            r(ctx, 14, 34, 36, 3, P.ceramicDark);
+            r(ctx, 14, 55, 36, 3, P.outline);
+            r(ctx, 14, 34, 3, 24, P.ceramicDark);
+            r(ctx, 47, 34, 3, 24, P.ceramicDark);
+            // Lid seam
+            r(ctx, 16, 36, 32, 2, P.white);
+            // Flush lever
+            r(ctx, 40, 42, 8, 3, P.silver);
+            r(ctx, 46, 40, 3, 5, P.silverDark);
+        }
+    },
+
+    water_boiler: {
+        nativeWidth: 64,
+        nativeHeight: 96,
+        draw(ctx) {
+            // Wall-mounted copper cylinder
+            r(ctx, 18, 8, 28, 72, P.goldDark);
+            r(ctx, 20, 10, 24, 68, P.gold);
+            r(ctx, 22, 12, 20, 64, P.goldDark);
+            r(ctx, 24, 14, 16, 60, P.copper);
+            r(ctx, 22, 10, 4, 68, P.highlight);
+            // Top dome
+            r(ctx, 22, 4, 20, 8, P.gold);
+            r(ctx, 26, 2, 12, 4, P.goldDark);
+            // Pipes
+            r(ctx, 8, 20, 12, 4, P.silver);
+            r(ctx, 44, 40, 12, 4, P.silver);
+            r(ctx, 46, 44, 4, 16, P.silverDark);
+            // Pressure gauge
+            r(ctx, 40, 24, 10, 10, P.silver);
+            r(ctx, 43, 27, 4, 4, P.white);
+            r(ctx, 44, 28, 2, 2, P.red);
+            // Wall bracket shadow
+            r(ctx, 16, 8, 4, 72, P.shadow);
+        }
     }
 };

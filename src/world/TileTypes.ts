@@ -10,3 +10,5 @@ export const TILE_GRAVEL = 5;
 export const TILE_FENCE = 6;
 /** Stone fence post at fence corners */
 export const TILE_FENCE_POST = 7;
+/** White ceramic bathroom tile */
+export const TILE_CERAMIC = 8;

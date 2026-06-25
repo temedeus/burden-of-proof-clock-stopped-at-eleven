@@ -12,6 +12,14 @@ export function gridSizeFromCanvas(canvasWidth: number, canvasHeight: number): {
     };
 }
 
+export function resizeCanvasForRoom(
+    canvas: HTMLCanvasElement,
+    room: { width: number; height: number }
+): void {
+    canvas.width = room.width * TILE_SIZE;
+    canvas.height = room.height * TILE_SIZE;
+}
+
 export function resolveExitPosition(
     value: number | "center" | "top" | "bottom",
     dimension: number

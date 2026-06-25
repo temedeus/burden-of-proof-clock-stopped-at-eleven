@@ -11,7 +11,8 @@ export const TILE_TO_SPRITE: Record<number, string> = {
     4: 'grass',
     5: 'gravel',
     6: 'fence',
-    7: 'fence_post'
+    7: 'fence_post',
+    8: 'ceramic'
 };
 
 export enum SpriteId {
@@ -38,5 +39,9 @@ export enum SpriteId {
     BoozeTable = "booze_table",
     DrinkingChair = "drinking_chair",
     Staircase = "staircase",
-    Carpet = "carpet"
+    Carpet = "carpet",
+    Ceramic = "ceramic",
+    Bathtub = "bathtub",
+    Toilet = "toilet",
+    WaterBoiler = "water_boiler"
 }

@@ -3,7 +3,7 @@ import { createRoomFromConfig } from "../../world/Rooms";
 import { TILE_SIZE } from "../../world/constants";
 import { spriteLoader } from "../../assets/SpriteLoader";
 import { renderRoomScene, spawnRoomNpcs } from "../../render/roomScene";
-import { getPlacementRect, gridSizeFromCanvas } from "./hitTest";
+import { getPlacementRect, resizeCanvasForRoom } from "./hitTest";
 import { buildDoorGhost, exitFromGhost, spawnForExit, type DoorGhost } from "./doorPlacement";
 import {
     applyDoorTarget,
@@ -110,7 +110,13 @@ export class RoomCanvas implements LayoutTargetHost {
     }
 
     gridSize(): { width: number; height: number } {
-        return gridSizeFromCanvas(this.canvas.width, this.canvas.height);
+        const room = this.currentRoom();
+        if (!room) return { width: 25, height: 18 };
+        return { width: room.width, height: room.height };
+    }
+
+    resizeCanvasToRoom(room: RoomConfig): void {
+        resizeCanvasForRoom(this.canvas, room);
     }
 
     furniturePlacementRect(
@@ -245,7 +251,7 @@ export class RoomCanvas implements LayoutTargetHost {
         }
 
         const runtime = this.gridSize();
-        const builtRoom = createRoomFromConfig(room, runtime.width, runtime.height);
+        const builtRoom = createRoomFromConfig(room, undefined, undefined, this.deps.workingRooms);
         spawnRoomNpcs(builtRoom, room, this.npcConfigs);
         renderRoomScene(ctx, builtRoom, { clearColor: "#111" });
 

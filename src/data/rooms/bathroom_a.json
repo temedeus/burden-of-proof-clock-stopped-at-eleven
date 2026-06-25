@@ -1,8 +1,28 @@
 {
   "id": "bathroom_a",
-  "width": 20,
-  "height": 15,
-  "furniture": [],
+  "width": 12,
+  "height": 10,
+  "floorTile": "ceramic",
+  "furniture": [
+    {
+      "furnitureId": "bathtub",
+      "x": 8,
+      "y": 3,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "toilet",
+      "x": 1,
+      "y": 6,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "water_boiler",
+      "x": 1,
+      "y": 2,
+      "anchor": "top-left"
+    }
+  ],
   "exits": [
     {
       "x": "center",

@@ -8,7 +8,8 @@ import {
     TILE_FURNITURE,
     TILE_GRASS,
     TILE_GRAVEL,
-    TILE_WALL
+    TILE_WALL,
+    TILE_CERAMIC
 } from "./TileTypes";
 import {Interactable} from "./Interactable";
 import {NPC} from "../entities/NPC";
@@ -241,7 +242,12 @@ function applyGravelPath(
     }
 }
 
-export function createRoomFromConfig(config: RoomConfig, width?: number, height?: number): Room {
+export function createRoomFromConfig(
+    config: RoomConfig,
+    width?: number,
+    height?: number,
+    allRoomConfigs?: Record<string, RoomConfig>
+): Room {
     const roomWidth = width || config.width;
     const roomHeight = height || config.height;
     
@@ -250,7 +256,9 @@ export function createRoomFromConfig(config: RoomConfig, width?: number, height?
             ? TILE_GRASS
             : config.floorTile === "gravel"
               ? TILE_GRAVEL
-              : TILE_FLOOR;
+              : config.floorTile === "ceramic"
+                ? TILE_CERAMIC
+                : TILE_FLOOR;
     const tiles = new Array(roomWidth * roomHeight).fill(baseFloor);
 
     // Outer walls
@@ -306,14 +314,19 @@ export function createRoomFromConfig(config: RoomConfig, width?: number, height?
         }
     }
 
-    // Place exits
-    const exits = config.exits.map(exit => ({
-        x: resolvePosition(exit.x, "width", roomWidth),
-        y: resolvePosition(exit.y, "height", roomHeight),
-        targetRoom: exit.targetRoom,
-        spawnX: resolvePosition(exit.spawnX, "width", roomWidth),
-        spawnY: resolveSpawnY(exit.spawnY, roomHeight)
-    }));
+    // Place exits — spawn tiles are in the *target* room's coordinate space
+    const exits = config.exits.map(exit => {
+        const target = allRoomConfigs?.[exit.targetRoom];
+        const spawnW = target?.width ?? roomWidth;
+        const spawnH = target?.height ?? roomHeight;
+        return {
+            x: resolvePosition(exit.x, "width", roomWidth),
+            y: resolvePosition(exit.y, "height", roomHeight),
+            targetRoom: exit.targetRoom,
+            spawnX: resolvePosition(exit.spawnX, "width", spawnW),
+            spawnY: resolveSpawnY(exit.spawnY, spawnH)
+        };
+    });
 
     // Place door tiles (3 tiles wide to accommodate 2x2 player with alignment buffer)
     exits.forEach(exit => {
@@ -348,12 +361,14 @@ export function createRoomFromConfig(config: RoomConfig, width?: number, height?
     // Place NPCs - NPCs will be initialized in Game.ts with proper configs
     const npcs: NPC[] = [];
 
-    const furnitureUnderlay: "floor" | "grass" | "gravel" =
+    const furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" =
         config.floorTile === "grass"
             ? "grass"
             : config.floorTile === "gravel"
               ? "gravel"
-              : "floor";
+              : config.floorTile === "ceramic"
+                ? "ceramic"
+                : "floor";
 
     return new Room(
         config.id,

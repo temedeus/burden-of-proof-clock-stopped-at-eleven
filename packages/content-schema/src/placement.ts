@@ -1,8 +1,13 @@
 import type { FurniturePlacement, RoomConfig } from "./rooms";
 
-/** Game/editor canvas tile grid (800×600 at 32px per tile). Placement coords are stored in this space. */
-export const GAME_CANVAS_TILE_WIDTH = 25;
-export const GAME_CANVAS_TILE_HEIGHT = 18;
+/** Default room size for new rooms / game viewport (800×600 at 32px per tile). */
+export const DEFAULT_ROOM_TILE_WIDTH = 25;
+export const DEFAULT_ROOM_TILE_HEIGHT = 18;
+
+/** @deprecated Use DEFAULT_ROOM_TILE_WIDTH */
+export const GAME_CANVAS_TILE_WIDTH = DEFAULT_ROOM_TILE_WIDTH;
+/** @deprecated Use DEFAULT_ROOM_TILE_HEIGHT */
+export const GAME_CANVAS_TILE_HEIGHT = DEFAULT_ROOM_TILE_HEIGHT;
 
 export interface FurnitureBoundsConfig {
     width: number;
@@ -46,8 +51,8 @@ export function getCollisionTileRange(
     };
 }
 
-export function getGameTileGridSize(_room?: RoomConfig): { width: number; height: number } {
-    return { width: GAME_CANVAS_TILE_WIDTH, height: GAME_CANVAS_TILE_HEIGHT };
+export function getGameTileGridSize(room: RoomConfig): { width: number; height: number } {
+    return { width: room.width, height: room.height };
 }
 
 function resolvePosition(value: number | "center" | "top" | "bottom", roomDimension: number): number {
@@ -76,8 +81,8 @@ export function resolveFurnitureOrigin(
 export function isFurniturePlacementInBounds(
     placement: FurniturePlacement,
     furniture: FurnitureBoundsConfig,
-    gridWidth: number = GAME_CANVAS_TILE_WIDTH,
-    gridHeight: number = GAME_CANVAS_TILE_HEIGHT
+    gridWidth: number = DEFAULT_ROOM_TILE_WIDTH,
+    gridHeight: number = DEFAULT_ROOM_TILE_HEIGHT
 ): boolean {
     const { startX, startY } = resolveFurnitureOrigin(placement, furniture, gridWidth, gridHeight);
 

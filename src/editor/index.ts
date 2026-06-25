@@ -27,6 +27,9 @@ const furnitureById: Record<string, FurnitureConfig> = {
 
 const roomSelect = document.getElementById("room-select") as HTMLSelectElement;
 const roomJson = document.getElementById("room-json") as HTMLTextAreaElement;
+const roomWidthInput = document.getElementById("room-width-input") as HTMLInputElement;
+const roomHeightInput = document.getElementById("room-height-input") as HTMLInputElement;
+const applyRoomSizeButton = document.getElementById("apply-room-size-btn") as HTMLButtonElement;
 const issuesEl = document.getElementById("issues") as HTMLDivElement;
 const backendStatusEl = document.getElementById("backend-status") as HTMLParagraphElement;
 const dirtyStatusEl = document.getElementById("dirty-status") as HTMLParagraphElement;
@@ -86,8 +89,9 @@ function refreshRoomOptions(): void {
     roomSelect.innerHTML = "";
     for (const roomId of Object.keys(workingRooms).sort()) {
         const option = document.createElement("option");
+        const room = workingRooms[roomId];
         option.value = roomId;
-        option.textContent = roomId;
+        option.textContent = `${roomId} (${room.width}×${room.height})`;
         roomSelect.appendChild(option);
     }
     if (selected && workingRooms[selected]) roomSelect.value = selected;
@@ -110,18 +114,28 @@ function refreshDoorTargetOptions(): void {
     }
 }
 
+function syncCanvasToSelectedRoom(): void {
+    const room = workingRooms[roomSelect.value];
+    if (!room) return;
+    roomCanvas.resizeCanvasToRoom(room);
+    roomEditor.syncSizeInputsFromRoom(room);
+}
+
 const roomEditor = new RoomEditor({
     workingRooms,
     furnitureById,
     npcConfigs: content.npcs as Record<string, NPCConfig>,
     roomSelect,
     roomJson,
+    roomWidthInput,
+    roomHeightInput,
     dirtyStatusEl,
     issuesEl,
     refreshRoomOptions,
     onRoomSelected: () => {
         roomCanvas.resetSelection();
         refreshDoorTargetOptions();
+        syncCanvasToSelectedRoom();
     }
 });
 
@@ -323,6 +337,21 @@ addDoorButton.addEventListener("click", () => {
 });
 deleteSelectedDoorButton.addEventListener("click", () => roomCanvas.deleteSelectedDoor());
 
+applyRoomSizeButton.addEventListener("click", () => {
+    const roomId = roomSelect.value;
+    const w = Number(roomWidthInput.value);
+    const h = Number(roomHeightInput.value);
+    if (!Number.isFinite(w) || !Number.isFinite(h)) {
+        issuesEl.textContent = "Width and height must be numbers.";
+        return;
+    }
+    if (roomEditor.applyRoomSize(roomId, w, h)) {
+        syncCanvasToSelectedRoom();
+        const room = workingRooms[roomId];
+        issuesEl.textContent = `Room size set to ${room.width}×${room.height} tiles.`;
+    }
+});
+
 toolSelect.addEventListener("change", () => updateModeTargetBadge());
 tabFurniture.addEventListener("click", () => setEditTarget("furniture"));
 tabNpc.addEventListener("click", () => setEditTarget("npc"));
@@ -340,6 +369,7 @@ refreshFurnitureOptions();
 refreshNpcOptions();
 refreshRoomOptions();
 roomEditor.renderSelectedRoom();
+syncCanvasToSelectedRoom();
 roomEditor.setDirtyStatus();
 setEditTarget("furniture");
 toolSelect.value = "select";

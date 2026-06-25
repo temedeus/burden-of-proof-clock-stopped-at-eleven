@@ -1,7 +1,7 @@
 {
   "id": "study",
-  "width": 20,
-  "height": 15,
+  "width": 25,
+  "height": 18,
   "furniture": [
     {
       "furnitureId": "table",
@@ -37,17 +37,17 @@
   "exits": [
     {
       "x": "center",
-      "y": "top",
-      "targetRoom": "hall",
+      "y": "bottom",
+      "targetRoom": "library",
       "spawnX": "center",
-      "spawnY": "bottom-2"
+      "spawnY": 2
     },
     {
-      "x": "bottom",
-      "y": "center",
-      "targetRoom": "library",
-      "spawnX": 1,
-      "spawnY": "center"
+      "x": "center",
+      "y": "top",
+      "targetRoom": "hidden_room",
+      "spawnX": "center",
+      "spawnY": "bottom-2"
     }
   ],
   "npcs": [

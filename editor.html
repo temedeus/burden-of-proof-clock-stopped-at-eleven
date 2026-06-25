@@ -12,6 +12,10 @@
     #room-json { height: 240px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     #canvas-wrap { display: flex; justify-content: center; align-items: start; margin-bottom: 10px; }
     #room-canvas { background: #111; border: 1px solid #3a3a3a; image-rendering: pixelated; cursor: crosshair; }
+    .room-size-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: end; margin-bottom: 8px; }
+    .room-size-row label { font-size: 12px; color: #aaa; margin: 0; }
+    .room-size-row input { margin-bottom: 0; }
+    .room-size-row button { margin-bottom: 0; }
     .issues { margin-top: 10px; white-space: pre-wrap; color: #ffb3b3; font-size: 13px; }
     .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; }
     .clue-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
@@ -66,6 +70,17 @@
       <a id="play-case-link" href="#" target="_blank" rel="noopener">Play in game</a>
 
       <h4>Canvas</h4>
+      <div class="room-size-row">
+        <div>
+          <label for="room-width-input">Width (tiles)</label>
+          <input id="room-width-input" type="number" min="5" max="40" step="1" value="20" />
+        </div>
+        <div>
+          <label for="room-height-input">Height (tiles)</label>
+          <input id="room-height-input" type="number" min="5" max="30" step="1" value="15" />
+        </div>
+        <button id="apply-room-size-btn" type="button">Apply</button>
+      </div>
       <select id="tool-select">
         <option value="add">Add</option>
         <option value="select" selected>Select</option>

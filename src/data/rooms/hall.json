@@ -1,7 +1,7 @@
 {
   "id": "hall",
-  "width": 20,
-  "height": 15,
+  "width": 25,
+  "height": 18,
   "furniture": [
     {
       "furnitureId": "bookshelves",

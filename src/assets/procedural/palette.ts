@@ -63,6 +63,7 @@ export const P = {
 
     gold: "#c8a030",
     goldDark: "#8a7020",
+    copper: "#a86830",
 
     red: "#8a2828",
     redLight: "#b84848",
@@ -96,5 +97,10 @@ export const P = {
     leafLight: "#48a048",
 
     carpetRed: "#6a1828",
-    carpetRedLight: "#9a2840"
+    carpetRedLight: "#9a2840",
+
+    ceramic: "#e4eaee",
+    ceramicLight: "#f4f8fa",
+    ceramicDark: "#c8d4dc",
+    grout: "#a8b4bc"
 } as const;

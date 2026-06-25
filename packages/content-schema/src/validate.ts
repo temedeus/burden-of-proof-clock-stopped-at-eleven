@@ -91,10 +91,23 @@ export function validateRooms(
             if (exitX < 0 || exitX >= room.width || exitY < 0 || exitY >= room.height) {
                 issues.push({ roomId: room.id, message: `Exit '${exit.targetRoom}' resolves out of room bounds.` });
             }
-            const spawnX = typeof exit.spawnX === "number" ? exit.spawnX : Math.floor(room.width / 2);
-            const spawnY = resolveSpawnY(exit.spawnY, room.height);
-            if (spawnX < 0 || spawnX >= room.width || spawnY < 0 || spawnY >= room.height) {
-                issues.push({ roomId: room.id, message: `Exit spawn point for '${exit.targetRoom}' resolves out of room bounds.` });
+            const targetRoom = rooms.find((r) => r.id === exit.targetRoom);
+            if (targetRoom) {
+                const targetSize = getGameTileGridSize(targetRoom);
+                const spawnX =
+                    typeof exit.spawnX === "number" ? exit.spawnX : Math.floor(targetSize.width / 2);
+                const spawnY = resolveSpawnY(exit.spawnY, targetSize.height);
+                if (
+                    spawnX < 0 ||
+                    spawnX >= targetSize.width ||
+                    spawnY < 0 ||
+                    spawnY >= targetSize.height
+                ) {
+                    issues.push({
+                        roomId: room.id,
+                        message: `Exit spawn point for '${exit.targetRoom}' resolves out of room bounds.`
+                    });
+                }
             }
         }
 

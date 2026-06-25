@@ -1,15 +1,15 @@
 {
   "id": "hidden_room",
-  "width": 20,
-  "height": 15,
+  "width": 25,
+  "height": 18,
   "furniture": [],
   "exits": [
     {
-      "x": 0,
-      "y": "center",
-      "targetRoom": "library",
-      "spawnX": 17,
-      "spawnY": "center"
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "study",
+      "spawnX": "center",
+      "spawnY": 2
     },
     {
       "x": "center",

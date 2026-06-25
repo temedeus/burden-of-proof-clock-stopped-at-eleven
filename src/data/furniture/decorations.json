@@ -248,5 +248,41 @@
     "walkableDecor": true,
     "spriteName": "carpet",
     "clues": []
+  },
+  "bathtub": {
+    "id": "bathtub",
+    "name": "Bathtub",
+    "description": "A claw-foot tub, dry and dusty.",
+    "width": 3,
+    "height": 2,
+    "drawWidth": 3,
+    "drawHeight": 2,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "spriteName": "bathtub"
+  },
+  "toilet": {
+    "id": "toilet",
+    "name": "Toilet",
+    "description": "Porcelain fixture; the chain hangs loose.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "spriteName": "toilet"
+  },
+  "water_boiler": {
+    "id": "water_boiler",
+    "name": "Water boiler",
+    "description": "A copper cylinder; cold to the touch.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 2,
+    "drawHeight": 3,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 1,
+    "spriteName": "water_boiler"
   }
 }

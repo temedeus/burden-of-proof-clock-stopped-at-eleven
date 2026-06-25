@@ -143,9 +143,21 @@ export function exitHasStaircase(room: Room, exit: DoorExit): boolean {
     return false;
 }
 
+const HIDDEN_PASSAGE_PAIRS = new Set([
+    "study:hidden_room",
+    "hidden_room:study",
+    "hidden_room:secret_tunnel",
+    "secret_tunnel:hidden_room"
+]);
+
+export function exitSkipsDoorSprite(room: Room, exit: DoorExit): boolean {
+    if (exitHasStaircase(room, exit)) return true;
+    return HIDDEN_PASSAGE_PAIRS.has(`${room.id}:${exit.targetRoom}`);
+}
+
 export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void {
     for (const exit of room.exits) {
-        if (exitHasStaircase(room, exit)) continue;
+        if (exitSkipsDoorSprite(room, exit)) continue;
 
         const isTopOrBottom = exit.y === 0 || exit.y === room.map.height - 1;
         if (isTopOrBottom) {
@@ -174,6 +186,8 @@ export interface RenderRoomSceneOptions {
     getAnimTime?: () => number;
     extraActors?: DepthActor[];
     clearColor?: string;
+    /** When the canvas is translated (e.g. centered small room), skip fill — caller clears screen space first. */
+    skipClear?: boolean;
 }
 
 export function renderRoomScene(
@@ -184,8 +198,10 @@ export function renderRoomScene(
     const getAnimTime = options.getAnimTime ?? (() => 0);
     const clearColor = options.clearColor ?? "#222";
 
-    ctx.fillStyle = clearColor;
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    if (!options.skipClear) {
+        ctx.fillStyle = clearColor;
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
 
     room.map.render(ctx);
     drawDoorSprites(ctx, room);

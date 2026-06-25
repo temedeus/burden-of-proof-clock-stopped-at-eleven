@@ -1,7 +1,7 @@
 {
   "id": "library",
-  "width": 20,
-  "height": 15,
+  "width": 25,
+  "height": 18,
   "furniture": [
     {
       "furnitureId": "table",
@@ -54,17 +54,10 @@
     },
     {
       "x": "center",
-      "y": "bottom",
+      "y": "top",
       "targetRoom": "study",
       "spawnX": "center",
-      "spawnY": 1
-    },
-    {
-      "x": "bottom",
-      "y": "center",
-      "targetRoom": "hidden_room",
-      "spawnX": 1,
-      "spawnY": "center"
+      "spawnY": "bottom-2"
     }
   ],
   "npcs": [

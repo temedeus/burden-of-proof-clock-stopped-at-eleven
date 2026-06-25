@@ -34,7 +34,7 @@ export interface RoomConfig {
     id: string;
     width: number;
     height: number;
-    floorTile?: "floor" | "grass" | "gravel";
+    floorTile?: "floor" | "grass" | "gravel" | "ceramic";
     gravelPath?: GravelPathConfig;
     /** Replace the south wall row with iron fence tiles (gate gap from gravel path). */
     southFenceBorder?: boolean;

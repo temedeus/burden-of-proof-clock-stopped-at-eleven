@@ -7,7 +7,8 @@ import {
     TILE_GRASS,
     TILE_GRAVEL,
     TILE_FENCE,
-    TILE_FENCE_POST
+    TILE_FENCE_POST,
+    TILE_CERAMIC
 } from "./TileTypes";
 import { NPC } from "../entities/NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
@@ -19,7 +20,7 @@ export class TileMap {
         public height: number,
         public tiles: number[],
         /** Fallback when `terrainBeforeFurniture` is absent (interior rooms use parquet `floor`) */
-        public furnitureUnderlay: "floor" | "grass" | "gravel" = "floor",
+        public furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" = "floor",
         /** Snapshot of terrain before furniture was placed; transparent props show grass/gravel/floor per cell */
         public terrainBeforeFurniture: number[] | null = null
     ) {}
@@ -76,13 +77,16 @@ export class TileMap {
             const t = snap[idx];
             if (t === TILE_GRASS) return "grass";
             if (t === TILE_GRAVEL) return "gravel";
+            if (t === TILE_CERAMIC) return "ceramic";
             if (t === TILE_FLOOR) return "floor";
         }
         return this.furnitureUnderlay === "grass"
             ? "grass"
             : this.furnitureUnderlay === "gravel"
               ? "gravel"
-              : "floor";
+              : this.furnitureUnderlay === "ceramic"
+                ? "ceramic"
+                : "floor";
     }
 
     render(ctx: CanvasRenderingContext2D) {
@@ -101,7 +105,9 @@ export class TileMap {
                           ? 'grass'
                           : tile === TILE_GRAVEL
                             ? 'gravel'
-                            : tile === TILE_FURNITURE
+                            : tile === TILE_CERAMIC
+                              ? 'ceramic'
+                              : tile === TILE_FURNITURE
                               ? this.spriteUnderFurniture(x, y)
                               : tile === TILE_FENCE
                                 ? 'fence'

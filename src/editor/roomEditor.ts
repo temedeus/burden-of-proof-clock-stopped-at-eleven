@@ -1,4 +1,5 @@
 import type { NPCConfig, RoomConfig } from "@cse/content-schema";
+import { DEFAULT_ROOM_TILE_HEIGHT, DEFAULT_ROOM_TILE_WIDTH } from "@cse/content-schema";
 import { validateRooms } from "@cse/content-schema";
 import type { FurnitureConfig } from "./types";
 
@@ -8,11 +9,15 @@ export interface RoomEditorDeps {
     npcConfigs: Record<string, NPCConfig>;
     roomSelect: HTMLSelectElement;
     roomJson: HTMLTextAreaElement;
+    roomWidthInput: HTMLInputElement;
+    roomHeightInput: HTMLInputElement;
     dirtyStatusEl: HTMLParagraphElement;
     issuesEl: HTMLDivElement;
     onRoomSelected: () => void;
     refreshRoomOptions: () => void;
 }
+
+export const ROOM_SIZE_LIMITS = { minWidth: 5, maxWidth: 40, minHeight: 5, maxHeight: 30 } as const;
 
 export class RoomEditor {
     readonly dirtyRooms = new Set<string>();
@@ -44,7 +49,36 @@ export class RoomEditor {
         if (!room) return;
         this.suppressDirtyTracking = true;
         this.deps.roomJson.value = JSON.stringify(room, null, 2);
+        this.syncSizeInputsFromRoom(room);
         this.suppressDirtyTracking = false;
+    }
+
+    syncSizeInputsFromRoom(room: RoomConfig): void {
+        this.deps.roomWidthInput.value = String(room.width);
+        this.deps.roomHeightInput.value = String(room.height);
+    }
+
+    clampRoomSize(width: number, height: number): { width: number; height: number } {
+        const { minWidth, maxWidth, minHeight, maxHeight } = ROOM_SIZE_LIMITS;
+        return {
+            width: Math.min(maxWidth, Math.max(minWidth, Math.round(width))),
+            height: Math.min(maxHeight, Math.max(minHeight, Math.round(height)))
+        };
+    }
+
+    applyRoomSize(roomId: string, width: number, height: number): boolean {
+        const room = this.deps.workingRooms[roomId];
+        if (!room) return false;
+        const next = this.clampRoomSize(width, height);
+        if (room.width === next.width && room.height === next.height) {
+            return false;
+        }
+        room.width = next.width;
+        room.height = next.height;
+        this.syncSizeInputsFromRoom(room);
+        this.syncTextareaFromRoom(roomId);
+        this.markDirty(roomId);
+        return true;
     }
 
     renderSelectedRoom(): void {
@@ -103,7 +137,11 @@ export class RoomEditor {
         if (selected && this.deps.roomJson.value.trim()) {
             const parsed = JSON.parse(this.deps.roomJson.value) as RoomConfig;
             parsed.id = selected;
+            const size = this.clampRoomSize(parsed.width, parsed.height);
+            parsed.width = size.width;
+            parsed.height = size.height;
             this.deps.workingRooms[selected] = parsed;
+            this.syncSizeInputsFromRoom(parsed);
         }
     }
 
@@ -116,8 +154,8 @@ export class RoomEditor {
         }
         this.deps.workingRooms[newId] = {
             id: newId,
-            width: 20,
-            height: 15,
+            width: DEFAULT_ROOM_TILE_WIDTH,
+            height: DEFAULT_ROOM_TILE_HEIGHT,
             floorTile: "floor",
             furniture: [],
             exits: [],

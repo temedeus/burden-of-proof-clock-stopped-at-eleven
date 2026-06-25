@@ -4,7 +4,7 @@ import { renderRoomScene, spawnRoomNpcs } from "../render/roomScene";
 import {Input} from "./Input";
 import { Player, PlayerSpriteName } from "../entities/Player";
 import {NPC} from "../entities/NPC";
-import {TILE_SIZE} from "../world/constants";
+import { TILE_SIZE, roomViewportOffset } from "../world/constants";
 import { InteractionSystem } from "../systems/InteractionSystem";
 import { ClueSystem } from "../systems/ClueSystem";
 import { spriteLoader } from "../assets/SpriteLoader";
@@ -117,13 +117,10 @@ export class Game {
             );
         }
 
-        const w = Math.floor(ctx.canvas.width / TILE_SIZE);
-        const h = Math.floor(ctx.canvas.height / TILE_SIZE);
-
         this.rooms = Object.fromEntries(
             Object.entries(this.content.rooms).map(([id, config]) => [
                 id,
-                createRoomFromConfig(config, w, h)
+                createRoomFromConfig(config, undefined, undefined, this.content.rooms)
             ])
         );
 
@@ -193,18 +190,9 @@ export class Game {
             ? applyStoryDialogOverrides(baseDialogs, this.activeStory.casePacket)
             : baseDialogs;
 
-        const roomConfigs: Record<string, { config: RoomConfig; room: Room }> = {
-            library: { config: this.content.rooms.library, room: this.rooms.library },
-            hall: { config: this.content.rooms.hall, room: this.rooms.hall },
-            study: { config: this.content.rooms.study, room: this.rooms.study },
-            kitchen: { config: this.content.rooms.kitchen, room: this.rooms.kitchen },
-            garden: { config: this.content.rooms.garden, room: this.rooms.garden },
-            courtyard: { config: this.content.rooms.courtyard, room: this.rooms.courtyard },
-            dining: { config: this.content.rooms.dining, room: this.rooms.dining }
-        };
-
-        for (const { config, room } of Object.values(roomConfigs)) {
-            spawnRoomNpcs(room, config, npcConfigs);
+        for (const [roomId, config] of Object.entries(this.content.rooms)) {
+            const room = this.rooms[roomId];
+            if (room) spawnRoomNpcs(room, config, npcConfigs);
         }
     }
 
@@ -572,6 +560,18 @@ export class Game {
         } else if (entryExit.x === roomW - 1) {
             this.player.x = Math.min(this.player.x, (roomW - 1 - insetTiles) * TILE_SIZE);
         }
+
+        this.clampPlayerInsideRoom(nextRoom);
+    }
+
+    /** Keep 2×2 player fully inside interior tiles (not on walls). */
+    private clampPlayerInsideRoom(room: Room): void {
+        const minX = TILE_SIZE;
+        const minY = TILE_SIZE;
+        const maxX = (room.map.width - 2) * TILE_SIZE;
+        const maxY = (room.map.height - 2) * TILE_SIZE;
+        this.player.x = Math.min(Math.max(this.player.x, minX), maxX);
+        this.player.y = Math.min(Math.max(this.player.y, minY), maxY);
     }
 
     private wrapDialogText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -604,14 +604,31 @@ export class Game {
             return;
         }
 
+        const roomPixelW = this.currentRoom.map.width * TILE_SIZE;
+        const roomPixelH = this.currentRoom.map.height * TILE_SIZE;
+        const needsCentering =
+            roomPixelW < ctx.canvas.width || roomPixelH < ctx.canvas.height;
+
+        ctx.fillStyle = "#222";
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        const offset = needsCentering
+            ? roomViewportOffset(ctx.canvas.width, ctx.canvas.height, this.currentRoom.map.width, this.currentRoom.map.height)
+            : { x: 0, y: 0 };
+        ctx.save();
+        ctx.translate(offset.x, offset.y);
+
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
-            extraActors: [this.player]
+            extraActors: [this.player],
+            skipClear: needsCentering
         });
 
         if (this.debugMode) {
             renderDebugOverlay(ctx, this.player, this.currentRoom, this.clueSystem);
         }
+
+        ctx.restore();
 
         if (this.message) {
             ctx.font = "16px serif";

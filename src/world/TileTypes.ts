@@ -12,3 +12,5 @@ export const TILE_FENCE = 6;
 export const TILE_FENCE_POST = 7;
 /** White ceramic bathroom tile */
 export const TILE_CERAMIC = 8;
+/** Rough stone / rocky cave floor */
+export const TILE_ROCK = 9;

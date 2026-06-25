@@ -41,6 +41,7 @@ export const VALID_SPRITE_NAMES = [
     "staircase",
     "carpet",
     "ceramic",
+    "rock",
     "bathtub",
     "toilet",
     "water_boiler"

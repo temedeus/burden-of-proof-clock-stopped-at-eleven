@@ -9,7 +9,8 @@ import {
     TILE_GRASS,
     TILE_GRAVEL,
     TILE_WALL,
-    TILE_CERAMIC
+    TILE_CERAMIC,
+    TILE_ROCK
 } from "./TileTypes";
 import {Interactable} from "./Interactable";
 import {NPC} from "../entities/NPC";
@@ -258,7 +259,9 @@ export function createRoomFromConfig(
               ? TILE_GRAVEL
               : config.floorTile === "ceramic"
                 ? TILE_CERAMIC
-                : TILE_FLOOR;
+                : config.floorTile === "rock"
+                  ? TILE_ROCK
+                  : TILE_FLOOR;
     const tiles = new Array(roomWidth * roomHeight).fill(baseFloor);
 
     // Outer walls
@@ -361,14 +364,16 @@ export function createRoomFromConfig(
     // Place NPCs - NPCs will be initialized in Game.ts with proper configs
     const npcs: NPC[] = [];
 
-    const furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" =
+    const furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" =
         config.floorTile === "grass"
             ? "grass"
             : config.floorTile === "gravel"
               ? "gravel"
               : config.floorTile === "ceramic"
                 ? "ceramic"
-                : "floor";
+                : config.floorTile === "rock"
+                  ? "rock"
+                  : "floor";
 
     return new Room(
         config.id,

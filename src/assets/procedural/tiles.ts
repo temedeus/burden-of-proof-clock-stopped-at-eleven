@@ -132,6 +132,36 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         r(ctx, 31, 0, 1, 32, P.grout);
     }),
 
+    rock: tile32((ctx) => {
+        r(ctx, 0, 0, 32, 32, P.rockDark);
+        const stones: [number, number, number, number, string][] = [
+            [1, 2, 10, 8, P.rock],
+            [12, 1, 9, 7, P.rockLight],
+            [22, 3, 9, 9, P.rock],
+            [3, 11, 8, 9, P.rockLight],
+            [14, 10, 11, 10, P.rock],
+            [26, 12, 5, 8, P.rockHi],
+            [1, 21, 12, 10, P.rock],
+            [16, 22, 10, 9, P.rockLight],
+            [27, 21, 4, 10, P.rock],
+            [8, 26, 7, 5, P.rockHi],
+            [22, 24, 8, 7, P.rock]
+        ];
+        for (const [x, y, w, h, color] of stones) {
+            r(ctx, x, y, w, h, color);
+            r(ctx, x, y, w, 1, P.rockHi);
+            r(ctx, x, y, 1, h, P.rockHi);
+            r(ctx, x + w - 1, y, 1, h, P.rockShadow);
+            r(ctx, x, y + h - 1, w, 1, P.rockShadow);
+        }
+        const pebbles: [number, number][] = [
+            [6, 6], [19, 5], [28, 8], [11, 18], [24, 17], [4, 28], [18, 30]
+        ];
+        for (const [px, py] of pebbles) {
+            r(ctx, px, py, 2, 2, P.gravelLight);
+        }
+    }),
+
     door: {
         nativeWidth: 32,
         nativeHeight: 48,

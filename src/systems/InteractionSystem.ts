@@ -11,6 +11,7 @@ export interface InteractionResult {
     clues: string[];
     speaker?: string; // NPC name if talking to NPC
     speakerId?: string; // NPC id (e.g. "cook") for game logic
+    confirmation?: { id: string; prompt: string };
 }
 
 export class InteractionSystem {
@@ -89,6 +90,18 @@ export class InteractionSystem {
                     playerBottomTile >= bounds.minY - 1 && playerTopTile <= bounds.maxY + 1;
 
                 if (horizontalAdjacent && verticalAdjacent) {
+                    if (obj.id === "secret_bookshelf") {
+                        return {
+                            description: "",
+                            clues: [],
+                            confirmation: {
+                                id: "study_secret",
+                                prompt:
+                                    "One volume sits loose on the shelf, almost asking to be pulled. Will you tug it free?"
+                            }
+                        };
+                    }
+
                     // Only add clues that haven't been collected yet
                     const newClues: string[] = [];
                     if (obj.clues) {

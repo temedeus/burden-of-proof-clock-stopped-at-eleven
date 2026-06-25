@@ -284,5 +284,15 @@
     "renderAnchor": "bottom",
     "collisionRowsFromBottom": 1,
     "spriteName": "water_boiler"
+  },
+  "secret_bookshelf": {
+    "id": "secret_bookshelf",
+    "name": "Bookshelves",
+    "description": "One book juts out slightly from the middle shelf.",
+    "width": 3,
+    "height": 2,
+    "drawWidth": 3,
+    "drawHeight": 2,
+    "spriteName": "secret_bookshelf"
   }
 }

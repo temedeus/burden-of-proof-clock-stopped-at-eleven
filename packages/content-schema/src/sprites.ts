@@ -44,7 +44,8 @@ export const VALID_SPRITE_NAMES = [
     "rock",
     "bathtub",
     "toilet",
-    "water_boiler"
+    "water_boiler",
+    "secret_bookshelf"
 ] as const;
 
 export type SpriteName = (typeof VALID_SPRITE_NAMES)[number];

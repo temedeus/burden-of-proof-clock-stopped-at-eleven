@@ -32,6 +32,12 @@
       "x": 17,
       "y": 1,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "secret_bookshelf",
+      "x": 11,
+      "y": 1,
+      "anchor": "top-left"
     }
   ],
   "exits": [

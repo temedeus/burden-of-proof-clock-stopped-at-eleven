@@ -1,5 +1,5 @@
 import { Room } from "../world/Room";
-import { createRoomFromConfig } from "../world/Rooms";
+import { createRoomFromConfig, setHiddenExitDoorOpen, removeInteractableById, addFurnitureToRoom } from "../world/Rooms";
 import { renderRoomScene, spawnRoomNpcs } from "../render/roomScene";
 import {Input} from "./Input";
 import { Player, PlayerSpriteName } from "../entities/Player";
@@ -21,7 +21,7 @@ import { clueSounds } from "../audio/ClueSounds";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import type { NPCConfig, NPCDialogConfig, RoomConfig } from "@cse/content-schema";
 
-type GameState = "playing" | "interacting" | "inventory" | "victory";
+type GameState = "playing" | "interacting" | "confirming" | "inventory" | "victory";
 
 const POLICE_NPC_IDS = ["police", "police2"];
 
@@ -60,6 +60,11 @@ const ROOM_DISPLAY_TITLES: Record<string, string> = {
 };
 
 const ROOM_TITLE_DURATION = 2;
+const STUDY_SECRET_REVEAL_DURATION = 1.4;
+
+function easeInOutCubic(t: number): number {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 export class Game {
     private input: Input;
@@ -75,6 +80,10 @@ export class Game {
     private interaction = new InteractionSystem(this.clueSystem);
     private state: GameState = "playing";
     private message: string | null = null;
+    private pendingConfirmation: { id: string; prompt: string } | null = null;
+    private studySecretRevealed = false;
+    private studySecretRevealAnim: { elapsed: number; duration: number; doorOpened: boolean } | null =
+        null;
     private clueNotification: { clueId: string } | null = null;
     private debugMode: boolean = false;
     private roomTransitionCooldown = 0;
@@ -138,6 +147,7 @@ export class Game {
         }
 
         this.loadNPCs();
+        this.applyStudySecretDoorState();
 
         spriteLoader.load().catch(err => {
             console.error('Failed to load spritesheet:', err);
@@ -348,6 +358,11 @@ export class Game {
         }
 
         if (this.input.wasPressed("escape")) {
+            if (this.state === "confirming") {
+                this.pendingConfirmation = null;
+                this.state = "playing";
+                return;
+            }
             talkSounds.stopDialogue();
             this.onMenuRequest?.();
             return;
@@ -377,6 +392,12 @@ export class Game {
                 );
 
                 if (result) {
+                    if (result.confirmation) {
+                        this.pendingConfirmation = result.confirmation;
+                        this.state = "confirming";
+                        return;
+                    }
+
                     this.message = result.description;
                     if (result.clues.length > 0) {
                         clueSounds.playFound();
@@ -444,6 +465,25 @@ export class Game {
             }
 
             this.checkRoomTransition();
+        }
+
+        if (this.studySecretRevealAnim) {
+            this.updateStudySecretReveal(dt);
+        }
+
+        if (this.state === "confirming") {
+            if (this.input.wasPressed("y") || this.input.wasPressed("enter")) {
+                const pending = this.pendingConfirmation;
+                this.pendingConfirmation = null;
+                if (pending?.id === "study_secret") {
+                    this.startStudySecretReveal();
+                } else {
+                    this.state = "playing";
+                }
+            } else if (this.input.wasPressed("n")) {
+                this.pendingConfirmation = null;
+                this.state = "playing";
+            }
         } else if (this.state === "interacting") {
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
                 talkSounds.stopDialogue();
@@ -451,6 +491,99 @@ export class Game {
                 this.clueNotification = null; // Clear clue notification on dismiss
                 this.state = "playing";
             }
+        }
+    }
+
+    private applyStudySecretDoorState(): void {
+        setHiddenExitDoorOpen(this.rooms.study, this.studySecretRevealed);
+    }
+
+    private startStudySecretReveal(): void {
+        if (this.studySecretRevealed || this.studySecretRevealAnim) return;
+
+        removeInteractableById(this.rooms.study, "secret_bookshelf");
+        this.studySecretRevealAnim = {
+            elapsed: 0,
+            duration: STUDY_SECRET_REVEAL_DURATION,
+            doorOpened: false
+        };
+        this.state = "playing";
+    }
+
+    private updateStudySecretReveal(dt: number): void {
+        const anim = this.studySecretRevealAnim;
+        if (!anim) return;
+
+        anim.elapsed += dt;
+        const t = Math.min(1, anim.elapsed / anim.duration);
+
+        if (!anim.doorOpened && t >= 0.55) {
+            setHiddenExitDoorOpen(this.rooms.study, true);
+            anim.doorOpened = true;
+        }
+
+        if (anim.elapsed >= anim.duration) {
+            this.finishStudySecretReveal();
+        }
+    }
+
+    private finishStudySecretReveal(): void {
+        if (this.studySecretRevealed) {
+            this.studySecretRevealAnim = null;
+            return;
+        }
+
+        this.studySecretRevealed = true;
+        this.studySecretRevealAnim = null;
+
+        const study = this.rooms.study;
+        for (const x of [9, 10, 14, 15]) {
+            addFurnitureToRoom(study, { furnitureId: "bookshelves", x, y: 1, anchor: "top-left" });
+        }
+        setHiddenExitDoorOpen(study, true);
+
+        this.message = "The bookshelf grinds aside, revealing a hidden passage.";
+        this.state = "interacting";
+    }
+
+    private renderStudySecretReveal(ctx: CanvasRenderingContext2D): void {
+        const anim = this.studySecretRevealAnim;
+        if (!anim || this.currentRoom.id !== "study") return;
+
+        const rawT = Math.min(1, anim.elapsed / anim.duration);
+        const y = TILE_SIZE;
+
+        if (rawT < 0.12) {
+            const nudge = easeInOutCubic(rawT / 0.12) * 3;
+            spriteLoader.drawSprite(
+                ctx,
+                "secret_bookshelf",
+                11 * TILE_SIZE - nudge,
+                y,
+                TILE_SIZE * 3,
+                TILE_SIZE * 2
+            );
+            return;
+        }
+
+        const slideT = easeInOutCubic((rawT - 0.12) / 0.88);
+        const slides: [number, number][] = [
+            [11, 9],
+            [12, 10],
+            [13, 14]
+        ];
+
+        for (const [from, to] of slides) {
+            const x = (from + (to - from) * slideT) * TILE_SIZE;
+            spriteLoader.drawSprite(ctx, "bookshelf", x, y, TILE_SIZE, TILE_SIZE * 2);
+        }
+
+        if (slideT > 0.3) {
+            const fade = Math.min(1, (slideT - 0.3) / 0.7);
+            ctx.save();
+            ctx.globalAlpha = fade;
+            spriteLoader.drawSprite(ctx, "bookshelf", 15 * TILE_SIZE, y, TILE_SIZE, TILE_SIZE * 2);
+            ctx.restore();
         }
     }
 
@@ -469,6 +602,10 @@ export class Game {
         const playerBottomTile = Math.ceil((this.player.y + this.player.height) / TILE_SIZE);
 
         for (const exit of this.currentRoom.exits) {
+            if (exit.targetRoom === "hidden_room" && (!this.studySecretRevealed || this.studySecretRevealAnim)) {
+                continue;
+            }
+
             // Check if player overlaps with door (3 tiles wide/tall)
             // Determine door orientation: if on top/bottom wall, door is horizontal; if on left/right wall, door is vertical
             const isTopOrBottom = exit.y === 0 || exit.y === this.currentRoom.map.height - 1;
@@ -574,6 +711,28 @@ export class Game {
         this.player.y = Math.min(Math.max(this.player.y, minY), maxY);
     }
 
+    private drawMessageBox(ctx: CanvasRenderingContext2D, text: string): void {
+        ctx.font = "16px serif";
+        ctx.textAlign = "left";
+
+        const boxWidth = Math.floor(ctx.canvas.width / 3);
+        const padding = 12;
+        const lineHeight = 20;
+        const maxTextWidth = boxWidth - padding * 2;
+        const lines = this.wrapDialogText(ctx, text, maxTextWidth);
+        const boxHeight = padding * 2 + lines.length * lineHeight;
+        const boxX = 20;
+        const boxY = ctx.canvas.height - 20 - boxHeight;
+
+        ctx.fillStyle = "rgba(0,0,0,0.78)";
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+        ctx.fillStyle = "white";
+        for (let i = 0; i < lines.length; i++) {
+            ctx.fillText(lines[i], boxX + padding, boxY + padding + 16 + i * lineHeight);
+        }
+    }
+
     private wrapDialogText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
         const lines: string[] = [];
         const paragraphs = text.split("\n");
@@ -624,6 +783,8 @@ export class Game {
             skipClear: needsCentering
         });
 
+        this.renderStudySecretReveal(ctx);
+
         if (this.debugMode) {
             renderDebugOverlay(ctx, this.player, this.currentRoom, this.clueSystem);
         }
@@ -631,25 +792,14 @@ export class Game {
         ctx.restore();
 
         if (this.message) {
-            ctx.font = "16px serif";
-            ctx.textAlign = "left";
+            this.drawMessageBox(ctx, this.message);
+        }
 
-            const boxWidth = Math.floor(ctx.canvas.width / 3);
-            const padding = 12;
-            const lineHeight = 20;
-            const maxTextWidth = boxWidth - padding * 2;
-            const lines = this.wrapDialogText(ctx, this.message, maxTextWidth);
-            const boxHeight = padding * 2 + lines.length * lineHeight;
-            const boxX = 20;
-            const boxY = ctx.canvas.height - 20 - boxHeight;
-
-            ctx.fillStyle = "rgba(0,0,0,0.78)";
-            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-
-            ctx.fillStyle = "white";
-            for (let i = 0; i < lines.length; i++) {
-                ctx.fillText(lines[i], boxX + padding, boxY + padding + 16 + i * lineHeight);
-            }
+        if (this.state === "confirming" && this.pendingConfirmation) {
+            this.drawMessageBox(
+                ctx,
+                `${this.pendingConfirmation.prompt}\n\nY — Yes    N — No`
+            );
         }
 
         if (this.clueNotification) {

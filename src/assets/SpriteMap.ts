@@ -45,5 +45,6 @@ export enum SpriteId {
     Rock = "rock",
     Bathtub = "bathtub",
     Toilet = "toilet",
-    WaterBoiler = "water_boiler"
+    WaterBoiler = "water_boiler",
+    SecretBookshelf = "secret_bookshelf"
 }

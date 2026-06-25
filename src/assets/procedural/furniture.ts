@@ -386,5 +386,34 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
             // Wall bracket shadow
             r(ctx, 16, 8, 4, 72, P.shadow);
         }
+    },
+
+    secret_bookshelf: {
+        nativeWidth: 96,
+        nativeHeight: 48,
+        draw(ctx) {
+            const bookColors = [P.red, P.blue, P.green, P.gold, P.redLight];
+            for (let unit = 0; unit < 3; unit++) {
+                const ox = unit * 32;
+                r(ctx, ox + 2, 0, 28, 48, P.woodDark);
+                r(ctx, ox + 4, 2, 24, 44, P.wood);
+                for (let y = 6; y < 44; y += 12) {
+                    r(ctx, ox + 4, y, 24, 2, P.woodLight);
+                }
+                for (let shelf = 0; shelf < 3; shelf++) {
+                    const by = 8 + shelf * 12;
+                    for (let i = 0; i < 5; i++) {
+                        r(ctx, ox + 6 + i * 4, by, 3, 8, bookColors[(i + unit) % bookColors.length]);
+                    }
+                }
+                r(ctx, ox + 2, 0, 2, 48, P.outline);
+                r(ctx, ox + 28, 0, 2, 48, P.outline);
+            }
+            // Loose book on the center shelf, pulled partway out
+            r(ctx, 42, 18, 6, 10, P.red);
+            r(ctx, 48, 16, 10, 12, P.redLight);
+            r(ctx, 56, 17, 4, 10, P.cream);
+            r(ctx, 58, 18, 2, 8, P.highlight);
+        }
     }
 };

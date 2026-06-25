@@ -203,6 +203,59 @@ function placeFurniture(
     return interactable;
 }
 
+function floorTileForUnderlay(underlay: TileMap["furnitureUnderlay"]): number {
+    switch (underlay) {
+        case "grass":
+            return TILE_GRASS;
+        case "gravel":
+            return TILE_GRAVEL;
+        case "ceramic":
+            return TILE_CERAMIC;
+        case "rock":
+            return TILE_ROCK;
+        default:
+            return TILE_FLOOR;
+    }
+}
+
+export function setHiddenExitDoorOpen(
+    room: Room,
+    open: boolean,
+    targetRoomId = "hidden_room"
+): void {
+    const exit = room.exits.find((e) => e.targetRoom === targetRoomId);
+    if (!exit) return;
+    const w = room.map.width;
+    for (const dx of [exit.x - 1, exit.x, exit.x + 1]) {
+        if (dx < 0 || dx >= w) continue;
+        room.map.tiles[exit.y * w + dx] = open ? TILE_DOOR : TILE_WALL;
+    }
+}
+
+export function removeInteractableById(room: Room, interactableId: string): void {
+    const idx = room.interactables.findIndex((i) => i.id === interactableId);
+    if (idx < 0) return;
+    const obj = room.interactables[idx];
+    const floor = floorTileForUnderlay(room.map.furnitureUnderlay);
+    for (const t of obj.tiles) {
+        room.map.tiles[t.y * room.map.width + t.x] = floor;
+    }
+    room.interactables.splice(idx, 1);
+}
+
+export function addFurnitureToRoom(room: Room, placement: FurniturePlacement): void {
+    const furnitureConfig = furnitureConfigs[placement.furnitureId];
+    if (!furnitureConfig) return;
+    const interactable = placeFurniture(
+        room.map.tiles,
+        room.map.width,
+        room.map.height,
+        furnitureConfig,
+        placement
+    );
+    room.interactables.push(interactable);
+}
+
 function applySouthFenceBorder(
     tiles: number[],
     roomWidth: number,

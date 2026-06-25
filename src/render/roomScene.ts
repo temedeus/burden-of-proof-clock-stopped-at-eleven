@@ -56,6 +56,8 @@ export function furnitureActorFromInteractable(
         spriteName = obj.spriteName;
     } else if (obj.id === "shelves" || obj.id === "bookshelves") {
         spriteName = "bookshelf";
+    } else if (obj.id === "secret_bookshelf" || obj.spriteName === "secret_bookshelf") {
+        spriteName = "secret_bookshelf";
     } else if (obj.id === "table") {
         spriteName = "table";
     }

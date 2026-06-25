@@ -104,9 +104,12 @@ export const P = {
     ceramicDark: "#c8d4dc",
     grout: "#a8b4bc",
 
-    rockDark: "#3a3840",
-    rock: "#5a5a62",
-    rockLight: "#7a7a84",
-    rockHi: "#9a9aa4",
-    rockShadow: "#2a2830"
+    rockVoid: "#121016",
+    rockShadow: "#1a181e",
+    rockDark: "#242228",
+    rock: "#2e2c32",
+    rockMid: "#38363c",
+    rockLight: "#424048",
+    rockHi: "#4c4a50",
+    rockFleck: "#1c1a20"
 } as const;

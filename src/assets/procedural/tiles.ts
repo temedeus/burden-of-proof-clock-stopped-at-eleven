@@ -133,33 +133,118 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     }),
 
     rock: tile32((ctx) => {
-        r(ctx, 0, 0, 32, 32, P.rockDark);
-        const stones: [number, number, number, number, string][] = [
-            [1, 2, 10, 8, P.rock],
-            [12, 1, 9, 7, P.rockLight],
-            [22, 3, 9, 9, P.rock],
-            [3, 11, 8, 9, P.rockLight],
-            [14, 10, 11, 10, P.rock],
-            [26, 12, 5, 8, P.rockHi],
-            [1, 21, 12, 10, P.rock],
-            [16, 22, 10, 9, P.rockLight],
-            [27, 21, 4, 10, P.rock],
-            [8, 26, 7, 5, P.rockHi],
-            [22, 24, 8, 7, P.rock]
+        r(ctx, 0, 0, 32, 32, P.rockVoid);
+
+        const S = {
+            d: P.rockDark,
+            m: P.rock,
+            l: P.rockLight,
+            h: P.rockHi,
+            s: P.rockShadow,
+            f: P.rockFleck
+        };
+
+        // Irregular flagstones — dark grout shows between shapes
+        grid(ctx, 0, 0, 2, [
+            "..dddddddddd..",
+            ".dhhhhllllld.",
+            "dhlllllllllld",
+            "dhllfllllllld",
+            "dhlllllllllld",
+            "dhllllfllllld",
+            "ddllllllllldd",
+            ".ddddddddddd."
+        ], S);
+
+        grid(ctx, 14, 0, 2, [
+            "....dddddddd",
+            "...dhlllllld",
+            "..dhllllllld",
+            "..dhlfllllld",
+            "..dhllllllld",
+            "...dhlllllld",
+            "....dddddddd"
+        ], S);
+
+        grid(ctx, 0, 14, 2, [
+            "dddddddd....",
+            "dhlllllld...",
+            "dhllllllld..",
+            "dhllflllld..",
+            "dhllllllld..",
+            "dhlllllld...",
+            "dddddddd...."
+        ], S);
+
+        grid(ctx, 13, 13, 2, [
+            "..dddddddd..",
+            ".dhllllllld.",
+            "dhllllllllld",
+            "dhllflllllld",
+            "dhllllllllld",
+            "dhllllllllld",
+            "ddlllllllldd",
+            ".dddddddddd."
+        ], S);
+
+        grid(ctx, 24, 16, 2, [
+            "dddd",
+            "dhld",
+            "dhld",
+            "dhld",
+            "dddd"
+        ], S);
+
+        grid(ctx, 2, 24, 2, [
+            "dddddd",
+            "dhllld",
+            "dhlfld",
+            "dhllld",
+            "dddddd"
+        ], S);
+
+        grid(ctx, 22, 2, 2, [
+            "ddd",
+            "dld",
+            "ddd"
+        ], S);
+
+        // Thin cracks between slabs
+        const cracks: [number, number, number, number][] = [
+            [12, 0, 2, 32],
+            [0, 12, 32, 2],
+            [22, 10, 2, 14],
+            [8, 22, 14, 2],
+            [26, 0, 1, 16],
+            [0, 26, 16, 1]
         ];
-        for (const [x, y, w, h, color] of stones) {
-            r(ctx, x, y, w, h, color);
-            r(ctx, x, y, w, 1, P.rockHi);
-            r(ctx, x, y, 1, h, P.rockHi);
-            r(ctx, x + w - 1, y, 1, h, P.rockShadow);
-            r(ctx, x, y + h - 1, w, 1, P.rockShadow);
+        for (const [x, y, w, h] of cracks) {
+            r(ctx, x, y, w, h, P.rockVoid);
         }
-        const pebbles: [number, number][] = [
-            [6, 6], [19, 5], [28, 8], [11, 18], [24, 17], [4, 28], [18, 30]
+
+        // Mineral flecks and weathering
+        const flecks: [number, number, string][] = [
+            [5, 5, P.rockFleck],
+            [9, 9, P.rockShadow],
+            [19, 3, P.rockFleck],
+            [25, 7, P.rockShadow],
+            [3, 19, P.rockFleck],
+            [17, 21, P.rockShadow],
+            [27, 25, P.rockFleck],
+            [7, 27, P.rockMid],
+            [21, 17, P.rockFleck],
+            [15, 7, P.rockShadow],
+            [29, 19, P.rockFleck]
         ];
-        for (const [px, py] of pebbles) {
-            r(ctx, px, py, 2, 2, P.gravelLight);
+        for (const [fx, fy, color] of flecks) {
+            r(ctx, fx, fy, 1, 1, color);
         }
+
+        // Soft top-left highlights on a few stones
+        r(ctx, 3, 3, 2, 1, P.rockHi);
+        r(ctx, 16, 2, 2, 1, P.rockHi);
+        r(ctx, 3, 16, 2, 1, P.rockHi);
+        r(ctx, 16, 16, 2, 1, P.rockHi);
     }),
 
     door: {

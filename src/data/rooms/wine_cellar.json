@@ -114,44 +114,38 @@
       "anchor": "top-left"
     },
     {
-      "furnitureId": "wine_barrel",
-      "x": 11,
-      "y": 12,
+      "furnitureId": "oil_lamp",
+      "x": 0,
+      "y": 3,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
-      "x": 1,
-      "y": 4,
+      "x": 0,
+      "y": 8,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
-      "x": 1,
-      "y": 9,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "oil_lamp",
-      "x": 1,
+      "x": 0,
       "y": 13,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
-      "x": 23,
-      "y": 4,
+      "x": 24,
+      "y": 3,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
-      "x": 23,
-      "y": 9,
+      "x": 24,
+      "y": 8,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
-      "x": 23,
+      "x": 24,
       "y": 13,
       "anchor": "top-left"
     }

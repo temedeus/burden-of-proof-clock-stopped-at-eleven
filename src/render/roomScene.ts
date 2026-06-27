@@ -1,6 +1,6 @@
 import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
 import { drawFountainAnimated } from "../assets/procedural/fountain";
-import { drawOilLampAnimated, oilLampAnimPhase } from "../assets/procedural/oil_lamp";
+import { drawOilLampAnimated, oilLampAnimPhase, oilLampDrawBounds } from "../assets/procedural/oil_lamp";
 import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TILE_SIZE } from "../world/constants";
@@ -10,33 +10,6 @@ import type { DoorExit, Room } from "../world/Room";
 import { renderTileMap } from "./tileMapRender";
 
 export type DepthActor = { y: number; height: number; render(ctx: CanvasRenderingContext2D): void };
-
-function snapOilLampToWall(
-    drawX: number,
-    drawY: number,
-    drawW: number,
-    drawH: number,
-    minX: number,
-    minY: number,
-    maxX: number,
-    maxY: number,
-    roomW: number,
-    roomH: number
-): { drawX: number; drawY: number } {
-    let x = drawX;
-    let y = drawY;
-    if (minY <= 1) {
-        y = 0;
-    } else if (maxY >= roomH - 2) {
-        y = (roomH - 1) * TILE_SIZE - drawH;
-    }
-    if (minX <= 1) {
-        x = 0;
-    } else if (maxX >= roomW - 2) {
-        x = (roomW - 1) * TILE_SIZE - drawW;
-    }
-    return { drawX: x, drawY: y };
-}
 
 export function furnitureActorFromInteractable(
     obj: Interactable,
@@ -98,21 +71,12 @@ export function furnitureActorFromInteractable(
         drawY = minY * TILE_SIZE;
     }
 
-    if (isOilLamp && roomSize) {
-        const snapped = snapOilLampToWall(
-            drawX,
-            drawY,
-            drawW,
-            drawH,
-            minX,
-            minY,
-            maxX,
-            maxY,
-            roomSize.width,
-            roomSize.height
-        );
-        drawX = snapped.drawX;
-        drawY = snapped.drawY;
+    if (isOilLamp && roomSize && obj.wallSide) {
+        const bounds = oilLampDrawBounds(minX, minY, obj.wallSide, roomSize.width, roomSize.height);
+        drawX = bounds.drawX;
+        drawY = bounds.drawY;
+        drawW = bounds.drawW;
+        drawH = bounds.drawH;
     }
 
     const sortY = hasDecorDraw || isFireplace || isFountain || isOilLamp || isStableBooth ? drawY : minY * TILE_SIZE;
@@ -134,6 +98,7 @@ export function furnitureActorFromInteractable(
                     drawW,
                     drawH,
                     getAnimTime(),
+                    obj.wallSide ?? "north",
                     oilLampAnimPhase(minX, minY)
                 );
             } else if (isStableBooth) {

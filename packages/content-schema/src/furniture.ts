@@ -27,6 +27,8 @@ export interface FurnitureConfig {
     walkableDecor?: boolean;
     /** Examine / clues disabled (e.g. wall sconces). */
     nonInteractive?: boolean;
+    /** Anchored to a perimeter wall tile; no footprint blocking. */
+    wallMount?: boolean;
     /** When set, interaction shows a yes/no confirmation instead of immediate examine. */
     interactionType?: "confirm";
     /** Puzzle or handler id passed to confirmation flow (e.g. `study_secret`). */

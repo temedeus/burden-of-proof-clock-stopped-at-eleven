@@ -14,48 +14,48 @@
     {
       "furnitureId": "oil_lamp",
       "x": 3,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
       "x": 9,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
       "x": 15,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
       "x": 21,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
-      "x": 1,
+      "x": 0,
       "y": 6,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
-      "x": 1,
+      "x": 0,
       "y": 12,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
-      "x": 23,
+      "x": 24,
       "y": 6,
       "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",
-      "x": 23,
+      "x": 24,
       "y": 12,
       "anchor": "top-left"
     }

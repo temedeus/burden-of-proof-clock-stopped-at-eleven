@@ -1,7 +1,7 @@
 import { P } from "./palette";
 import { grid, r } from "./pixel";
 import { drawFireplaceStone } from "./fireplace";
-import { drawOilLampBase } from "./oil_lamp";
+import { drawOilLampNorthBase } from "./oil_lamp";
 import type { ProceduralSpriteDef } from "./types";
 
 /** Wood tabletop with edge highlights (shared by all tables). */
@@ -498,7 +498,7 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 32,
         nativeHeight: 64,
         draw(ctx) {
-            drawOilLampBase(ctx);
+            drawOilLampNorthBase(ctx);
             r(ctx, 14, 18, 4, 8, P.fireOrange);
             r(ctx, 15, 16, 2, 4, P.fireYellow);
         }

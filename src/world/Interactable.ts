@@ -18,6 +18,8 @@ export interface Interactable {
     walkableDecor?: boolean;
     /** No examine prompt or clue pickup. */
     nonInteractive?: boolean;
+    /** Wall sconce orientation (oil lamps). */
+    wallSide?: "north" | "south" | "east" | "west";
     /** When set, interaction shows a yes/no confirmation instead of immediate examine. */
     interactionType?: "confirm";
     confirmId?: string;

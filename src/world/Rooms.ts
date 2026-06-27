@@ -18,6 +18,7 @@ import { Interactable } from "./Interactable";
 import { NPC } from "../entities/NPC";
 import { loadFurnitureCatalog } from "../content/loadCatalog";
 import type { FurnitureConfig, FurniturePlacement, GravelPathConfig, RoomConfig } from "@cse/content-schema";
+import { detectOilLampWallSide } from "../assets/procedural/oil_lamp";
 import { getCollisionTileRange, resolvePosition, resolveSpawnY } from "@cse/content-schema";
 
 const furnitureConfigs = loadFurnitureCatalog();
@@ -112,6 +113,13 @@ function placeFurniture(
     } else {
         startX = resolvePosition(placement.x, width);
         startY = resolvePosition(placement.y, height);
+    }
+
+    if (furniture.wallMount) {
+        interactable.tiles = [{ x: startX, y: startY }];
+        interactable.wallSide = detectOilLampWallSide(startX, startY, width, height);
+        interactable.interactionTiles = [];
+        return interactable;
     }
 
     if (furniture.walkableDecor) {

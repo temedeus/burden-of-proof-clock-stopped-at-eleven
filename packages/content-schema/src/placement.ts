@@ -18,6 +18,7 @@ export interface FurnitureBoundsConfig {
     /** Solid rows from the top of the footprint (e.g. tall fireplace mantle). */
     collisionRowsFromTop?: number;
     walkableDecor?: boolean;
+    wallMount?: boolean;
 }
 
 /** Resolve furniture/exit anchor tokens to tile coordinates (edge-aligned). */
@@ -106,6 +107,10 @@ export function isFurniturePlacementInBounds(
     gridHeight: number = DEFAULT_ROOM_TILE_HEIGHT
 ): boolean {
     const { startX, startY } = resolveFurnitureOrigin(placement, furniture, gridWidth, gridHeight);
+
+    if (furniture.wallMount) {
+        return startX >= 0 && startX < gridWidth && startY >= 0 && startY < gridHeight;
+    }
 
     if (furniture.walkableDecor) {
         for (let tileY = startY; tileY < startY + furniture.height; tileY++) {

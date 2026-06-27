@@ -369,11 +369,9 @@
     "description": "Warm light wavers inside the soot-stained chimney.",
     "width": 1,
     "height": 1,
-    "drawWidth": 1,
-    "drawHeight": 2,
-    "renderAnchor": "bottom",
     "walkableDecor": true,
     "nonInteractive": true,
+    "wallMount": true,
     "spriteName": "oil_lamp"
   }
 }

@@ -175,6 +175,7 @@
     "drawHeight": 7,
     "renderAnchor": "bottom",
     "collisionRowsFromTop": 4,
+    "wallAlign": "north",
     "interactionWidth": 5,
     "interactionHeight": 2,
     "interactionOffsetY": -3,

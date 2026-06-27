@@ -44,6 +44,8 @@ export interface FurnitureConfig {
     nonInteractive?: boolean;
     /** Anchored to a perimeter wall tile; no footprint blocking. */
     wallMount?: boolean;
+    /** Render flush to north or south wall (fireplace). */
+    wallAlign?: "north" | "south";
     /** When set, interaction shows a yes/no confirmation instead of immediate examine. */
     interactionType?: "confirm";
     /** Puzzle or handler id passed to confirmation flow (e.g. `study_secret`). */

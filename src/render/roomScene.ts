@@ -2,6 +2,7 @@ import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
 import { drawFountainAnimated } from "../assets/procedural/fountain";
 import { drawOilLampAnimated, oilLampAnimPhase, oilLampDrawBounds } from "../assets/procedural/oil_lamp";
 import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
+import { decorWallDrawBounds } from "../assets/procedural/wall_align";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TILE_SIZE } from "../world/constants";
 import { tileBounds } from "../world/interactableTiles";
@@ -70,6 +71,12 @@ export function furnitureActorFromInteractable(
         drawH = heightTiles * TILE_SIZE;
         drawX = minX * TILE_SIZE;
         drawY = minY * TILE_SIZE;
+    }
+
+    if (obj.wallAlign && roomSize && hasDecorDraw) {
+        const snapped = decorWallDrawBounds(obj.wallAlign, minX, maxX, drawW, drawH, roomSize.height);
+        drawX = snapped.drawX;
+        drawY = snapped.drawY;
     }
 
     if (isOilLamp && roomSize && obj.wallSide) {

@@ -19,6 +19,7 @@ import { NPC } from "../entities/NPC";
 import { loadFurnitureCatalog } from "../content/loadCatalog";
 import type { FurnitureConfig, FurniturePlacement, GravelPathConfig, InteractionFaceConfig, RoomConfig } from "@cse/content-schema";
 import { detectOilLampWallSide } from "../assets/procedural/oil_lamp";
+import { inferWallAlign } from "../assets/procedural/wall_align";
 import { getCollisionTileRange, resolvePosition, resolveSpawnY } from "@cse/content-schema";
 
 const furnitureConfigs = loadFurnitureCatalog();
@@ -323,11 +324,22 @@ function placeFurniture(
         for (const tile of interactable.footprintTiles) {
             interactable.tiles.push(tile);
         }
+        if (placement.furnitureId === "staircase") {
+            const align = inferWallAlign(startY, furniture.height, height);
+            if (align) interactable.wallAlign = align;
+        }
         interactable.interactionTiles = furniture.nonInteractive ? [] : [...interactable.tiles];
         return interactable;
     }
 
     interactable.footprintTiles = buildFootprintTiles(startX, startY, furniture, width, height);
+
+    if (furniture.wallAlign) {
+        interactable.wallAlign = furniture.wallAlign;
+    } else if (placement.furnitureId === "staircase") {
+        const align = inferWallAlign(startY, furniture.height, height);
+        if (align) interactable.wallAlign = align;
+    }
 
     const { startX: collisionStartX, endX: collisionEndX, startY: collisionStartY, endY: collisionEndY } =
         getCollisionTileRange(startX, startY, furniture);

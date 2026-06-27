@@ -89,7 +89,7 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         draw(ctx) {
             drawFireplaceStone(ctx);
             const fireC = { y: P.fireYellow, o: P.fireOrange, r: P.fireRed, k: P.black };
-            grid(ctx, 14, 24, 2, [
+            grid(ctx, 14, 20, 2, [
                 "...ror...",
                 "..roror..",
                 ".roroyor.",

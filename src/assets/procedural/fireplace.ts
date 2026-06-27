@@ -6,28 +6,28 @@ const NATIVE_H = 56;
 
 /** Stone mantle + hearth (no fire). */
 export function drawFireplaceStone(ctx: CanvasRenderingContext2D): void {
-    r(ctx, 0, 4, 48, 10, P.stoneHi);
-    r(ctx, 2, 12, 44, 6, P.stoneLight);
-    r(ctx, 4, 16, 40, 38, P.stone);
-    r(ctx, 6, 18, 36, 34, P.stoneLight);
+    r(ctx, 0, 0, 48, 10, P.stoneHi);
+    r(ctx, 2, 8, 44, 6, P.stoneLight);
+    r(ctx, 4, 12, 40, 38, P.stone);
+    r(ctx, 6, 14, 36, 34, P.stoneLight);
 
-    r(ctx, 10, 22, 28, 28, P.shadow);
-    r(ctx, 12, 24, 24, 24, P.black);
-    r(ctx, 14, 20, 20, 4, P.shadow);
+    r(ctx, 10, 18, 28, 28, P.shadow);
+    r(ctx, 12, 20, 24, 24, P.black);
+    r(ctx, 14, 16, 20, 4, P.shadow);
 
-    r(ctx, 14, 38, 20, 6, P.woodDark);
-    r(ctx, 16, 36, 8, 4, P.wood);
-    r(ctx, 26, 36, 8, 4, P.woodLight);
+    r(ctx, 14, 34, 20, 6, P.woodDark);
+    r(ctx, 16, 32, 8, 4, P.wood);
+    r(ctx, 26, 32, 8, 4, P.woodLight);
 
-    r(ctx, 12, 44, 24, 2, P.stoneHi);
-    r(ctx, 4, 52, 40, 4, P.stone);
+    r(ctx, 12, 40, 24, 2, P.stoneHi);
+    r(ctx, 4, 48, 40, 8, P.stone);
 }
 
 function drawAnimatedFire(ctx: CanvasRenderingContext2D, t: number): void {
     const flicker = 0.88 + 0.12 * Math.sin(t * 11);
     const sway = Math.sin(t * 4.5) * 1.5;
 
-    r(ctx, 13, 36, 22, 4, P.fireRed);
+    r(ctx, 13, 32, 22, 4, P.fireRed);
 
     const flames = [
         { x: 14, phase: 0, w: 4 },
@@ -38,7 +38,7 @@ function drawAnimatedFire(ctx: CanvasRenderingContext2D, t: number): void {
 
     for (const f of flames) {
         const h = Math.floor((10 + Math.sin(t * 8 + f.phase) * 5) * flicker);
-        const y = 38 - h;
+        const y = 34 - h;
         const x = f.x + Math.floor(sway * (f.phase > 1 ? -1 : 1));
         r(ctx, x, y, f.w, h, P.fireOrange);
         r(ctx, x + 1, y + 1, Math.max(1, f.w - 2), Math.max(2, h - 3), P.fireYellow);
@@ -80,13 +80,13 @@ function drawAnimatedFire(ctx: CanvasRenderingContext2D, t: number): void {
             "...oy..."
         ]
     ];
-    grid(ctx, 14 + Math.floor(sway), 24 + (frame % 2), 2, grids[frame], fireC);
+    grid(ctx, 14 + Math.floor(sway), 20 + (frame % 2), 2, grids[frame], fireC);
 
     const sparkSeed = Math.floor(t * 14);
     for (let i = 0; i < 3; i++) {
         if ((sparkSeed + i * 3) % 5 !== 0) continue;
         const sx = 16 + ((sparkSeed * 7 + i * 11) % 14);
-        const sy = 20 + ((sparkSeed * 5 + i * 9) % 12);
+        const sy = 16 + ((sparkSeed * 5 + i * 9) % 12);
         r(ctx, sx, sy, 2, 2, P.fireYellow);
     }
 }

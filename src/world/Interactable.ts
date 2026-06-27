@@ -26,6 +26,8 @@ export interface Interactable {
     nonInteractive?: boolean;
     /** Wall sconce orientation (oil lamps). */
     wallSide?: "north" | "south" | "east" | "west";
+    /** Flush against north or south wall when rendering (fireplace, stairs). */
+    wallAlign?: "north" | "south";
     /** When set, interaction shows a yes/no confirmation instead of immediate examine. */
     interactionType?: "confirm";
     confirmId?: string;

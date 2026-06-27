@@ -1,5 +1,13 @@
 import type { SpriteName } from "./sprites";
 
+/** Tile strip on one side of the draw footprint used for examine when the player faces that direction. */
+export interface InteractionFaceConfig {
+    width: number;
+    height: number;
+    offsetX?: number;
+    offsetY?: number;
+}
+
 export interface FurnitureConfig {
     id: string;
     name: string;
@@ -16,6 +24,13 @@ export interface FurnitureConfig {
     interactionHeight?: number;
     interactionOffsetX?: number;
     interactionOffsetY?: number;
+    /** Per-side examine strips (north/south/east/west edges of the draw footprint). */
+    interactionFaces?: {
+        north?: InteractionFaceConfig;
+        south?: InteractionFaceConfig;
+        east?: InteractionFaceConfig;
+        west?: InteractionFaceConfig;
+    };
     renderAnchor?: "center" | "bottom";
     /** Horizontal extent of collision rows; defaults to `width`, centered on the placement footprint. */
     collisionWidth?: number;

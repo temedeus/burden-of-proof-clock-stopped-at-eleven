@@ -17,11 +17,155 @@ import {
 import { Interactable } from "./Interactable";
 import { NPC } from "../entities/NPC";
 import { loadFurnitureCatalog } from "../content/loadCatalog";
-import type { FurnitureConfig, FurniturePlacement, GravelPathConfig, RoomConfig } from "@cse/content-schema";
+import type { FurnitureConfig, FurniturePlacement, GravelPathConfig, InteractionFaceConfig, RoomConfig } from "@cse/content-schema";
 import { detectOilLampWallSide } from "../assets/procedural/oil_lamp";
 import { getCollisionTileRange, resolvePosition, resolveSpawnY } from "@cse/content-schema";
 
 const furnitureConfigs = loadFurnitureCatalog();
+
+type ObjectFace = "north" | "south" | "east" | "west";
+type PlayerFacing = "up" | "down" | "left" | "right";
+
+const FACE_TO_FACING: Record<ObjectFace, PlayerFacing> = {
+    north: "down",
+    south: "up",
+    east: "left",
+    west: "right"
+};
+
+function buildFootprintTiles(
+    startX: number,
+    startY: number,
+    furniture: FurnitureConfig,
+    roomWidth: number,
+    roomHeight: number
+): { x: number; y: number }[] {
+    const tiles: { x: number; y: number }[] = [];
+    for (let tileY = startY; tileY < startY + furniture.height; tileY++) {
+        for (let tileX = startX; tileX < startX + furniture.width; tileX++) {
+            if (tileX >= 0 && tileX < roomWidth && tileY >= 0 && tileY < roomHeight) {
+                tiles.push({ x: tileX, y: tileY });
+            }
+        }
+    }
+    return tiles;
+}
+
+function getDrawTileOrigin(
+    startX: number,
+    startY: number,
+    furniture: FurnitureConfig
+): { ix: number; iy: number; iw: number; ih: number } {
+    const iw = furniture.drawWidth ?? furniture.width;
+    const ih = furniture.drawHeight ?? furniture.height;
+
+    let ix: number;
+    let iy: number;
+    if (furniture.renderAnchor === "bottom") {
+        ix = startX + Math.floor((furniture.width - iw) / 2);
+        iy = startY + furniture.height - ih;
+    } else if (furniture.renderAnchor === "center") {
+        ix = startX + Math.floor((furniture.width - iw) / 2);
+        iy = startY + Math.floor((furniture.height - ih) / 2);
+    } else {
+        ix = startX;
+        iy = startY;
+    }
+
+    return { ix, iy, iw, ih };
+}
+
+function hasLegacyInteraction(furniture: FurnitureConfig): boolean {
+    return (
+        furniture.interactionFaces == null &&
+        (furniture.interactionWidth != null ||
+            furniture.interactionHeight != null ||
+            furniture.interactionOffsetX != null ||
+            furniture.interactionOffsetY != null)
+    );
+}
+
+function buildAutoFaceStrip(
+    ix: number,
+    iy: number,
+    iw: number,
+    ih: number,
+    face: ObjectFace,
+    roomWidth: number,
+    roomHeight: number
+): { x: number; y: number }[] {
+    const tiles: { x: number; y: number }[] = [];
+    const push = (x: number, y: number) => {
+        if (x >= 0 && x < roomWidth && y >= 0 && y < roomHeight) {
+            tiles.push({ x, y });
+        }
+    };
+
+    switch (face) {
+        case "north":
+            for (let x = ix; x < ix + iw; x++) push(x, iy);
+            break;
+        case "south":
+            for (let x = ix; x < ix + iw; x++) push(x, iy + ih - 1);
+            break;
+        case "west":
+            for (let y = iy; y < iy + ih; y++) push(ix, y);
+            break;
+        case "east":
+            for (let y = iy; y < iy + ih; y++) push(ix + iw - 1, y);
+            break;
+    }
+
+    return tiles;
+}
+
+function buildExplicitFaceTiles(
+    ix: number,
+    iy: number,
+    iw: number,
+    ih: number,
+    face: ObjectFace,
+    faceConfig: InteractionFaceConfig,
+    roomWidth: number,
+    roomHeight: number
+): { x: number; y: number }[] {
+    const faceW = faceConfig.width;
+    const faceH = faceConfig.height;
+    const offsetX = faceConfig.offsetX ?? 0;
+    const offsetY = faceConfig.offsetY ?? 0;
+
+    let tileStartX: number;
+    let tileStartY: number;
+
+    switch (face) {
+        case "north":
+            tileStartX = ix + Math.floor((iw - faceW) / 2) + offsetX;
+            tileStartY = iy + offsetY;
+            break;
+        case "south":
+            tileStartX = ix + Math.floor((iw - faceW) / 2) + offsetX;
+            tileStartY = iy + ih - faceH + offsetY;
+            break;
+        case "west":
+            tileStartX = ix + offsetX;
+            tileStartY = iy + Math.floor((ih - faceH) / 2) + offsetY;
+            break;
+        case "east":
+            tileStartX = ix + iw - faceW + offsetX;
+            tileStartY = iy + Math.floor((ih - faceH) / 2) + offsetY;
+            break;
+    }
+
+    const tiles: { x: number; y: number }[] = [];
+    for (let tileY = tileStartY; tileY < tileStartY + faceH; tileY++) {
+        for (let tileX = tileStartX; tileX < tileStartX + faceW; tileX++) {
+            if (tileX >= 0 && tileX < roomWidth && tileY >= 0 && tileY < roomHeight) {
+                tiles.push({ x: tileX, y: tileY });
+            }
+        }
+    }
+    return tiles;
+}
 
 function buildInteractionTiles(
     startX: number,
@@ -75,6 +219,57 @@ function buildInteractionTiles(
     return tiles;
 }
 
+function buildInteractionTilesByFacing(
+    startX: number,
+    startY: number,
+    furniture: FurnitureConfig,
+    roomWidth: number,
+    roomHeight: number
+): Partial<Record<PlayerFacing, { x: number; y: number }[]>> {
+    const { ix, iy, iw, ih } = getDrawTileOrigin(startX, startY, furniture);
+    const result: Partial<Record<PlayerFacing, { x: number; y: number }[]>> = {};
+    const legacySouth = hasLegacyInteraction(furniture)
+        ? buildInteractionTiles(startX, startY, furniture, roomWidth, roomHeight)
+        : null;
+
+    const faces: ObjectFace[] = ["north", "south", "east", "west"];
+    for (const face of faces) {
+        const facing = FACE_TO_FACING[face];
+        const faceConfig = furniture.interactionFaces?.[face];
+        let tiles: { x: number; y: number }[];
+
+        if (faceConfig) {
+            tiles = buildExplicitFaceTiles(ix, iy, iw, ih, face, faceConfig, roomWidth, roomHeight);
+        } else if (face === "south" && legacySouth && legacySouth.length > 0) {
+            tiles = legacySouth;
+        } else {
+            tiles = buildAutoFaceStrip(ix, iy, iw, ih, face, roomWidth, roomHeight);
+        }
+
+        result[facing] = tiles;
+    }
+
+    return result;
+}
+
+function unionInteractionTiles(
+    byFacing: Partial<Record<PlayerFacing, { x: number; y: number }[]>>
+): { x: number; y: number }[] {
+    const seen = new Set<string>();
+    const tiles: { x: number; y: number }[] = [];
+    for (const facingTiles of Object.values(byFacing)) {
+        if (!facingTiles) continue;
+        for (const tile of facingTiles) {
+            const key = `${tile.x},${tile.y}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                tiles.push(tile);
+            }
+        }
+    }
+    return tiles;
+}
+
 function placeFurniture(
     tiles: number[],
     width: number,
@@ -116,6 +311,7 @@ function placeFurniture(
     }
 
     if (furniture.wallMount) {
+        interactable.footprintTiles = [{ x: startX, y: startY }];
         interactable.tiles = [{ x: startX, y: startY }];
         interactable.wallSide = detectOilLampWallSide(startX, startY, width, height);
         interactable.interactionTiles = [];
@@ -123,17 +319,15 @@ function placeFurniture(
     }
 
     if (furniture.walkableDecor) {
-        for (let tileY = startY; tileY < startY + furniture.height; tileY++) {
-            for (let x = 0; x < furniture.width; x++) {
-                const tileX = startX + x;
-                if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
-                    interactable.tiles.push({ x: tileX, y: tileY });
-                }
-            }
+        interactable.footprintTiles = buildFootprintTiles(startX, startY, furniture, width, height);
+        for (const tile of interactable.footprintTiles) {
+            interactable.tiles.push(tile);
         }
         interactable.interactionTiles = furniture.nonInteractive ? [] : [...interactable.tiles];
         return interactable;
     }
+
+    interactable.footprintTiles = buildFootprintTiles(startX, startY, furniture, width, height);
 
     const { startX: collisionStartX, endX: collisionEndX, startY: collisionStartY, endY: collisionEndY } =
         getCollisionTileRange(startX, startY, furniture);
@@ -147,7 +341,15 @@ function placeFurniture(
         }
     }
 
-    interactable.interactionTiles = buildInteractionTiles(startX, startY, furniture, width, height);
+    const interactionTilesByFacing = buildInteractionTilesByFacing(
+        startX,
+        startY,
+        furniture,
+        width,
+        height
+    );
+    interactable.interactionTilesByFacing = interactionTilesByFacing;
+    interactable.interactionTiles = unionInteractionTiles(interactionTilesByFacing);
 
     return interactable;
 }

@@ -1,7 +1,7 @@
 import { TILE_SIZE } from "../world/constants";
 import { Player } from "../entities/Player";
 import { Room } from "../world/Room";
-import { getInteractionTiles, tileBounds } from "../world/interactableTiles";
+import { getInteractionTiles, getInteractionTilesForFacing, tileBounds } from "../world/interactableTiles";
 import type { ClueSystem } from "../systems/ClueSystem";
 
 /**
@@ -44,6 +44,17 @@ export function renderDebugOverlay(
             ctx.strokeRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
     }
+
+    // Player feet row (magenta) — used for furniture / NPC collision
+    const feetLeftTile = Math.floor(player.x / TILE_SIZE);
+    const feetRightTile = Math.ceil((player.x + player.width) / TILE_SIZE);
+    const feetBottomTile = Math.ceil((player.y + player.height) / TILE_SIZE);
+    const feetRow = feetBottomTile - 1;
+    ctx.fillStyle = "rgba(255, 0, 255, 0.25)";
+    ctx.fillRect(feetLeftTile * TILE_SIZE, feetRow * TILE_SIZE, (feetRightTile - feetLeftTile) * TILE_SIZE, TILE_SIZE);
+    ctx.strokeStyle = "#ff00ff";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(feetLeftTile * TILE_SIZE, feetRow * TILE_SIZE, (feetRightTile - feetLeftTile) * TILE_SIZE, TILE_SIZE);
 
     // Draw NPC collision boxes (blue outline)
     for (const npc of currentRoom.npcs) {
@@ -89,16 +100,18 @@ export function renderDebugOverlay(
 
     // Interaction tiles (cyan) — examine / clue targeting
     for (const obj of currentRoom.interactables) {
-        const interactTiles = getInteractionTiles(obj);
-        if (interactTiles.length === 0) continue;
+        const activeFacingTiles = getInteractionTilesForFacing(obj, player.facing);
+        const allInteractTiles = getInteractionTiles(obj);
+        if (allInteractTiles.length === 0) continue;
 
-        ctx.fillStyle = "rgba(0, 200, 255, 0.2)";
-        for (const tile of interactTiles) {
+        const activeKeys = new Set(activeFacingTiles.map((t) => `${t.x},${t.y}`));
+
+        for (const tile of allInteractTiles) {
+            const isActive = activeKeys.has(`${tile.x},${tile.y}`);
+            ctx.fillStyle = isActive ? "rgba(0, 200, 255, 0.35)" : "rgba(0, 200, 255, 0.1)";
             ctx.fillRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        }
-        ctx.strokeStyle = "#00c8ff";
-        ctx.lineWidth = 1;
-        for (const tile of interactTiles) {
+            ctx.strokeStyle = isActive ? "#00c8ff" : "#006688";
+            ctx.lineWidth = isActive ? 2 : 1;
             ctx.strokeRect(tile.x * TILE_SIZE, tile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
     }
@@ -186,4 +199,23 @@ export function renderDebugOverlay(
     ctx.lineTo(targetX, targetY);
     ctx.stroke();
     ctx.setLineDash([]);
+
+    // Legend
+    const legendX = 8;
+    const legendY = 8;
+    const lines = [
+        "Green = movement block",
+        "Cyan = interact (bright = facing)",
+        "Magenta = player feet",
+        "Yellow = interact aim"
+    ];
+    ctx.font = "11px monospace";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+    ctx.fillRect(legendX - 4, legendY - 4, 200, lines.length * 14 + 8);
+    for (let i = 0; i < lines.length; i++) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(lines[i], legendX, legendY + i * 14);
+    }
 }

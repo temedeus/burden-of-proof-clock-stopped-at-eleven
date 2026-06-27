@@ -1,7 +1,7 @@
 import { Player } from "../entities/Player";
 import { Room } from "../world/Room";
 import { TILE_SIZE } from "../world/constants";
-import { getInteractionTiles, tileBounds } from "../world/interactableTiles";
+import { getInteractionTilesForFacing, tileBounds } from "../world/interactableTiles";
 import { ClueSystem } from "./ClueSystem";
 import { DialogSystem } from "./DialogSystem";
 import { NPC } from "../entities/NPC";
@@ -70,10 +70,10 @@ export class InteractionSystem {
             }
         }
 
-        // Check interactables — target interaction tiles (sprite/examine area), not collision only
+        // Check interactables — target facing-specific interaction tiles
         for (const obj of room.interactables) {
             if (obj.nonInteractive) continue;
-            const interactTiles = getInteractionTiles(obj);
+            const interactTiles = getInteractionTilesForFacing(obj, player.facing);
             const targetOverlapsFurniture = interactTiles.some((t) => t.x === x && t.y === y);
 
             if (targetOverlapsFurniture) {

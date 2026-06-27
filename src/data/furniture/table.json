@@ -3,5 +3,6 @@
   "name": "Large Oak Table",
   "description": "A heavy oak table, scarred by years of use.",
   "width": 2,
-  "height": 2
+  "height": 2,
+  "collisionRowsFromBottom": 1
 }

@@ -4,8 +4,14 @@ export interface Interactable {
     description: string;
     /** Tiles that block movement (written to the map as solid furniture). */
     tiles: { x: number; y: number }[];
-    /** Tiles the player can target to examine or collect clues (may cover the full sprite). */
+    /** Full placement footprint (width×height); used for sprite anchoring. */
+    footprintTiles?: { x: number; y: number }[];
+    /** Tiles the player can target to examine or collect clues (union of all facing strips). */
     interactionTiles?: { x: number; y: number }[];
+    /** Examine tiles per player facing direction. */
+    interactionTilesByFacing?: Partial<
+        Record<"up" | "down" | "left" | "right", { x: number; y: number }[]>
+    >;
     clues?: string[];
     /** When set, Game renders this sprite (garden / exterior / interior atlases) instead of id-based mapping */
     spriteName?: string;

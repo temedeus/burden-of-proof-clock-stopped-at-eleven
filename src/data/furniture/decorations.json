@@ -20,6 +20,7 @@
     "drawWidth": 4,
     "drawHeight": 5,
     "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 1,
     "spriteName": "tree"
   },
   "bush": {
@@ -28,6 +29,7 @@
     "description": "Neatly trimmed hedges.",
     "width": 2,
     "height": 2,
+    "collisionRowsFromBottom": 1,
     "spriteName": "bush"
   },
   "pond": {
@@ -346,8 +348,8 @@
     "drawWidth": 2,
     "drawHeight": 2,
     "renderAnchor": "bottom",
-    "collisionRowsFromBottom": 2,
-    "collisionWidth": 2,
+    "collisionRowsFromBottom": 1,
+    "collisionWidth": 1,
     "spriteName": "wine_barrel"
   },
   "wine_rack": {
@@ -359,8 +361,8 @@
     "drawWidth": 3,
     "drawHeight": 2,
     "renderAnchor": "bottom",
-    "collisionRowsFromBottom": 2,
-    "collisionWidth": 3,
+    "collisionRowsFromBottom": 1,
+    "collisionWidth": 2,
     "spriteName": "wine_rack"
   },
   "oil_lamp": {

@@ -16,10 +16,11 @@ export function furnitureActorFromInteractable(
     getAnimTime: () => number,
     roomSize?: { width: number; height: number }
 ): DepthActor {
-    const minX = Math.min(...obj.tiles.map((t) => t.x));
-    const maxX = Math.max(...obj.tiles.map((t) => t.x));
-    const minY = Math.min(...obj.tiles.map((t) => t.y));
-    const maxY = Math.max(...obj.tiles.map((t) => t.y));
+    const footprint = obj.footprintTiles && obj.footprintTiles.length > 0 ? obj.footprintTiles : obj.tiles;
+    const minX = Math.min(...footprint.map((t) => t.x));
+    const maxX = Math.max(...footprint.map((t) => t.x));
+    const minY = Math.min(...footprint.map((t) => t.y));
+    const maxY = Math.max(...footprint.map((t) => t.y));
 
     const widthTiles = maxX - minX + 1;
     const heightTiles = maxY - minY + 1;

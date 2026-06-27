@@ -2,6 +2,71 @@ import { P } from "./palette";
 import { grid, r } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
 
+export interface HorsePalette {
+    coat: string;
+    light: string;
+    mid: string;
+    dark: string;
+    mane: string;
+    blaze?: string;
+    socks?: boolean;
+}
+
+export const HORSE_PALETTES: Record<string, HorsePalette> = {
+    stable_booth: {
+        coat: P.horseCoat,
+        light: P.horseCoatLight,
+        mid: P.horseCoatMid,
+        dark: P.horseCoatDark,
+        mane: P.horseMane
+    },
+    stable_booth_bay: {
+        coat: P.horseBay,
+        light: P.horseBayLight,
+        mid: P.horseCoatMid,
+        dark: P.horseCoatDark,
+        mane: P.horseMane,
+        blaze: P.cream,
+        socks: true
+    },
+    stable_booth_gray: {
+        coat: P.horseGray,
+        light: P.horseGrayLight,
+        mid: P.horseGrayMid,
+        dark: P.horseGrayDark,
+        mane: P.horseManeLight,
+        blaze: P.white
+    }
+};
+
+const BOOTH_NATIVE_W = 96;
+const BOOTH_NATIVE_H = 128;
+
+/** Stable phase offset from tile position so each horse animates on its own schedule. */
+export function horseAnimPhase(tileX: number, tileY: number): number {
+    return (tileX * 2.17 + tileY * 3.71) % (Math.PI * 2);
+}
+
+export function getHorseAnimOffsets(
+    animTime: number,
+    phase: number
+): { jumpY: number; tailX: number; tailY: number } {
+    const jumpCycle = 3.8 + (Math.sin(phase * 1.7) + 1) * 1.4;
+    const localT = (animTime + phase * 0.31) % jumpCycle;
+    let jumpY = 0;
+    const hopDuration = 0.42;
+    if (localT < hopDuration) {
+        jumpY = -Math.sin((localT / hopDuration) * Math.PI) * 5;
+    }
+
+    const tailPhase = animTime * 2.1 + phase;
+    return {
+        jumpY,
+        tailX: Math.sin(tailPhase) * 4,
+        tailY: Math.sin(tailPhase * 0.9 + 0.6) * 2
+    };
+}
+
 /** Top-down stall rails; horse is a side-profile illustration facing left. */
 function drawStallFrame(ctx: CanvasRenderingContext2D, w: number, h: number): void {
     r(ctx, 0, 0, w, 11, P.wood);
@@ -18,14 +83,12 @@ function drawStallFrame(ctx: CanvasRenderingContext2D, w: number, h: number): vo
     r(ctx, 28, h - 11, 40, 2, P.gravel);
 }
 
-interface HorsePalette {
-    coat: string;
-    light: string;
-    mid: string;
-    dark: string;
-    mane: string;
-    blaze?: string;
-    socks?: boolean;
+function drawStrawFloor(ctx: CanvasRenderingContext2D): void {
+    r(ctx, 5, 94, 86, 28, P.straw);
+    r(ctx, 7, 96, 82, 24, P.strawLight);
+    for (let i = 0; i < 8; i++) {
+        r(ctx, 10 + i * 10, 98 + (i % 3), 6, 2, P.straw);
+    }
 }
 
 function drawForeleg(
@@ -70,61 +133,66 @@ function drawHindleg(
     r(ctx, x, y + 27, w, 1, P.black);
 }
 
+function drawHorseTail(
+    ctx: CanvasRenderingContext2D,
+    ox: number,
+    oy: number,
+    mane: string,
+    tailX: number,
+    tailY: number
+): void {
+    const tx = Math.round(tailX);
+    const ty = Math.round(tailY);
+    r(ctx, ox + 66 + tx, oy + 10 + ty, 5, 16, mane);
+    r(ctx, ox + 68 + tx, oy + 6 + ty, 4, 12, mane);
+    r(ctx, ox + 70 + tx, oy + 2 + ty, 3, 10, mane);
+    r(ctx, ox + 71 + tx, oy + ty, 2, 6, mane);
+}
+
 /** Side-profile horse facing left — head west, tail east. */
 function drawHorseSideProfile(
     ctx: CanvasRenderingContext2D,
     ox: number,
     oy: number,
-    pal: HorsePalette
+    pal: HorsePalette,
+    anim: { jumpY: number; tailX: number; tailY: number }
 ): void {
-    const { coat: c, light: l, mid: m, dark: d, mane: mn, blaze } = pal;
+    const { coat: c, light: l, dark: d, mane: mn, blaze } = pal;
+    const hy = oy + Math.round(anim.jumpY);
 
-    // Far legs (behind body)
-    drawHindleg(ctx, ox + 54, oy + 44, pal, false);
-    drawForeleg(ctx, ox + 30, oy + 46, pal, false);
+    drawHindleg(ctx, ox + 54, hy + 44, pal, false);
+    drawForeleg(ctx, ox + 30, hy + 46, pal, false);
+    drawHorseTail(ctx, ox, hy, mn, anim.tailX, anim.tailY);
 
-    // Tail
-    r(ctx, ox + 66, oy + 10, 5, 16, mn);
-    r(ctx, ox + 68, oy + 6, 4, 12, mn);
-    r(ctx, ox + 70, oy + 2, 3, 10, mn);
-    r(ctx, ox + 71, oy + 0, 2, 6, mn);
+    r(ctx, ox + 48, hy + 14, 20, 24, c);
+    r(ctx, ox + 50, hy + 16, 16, 18, l);
+    r(ctx, ox + 48, hy + 34, 18, 6, d);
+    r(ctx, ox + 62, hy + 14, 6, 10, d);
 
-    // Hindquarters and croup
-    r(ctx, ox + 48, oy + 14, 20, 24, c);
-    r(ctx, ox + 50, oy + 16, 16, 18, l);
-    r(ctx, ox + 48, oy + 34, 18, 6, d);
-    r(ctx, ox + 62, oy + 14, 6, 10, d);
+    r(ctx, ox + 30, hy + 18, 22, 22, c);
+    r(ctx, ox + 32, hy + 20, 18, 16, l);
+    r(ctx, ox + 30, hy + 36, 20, 5, d);
 
-    // Barrel
-    r(ctx, ox + 30, oy + 18, 22, 22, c);
-    r(ctx, ox + 32, oy + 20, 18, 16, l);
-    r(ctx, ox + 30, oy + 36, 20, 5, d);
+    r(ctx, ox + 20, hy + 22, 12, 20, c);
+    r(ctx, ox + 22, hy + 24, 8, 14, l);
+    r(ctx, ox + 20, hy + 38, 10, 4, d);
 
-    // Chest and shoulder
-    r(ctx, ox + 20, oy + 22, 12, 20, c);
-    r(ctx, ox + 22, oy + 24, 8, 14, l);
-    r(ctx, ox + 20, oy + 38, 10, 4, d);
+    r(ctx, ox + 28, hy + 16, 8, 5, c);
+    r(ctx, ox + 30, hy + 14, 5, 3, l);
 
-    // Withers
-    r(ctx, ox + 28, oy + 16, 8, 5, c);
-    r(ctx, ox + 30, oy + 14, 5, 3, l);
+    r(ctx, ox + 10, hy + 16, 12, 26, c);
+    r(ctx, ox + 12, hy + 18, 8, 20, l);
+    r(ctx, ox + 8, hy + 20, 3, 18, d);
 
-    // Neck
-    r(ctx, ox + 10, oy + 16, 12, 26, c);
-    r(ctx, ox + 12, oy + 18, 8, 20, l);
-    r(ctx, ox + 8, oy + 20, 3, 18, d);
+    r(ctx, ox + 14, hy + 6, 4, 14, mn);
+    r(ctx, ox + 18, hy + 4, 4, 16, mn);
+    r(ctx, ox + 22, hy + 8, 3, 12, mn);
+    r(ctx, ox + 25, hy + 12, 3, 8, mn);
 
-    // Mane
-    r(ctx, ox + 14, oy + 6, 4, 14, mn);
-    r(ctx, ox + 18, oy + 4, 4, 16, mn);
-    r(ctx, ox + 22, oy + 8, 3, 12, mn);
-    r(ctx, ox + 25, oy + 12, 3, 8, mn);
-
-    // Head — fine 1px side profile (facing left)
     grid(
         ctx,
         ox,
-        oy + 8,
+        hy + 8,
         1,
         [
             ".......ee.......",
@@ -151,7 +219,7 @@ function drawHorseSideProfile(
         ],
         {
             c,
-            l,
+            l: pal.light,
             e: P.black,
             w: blaze ?? P.white,
             m: P.horseMuzzle,
@@ -160,91 +228,86 @@ function drawHorseSideProfile(
         }
     );
 
-    // Ear (over paint)
-    r(ctx, ox + 11, oy + 6, 3, 6, c);
-    r(ctx, ox + 12, oy + 4, 2, 3, d);
-    r(ctx, ox + 15, oy + 7, 3, 5, c);
-    r(ctx, ox + 16, oy + 5, 2, 2, d);
+    r(ctx, ox + 11, hy + 6, 3, 6, c);
+    r(ctx, ox + 12, hy + 4, 2, 3, d);
+    r(ctx, ox + 15, hy + 7, 3, 5, c);
+    r(ctx, ox + 16, hy + 5, 2, 2, d);
 
-    // Eye highlight
-    r(ctx, ox + 17, oy + 16, 4, 3, P.horseEyeWhite);
-    r(ctx, ox + 18, oy + 17, 2, 2, P.black);
-    r(ctx, ox + 18, oy + 17, 1, 1, P.white);
+    r(ctx, ox + 17, hy + 16, 4, 3, P.horseEyeWhite);
+    r(ctx, ox + 18, hy + 17, 2, 2, P.black);
+    r(ctx, ox + 18, hy + 17, 1, 1, P.white);
 
-    // Forehead blaze (bay / grey) — painted after base head
     if (pal.blaze && pal.blaze !== P.horseMuzzle) {
-        r(ctx, ox + 13, oy + 12, 5, 8, pal.blaze);
-        r(ctx, ox + 11, oy + 18, 7, 10, pal.blaze);
-        r(ctx, ox + 9, oy + 24, 9, 8, pal.blaze);
-        // Restore eye after blaze
-        r(ctx, ox + 17, oy + 16, 4, 3, P.horseEyeWhite);
-        r(ctx, ox + 18, oy + 17, 2, 2, P.black);
-        r(ctx, ox + 18, oy + 17, 1, 1, P.white);
-        r(ctx, ox + 14, oy + 22, 2, 2, P.horseNostril);
+        r(ctx, ox + 13, hy + 12, 5, 8, pal.blaze);
+        r(ctx, ox + 11, hy + 18, 7, 10, pal.blaze);
+        r(ctx, ox + 9, hy + 24, 9, 8, pal.blaze);
+        r(ctx, ox + 17, hy + 16, 4, 3, P.horseEyeWhite);
+        r(ctx, ox + 18, hy + 17, 2, 2, P.black);
+        r(ctx, ox + 18, hy + 17, 1, 1, P.white);
+        r(ctx, ox + 14, hy + 22, 2, 2, P.horseNostril);
     }
 
-    // Near legs (in front of body)
-    drawHindleg(ctx, ox + 50, oy + 42, pal, true);
-    drawForeleg(ctx, ox + 26, oy + 44, pal, true);
+    drawHindleg(ctx, ox + 50, hy + 42, pal, true);
+    drawForeleg(ctx, ox + 26, hy + 44, pal, true);
 
-    // Back line and belly shading
-    r(ctx, ox + 34, oy + 17, 30, 2, d);
-    r(ctx, ox + 32, oy + 38, 24, 2, d);
+    r(ctx, ox + 34, hy + 17, 30, 2, d);
+    r(ctx, ox + 32, hy + 38, 24, 2, d);
 }
 
-function drawStableBooth(ctx: CanvasRenderingContext2D, horse: HorsePalette): void {
-    drawStallFrame(ctx, 96, 128);
-    r(ctx, 5, 94, 86, 28, P.straw);
-    r(ctx, 7, 96, 82, 24, P.strawLight);
-    for (let i = 0; i < 8; i++) {
-        r(ctx, 10 + i * 10, 98 + (i % 3), 6, 2, P.straw);
-    }
-    drawHorseSideProfile(ctx, 6, 18, horse);
+function drawStableBoothContents(
+    ctx: CanvasRenderingContext2D,
+    horse: HorsePalette,
+    animTime: number,
+    phase: number
+): void {
+    drawStallFrame(ctx, BOOTH_NATIVE_W, BOOTH_NATIVE_H);
+    drawStrawFloor(ctx);
+    const offsets = getHorseAnimOffsets(animTime, phase);
+    drawHorseSideProfile(ctx, 6, 18, horse, offsets);
+}
+
+export function drawStableBoothAnimated(
+    ctx: CanvasRenderingContext2D,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
+    animTime: number,
+    phase: number,
+    spriteName: string
+): void {
+    const horse = HORSE_PALETTES[spriteName];
+    if (!horse) return;
+
+    ctx.save();
+    ctx.translate(dx, dy);
+    ctx.scale(dw / BOOTH_NATIVE_W, dh / BOOTH_NATIVE_H);
+    drawStableBoothContents(ctx, horse, animTime, phase);
+    ctx.restore();
 }
 
 export const ANIMAL_SPRITES: Record<string, ProceduralSpriteDef> = {
     stable_booth: {
-        nativeWidth: 96,
-        nativeHeight: 128,
+        nativeWidth: BOOTH_NATIVE_W,
+        nativeHeight: BOOTH_NATIVE_H,
         draw(ctx) {
-            drawStableBooth(ctx, {
-                coat: P.horseCoat,
-                light: P.horseCoatLight,
-                mid: P.horseCoatMid,
-                dark: P.horseCoatDark,
-                mane: P.horseMane
-            });
+            drawStableBoothContents(ctx, HORSE_PALETTES.stable_booth, 0, 0);
         }
     },
 
     stable_booth_bay: {
-        nativeWidth: 96,
-        nativeHeight: 128,
+        nativeWidth: BOOTH_NATIVE_W,
+        nativeHeight: BOOTH_NATIVE_H,
         draw(ctx) {
-            drawStableBooth(ctx, {
-                coat: P.horseBay,
-                light: P.horseBayLight,
-                mid: P.horseCoatMid,
-                dark: P.horseCoatDark,
-                mane: P.horseMane,
-                blaze: P.cream,
-                socks: true
-            });
+            drawStableBoothContents(ctx, HORSE_PALETTES.stable_booth_bay, 0, 0);
         }
     },
 
     stable_booth_gray: {
-        nativeWidth: 96,
-        nativeHeight: 128,
+        nativeWidth: BOOTH_NATIVE_W,
+        nativeHeight: BOOTH_NATIVE_H,
         draw(ctx) {
-            drawStableBooth(ctx, {
-                coat: P.horseGray,
-                light: P.horseGrayLight,
-                mid: P.horseGrayMid,
-                dark: P.horseGrayDark,
-                mane: P.horseManeLight,
-                blaze: P.white
-            });
+            drawStableBoothContents(ctx, HORSE_PALETTES.stable_booth_gray, 0, 0);
         }
     }
 };

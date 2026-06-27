@@ -1,5 +1,6 @@
 import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
 import { drawFountainAnimated } from "../assets/procedural/fountain";
+import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TILE_SIZE } from "../world/constants";
 import { tileBounds } from "../world/interactableTiles";
@@ -32,6 +33,7 @@ export function furnitureActorFromInteractable(
 
     const isFireplace = spriteName === "fireplace";
     const isFountain = spriteName === "fountain";
+    const isStableBooth = spriteName.startsWith("stable_booth");
     const decorW = obj.drawWidthTiles;
     const decorH = obj.drawHeightTiles;
     const hasDecorDraw = decorW != null && decorH != null;
@@ -66,8 +68,8 @@ export function furnitureActorFromInteractable(
         drawY = minY * TILE_SIZE;
     }
 
-    const sortY = hasDecorDraw || isFireplace || isFountain ? drawY : minY * TILE_SIZE;
-    const sortH = hasDecorDraw || isFireplace || isFountain ? drawH : heightTiles * TILE_SIZE;
+    const sortY = hasDecorDraw || isFireplace || isFountain || isStableBooth ? drawY : minY * TILE_SIZE;
+    const sortH = hasDecorDraw || isFireplace || isFountain || isStableBooth ? drawH : heightTiles * TILE_SIZE;
 
     return {
         y: sortY,
@@ -77,6 +79,18 @@ export function furnitureActorFromInteractable(
                 drawFireplaceAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
             } else if (spriteName === "fountain") {
                 drawFountainAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
+            } else if (isStableBooth) {
+                const phase = horseAnimPhase(minX, minY);
+                drawStableBoothAnimated(
+                    ctx,
+                    drawX,
+                    drawY,
+                    drawW,
+                    drawH,
+                    getAnimTime(),
+                    phase,
+                    spriteName
+                );
             } else {
                 spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
             }

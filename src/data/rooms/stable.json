@@ -3,7 +3,38 @@
   "width": 25,
   "height": 18,
   "floorTile": "gravel",
-  "furniture": [],
+  "furniture": [
+    {
+      "furnitureId": "stable_booth",
+      "x": 2,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "stable_booth_bay",
+      "x": 6,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "stable_booth_gray",
+      "x": 10,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "stable_booth",
+      "x": 14,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "stable_booth_bay",
+      "x": 18,
+      "y": 1,
+      "anchor": "top-left"
+    }
+  ],
   "exits": [
     {
       "x": 0,

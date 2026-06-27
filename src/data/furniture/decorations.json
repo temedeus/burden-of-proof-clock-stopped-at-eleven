@@ -297,5 +297,44 @@
     "interactionType": "confirm",
     "confirmId": "study_secret",
     "confirmPrompt": "One volume sits loose on the shelf, almost asking to be pulled. Will you tug it free?"
+  },
+  "stable_booth": {
+    "id": "stable_booth",
+    "name": "Stall",
+    "description": "A chestnut horse shifts restlessly in the straw.",
+    "width": 3,
+    "height": 4,
+    "drawWidth": 3,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 4,
+    "collisionWidth": 3,
+    "spriteName": "stable_booth"
+  },
+  "stable_booth_bay": {
+    "id": "stable_booth_bay",
+    "name": "Stall",
+    "description": "A bay horse stamps its hoof against the straw.",
+    "width": 3,
+    "height": 4,
+    "drawWidth": 3,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 4,
+    "collisionWidth": 3,
+    "spriteName": "stable_booth_bay"
+  },
+  "stable_booth_gray": {
+    "id": "stable_booth_gray",
+    "name": "Stall",
+    "description": "A dappled grey dozes with one ear turned toward the door.",
+    "width": 3,
+    "height": 4,
+    "drawWidth": 3,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 4,
+    "collisionWidth": 3,
+    "spriteName": "stable_booth_gray"
   }
 }

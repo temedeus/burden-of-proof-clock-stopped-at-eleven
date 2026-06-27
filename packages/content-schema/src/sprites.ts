@@ -45,7 +45,10 @@ export const VALID_SPRITE_NAMES = [
     "bathtub",
     "toilet",
     "water_boiler",
-    "secret_bookshelf"
+    "secret_bookshelf",
+    "stable_booth",
+    "stable_booth_bay",
+    "stable_booth_gray"
 ] as const;
 
 export type SpriteName = (typeof VALID_SPRITE_NAMES)[number];

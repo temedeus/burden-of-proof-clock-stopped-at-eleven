@@ -111,5 +111,25 @@ export const P = {
     rockMid: "#38363c",
     rockLight: "#424048",
     rockHi: "#4c4a50",
-    rockFleck: "#1c1a20"
+    rockFleck: "#1c1a20",
+
+    straw: "#a89868",
+    strawLight: "#c4b480",
+    horseCoat: "#6b4a36",
+    horseCoatLight: "#9a7058",
+    horseCoatMid: "#7a5844",
+    horseCoatDark: "#4a3020",
+    horseBay: "#4a2818",
+    horseBayLight: "#7a4830",
+    horseGray: "#6a6868",
+    horseGrayLight: "#9a9898",
+    horseGrayMid: "#7a7878",
+    horseGrayDark: "#4a4848",
+    horseMane: "#1a1410",
+    horseManeLight: "#3a3838",
+    horseHoof: "#2a2018",
+    horseMuzzle: "#8a7060",
+    horseNostril: "#2a1810",
+    horseEyeWhite: "#ece8e0",
+    horseSock: "#d8d0c8"
 } as const;

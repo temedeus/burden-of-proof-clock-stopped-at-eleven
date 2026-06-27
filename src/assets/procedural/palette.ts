@@ -92,6 +92,12 @@ export const P = {
     fireYellow: "#e8a030",
     fireRed: "#8a2010",
 
+    iron: "#4a4a52",
+    ironDark: "#323238",
+    glass: "#8a9aa8",
+    glassHi: "#b8c8d4",
+    glassShine: "#dce8f0",
+
     leafDark: "#1a3818",
     leaf: "#286830",
     leafLight: "#48a048",

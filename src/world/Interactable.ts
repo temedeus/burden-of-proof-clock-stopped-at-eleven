@@ -16,6 +16,8 @@ export interface Interactable {
     renderAnchor?: "center" | "bottom";
     /** Floor decal: no blocking; drawn beneath NPCs/player (see Game render pass). */
     walkableDecor?: boolean;
+    /** No examine prompt or clue pickup. */
+    nonInteractive?: boolean;
     /** When set, interaction shows a yes/no confirmation instead of immediate examine. */
     interactionType?: "confirm";
     confirmId?: string;

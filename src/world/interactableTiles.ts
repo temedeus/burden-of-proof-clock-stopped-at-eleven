@@ -4,7 +4,7 @@ export type TileCoord = { x: number; y: number };
 
 /** Tiles used for examine / clue targeting (defaults to collision tiles if unset). */
 export function getInteractionTiles(obj: Interactable): TileCoord[] {
-    if (obj.interactionTiles && obj.interactionTiles.length > 0) {
+    if (obj.interactionTiles !== undefined) {
         return obj.interactionTiles;
     }
     return obj.tiles;

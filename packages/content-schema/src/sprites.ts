@@ -59,7 +59,8 @@ export const VALID_SPRITE_NAMES = [
     "stable_booth_bay",
     "stable_booth_gray",
     "wine_barrel",
-    "wine_rack"
+    "wine_rack",
+    "oil_lamp"
 ] as const;
 
 export type SpriteName = (typeof VALID_SPRITE_NAMES)[number];

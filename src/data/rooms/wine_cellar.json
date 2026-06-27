@@ -118,6 +118,42 @@
       "x": 11,
       "y": 12,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 1,
+      "y": 4,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 1,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 1,
+      "y": 13,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 23,
+      "y": 4,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 23,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 23,
+      "y": 13,
+      "anchor": "top-left"
     }
   ],
   "exits": [

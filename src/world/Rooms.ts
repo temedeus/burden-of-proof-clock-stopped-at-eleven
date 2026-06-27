@@ -93,6 +93,7 @@ function placeFurniture(
             : {}),
         ...(furniture.renderAnchor ? { renderAnchor: furniture.renderAnchor } : {}),
         ...(furniture.walkableDecor ? { walkableDecor: true } : {}),
+        ...(furniture.nonInteractive ? { nonInteractive: true } : {}),
         ...(furniture.interactionType === "confirm"
             ? {
                   interactionType: "confirm" as const,
@@ -122,7 +123,7 @@ function placeFurniture(
                 }
             }
         }
-        interactable.interactionTiles = [...interactable.tiles];
+        interactable.interactionTiles = furniture.nonInteractive ? [] : [...interactable.tiles];
         return interactable;
     }
 

@@ -1,5 +1,6 @@
 import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
 import { drawFountainAnimated } from "../assets/procedural/fountain";
+import { drawOilLampAnimated, oilLampAnimPhase } from "../assets/procedural/oil_lamp";
 import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TILE_SIZE } from "../world/constants";
@@ -10,9 +11,37 @@ import { renderTileMap } from "./tileMapRender";
 
 export type DepthActor = { y: number; height: number; render(ctx: CanvasRenderingContext2D): void };
 
+function snapOilLampToWall(
+    drawX: number,
+    drawY: number,
+    drawW: number,
+    drawH: number,
+    minX: number,
+    minY: number,
+    maxX: number,
+    maxY: number,
+    roomW: number,
+    roomH: number
+): { drawX: number; drawY: number } {
+    let x = drawX;
+    let y = drawY;
+    if (minY <= 1) {
+        y = 0;
+    } else if (maxY >= roomH - 2) {
+        y = (roomH - 1) * TILE_SIZE - drawH;
+    }
+    if (minX <= 1) {
+        x = 0;
+    } else if (maxX >= roomW - 2) {
+        x = (roomW - 1) * TILE_SIZE - drawW;
+    }
+    return { drawX: x, drawY: y };
+}
+
 export function furnitureActorFromInteractable(
     obj: Interactable,
-    getAnimTime: () => number
+    getAnimTime: () => number,
+    roomSize?: { width: number; height: number }
 ): DepthActor {
     const minX = Math.min(...obj.tiles.map((t) => t.x));
     const maxX = Math.max(...obj.tiles.map((t) => t.x));
@@ -33,6 +62,7 @@ export function furnitureActorFromInteractable(
 
     const isFireplace = spriteName === "fireplace";
     const isFountain = spriteName === "fountain";
+    const isOilLamp = spriteName === "oil_lamp";
     const isStableBooth = spriteName.startsWith("stable_booth");
     const decorW = obj.drawWidthTiles;
     const decorH = obj.drawHeightTiles;
@@ -68,8 +98,25 @@ export function furnitureActorFromInteractable(
         drawY = minY * TILE_SIZE;
     }
 
-    const sortY = hasDecorDraw || isFireplace || isFountain || isStableBooth ? drawY : minY * TILE_SIZE;
-    const sortH = hasDecorDraw || isFireplace || isFountain || isStableBooth ? drawH : heightTiles * TILE_SIZE;
+    if (isOilLamp && roomSize) {
+        const snapped = snapOilLampToWall(
+            drawX,
+            drawY,
+            drawW,
+            drawH,
+            minX,
+            minY,
+            maxX,
+            maxY,
+            roomSize.width,
+            roomSize.height
+        );
+        drawX = snapped.drawX;
+        drawY = snapped.drawY;
+    }
+
+    const sortY = hasDecorDraw || isFireplace || isFountain || isOilLamp || isStableBooth ? drawY : minY * TILE_SIZE;
+    const sortH = hasDecorDraw || isFireplace || isFountain || isOilLamp || isStableBooth ? drawH : heightTiles * TILE_SIZE;
 
     return {
         y: sortY,
@@ -79,6 +126,16 @@ export function furnitureActorFromInteractable(
                 drawFireplaceAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
             } else if (spriteName === "fountain") {
                 drawFountainAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
+            } else if (isOilLamp) {
+                drawOilLampAnimated(
+                    ctx,
+                    drawX,
+                    drawY,
+                    drawW,
+                    drawH,
+                    getAnimTime(),
+                    oilLampAnimPhase(minX, minY)
+                );
             } else if (isStableBooth) {
                 const phase = horseAnimPhase(minX, minY);
                 drawStableBoothAnimated(
@@ -188,7 +245,10 @@ export function renderRoomScene(
     const rugActors: DepthActor[] = [];
     const furnitureActors: DepthActor[] = [];
     for (const obj of room.interactables) {
-        const actor = furnitureActorFromInteractable(obj, getAnimTime);
+        const actor = furnitureActorFromInteractable(obj, getAnimTime, {
+            width: room.map.width,
+            height: room.map.height
+        });
         if (obj.walkableDecor) {
             rugActors.push(actor);
         } else {

@@ -2,12 +2,62 @@
   "id": "cellar_storage",
   "width": 25,
   "height": 18,
+  "floorTile": "rock",
+  "wallTile": "rock",
   "furniture": [
     {
       "furnitureId": "staircase",
       "x": "center",
-      "y": 2,
+      "y": 1,
       "anchor": "center"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 3,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 9,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 15,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 21,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 1,
+      "y": 6,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 1,
+      "y": 12,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 23,
+      "y": 6,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 23,
+      "y": 12,
+      "anchor": "top-left"
     }
   ],
   "exits": [

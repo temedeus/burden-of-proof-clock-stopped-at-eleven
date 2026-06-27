@@ -4,7 +4,38 @@
   "height": 12,
   "floorTile": "rock",
   "wallTile": "rock",
-  "furniture": [],
+  "furniture": [
+    {
+      "furnitureId": "oil_lamp",
+      "x": 1,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 16,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 1,
+      "y": 10,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 16,
+      "y": 10,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 8,
+      "y": 6,
+      "anchor": "top-left"
+    }
+  ],
   "exits": [
     {
       "x": "center",

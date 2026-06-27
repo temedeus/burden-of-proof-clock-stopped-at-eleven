@@ -72,6 +72,7 @@ export class InteractionSystem {
 
         // Check interactables — target interaction tiles (sprite/examine area), not collision only
         for (const obj of room.interactables) {
+            if (obj.nonInteractive) continue;
             const interactTiles = getInteractionTiles(obj);
             const targetOverlapsFurniture = interactTiles.some((t) => t.x === x && t.y === y);
 

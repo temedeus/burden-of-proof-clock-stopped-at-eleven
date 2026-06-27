@@ -2,6 +2,7 @@ import { Entity } from "./Entity";
 import { Input } from "../engine/Input";
 import { TILE_SIZE } from "../world/constants";
 import { TileMap } from "../world/TileMap";
+import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_FURNITURE } from "../world/TileTypes";
 import { NPC } from "./NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
 import type { CharacterPose } from "../assets/procedural/characters";
@@ -89,7 +90,7 @@ export class Player extends Entity {
                     return true;
                 }
                 const tile = map.getTile(tx, ty);
-                if (tile === 1) { // TILE_WALL - strict collision
+                if (tile === TILE_WALL || tile === TILE_WOOD_WALL || tile === TILE_ROCK_WALL) {
                     return true;
                 }
             }
@@ -101,7 +102,7 @@ export class Player extends Entity {
                 continue;
             }
             const tile = map.getTile(tx, bottomRow);
-            if (tile === 2) { // TILE_FURNITURE - only bottom row checks
+            if (tile === TILE_FURNITURE) { // only bottom row checks
                 return true;
             }
         }

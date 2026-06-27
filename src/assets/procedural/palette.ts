@@ -113,6 +113,16 @@ export const P = {
     rockHi: "#4c4a50",
     rockFleck: "#1c1a20",
 
+    /** Darker cave-floor tones (floor tiles only — walls stay brighter for contrast). */
+    rockFloorVoid: "#06050a",
+    rockFloorShadow: "#0c0a10",
+    rockFloorDark: "#121018",
+    rockFloor: "#18161c",
+    rockFloorMid: "#1e1c22",
+    rockFloorLight: "#242228",
+    rockFloorHi: "#2a2830",
+    rockFloorFleck: "#08060c",
+
     straw: "#a89868",
     strawLight: "#c4b480",
     horseCoat: "#6b4a36",

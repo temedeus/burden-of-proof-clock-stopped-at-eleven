@@ -227,29 +227,32 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     staircase: {
-        nativeWidth: 32,
-        nativeHeight: 32,
+        nativeWidth: 96,
+        nativeHeight: 64,
         draw(ctx) {
-            // Top-down view — even treads, same width (reads correctly against a wall)
-            const sx = 4;
-            const sw = 24;
+            // Top-down — 3×2 tiles, treads flush to sprite bounds (aligns with footprint grid)
             const stepCount = 6;
-            const sh = 4;
-            const top = 32 - stepCount * sh;
+            const sh = 10;
+            const top = 2;
+            const bottom = 62;
 
             for (let i = 0; i < stepCount; i++) {
-                const y = top + i * sh;
-                r(ctx, sx, y, sw, sh - 1, P.stoneLight);
-                r(ctx, sx, y, sw, 1, P.stoneHi);
-                r(ctx, sx + 1, y + sh - 2, sw - 2, 1, P.stone);
+                const t = i / (stepCount - 1);
+                const y = top + Math.round(t * (bottom - top - sh));
+                const inset = Math.round(t * 10);
+                const left = 6 + inset;
+                const w = 84 - inset * 2;
+                r(ctx, left, y, w, sh - 2, P.stoneLight);
+                r(ctx, left, y, w, 1, P.stoneHi);
+                r(ctx, left + 1, y + sh - 3, w - 2, 1, P.stone);
             }
 
-            r(ctx, 2, top, 2, stepCount * sh, P.woodDark);
-            r(ctx, 28, top, 2, stepCount * sh, P.woodDark);
-            r(ctx, 2, top, 2, 2, P.woodHi);
-            r(ctx, 28, top, 2, 2, P.woodHi);
-            r(ctx, 3, 26, 3, 4, P.wood);
-            r(ctx, 26, 26, 3, 4, P.wood);
+            r(ctx, 2, top, 4, bottom - top, P.woodDark);
+            r(ctx, 90, top, 4, bottom - top, P.woodDark);
+            r(ctx, 2, top, 4, 2, P.woodHi);
+            r(ctx, 90, top, 4, 2, P.woodHi);
+            r(ctx, 4, bottom - 8, 4, 6, P.wood);
+            r(ctx, 88, bottom - 8, 4, 6, P.wood);
         }
     },
 
@@ -414,6 +417,79 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
             r(ctx, 48, 16, 10, 12, P.redLight);
             r(ctx, 56, 17, 4, 10, P.cream);
             r(ctx, 58, 18, 2, 8, P.highlight);
+        }
+    },
+
+    wine_barrel: {
+        nativeWidth: 64,
+        nativeHeight: 64,
+        draw(ctx) {
+            const cx = 32;
+            const cy = 32;
+            // Barrel body — elliptical top-down
+            grid(ctx, 14, 10, 2, [
+                "....dddddddd....",
+                "..ddhhhhhhll..",
+                ".ddhhhhhhhlll.",
+                "ddhhhhhhhhllll",
+                "ddhhhhhhhhllll",
+                "ddhhhhhhhhllll",
+                "ddhhhhhhhhllll",
+                ".ddhhhhhhhlll.",
+                "..ddhhhhhhll..",
+                "....dddddddd...."
+            ], {
+                d: P.woodDark,
+                h: P.wood,
+                l: P.woodLight
+            });
+            // Metal hoops
+            r(ctx, 12, 16, 40, 3, P.silverDark);
+            r(ctx, 12, 30, 40, 3, P.silverDark);
+            r(ctx, 12, 44, 40, 3, P.silverDark);
+            r(ctx, 12, 16, 40, 1, P.silver);
+            r(ctx, 12, 30, 40, 1, P.silver);
+            r(ctx, 12, 44, 40, 1, P.silver);
+            // Stave highlights
+            r(ctx, 20, 14, 2, 36, P.woodHi);
+            r(ctx, 30, 12, 2, 40, P.woodHi);
+            r(ctx, 40, 14, 2, 36, P.woodDark);
+            // Bung hole
+            r(ctx, cx - 2, cy - 4, 4, 4, P.woodDark);
+            r(ctx, cx - 1, cy - 3, 2, 2, P.shadow);
+        }
+    },
+
+    wine_rack: {
+        nativeWidth: 96,
+        nativeHeight: 64,
+        draw(ctx) {
+            // Stone alcove with horizontal bottle slots (classic cellar rack)
+            r(ctx, 0, 8, 96, 56, P.rockDark);
+            r(ctx, 2, 10, 92, 52, P.rock);
+            r(ctx, 4, 12, 88, 48, P.rockVoid);
+
+            const drawBottleRow = (y: number) => {
+                for (let i = 0; i < 5; i++) {
+                    const bx = 8 + i * 17;
+                    r(ctx, bx, y, 14, 10, P.woodDark);
+                    r(ctx, bx + 1, y + 1, 12, 8, P.wood);
+                    // Bottle lying on side
+                    r(ctx, bx + 2, y + 3, 10, 4, P.wine);
+                    r(ctx, bx + 1, y + 4, 2, 2, P.green);
+                    r(ctx, bx + 10, y + 4, 2, 2, P.cream);
+                }
+            };
+
+            drawBottleRow(16);
+            drawBottleRow(34);
+
+            // Stone arch at top
+            r(ctx, 0, 0, 96, 12, P.rockLight);
+            r(ctx, 4, 0, 88, 10, P.rock);
+            r(ctx, 20, 2, 56, 6, P.rockVoid);
+            r(ctx, 0, 0, 96, 2, P.rockHi);
+            r(ctx, 0, 62, 96, 2, P.outline);
         }
     }
 };

@@ -5,7 +5,7 @@
   "furniture": [
     {
       "furnitureId": "staircase",
-      "x": 12,
+      "x": "center",
       "y": 2,
       "anchor": "center"
     }

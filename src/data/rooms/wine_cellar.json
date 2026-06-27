@@ -2,7 +2,124 @@
   "id": "wine_cellar",
   "width": 25,
   "height": 18,
-  "furniture": [],
+  "floorTile": "rock",
+  "wallTile": "rock",
+  "furniture": [
+    {
+      "furnitureId": "wine_rack",
+      "x": 2,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_rack",
+      "x": 6,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_rack",
+      "x": 10,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_rack",
+      "x": 14,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_rack",
+      "x": 18,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_rack",
+      "x": 2,
+      "y": 14,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_rack",
+      "x": 6,
+      "y": 14,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_rack",
+      "x": 14,
+      "y": 14,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_rack",
+      "x": 18,
+      "y": 14,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 4,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 8,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 12,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 16,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 20,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 6,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 10,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 14,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 18,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 11,
+      "y": 12,
+      "anchor": "top-left"
+    }
+  ],
   "exits": [
     {
       "x": 0,

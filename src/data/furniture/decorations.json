@@ -228,10 +228,10 @@
     "id": "staircase",
     "name": "Staircase",
     "description": "Stone steps leading to another floor.",
-    "width": 2,
+    "width": 3,
     "height": 2,
-    "drawWidth": 4,
-    "drawHeight": 4,
+    "drawWidth": 3,
+    "drawHeight": 2,
     "renderAnchor": "bottom",
     "walkableDecor": true,
     "spriteName": "staircase"
@@ -336,5 +336,31 @@
     "collisionRowsFromBottom": 4,
     "collisionWidth": 3,
     "spriteName": "stable_booth_gray"
+  },
+  "wine_barrel": {
+    "id": "wine_barrel",
+    "name": "Wine barrel",
+    "description": "An oak cask, still heavy with age.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 2,
+    "spriteName": "wine_barrel"
+  },
+  "wine_rack": {
+    "id": "wine_rack",
+    "name": "Wine rack",
+    "description": "Dusty bottles lie in stone niches.",
+    "width": 3,
+    "height": 2,
+    "drawWidth": 3,
+    "drawHeight": 2,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 3,
+    "spriteName": "wine_rack"
   }
 }

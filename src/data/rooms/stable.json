@@ -3,6 +3,7 @@
   "width": 25,
   "height": 18,
   "floorTile": "gravel",
+  "wallTile": "wood",
   "furniture": [
     {
       "furnitureId": "stable_booth",
@@ -41,7 +42,8 @@
       "y": "center",
       "targetRoom": "courtyard",
       "spawnX": 17,
-      "spawnY": "center"
+      "spawnY": "center",
+      "doorSprite": "door_wood"
     }
   ]
 }

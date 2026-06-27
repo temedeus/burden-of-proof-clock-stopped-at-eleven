@@ -1,6 +1,8 @@
 import { TILE_SIZE } from "./constants";
 import {
     TILE_WALL,
+    TILE_WOOD_WALL,
+    TILE_ROCK_WALL,
     TILE_FURNITURE,
     TILE_DOOR,
     TILE_FLOOR,
@@ -33,6 +35,8 @@ export class TileMap {
         const tile = this.tiles[ty * this.width + tx];
         if (
             tile === TILE_WALL ||
+            tile === TILE_WOOD_WALL ||
+            tile === TILE_ROCK_WALL ||
             tile === TILE_FURNITURE ||
             tile === TILE_FENCE ||
             tile === TILE_FENCE_POST

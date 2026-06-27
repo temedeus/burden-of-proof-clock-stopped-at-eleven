@@ -3,6 +3,7 @@
   "width": 18,
   "height": 12,
   "floorTile": "rock",
+  "wallTile": "rock",
   "furniture": [],
   "exits": [
     {

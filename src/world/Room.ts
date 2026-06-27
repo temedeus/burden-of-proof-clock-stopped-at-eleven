@@ -9,6 +9,7 @@ export interface DoorExit {
     spawnX: number;
     spawnY: number;
     skipDoorSprite?: boolean;
+    doorSprite?: "door_wood";
     requiresUnlock?: string;
 }
 

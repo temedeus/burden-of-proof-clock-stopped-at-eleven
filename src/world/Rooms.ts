@@ -9,6 +9,8 @@ import {
     TILE_GRASS,
     TILE_GRAVEL,
     TILE_WALL,
+    TILE_WOOD_WALL,
+    TILE_ROCK_WALL,
     TILE_CERAMIC,
     TILE_ROCK
 } from "./TileTypes";
@@ -253,16 +255,22 @@ export function createRoomFromConfig(
                 : config.floorTile === "rock"
                   ? TILE_ROCK
                   : TILE_FLOOR;
+    const perimeterWall =
+        config.wallTile === "wood"
+            ? TILE_WOOD_WALL
+            : config.wallTile === "rock"
+              ? TILE_ROCK_WALL
+              : TILE_WALL;
     const tiles = new Array(roomWidth * roomHeight).fill(baseFloor);
 
     for (let x = 0; x < roomWidth; x++) {
-        tiles[x] = TILE_WALL;
-        tiles[(roomHeight - 1) * roomWidth + x] = TILE_WALL;
+        tiles[x] = perimeterWall;
+        tiles[(roomHeight - 1) * roomWidth + x] = perimeterWall;
     }
 
     for (let y = 0; y < roomHeight; y++) {
-        tiles[y * roomWidth] = TILE_WALL;
-        tiles[y * roomWidth + (roomWidth - 1)] = TILE_WALL;
+        tiles[y * roomWidth] = perimeterWall;
+        tiles[y * roomWidth + (roomWidth - 1)] = perimeterWall;
     }
 
     if (config.gravelPath) {
@@ -315,6 +323,7 @@ export function createRoomFromConfig(
             spawnX: resolvePosition(exit.spawnX, spawnW),
             spawnY: resolveSpawnY(exit.spawnY, spawnH),
             ...(exit.skipDoorSprite ? { skipDoorSprite: true } : {}),
+            ...(exit.doorSprite ? { doorSprite: exit.doorSprite } : {}),
             ...(exit.requiresUnlock ? { requiresUnlock: exit.requiresUnlock } : {})
         };
     });

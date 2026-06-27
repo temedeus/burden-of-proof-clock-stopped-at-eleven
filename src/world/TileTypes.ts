@@ -14,3 +14,7 @@ export const TILE_FENCE_POST = 7;
 export const TILE_CERAMIC = 8;
 /** Rough stone / rocky cave floor */
 export const TILE_ROCK = 9;
+/** Barn-style wooden wall boards */
+export const TILE_WOOD_WALL = 10;
+/** Natural stone cave / cellar wall */
+export const TILE_ROCK_WALL = 11;

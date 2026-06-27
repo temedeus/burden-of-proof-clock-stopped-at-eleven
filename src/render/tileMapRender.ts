@@ -1,4 +1,5 @@
 import { spriteLoader } from "../assets/SpriteLoader";
+import { rockFloorSpriteName, rockWallSpriteName } from "../assets/procedural/tiles";
 import { TILE_TO_SPRITE } from "../assets/SpriteMap";
 import { TILE_SIZE } from "../world/constants";
 import {
@@ -10,7 +11,8 @@ import {
     TILE_FURNITURE,
     TILE_GRASS,
     TILE_GRAVEL,
-    TILE_ROCK
+    TILE_ROCK,
+    TILE_ROCK_WALL
 } from "../world/TileTypes";
 import type { TileMap } from "../world/TileMap";
 
@@ -32,7 +34,7 @@ function spriteUnderFurniture(map: TileMap, x: number, y: number): string {
         if (t === TILE_GRASS) return "grass";
         if (t === TILE_GRAVEL) return "gravel";
         if (t === TILE_CERAMIC) return "ceramic";
-        if (t === TILE_ROCK) return "rock";
+        if (t === TILE_ROCK) return rockFloorSpriteName(x, y);
         if (t === TILE_FLOOR) return "floor";
     }
     return map.furnitureUnderlay === "grass"
@@ -42,7 +44,7 @@ function spriteUnderFurniture(map: TileMap, x: number, y: number): string {
           : map.furnitureUnderlay === "ceramic"
             ? "ceramic"
             : map.furnitureUnderlay === "rock"
-              ? "rock"
+              ? rockFloorSpriteName(x, y)
               : "floor";
 }
 
@@ -60,7 +62,9 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                 : tile === TILE_CERAMIC
                   ? "ceramic"
                   : tile === TILE_ROCK
-                    ? "rock"
+                    ? rockFloorSpriteName(x, y)
+                    : tile === TILE_ROCK_WALL
+                      ? rockWallSpriteName(x, y)
                     : tile === TILE_FURNITURE
                       ? spriteUnderFurniture(map, x, y)
                       : tile === TILE_FENCE

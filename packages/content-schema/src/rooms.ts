@@ -18,6 +18,8 @@ export interface ExitConfig {
     spawnY: SpawnYToken;
     /** When true, no door sprite is drawn (hidden passages, staircases). */
     skipDoorSprite?: boolean;
+    /** Door sprite override (default `door`; stable uses `door_wood`). */
+    doorSprite?: "door_wood";
     /** Exit is blocked until the named unlock id is satisfied (e.g. `study_secret`). */
     requiresUnlock?: string;
 }
@@ -39,6 +41,8 @@ export interface RoomConfig {
     width: number;
     height: number;
     floorTile?: "floor" | "grass" | "gravel" | "ceramic" | "rock";
+    /** Perimeter wall style (default red brick). */
+    wallTile?: "brick" | "wood" | "rock";
     gravelPath?: GravelPathConfig;
     /** Replace the south wall row with iron fence tiles (gate gap from gravel path). */
     southFenceBorder?: boolean;

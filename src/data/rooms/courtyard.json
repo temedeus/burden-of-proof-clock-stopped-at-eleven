@@ -19,8 +19,8 @@
     },
     {
       "furnitureId": "staircase",
-      "x": 12,
-      "y": "bottom",
+      "x": "center",
+      "y": 16,
       "anchor": "center"
     }
   ],
@@ -37,7 +37,8 @@
       "y": "center",
       "targetRoom": "stable",
       "spawnX": 1,
-      "spawnY": "center"
+      "spawnY": "center",
+      "doorSprite": "door_wood"
     },
     {
       "x": "center",

@@ -136,11 +136,12 @@ export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void
     for (const exit of room.exits) {
         if (exitSkipsDoorSprite(room, exit)) continue;
 
+        const doorSprite = exit.doorSprite ?? "door";
         const isTopOrBottom = exit.y === 0 || exit.y === room.map.height - 1;
         if (isTopOrBottom) {
             spriteLoader.drawSprite(
                 ctx,
-                "door",
+                doorSprite,
                 (exit.x - 1) * TILE_SIZE,
                 exit.y * TILE_SIZE,
                 TILE_SIZE * 3,
@@ -149,7 +150,7 @@ export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void
         } else {
             spriteLoader.drawSprite(
                 ctx,
-                "door",
+                doorSprite,
                 exit.x * TILE_SIZE - 1,
                 (exit.y - 1) * TILE_SIZE - 1,
                 TILE_SIZE + 2,

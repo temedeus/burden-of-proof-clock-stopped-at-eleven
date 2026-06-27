@@ -1,7 +1,13 @@
 export const VALID_SPRITE_NAMES = [
     "wall",
+    "wall_wood",
+    "wall_rock",
+    "wall_rock_b",
+    "wall_rock_c",
+    "wall_rock_d",
     "floor",
     "door",
+    "door_wood",
     "table",
     "bookshelf",
     "npc_male",
@@ -42,13 +48,18 @@ export const VALID_SPRITE_NAMES = [
     "carpet",
     "ceramic",
     "rock",
+    "rock_b",
+    "rock_c",
+    "rock_d",
     "bathtub",
     "toilet",
     "water_boiler",
     "secret_bookshelf",
     "stable_booth",
     "stable_booth_bay",
-    "stable_booth_gray"
+    "stable_booth_gray",
+    "wine_barrel",
+    "wine_rack"
 ] as const;
 
 export type SpriteName = (typeof VALID_SPRITE_NAMES)[number];

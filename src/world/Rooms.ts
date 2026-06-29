@@ -86,6 +86,9 @@ function hasLegacyInteraction(furniture: FurnitureConfig): boolean {
     );
 }
 
+/** How many tiles deep each auto-generated interaction face extends toward the player. */
+const INTERACTION_FACE_DEPTH = 2;
+
 function buildAutoFaceStrip(
     ix: number,
     iy: number,
@@ -102,18 +105,27 @@ function buildAutoFaceStrip(
         }
     };
 
+    // Two tiles deep inward from the draw edge on the approached side.
     switch (face) {
         case "north":
-            for (let x = ix; x < ix + iw; x++) push(x, iy);
+            for (let d = 0; d < INTERACTION_FACE_DEPTH; d++) {
+                for (let x = ix; x < ix + iw; x++) push(x, iy + d);
+            }
             break;
         case "south":
-            for (let x = ix; x < ix + iw; x++) push(x, iy + ih - 1);
+            for (let d = 0; d < INTERACTION_FACE_DEPTH; d++) {
+                for (let x = ix; x < ix + iw; x++) push(x, iy + ih - 1 - d);
+            }
             break;
         case "west":
-            for (let y = iy; y < iy + ih; y++) push(ix, y);
+            for (let d = 0; d < INTERACTION_FACE_DEPTH; d++) {
+                for (let y = iy; y < iy + ih; y++) push(ix + d, y);
+            }
             break;
         case "east":
-            for (let y = iy; y < iy + ih; y++) push(ix + iw - 1, y);
+            for (let d = 0; d < INTERACTION_FACE_DEPTH; d++) {
+                for (let y = iy; y < iy + ih; y++) push(ix + iw - 1 - d, y);
+            }
             break;
     }
 

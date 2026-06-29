@@ -5,9 +5,9 @@ import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/an
 import { decorWallDrawBounds } from "../assets/procedural/wall_align";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TILE_SIZE } from "../world/constants";
-import { tileBounds } from "../world/interactableTiles";
+import { exitSkipsDoorSprite } from "../world/exitDoor";
 import type { Interactable } from "../world/Interactable";
-import type { DoorExit, Room } from "../world/Room";
+import type { Room } from "../world/Room";
 import { renderTileMap } from "./tileMapRender";
 
 export type DepthActor = { y: number; height: number; render(ctx: CanvasRenderingContext2D): void };
@@ -74,7 +74,7 @@ export function furnitureActorFromInteractable(
     }
 
     if (obj.wallAlign && roomSize && hasDecorDraw) {
-        const snapped = decorWallDrawBounds(obj.wallAlign, minX, maxX, drawW, drawH, roomSize.height);
+        const snapped = decorWallDrawBounds(obj.wallAlign, minX, maxX, maxY, drawW, drawH, roomSize.height);
         drawX = snapped.drawX;
         drawY = snapped.drawY;
     }
@@ -128,43 +128,9 @@ export function furnitureActorFromInteractable(
     };
 }
 
-export function exitHasStaircase(room: Room, exit: DoorExit): boolean {
-    const w = room.map.width;
-    const h = room.map.height;
-    const isTopOrBottom = exit.y === 0 || exit.y === h - 1;
-
-    for (const obj of room.interactables) {
-        if (obj.spriteName !== "staircase") continue;
-        const bounds = tileBounds(obj.tiles);
-        if (!bounds) continue;
-
-        if (isTopOrBottom) {
-            const onWall =
-                (exit.y === 0 && bounds.minY <= 2) || (exit.y === h - 1 && bounds.maxY >= h - 2);
-            if (!onWall) continue;
-            const doorLeft = exit.x - 1;
-            const doorRight = exit.x + 1;
-            if (bounds.maxX >= doorLeft && bounds.minX <= doorRight) return true;
-        } else {
-            const onWall =
-                (exit.x === 0 && bounds.minX <= 2) || (exit.x === w - 1 && bounds.maxX >= w - 2);
-            if (!onWall) continue;
-            const doorTop = exit.y - 1;
-            const doorBottom = exit.y + 1;
-            if (bounds.maxY >= doorTop && bounds.minY <= doorBottom) return true;
-        }
-    }
-    return false;
-}
-
-export function exitSkipsDoorSprite(room: Room, exit: DoorExit): boolean {
-    if (exit.skipDoorSprite) return true;
-    return exitHasStaircase(room, exit);
-}
-
 export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void {
     for (const exit of room.exits) {
-        if (exitSkipsDoorSprite(room, exit)) continue;
+        if (exitSkipsDoorSprite(exit, room.interactables, room.map.width, room.map.height)) continue;
 
         const doorSprite = exit.doorSprite ?? "door";
         const isTopOrBottom = exit.y === 0 || exit.y === room.map.height - 1;

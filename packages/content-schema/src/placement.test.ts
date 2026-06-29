@@ -74,6 +74,16 @@ describe("getCollisionTileRange", () => {
         expect(range).toEqual({ startX: 2, endX: 5, startY: 3, endY: 5 });
     });
 
+    it("insets top-row collision when collisionInsetTop is set", () => {
+        const range = getCollisionTileRange(2, -2, {
+            width: 5,
+            height: 7,
+            collisionRowsFromTop: 2,
+            collisionInsetTop: 5
+        });
+        expect(range).toEqual({ startX: 2, endX: 7, startY: 3, endY: 5 });
+    });
+
     it("centers a narrower collision width within the footprint", () => {
         const range = getCollisionTileRange(4, 6, {
             width: 4,

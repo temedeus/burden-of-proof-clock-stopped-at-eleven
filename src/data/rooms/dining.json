@@ -42,7 +42,8 @@
       "y": "top",
       "targetRoom": "garden",
       "spawnX": "center",
-      "spawnY": "bottom-2"
+      "spawnY": "bottom-2",
+      "skipDoorSprite": true
     }
   ]
 }

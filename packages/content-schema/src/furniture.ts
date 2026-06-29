@@ -38,6 +38,8 @@ export interface FurnitureConfig {
     collisionRowsFromBottom?: number;
     /** If set, only the top N rows are solid; lower rows stay walkable (e.g. fireplace mantle). */
     collisionRowsFromTop?: number;
+    /** Skip this many footprint rows before top-row collision (e.g. mantle above solid hearth). */
+    collisionInsetTop?: number;
     /** Render only: no tile blocking (e.g. floor carpet). */
     walkableDecor?: boolean;
     /** Examine / clues disabled (e.g. wall sconces). */

@@ -7,15 +7,19 @@ export function decorWallDrawBounds(
     align: WallAlign,
     minX: number,
     maxX: number,
+    maxY: number,
     drawW: number,
     drawH: number,
     roomH: number
 ): { drawX: number; drawY: number } {
     const footW = (maxX - minX + 1) * TILE_SIZE;
     const drawX = minX * TILE_SIZE + (footW - drawW) / 2;
+    if (align === "north") {
+        // Bottom-anchor tall sprites so extra draw height extends into the wall row.
+        return { drawX, drawY: (maxY + 1) * TILE_SIZE - drawH };
+    }
     const drawTiles = drawH / TILE_SIZE;
-    const drawY = align === "north" ? 0 : (roomH - drawTiles) * TILE_SIZE;
-    return { drawX, drawY };
+    return { drawX, drawY: (roomH - drawTiles) * TILE_SIZE };
 }
 
 /** Infer north/south wall alignment from placement center. */

@@ -174,11 +174,12 @@
     "drawWidth": 6,
     "drawHeight": 7,
     "renderAnchor": "bottom",
-    "collisionRowsFromTop": 4,
+    "collisionRowsFromTop": 2,
+    "collisionInsetTop": 5,
     "wallAlign": "north",
     "interactionWidth": 5,
     "interactionHeight": 2,
-    "interactionOffsetY": -3,
+    "interactionOffsetY": 0,
     "spriteName": "fireplace"
   },
   "kitchen_table": {

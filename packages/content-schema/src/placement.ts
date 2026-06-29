@@ -17,6 +17,8 @@ export interface FurnitureBoundsConfig {
     collisionRowsFromBottom?: number;
     /** Solid rows from the top of the footprint (e.g. tall fireplace mantle). */
     collisionRowsFromTop?: number;
+    /** Skip footprint rows before top-row collision begins. */
+    collisionInsetTop?: number;
     walkableDecor?: boolean;
     wallMount?: boolean;
 }
@@ -61,8 +63,9 @@ export function getCollisionTileRange(
     let collisionEndY: number;
     if (furniture.collisionRowsFromTop != null) {
         const rows = Math.min(Math.max(1, furniture.collisionRowsFromTop), furniture.height);
-        collisionStartY = startY;
-        collisionEndY = startY + rows;
+        const insetTop = Math.max(0, furniture.collisionInsetTop ?? 0);
+        collisionStartY = startY + insetTop;
+        collisionEndY = startY + insetTop + rows;
     } else {
         const collisionRows =
             furniture.collisionRowsFromBottom != null

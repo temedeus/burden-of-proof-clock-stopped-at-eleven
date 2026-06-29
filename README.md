@@ -38,6 +38,10 @@ Optional debug mode: `http://localhost:5173/?debug=true`
 
 Debug overlays show collision boundaries, interaction targets, and reach lines. Clue objects are highlighted in **amber** (uncollected) or **gray** (already in inventory), with clue ids labeled on the tile. Reload without `?debug=true` to disable.
 
+Optional mobile simulation on desktop: `http://localhost:5173/?simulateMobile=true` (or `?simulateMobile=1`)
+
+Shows the on-screen touch controls (joystick, Interact, Inventory, Menu) and mobile UI hints without a phone or tablet. Useful for testing touch input and layout in the browser devtools. Combine with other params, e.g. `?simulateMobile=true&debug=true`.
+
 ### Cases (authored in the editor)
 
 When `src/data/story/generated/stories/active.json` is valid, the game loads that story (clues on furniture, dialog overrides, culprit). Optional URL override (same file):

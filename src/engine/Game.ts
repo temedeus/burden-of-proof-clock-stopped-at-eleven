@@ -35,6 +35,7 @@ import {
     type RoomTitleBanner
 } from "../render/GameHud";
 import type { NPCConfig, NPCDialogConfig } from "@cse/content-schema";
+import { shouldShowTouchControls } from "./platform";
 
 type GameState = "playing" | "interacting" | "confirming" | "inventory" | "victory";
 
@@ -354,7 +355,12 @@ export class Game {
         }
 
         if (this.state === "confirming") {
-            if (this.input.wasPressed("y") || this.input.wasPressed("enter")) {
+            if (
+                this.input.wasPressed("y") ||
+                this.input.wasPressed("enter") ||
+                this.input.wasPressed("e") ||
+                this.input.wasPressed(" ")
+            ) {
                 const pending = this.pendingConfirmation;
                 this.pendingConfirmation = null;
                 const handled = pending
@@ -465,7 +471,10 @@ export class Game {
         }
 
         if (this.state === "confirming" && this.pendingConfirmation) {
-            drawMessageBox(ctx, `${this.pendingConfirmation.prompt}\n\nY — Yes    N — No`);
+            const confirmHint = shouldShowTouchControls()
+                ? "Tap Interact to confirm    Tap Menu to cancel"
+                : "E — Yes    Esc — No";
+            drawMessageBox(ctx, `${this.pendingConfirmation.prompt}\n\n${confirmHint}`);
         }
 
         if (this.clueNotification) {

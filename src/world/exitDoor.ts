@@ -2,19 +2,17 @@ import { tileBounds } from "./interactableTiles";
 import type { Interactable } from "./Interactable";
 import type { DoorExit } from "./Room";
 
-/** True when a wall-aligned decor or staircase blocks the door opening. */
-export function exitOverlapsWallDecor(
+function exitOverlapsDecorAtOpening(
     interactables: Interactable[],
     exit: Pick<DoorExit, "x" | "y">,
     roomWidth: number,
-    roomHeight: number
+    roomHeight: number,
+    include: (obj: Interactable) => boolean
 ): boolean {
     const isTopOrBottom = exit.y === 0 || exit.y === roomHeight - 1;
 
     for (const obj of interactables) {
-        const isStaircase = obj.spriteName === "staircase";
-        const isWallAligned = obj.wallAlign === "north" || obj.wallAlign === "south";
-        if (!isStaircase && !isWallAligned) continue;
+        if (!include(obj)) continue;
 
         const bounds = tileBounds(obj.tiles.length > 0 ? obj.tiles : obj.footprintTiles ?? []);
         if (!bounds) continue;
@@ -36,6 +34,38 @@ export function exitOverlapsWallDecor(
         }
     }
     return false;
+}
+
+/** True when a wall-aligned decor or staircase blocks the door opening. */
+export function exitOverlapsWallDecor(
+    interactables: Interactable[],
+    exit: Pick<DoorExit, "x" | "y">,
+    roomWidth: number,
+    roomHeight: number
+): boolean {
+    return exitOverlapsDecorAtOpening(
+        interactables,
+        exit,
+        roomWidth,
+        roomHeight,
+        (obj) => obj.spriteName === "staircase" || obj.wallAlign === "north" || obj.wallAlign === "south"
+    );
+}
+
+/** True when solid wall decor (e.g. fireplace) should replace door tiles with wall. */
+export function exitSkipsDoorTiles(
+    interactables: Interactable[],
+    exit: Pick<DoorExit, "x" | "y">,
+    roomWidth: number,
+    roomHeight: number
+): boolean {
+    return exitOverlapsDecorAtOpening(
+        interactables,
+        exit,
+        roomWidth,
+        roomHeight,
+        (obj) => !obj.walkableDecor && (obj.wallAlign === "north" || obj.wallAlign === "south")
+    );
 }
 
 export function exitSkipsDoorSprite(

@@ -20,7 +20,7 @@ import { loadFurnitureCatalog } from "../content/loadCatalog";
 import type { FurnitureConfig, FurniturePlacement, GravelPathConfig, InteractionFaceConfig, RoomConfig } from "@cse/content-schema";
 import { detectOilLampWallSide } from "../assets/procedural/oil_lamp";
 import { inferWallAlign } from "../assets/procedural/wall_align";
-import { exitSkipsDoorSprite } from "./exitDoor";
+import { exitSkipsDoorTiles } from "./exitDoor";
 import { getCollisionTileRange, resolvePosition, resolveSpawnY } from "@cse/content-schema";
 
 const furnitureConfigs = loadFurnitureCatalog();
@@ -565,7 +565,7 @@ export function createRoomFromConfig(
     });
 
     exits.forEach((exit) => {
-        if (exitSkipsDoorSprite(exit, interactables, roomWidth, roomHeight)) return;
+        if (exitSkipsDoorTiles(interactables, exit, roomWidth, roomHeight)) return;
 
         const isTopOrBottom = exit.y === 0 || exit.y === roomHeight - 1;
 

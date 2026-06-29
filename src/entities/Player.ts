@@ -107,27 +107,19 @@ export class Player extends Entity {
             }
         }
 
-        // Check NPCs - only check bottom row of player's tiles (pixel-based)
-        // This allows player to get closer from top/left/right directions
+        // Check NPCs — single centered foot tile (allows squeezing past diagonal pairs)
+        const playerFeetTileX = Math.floor((x + this.width / 2) / TILE_SIZE);
+        const playerFeetRowTop = y + this.height - TILE_SIZE;
+        const playerFeetRowBottom = y + this.height;
+
         for (const npc of npcs) {
-            // Player's bottom row spans from y + height - TILE_SIZE to y + height
-            const playerBottomRowTop = y + this.height - TILE_SIZE;
-            const playerBottomRowBottom = y + this.height;
-            
-            // NPC's bottom row spans from npc.y + npc.height - TILE_SIZE to npc.y + npc.height
-            const npcBottomRowTop = npc.y + npc.height - TILE_SIZE;
-            const npcBottomRowBottom = npc.y + npc.height;
-            
-            // Only check collision if player's bottom row overlaps with NPC's bottom row
-            // This allows passing when player and NPC are at different vertical levels
-            if (playerBottomRowBottom > npcBottomRowTop && playerBottomRowTop < npcBottomRowBottom) {
-                // Check horizontal overlap using pixel bounds
-                const playerRightX = x + this.width;
-                const npcRightX = npc.x + npc.width;
-                
-                // Only collide if there's actual overlap (not just touching)
-                if (playerRightX > npc.x && x < npcRightX) {
-                    return true; // Collision detected
+            const npcFeetTileX = Math.floor((npc.x + npc.width / 2) / TILE_SIZE);
+            const npcFeetRowTop = npc.y + npc.height - TILE_SIZE;
+            const npcFeetRowBottom = npc.y + npc.height;
+
+            if (playerFeetRowBottom > npcFeetRowTop && playerFeetRowTop < npcFeetRowBottom) {
+                if (playerFeetTileX === npcFeetTileX) {
+                    return true;
                 }
             }
         }

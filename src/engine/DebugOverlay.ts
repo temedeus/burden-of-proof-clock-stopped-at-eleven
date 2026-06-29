@@ -45,15 +45,21 @@ export function renderDebugOverlay(
         }
     }
 
-    // Player feet row (magenta) — used for furniture / NPC collision
+    // Player feet tile (magenta) — centered foot used for NPC / furniture collision
     const feetLeftTile = Math.floor(player.x / TILE_SIZE);
     const feetRightTile = Math.ceil((player.x + player.width) / TILE_SIZE);
     const feetBottomTile = Math.ceil((player.y + player.height) / TILE_SIZE);
     const feetRow = feetBottomTile - 1;
+    const feetCenterTileX = Math.floor((player.x + player.width / 2) / TILE_SIZE);
     ctx.fillStyle = "rgba(255, 0, 255, 0.25)";
-    ctx.fillRect(feetLeftTile * TILE_SIZE, feetRow * TILE_SIZE, (feetRightTile - feetLeftTile) * TILE_SIZE, TILE_SIZE);
+    ctx.fillRect(feetCenterTileX * TILE_SIZE, feetRow * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     ctx.strokeStyle = "#ff00ff";
     ctx.lineWidth = 2;
+    ctx.strokeRect(feetCenterTileX * TILE_SIZE, feetRow * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+    // Furniture uses full bottom row (faint magenta outline)
+    ctx.strokeStyle = "rgba(255, 0, 255, 0.35)";
+    ctx.lineWidth = 1;
     ctx.strokeRect(feetLeftTile * TILE_SIZE, feetRow * TILE_SIZE, (feetRightTile - feetLeftTile) * TILE_SIZE, TILE_SIZE);
 
     // Draw NPC collision boxes (blue outline)
@@ -206,7 +212,7 @@ export function renderDebugOverlay(
     const lines = [
         "Green = movement block",
         "Cyan = interact (bright = facing)",
-        "Magenta = player feet",
+        "Magenta = feet (NPC: center tile)",
         "Yellow = interact aim"
     ];
     ctx.font = "11px monospace";

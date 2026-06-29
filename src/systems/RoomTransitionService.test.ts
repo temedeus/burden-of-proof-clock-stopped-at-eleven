@@ -72,7 +72,7 @@ describe("RoomTransitionService", () => {
         expect(result).toBeNull();
     });
 
-    it("insets the player after transitioning through a top-wall entry", () => {
+    it("places the player beside a top-wall entry door", () => {
         const service = new RoomTransitionService();
         const hall = makeRoom("hall", 10, 10, [
             { x: 5, y: 9, targetRoom: "library", spawnX: 5, spawnY: 0 }
@@ -84,9 +84,24 @@ describe("RoomTransitionService", () => {
 
         service.placePlayerAfterRoomTransition(player, "hall", library, 5, 0);
 
-        expect(player.y).toBeGreaterThanOrEqual(3 * TILE_SIZE);
-        expect(player.x).toBeGreaterThanOrEqual(TILE_SIZE);
-        expect(player.x).toBeLessThanOrEqual((library.map.width - 2) * TILE_SIZE);
+        expect(player.y).toBe(TILE_SIZE);
+        expect(player.x).toBe(4 * TILE_SIZE);
+    });
+
+    it("places the player beside a bottom-wall entry door", () => {
+        const service = new RoomTransitionService();
+        const garden = makeRoom("garden", 18, 18, [
+            { x: 12, y: 0, targetRoom: "hall", spawnX: 12, spawnY: 15 }
+        ]);
+        const hall = makeRoom("hall", 18, 18, [
+            { x: 12, y: 17, targetRoom: "garden", spawnX: 12, spawnY: 1 }
+        ]);
+        const player = new Player("player", 0, 0);
+
+        service.placePlayerAfterRoomTransition(player, "garden", hall, 12, 1);
+
+        expect(player.y).toBe(15 * TILE_SIZE);
+        expect(player.x).toBe(11 * TILE_SIZE);
     });
 
     it("ticks cooldown down toward zero", () => {

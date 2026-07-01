@@ -464,9 +464,12 @@ export function setHiddenExitDoorOpen(
     const exit = room.exits.find((e) => e.targetRoom === targetRoomId);
     if (!exit) return;
     const w = room.map.width;
+    const isRock = room.map.furnitureUnderlay === "rock";
+    const closedTile = isRock ? TILE_ROCK_WALL : TILE_WALL;
+    const openTile = isRock ? TILE_ROCK : TILE_DOOR;
     for (const dx of [exit.x - 1, exit.x, exit.x + 1]) {
         if (dx < 0 || dx >= w) continue;
-        room.map.tiles[exit.y * w + dx] = open ? TILE_DOOR : TILE_WALL;
+        room.map.tiles[exit.y * w + dx] = open ? openTile : closedTile;
     }
 }
 

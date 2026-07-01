@@ -8,8 +8,8 @@ const REVEAL_DURATION = 1.4;
 
 /** Clustered barrel anchors before the passage opens (tiles 10–13). */
 const BARREL_START_X = [10, 11, 12, 13] as const;
-/** Left pair pushed further west; right pair stays east of the door. */
-const BARREL_END_X = [6, 7, 14, 15] as const;
+/** Left pair west of the door; right pair east. */
+const BARREL_END_X = [8, 9, 14, 15] as const;
 const BARREL_Y = 15;
 
 function easeInOutCubic(t: number): number {

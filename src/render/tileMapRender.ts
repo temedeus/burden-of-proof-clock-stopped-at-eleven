@@ -86,7 +86,7 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
 
     const spriteName =
         tile === TILE_DOOR
-            ? "floor"
+            ? underlaySpriteName(map, x, y)
             : tile === TILE_GRASS
               ? "grass"
               : tile === TILE_GRAVEL

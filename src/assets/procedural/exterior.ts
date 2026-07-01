@@ -257,8 +257,9 @@ function tile32(draw: (ctx: CanvasRenderingContext2D) => void): ProceduralSprite
 
 export const EXTERIOR_SPRITES: Record<string, ProceduralSpriteDef> = {
     fence: tile32((ctx) => {
-        r(ctx, 0, 26, 32, 6, P.stone);
-        r(ctx, 0, 26, 32, 2, P.stoneLight);
+        // Thin footing only — grass/gravel shows through the rest of the tile
+        r(ctx, 0, 30, 32, 2, P.stone);
+        r(ctx, 0, 30, 32, 1, P.stoneLight);
         drawIronFenceRails(ctx, 0, 32);
     }),
 

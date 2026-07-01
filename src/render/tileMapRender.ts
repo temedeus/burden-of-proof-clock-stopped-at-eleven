@@ -71,6 +71,19 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
         return;
     }
 
+    if (tile === TILE_FENCE || tile === TILE_FENCE_POST) {
+        spriteLoader.drawSprite(ctx, underlaySpriteName(map, x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
+        spriteLoader.drawSprite(
+            ctx,
+            tile === TILE_FENCE ? "fence" : "fence_post",
+            tileX,
+            tileY,
+            TILE_SIZE,
+            TILE_SIZE
+        );
+        return;
+    }
+
     const spriteName =
         tile === TILE_DOOR
             ? "floor"
@@ -88,11 +101,7 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                         ? manorWallSpriteName(x, y)
                     : tile === TILE_FURNITURE
                       ? spriteUnderFurniture(map, x, y)
-                      : tile === TILE_FENCE
-                        ? "fence"
-                        : tile === TILE_FENCE_POST
-                          ? "fence_post"
-                          : TILE_TO_SPRITE[tile];
+                      : TILE_TO_SPRITE[tile];
 
     if (spriteName) {
         spriteLoader.drawSprite(ctx, spriteName, tileX, tileY, TILE_SIZE, TILE_SIZE);

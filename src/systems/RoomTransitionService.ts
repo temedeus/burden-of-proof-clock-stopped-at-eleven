@@ -2,6 +2,45 @@ import { Player } from "../entities/Player";
 import { TILE_SIZE } from "../world/constants";
 import type { DoorExit, Room } from "../world/Room";
 
+function isPerimeterExit(exit: Pick<DoorExit, "x" | "y">, width: number, height: number): boolean {
+    return exit.y === 0 || exit.y === height - 1 || exit.x === 0 || exit.x === width - 1;
+}
+
+function overlapsExitZone(
+    exit: Pick<DoorExit, "x" | "y">,
+    playerLeftTile: number,
+    playerRightTile: number,
+    playerTopTile: number,
+    playerFeetRow: number,
+    playerFeetCol: number,
+    room: Room
+): boolean {
+    const doorLeft = exit.x - 1;
+    const doorRight = exit.x + 2;
+    const doorTop = exit.y - 1;
+    const doorBottom = exit.y + 2;
+
+    if (isPerimeterExit(exit, room.map.width, room.map.height)) {
+        const isTopOrBottom = exit.y === 0 || exit.y === room.map.height - 1;
+        if (isTopOrBottom) {
+            const horizontalOverlap = playerLeftTile < doorRight && playerRightTile > doorLeft;
+            const verticalOverlap =
+                exit.y === room.map.height - 1
+                    ? playerFeetRow >= exit.y
+                    : playerTopTile <= exit.y;
+            return horizontalOverlap && verticalOverlap;
+        }
+        const verticalOverlap = playerTopTile < doorBottom && playerFeetRow >= doorTop;
+        const horizontalOverlap =
+            exit.x === room.map.width - 1 ? playerFeetCol >= exit.x : playerLeftTile <= exit.x;
+        return horizontalOverlap && verticalOverlap;
+    }
+
+    const horizontalOverlap = playerLeftTile < doorRight && playerRightTile > doorLeft;
+    const verticalOverlap = playerTopTile < doorBottom && playerFeetRow >= doorTop;
+    return horizontalOverlap && verticalOverlap;
+}
+
 export interface RoomTransitionResult {
     nextRoom: Room;
     targetRoomId: string;
@@ -30,30 +69,17 @@ export class RoomTransitionService {
         for (const exit of currentRoom.exits) {
             if (isExitBlocked(exit)) continue;
 
-            const isTopOrBottom = exit.y === 0 || exit.y === currentRoom.map.height - 1;
-            let overlapsDoor = false;
-
-            if (isTopOrBottom) {
-                const doorLeft = exit.x - 1;
-                const doorRight = exit.x + 2;
-                const horizontalOverlap = playerLeftTile < doorRight && playerRightTile > doorLeft;
-                const verticalOverlap =
-                    exit.y === currentRoom.map.height - 1
-                        ? playerFeetRow >= exit.y
-                        : playerTopTile <= exit.y;
-                overlapsDoor = horizontalOverlap && verticalOverlap;
-            } else {
-                const doorTop = exit.y - 1;
-                const doorBottom = exit.y + 2;
-                const verticalOverlap = playerTopTile < doorBottom && playerFeetRow >= doorTop;
-                const horizontalOverlap =
-                    exit.x === currentRoom.map.width - 1
-                        ? playerFeetCol >= exit.x
-                        : playerLeftTile <= exit.x;
-                overlapsDoor = horizontalOverlap && verticalOverlap;
-            }
-
-            if (overlapsDoor) {
+            if (
+                overlapsExitZone(
+                    exit,
+                    playerLeftTile,
+                    playerRightTile,
+                    playerTopTile,
+                    playerFeetRow,
+                    playerFeetCol,
+                    currentRoom
+                )
+            ) {
                 const nextRoom = rooms[exit.targetRoom];
                 if (!nextRoom) continue;
 
@@ -90,22 +116,27 @@ export class RoomTransitionService {
         const entryExit = nextRoom.exits.find((e) => e.targetRoom === fromRoomId);
 
         if (entryExit) {
-            const isTopOrBottom = entryExit.y === 0 || entryExit.y === roomH - 1;
+            if (isPerimeterExit(entryExit, roomW, roomH)) {
+                const isTopOrBottom = entryExit.y === 0 || entryExit.y === roomH - 1;
 
-            if (isTopOrBottom) {
-                player.x = (entryExit.x - Math.floor(playerTileW / 2)) * TILE_SIZE;
-                if (entryExit.y === 0) {
-                    player.y = TILE_SIZE;
+                if (isTopOrBottom) {
+                    player.x = (entryExit.x - Math.floor(playerTileW / 2)) * TILE_SIZE;
+                    if (entryExit.y === 0) {
+                        player.y = TILE_SIZE;
+                    } else {
+                        player.y = (entryExit.y - playerTileH) * TILE_SIZE;
+                    }
                 } else {
-                    player.y = (entryExit.y - playerTileH) * TILE_SIZE;
+                    player.y = (entryExit.y - Math.floor(playerTileH / 2)) * TILE_SIZE;
+                    if (entryExit.x === 0) {
+                        player.x = TILE_SIZE;
+                    } else {
+                        player.x = (entryExit.x - playerTileW) * TILE_SIZE;
+                    }
                 }
             } else {
+                player.x = (entryExit.x - Math.floor(playerTileW / 2)) * TILE_SIZE;
                 player.y = (entryExit.y - Math.floor(playerTileH / 2)) * TILE_SIZE;
-                if (entryExit.x === 0) {
-                    player.x = TILE_SIZE;
-                } else {
-                    player.x = (entryExit.x - playerTileW) * TILE_SIZE;
-                }
             }
         } else {
             player.x = spawnX * TILE_SIZE;

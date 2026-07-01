@@ -12,7 +12,7 @@ export interface FurniturePlacement {
 
 export interface ExitConfig {
     x: number | "center";
-    y: "top" | "bottom" | "center";
+    y: PositionToken;
     targetRoom: string;
     spawnX: number | "center";
     spawnY: SpawnYToken;
@@ -31,9 +31,16 @@ export interface NPCPlacement {
 }
 
 export interface GravelPathConfig {
-    orientation: "vertical";
+    orientation: "vertical" | "horizontal";
     widthTiles: number;
-    centerX: number | "center";
+    /** Vertical paths: column center. */
+    centerX?: number | "center";
+    /** Horizontal paths: row center. */
+    centerY?: number | "center";
+    /** Interior start along the path axis (row for vertical, column for horizontal). */
+    start?: number;
+    /** Interior end along the path axis (inclusive). */
+    end?: number;
 }
 
 export type PerimeterWallStyle = "brick" | "wood" | "rock" | "manor" | "gate_side";
@@ -53,6 +60,8 @@ export interface RoomConfig {
     /** Perimeter wall style (default red brick). */
     wallTile?: "brick" | "wood" | "rock";
     gravelPath?: GravelPathConfig;
+    /** Multiple gravel paths (merged with `gravelPath` when present). */
+    gravelPaths?: GravelPathConfig[];
     /** Override individual perimeter rows/columns (applied before southFenceBorder). */
     perimeterWalls?: PerimeterWallsConfig;
     /** Replace the south wall row with iron fence tiles (gate gap from gravel path). */

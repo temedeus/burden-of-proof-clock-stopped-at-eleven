@@ -3,11 +3,13 @@
   "width": 25,
   "height": 18,
   "floorTile": "grass",
-  "gravelPath": {
-    "orientation": "vertical",
-    "widthTiles": 3,
-    "centerX": "center"
-  },
+  "gravelPaths": [
+    {
+      "orientation": "vertical",
+      "widthTiles": 3,
+      "centerX": "center"
+    }
+  ],
   "perimeterWalls": {
     "north": "manor",
     "west": "gate_side",

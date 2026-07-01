@@ -60,7 +60,7 @@ export function validateRooms(
             if (!isPositionToken(exit.x)) {
                 issues.push({ roomId: room.id, message: "Exit x must be a number or 'center'." });
             }
-            if (!isExitYToken(exit.y)) {
+            if (!isPositionToken(exit.y)) {
                 issues.push({ roomId: room.id, message: `Exit y '${String(exit.y)}' is invalid.` });
             }
             if (!(isNumber(exit.spawnX) || exit.spawnX === "center")) {

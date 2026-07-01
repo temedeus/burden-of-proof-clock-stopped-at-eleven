@@ -454,22 +454,63 @@ function applySouthFenceBorder(
     }
 }
 
+function getGravelPaths(config: RoomConfig): GravelPathConfig[] {
+    const paths: GravelPathConfig[] = [];
+    if (config.gravelPath) paths.push(config.gravelPath);
+    if (config.gravelPaths) paths.push(...config.gravelPaths);
+    return paths;
+}
+
+function getSouthGatePath(config: RoomConfig): GravelPathConfig | undefined {
+    const paths = getGravelPaths(config);
+    return paths.find((path) => path.orientation !== "horizontal") ?? paths[0];
+}
+
+function isPathBlockingTile(tile: number): boolean {
+    return tile === TILE_WALL || tile === TILE_MANOR_WALL || tile === TILE_GATE_WALL;
+}
+
+function paintGravelTile(
+    tiles: number[],
+    roomWidth: number,
+    roomHeight: number,
+    x: number,
+    y: number
+): void {
+    if (x < 1 || x >= roomWidth - 1 || y < 1 || y >= roomHeight - 1) return;
+    const idx = y * roomWidth + x;
+    if (isPathBlockingTile(tiles[idx])) return;
+    tiles[idx] = TILE_GRAVEL;
+}
+
 function applyGravelPath(
     tiles: number[],
     roomWidth: number,
     roomHeight: number,
     path: GravelPathConfig
 ): void {
-    const cx = resolvePosition(path.centerX, roomWidth);
     const w = path.widthTiles;
+
+    if (path.orientation === "horizontal") {
+        const cy = resolvePosition(path.centerY ?? "center", roomHeight);
+        const startRow = cy - Math.floor(w / 2);
+        const xStart = path.start ?? 1;
+        const xEnd = path.end ?? roomWidth - 2;
+        for (let x = xStart; x <= xEnd; x++) {
+            for (let i = 0; i < w; i++) {
+                paintGravelTile(tiles, roomWidth, roomHeight, x, startRow + i);
+            }
+        }
+        return;
+    }
+
+    const cx = resolvePosition(path.centerX ?? "center", roomWidth);
     const startCol = cx - Math.floor(w / 2);
-    for (let y = 1; y < roomHeight - 1; y++) {
+    const yStart = path.start ?? 1;
+    const yEnd = path.end ?? roomHeight - 2;
+    for (let y = yStart; y <= yEnd; y++) {
         for (let i = 0; i < w; i++) {
-            const x = startCol + i;
-            if (x < 1 || x >= roomWidth - 1) continue;
-            const idx = y * roomWidth + x;
-            if (tiles[idx] === TILE_WALL || tiles[idx] === TILE_MANOR_WALL || tiles[idx] === TILE_GATE_WALL) continue;
-            tiles[idx] = TILE_GRAVEL;
+            paintGravelTile(tiles, roomWidth, roomHeight, startCol + i, y);
         }
     }
 }
@@ -557,26 +598,29 @@ export function createRoomFromConfig(
         applyPerimeterWalls(tiles, roomWidth, roomHeight, config.perimeterWalls, perimeterWall);
     }
 
-    if (config.gravelPath) {
-        applyGravelPath(tiles, roomWidth, roomHeight, config.gravelPath);
+    const gravelPaths = getGravelPaths(config);
+    for (const path of gravelPaths) {
+        applyGravelPath(tiles, roomWidth, roomHeight, path);
     }
 
     if (config.southFenceBorder) {
-        const gateCx = config.gravelPath
-            ? resolvePosition(config.gravelPath.centerX, roomWidth)
+        const gatePath = getSouthGatePath(config);
+        const gateCx = gatePath
+            ? resolvePosition(gatePath.centerX ?? "center", roomWidth)
             : Math.floor(roomWidth / 2);
-        const gateW = config.gravelPath?.widthTiles ?? 3;
+        const gateW = gatePath?.widthTiles ?? 3;
         applySouthFenceBorder(tiles, roomWidth, roomHeight, gateCx, gateW);
     }
 
     const terrainBeforeFurniture = tiles.slice();
 
-    if (config.southFenceBorder || config.gravelPath) {
-        const cx = config.gravelPath
-            ? resolvePosition(config.gravelPath.centerX, roomWidth)
+    if (config.southFenceBorder || gravelPaths.length > 0) {
+        const gatePath = getSouthGatePath(config);
+        const cx = gatePath
+            ? resolvePosition(gatePath.centerX ?? "center", roomWidth)
             : Math.floor(roomWidth / 2);
         const bottomY = roomHeight - 1;
-        const gateRadius = Math.floor((config.gravelPath?.widthTiles ?? 3) / 2);
+        const gateRadius = Math.floor((gatePath?.widthTiles ?? 3) / 2);
         for (let x = 0; x < roomWidth; x++) {
             const idx = bottomY * roomWidth + x;
             if (Math.abs(x - cx) <= gateRadius) {
@@ -616,6 +660,8 @@ export function createRoomFromConfig(
         if (exitSkipsDoorTiles(interactables, exit, roomWidth, roomHeight)) return;
 
         const isTopOrBottom = exit.y === 0 || exit.y === roomHeight - 1;
+        const isLeftOrRight = exit.x === 0 || exit.x === roomWidth - 1;
+        if (!isTopOrBottom && !isLeftOrRight) return;
 
         if (isTopOrBottom) {
             const doorX1 = exit.x - 1;

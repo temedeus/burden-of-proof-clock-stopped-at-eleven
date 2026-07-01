@@ -3,11 +3,20 @@
   "width": 25,
   "height": 18,
   "floorTile": "grass",
-  "gravelPath": {
-    "orientation": "vertical",
-    "widthTiles": 3,
-    "centerX": "center"
-  },
+  "gravelPaths": [
+    {
+      "orientation": "vertical",
+      "widthTiles": 3,
+      "centerX": "center"
+    },
+    {
+      "orientation": "horizontal",
+      "widthTiles": 1,
+      "centerY": 7,
+      "start": 5,
+      "end": 11
+    }
+  ],
   "perimeterWalls": {
     "north": "manor",
     "west": "gate_side",
@@ -19,6 +28,12 @@
       "furnitureId": "gate_courtyard_south",
       "x": "center",
       "y": "bottom",
+      "anchor": "center"
+    },
+    {
+      "furnitureId": "cellar_hatch",
+      "x": 5,
+      "y": 9,
       "anchor": "center"
     },
     {
@@ -56,12 +71,6 @@
       "x": 21,
       "y": 3,
       "anchor": "top-left"
-    },
-    {
-      "furnitureId": "staircase",
-      "x": "center",
-      "y": 17,
-      "anchor": "center"
     }
   ],
   "exits": [
@@ -81,11 +90,12 @@
       "doorSprite": "door_wood"
     },
     {
-      "x": "center",
-      "y": "bottom",
+      "x": 5,
+      "y": 9,
       "targetRoom": "cellar_storage",
       "spawnX": "center",
-      "spawnY": 2
+      "spawnY": 2,
+      "skipDoorSprite": true
     }
   ]
 }

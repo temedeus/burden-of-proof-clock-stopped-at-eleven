@@ -4,6 +4,107 @@ import { drawFireplaceStone } from "./fireplace";
 import { drawOilLampNorthBase } from "./oil_lamp";
 import type { ProceduralSpriteDef } from "./types";
 
+function pitEllipseDist(x: number, y: number, cx: number, cy: number, rx: number, ry: number): number {
+    return Math.hypot((x - cx) / rx, (y - cy) / ry);
+}
+
+/** Rocky pit entrance with a wooden ladder descending into darkness. */
+function drawCellarHatch(ctx: CanvasRenderingContext2D, w = 128, h = 128): void {
+    const cx = w * 0.5;
+    const pitCy = h * 0.62;
+    const rxOuter = w * 0.44;
+    const ryOuter = h * 0.3;
+    const rxInner = w * 0.3;
+    const ryInner = h * 0.2;
+
+    // Worn grass lip around the hole
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const d = pitEllipseDist(x, y, cx + 2, pitCy + 4, rxOuter + 10, ryOuter + 6);
+            if (d > 1.02 && d < 1.22) r(ctx, x, y, 1, 1, d > 1.12 ? P.grassDark : P.grass);
+        }
+    }
+
+    // Rocky rim — lit NW, shadowed SE (top-down oblique)
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const dOut = pitEllipseDist(x, y, cx, pitCy, rxOuter, ryOuter);
+            const dIn = pitEllipseDist(x, y, cx, pitCy + 4, rxInner, ryInner);
+            if (dOut > 1 || dIn < 1) continue;
+
+            const angle = Math.atan2((y - pitCy) / ryOuter, (x - cx) / rxOuter);
+            const lit = Math.cos(angle + Math.PI * 0.55);
+            const depth = (dOut - dIn) / (1 - dIn);
+            const fleck = ((x * 7 + y * 13) & 15) < 2;
+
+            let color: string;
+            if (depth > 0.82) {
+                color = lit > 0.35 ? P.rockHi : lit > 0 ? P.rockLight : P.rock;
+            } else if (lit > 0.25) {
+                color = fleck ? P.rockFleck : P.rockLight;
+            } else if (lit > -0.15) {
+                color = fleck ? P.rockFleck : P.rock;
+            } else {
+                color = fleck ? P.rockVoid : P.rockDark;
+            }
+            r(ctx, x, y, 1, 1, color);
+        }
+    }
+
+    // Chunky boulder accents on the rim
+    r(ctx, 10, pitCy - ryOuter * 0.5, 18, 10, P.rockLight);
+    r(ctx, 12, pitCy - ryOuter * 0.45, 8, 4, P.rockHi);
+    r(ctx, w - 30, pitCy - ryOuter * 0.35, 20, 12, P.rock);
+    r(ctx, w - 26, pitCy - ryOuter * 0.3, 10, 4, P.rockDark);
+    r(ctx, 16, pitCy + ryOuter * 0.15, 22, 14, P.rockDark);
+    r(ctx, w - 34, pitCy + ryOuter * 0.25, 20, 12, P.rockVoid);
+    r(ctx, cx - 14, pitCy - ryOuter * 0.75, 28, 8, P.rockHi);
+
+    // Pit void — graded depth
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const d = pitEllipseDist(x, y, cx, pitCy + 6, rxInner, ryInner);
+            if (d >= 1) continue;
+            const depth = 1 - d;
+            const color =
+                depth > 0.7 ? P.rockVoid : depth > 0.45 ? P.rockShadow : depth > 0.2 ? P.rockDark : P.black;
+            r(ctx, x, y, 1, 1, color);
+        }
+    }
+
+    // Wooden ladder — converging rails, rungs spaced for depth
+    const ladderTop = h * 0.28;
+    const ladderBottom = h * 0.94;
+    const rungYs = [0, 0.12, 0.26, 0.42, 0.58, 0.74, 0.88];
+
+    for (let i = 0; i < rungYs.length; i++) {
+        const t = rungYs[i];
+        const y = ladderTop + (ladderBottom - ladderTop) * t;
+        const nextT = i < rungYs.length - 1 ? rungYs[i + 1] : 1;
+        const nextY = ladderTop + (ladderBottom - ladderTop) * nextT;
+        const inset = t * t * w * 0.1;
+        const railW = Math.max(2, 4 - t * 2);
+        const left = cx - w * 0.12 + inset;
+        const right = cx + w * 0.12 - inset;
+        const segH = nextY - y;
+
+        r(ctx, left, y, railW, segH, P.woodDark);
+        r(ctx, right - railW, y, railW, segH, P.woodDark);
+        if (i === 0) {
+            r(ctx, left + 1, y, railW - 2, 2, P.woodHi);
+            r(ctx, right - railW + 1, y, railW - 2, 2, P.woodHi);
+        }
+
+        const rungH = Math.max(2, 4 - t * 1.5);
+        r(ctx, left + railW, y, right - left - railW * 2, rungH, P.wood);
+        r(ctx, left + railW, y, right - left - railW * 2, 1, P.woodHi);
+        r(ctx, left + railW, y + rungH - 1, right - left - railW * 2, 1, P.woodDark);
+    }
+
+    r(ctx, cx - w * 0.1, ladderTop + 1, 3, 3, P.iron);
+    r(ctx, cx + w * 0.1 - 3, ladderTop + 1, 3, 3, P.iron);
+}
+
 /** Wood tabletop with edge highlights (shared by all tables). */
 function drawWoodTabletop(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
     r(ctx, x, y, w, h, P.woodLight);
@@ -254,6 +355,14 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
             r(ctx, 90, top, 4, 2, P.woodHi);
             r(ctx, 4, bottom - 8, 4, 6, P.wood);
             r(ctx, 88, bottom - 8, 4, 6, P.wood);
+        }
+    },
+
+    cellar_hatch: {
+        nativeWidth: 128,
+        nativeHeight: 128,
+        draw(ctx, w = 128, h = 128) {
+            drawCellarHatch(ctx, w, h);
         }
     },
 

@@ -62,11 +62,12 @@
   ],
   "exits": [
     {
-      "x": "center",
-      "y": "top",
+      "x": 12,
+      "y": 2,
       "targetRoom": "courtyard",
-      "spawnX": "center",
-      "spawnY": "bottom-3"
+      "spawnX": 5,
+      "spawnY": 9,
+      "skipDoorSprite": true
     },
     {
       "x": "bottom",

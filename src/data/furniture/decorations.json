@@ -240,6 +240,18 @@
     "walkableDecor": true,
     "spriteName": "staircase"
   },
+  "cellar_hatch": {
+    "id": "cellar_hatch",
+    "name": "Cellar hatch",
+    "description": "A rough rocky pit in the ground — a ladder leads down into the cellars.",
+    "width": 4,
+    "height": 4,
+    "drawWidth": 4,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "walkableDecor": true,
+    "spriteName": "cellar_hatch"
+  },
   "carpet": {
     "id": "carpet",
     "name": "Carpet",

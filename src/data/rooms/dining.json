@@ -31,11 +31,11 @@
       "spawnY": "center"
     },
     {
-      "x": "center",
-      "y": "bottom",
+      "x": 0,
+      "y": "center",
       "targetRoom": "kitchen",
-      "spawnX": "center",
-      "spawnY": 1
+      "spawnX": 22,
+      "spawnY": "center"
     },
     {
       "x": "center",

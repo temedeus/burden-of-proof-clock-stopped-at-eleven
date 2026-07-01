@@ -142,12 +142,17 @@ export class Game {
 
         spriteLoader.load().catch((err) => console.error("Failed to load spritesheet:", err));
 
-        this.currentRoom = this.rooms.library;
+        this.currentRoom = this.rooms.hall;
         this.syncRoomAmbience();
+        const hallCx = Math.floor(this.currentRoom.map.width / 2);
+        const hallCy = Math.floor(this.currentRoom.map.height / 2);
+        this.player.x = (hallCx - 1) * TILE_SIZE;
+        this.player.y = (hallCy - 1) * TILE_SIZE;
+        this.roomTransitions.clampPlayerInsideRoom(this.player, this.currentRoom);
         if (this.activeStory) {
             this.roomTitleBanner = createRoomTitleBanner(this.activeStory.title);
         } else {
-            this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle("library"));
+            this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle("hall"));
         }
     }
 

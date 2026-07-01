@@ -30,11 +30,11 @@
   ],
   "exits": [
     {
-      "x": "center",
-      "y": "top",
+      "x": "bottom",
+      "y": "center",
       "targetRoom": "dining",
-      "spawnX": "center",
-      "spawnY": "bottom-2"
+      "spawnX": 2,
+      "spawnY": "center"
     },
     {
       "x": "center",

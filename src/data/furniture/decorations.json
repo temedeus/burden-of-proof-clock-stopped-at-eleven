@@ -334,17 +334,15 @@
     "id": "secret_cellar_barrels",
     "name": "Stacked barrels",
     "description": "Heavy casks are wedged across the passage.",
-    "width": 3,
+    "width": 4,
     "height": 2,
-    "drawWidth": 3,
+    "drawWidth": 4,
     "drawHeight": 2,
     "renderAnchor": "bottom",
-    "wallAlign": "south",
-    "spriteName": "secret_cellar_barrels",
     "interactionFaces": {
       "north": {
-        "width": 3,
-        "height": 2,
+        "width": 4,
+        "height": 3,
         "offsetY": -2
       }
     },

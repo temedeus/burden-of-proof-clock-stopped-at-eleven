@@ -4,6 +4,35 @@ import { drawFireplaceStone } from "./fireplace";
 import { drawOilLampNorthBase } from "./oil_lamp";
 import type { ProceduralSpriteDef } from "./types";
 
+/** Top-down oak cask drawn at a pixel origin (shared by single and clustered barrels). */
+function drawWineBarrelTopDown(ctx: CanvasRenderingContext2D, ox: number, oy: number, cell = 2): void {
+    grid(
+        ctx,
+        ox,
+        oy,
+        cell,
+        [
+            "....dddddddd....",
+            "..ddhhhhhhll..",
+            ".ddhhhhhhhlll.",
+            "ddhhhhhhhhllll",
+            "ddhhhhhhhhllll",
+            "ddhhhhhhhhllll",
+            "ddhhhhhhhhllll",
+            ".ddhhhhhhhlll.",
+            "..ddhhhhhhll..",
+            "....dddddddd...."
+        ],
+        { d: P.woodDark, h: P.wood, l: P.woodLight }
+    );
+    r(ctx, ox - cell, oy + 3 * cell, 16 * cell, cell, P.silverDark);
+    r(ctx, ox - cell, oy + 5 * cell, 16 * cell, cell, P.silver);
+    r(ctx, ox - cell, oy + 7 * cell, 16 * cell, cell, P.silverDark);
+    r(ctx, ox + 3 * cell, oy + 2 * cell, cell, 8 * cell, P.woodHi);
+    r(ctx, ox + 7 * cell, oy + cell, cell, 9 * cell, P.woodDark);
+    r(ctx, ox + 6 * cell, oy + 4 * cell, 2 * cell, 2 * cell, P.shadow);
+}
+
 function pitEllipseDist(x: number, y: number, cx: number, cy: number, rx: number, ry: number): number {
     return Math.hypot((x - cx) / rx, (y - cy) / ry);
 }
@@ -530,38 +559,6 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
-    secret_cellar_barrels: {
-        nativeWidth: 96,
-        nativeHeight: 48,
-        draw(ctx) {
-            const drawBarrel = (ox: number) => {
-                grid(ctx, ox + 2, 4, 2, [
-                    "..dddd..",
-                    ".dhhhhl.",
-                    "dhhhhlll",
-                    "dhhhhlll",
-                    "dhhhhlll",
-                    ".dhhhhl.",
-                    "..dddd.."
-                ], { d: P.woodDark, h: P.wood, l: P.woodLight });
-                r(ctx, ox + 4, 10, 20, 2, P.silverDark);
-                r(ctx, ox + 4, 18, 20, 2, P.silverDark);
-                r(ctx, ox + 4, 26, 20, 2, P.silverDark);
-                r(ctx, ox + 8, 6, 2, 20, P.woodHi);
-                r(ctx, ox + 14, 5, 2, 22, P.woodDark);
-            };
-
-            drawBarrel(0);
-            drawBarrel(32);
-            drawBarrel(64);
-
-            // Rusted lever between the center casks
-            r(ctx, 46, 20, 4, 12, P.silverDark);
-            r(ctx, 47, 22, 2, 8, P.silver);
-            r(ctx, 48, 16, 6, 4, P.silverDark);
-        }
-    },
-
     secret_passage_switch: {
         nativeWidth: 32,
         nativeHeight: 32,
@@ -581,39 +578,7 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 64,
         nativeHeight: 64,
         draw(ctx) {
-            const cx = 32;
-            const cy = 32;
-            // Barrel body — elliptical top-down
-            grid(ctx, 14, 10, 2, [
-                "....dddddddd....",
-                "..ddhhhhhhll..",
-                ".ddhhhhhhhlll.",
-                "ddhhhhhhhhllll",
-                "ddhhhhhhhhllll",
-                "ddhhhhhhhhllll",
-                "ddhhhhhhhhllll",
-                ".ddhhhhhhhlll.",
-                "..ddhhhhhhll..",
-                "....dddddddd...."
-            ], {
-                d: P.woodDark,
-                h: P.wood,
-                l: P.woodLight
-            });
-            // Metal hoops
-            r(ctx, 12, 16, 40, 3, P.silverDark);
-            r(ctx, 12, 30, 40, 3, P.silverDark);
-            r(ctx, 12, 44, 40, 3, P.silverDark);
-            r(ctx, 12, 16, 40, 1, P.silver);
-            r(ctx, 12, 30, 40, 1, P.silver);
-            r(ctx, 12, 44, 40, 1, P.silver);
-            // Stave highlights
-            r(ctx, 20, 14, 2, 36, P.woodHi);
-            r(ctx, 30, 12, 2, 40, P.woodHi);
-            r(ctx, 40, 14, 2, 36, P.woodDark);
-            // Bung hole
-            r(ctx, cx - 2, cy - 4, 4, 4, P.woodDark);
-            r(ctx, cx - 1, cy - 3, 2, 2, P.shadow);
+            drawWineBarrelTopDown(ctx, 14, 10, 2);
         }
     },
 

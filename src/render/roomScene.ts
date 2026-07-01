@@ -4,6 +4,7 @@ import { drawOilLampAnimated, oilLampAnimPhase, oilLampDrawBounds } from "../ass
 import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
 import { decorWallDrawBounds, wallMountDrawBounds } from "../assets/procedural/wall_align";
 import { spriteLoader } from "../assets/SpriteLoader";
+import { drawWineBarrelsAtAnchors } from "./wineBarrelDraw";
 import { TILE_SIZE } from "../world/constants";
 import { exitSkipsDoorSprite } from "../world/exitDoor";
 import type { Interactable } from "../world/Interactable";
@@ -138,6 +139,10 @@ export function furnitureActorFromInteractable(
                     phase,
                     spriteName
                 );
+            } else if (obj.id === "secret_cellar_barrels") {
+                const anchorXs: number[] = [];
+                for (let x = minX; x <= maxX; x++) anchorXs.push(x);
+                drawWineBarrelsAtAnchors(ctx, anchorXs, minY);
             } else {
                 spriteLoader.drawSprite(ctx, spriteName, drawX, drawY, drawW, drawH);
             }

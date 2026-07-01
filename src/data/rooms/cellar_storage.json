@@ -60,32 +60,8 @@
       "anchor": "top-left"
     },
     {
-      "furnitureId": "wine_barrel",
-      "x": 9,
-      "y": 15,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "wine_barrel",
-      "x": 10,
-      "y": 15,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "wine_barrel",
-      "x": 14,
-      "y": 15,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "wine_barrel",
-      "x": 15,
-      "y": 15,
-      "anchor": "top-left"
-    },
-    {
       "furnitureId": "secret_cellar_barrels",
-      "x": 11,
+      "x": 10,
       "y": 15,
       "anchor": "top-left"
     }

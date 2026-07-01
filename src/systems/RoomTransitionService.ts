@@ -6,6 +6,19 @@ function isPerimeterExit(exit: Pick<DoorExit, "x" | "y">, width: number, height:
     return exit.y === 0 || exit.y === height - 1 || exit.x === 0 || exit.x === width - 1;
 }
 
+/** Interior ladder/hatch exits — narrow band so spawn can sit one tile below. */
+function overlapsInteriorExitZone(
+    exit: Pick<DoorExit, "x" | "y">,
+    playerLeftTile: number,
+    playerRightTile: number,
+    playerTopTile: number,
+    playerFeetRow: number
+): boolean {
+    const horizontalOverlap = playerLeftTile <= exit.x + 1 && playerRightTile > exit.x - 1;
+    const verticalOverlap = playerFeetRow >= exit.y && playerTopTile <= exit.y;
+    return horizontalOverlap && verticalOverlap;
+}
+
 function overlapsExitZone(
     exit: Pick<DoorExit, "x" | "y">,
     playerLeftTile: number,
@@ -36,9 +49,13 @@ function overlapsExitZone(
         return horizontalOverlap && verticalOverlap;
     }
 
-    const horizontalOverlap = playerLeftTile < doorRight && playerRightTile > doorLeft;
-    const verticalOverlap = playerTopTile < doorBottom && playerFeetRow >= doorTop;
-    return horizontalOverlap && verticalOverlap;
+    return overlapsInteriorExitZone(
+        exit,
+        playerLeftTile,
+        playerRightTile,
+        playerTopTile,
+        playerFeetRow
+    );
 }
 
 export interface RoomTransitionResult {
@@ -135,6 +152,9 @@ export class RoomTransitionService {
                         player.x = (entryExit.x - playerTileW) * TILE_SIZE;
                     }
                 }
+            } else if (entryExit.interactionOnly || !isPerimeterExit(entryExit, roomW, roomH)) {
+                player.x = (spawnX - Math.floor(playerTileW / 2)) * TILE_SIZE;
+                player.y = (spawnY - playerTileH + 1) * TILE_SIZE;
             } else {
                 player.x = (entryExit.x - Math.floor(playerTileW / 2)) * TILE_SIZE;
                 player.y = (entryExit.y - Math.floor(playerTileH / 2)) * TILE_SIZE;

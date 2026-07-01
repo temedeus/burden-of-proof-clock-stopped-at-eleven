@@ -25,6 +25,19 @@ describe("RoomTransitionService", () => {
         expect(result).toBeNull();
     });
 
+    it("does not re-trigger an interior exit immediately after spawning below it", () => {
+        const service = new RoomTransitionService();
+        const cellar = makeRoom("cellar_storage", 25, 18, [
+            { x: 12, y: 2, targetRoom: "courtyard", spawnX: 5, spawnY: 7 }
+        ]);
+        const player = new Player("player", 0, 0);
+
+        service.placePlayerAfterRoomTransition(player, "courtyard", cellar, 12, 4);
+
+        const result = service.checkTransition(player, cellar, { cellar_storage: cellar, courtyard: makeRoom("courtyard", 25, 18, []) }, () => false);
+        expect(result).toBeNull();
+    });
+
     it("detects overlap with a bottom-wall door and returns the target room", () => {
         const service = new RoomTransitionService();
         const hall = makeRoom("hall", 10, 10, [
@@ -95,6 +108,39 @@ describe("RoomTransitionService", () => {
         );
 
         expect(result).toBeNull();
+    });
+
+    it("places the player on the departing spawn for interior exits", () => {
+        const service = new RoomTransitionService();
+        const cellar = makeRoom("cellar_storage", 25, 18, [
+            { x: 12, y: 2, targetRoom: "courtyard", spawnX: 5, spawnY: 7 }
+        ]);
+        const player = new Player("player", 0, 0);
+
+        service.placePlayerAfterRoomTransition(player, "courtyard", cellar, 12, 4);
+
+        expect(player.x).toBe(11 * TILE_SIZE);
+        expect(player.y).toBe(3 * TILE_SIZE);
+    });
+
+    it("places the player on the departing spawn for interaction-only interior exits", () => {
+        const service = new RoomTransitionService();
+        const courtyard = makeRoom("courtyard", 25, 18, [
+            {
+                x: 5,
+                y: 9,
+                targetRoom: "cellar_storage",
+                spawnX: 12,
+                spawnY: 2,
+                interactionOnly: true
+            }
+        ]);
+        const player = new Player("player", 0, 0);
+
+        service.placePlayerAfterRoomTransition(player, "cellar_storage", courtyard, 5, 7);
+
+        expect(player.x).toBe(4 * TILE_SIZE);
+        expect(player.y).toBe(6 * TILE_SIZE);
     });
 
     it("places the player beside a top-wall entry door", () => {

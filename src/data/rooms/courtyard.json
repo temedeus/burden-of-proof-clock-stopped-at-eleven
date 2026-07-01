@@ -94,7 +94,7 @@
       "y": 9,
       "targetRoom": "cellar_storage",
       "spawnX": "center",
-      "spawnY": 2,
+      "spawnY": 4,
       "skipDoorSprite": true,
       "interactionOnly": true
     }

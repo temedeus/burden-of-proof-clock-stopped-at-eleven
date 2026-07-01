@@ -63,6 +63,8 @@ export const VALID_SPRITE_NAMES = [
     "toilet",
     "water_boiler",
     "secret_bookshelf",
+    "secret_cellar_barrels",
+    "secret_passage_switch",
     "stable_booth",
     "stable_booth_bay",
     "stable_booth_gray",

@@ -29,3 +29,31 @@ export function inferWallAlign(startY: number, furnitureHeight: number, roomHeig
     if (centerY >= (roomHeight * 2) / 3) return "south";
     return undefined;
 }
+
+export type WallSide = "north" | "south" | "east" | "west";
+
+/** Position a wall-mounted interactable flush to the perimeter wall. */
+export function wallMountDrawBounds(
+    anchorX: number,
+    anchorY: number,
+    wallSide: WallSide,
+    roomW: number,
+    roomH: number,
+    tileW = 1,
+    tileH = 1
+): { drawX: number; drawY: number; drawW: number; drawH: number } {
+    const ts = TILE_SIZE;
+    const drawW = tileW * ts;
+    const drawH = tileH * ts;
+
+    switch (wallSide) {
+        case "north":
+            return { drawX: anchorX * ts, drawY: 0, drawW, drawH };
+        case "south":
+            return { drawX: anchorX * ts, drawY: (roomH - 1) * ts - drawH + ts, drawW, drawH };
+        case "west":
+            return { drawX: 0, drawY: anchorY * ts, drawW, drawH };
+        case "east":
+            return { drawX: (roomW - 1) * ts - drawW + ts, drawY: anchorY * ts, drawW, drawH };
+    }
+}

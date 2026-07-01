@@ -318,6 +318,52 @@
     "confirmId": "study_secret",
     "confirmPrompt": "One volume sits loose on the shelf, almost asking to be pulled. Will you tug it free?"
   },
+  "study_passage_switch": {
+    "id": "study_passage_switch",
+    "name": "Hidden lever",
+    "description": "A cord hangs down from the rock face to a rusted lever.",
+    "width": 1,
+    "height": 1,
+    "wallMount": true,
+    "spriteName": "secret_passage_switch",
+    "interactionType": "confirm",
+    "confirmId": "study_secret",
+    "confirmPrompt": "A cord hangs down to a hidden lever. Pull it to open the passage to the study?"
+  },
+  "secret_cellar_barrels": {
+    "id": "secret_cellar_barrels",
+    "name": "Stacked barrels",
+    "description": "Heavy casks are wedged across the passage.",
+    "width": 3,
+    "height": 2,
+    "drawWidth": 3,
+    "drawHeight": 2,
+    "renderAnchor": "bottom",
+    "wallAlign": "south",
+    "spriteName": "secret_cellar_barrels",
+    "interactionFaces": {
+      "north": {
+        "width": 3,
+        "height": 2,
+        "offsetY": -2
+      }
+    },
+    "interactionType": "confirm",
+    "confirmId": "cellar_secret",
+    "confirmPrompt": "A rusted lever is tucked between the casks. Pull it to roll the barrels aside?"
+  },
+  "cellar_passage_switch": {
+    "id": "cellar_passage_switch",
+    "name": "Hidden lever",
+    "description": "A rusted lever is set into the tunnel wall.",
+    "width": 1,
+    "height": 1,
+    "wallMount": true,
+    "spriteName": "secret_passage_switch",
+    "interactionType": "confirm",
+    "confirmId": "cellar_secret",
+    "confirmPrompt": "A rusted lever is set into the rock. Pull it to open the way to the cellar?"
+  },
   "stable_booth": {
     "id": "stable_booth",
     "name": "Stall",

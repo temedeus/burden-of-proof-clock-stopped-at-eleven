@@ -28,6 +28,12 @@
       "x": 16,
       "y": 11,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "study_passage_switch",
+      "x": 9,
+      "y": 11,
+      "anchor": "top-left"
     }
   ],
   "exits": [
@@ -37,7 +43,8 @@
       "targetRoom": "study",
       "spawnX": "center",
       "spawnY": 2,
-      "skipDoorSprite": true
+      "skipDoorSprite": true,
+      "requiresUnlock": "study_secret"
     },
     {
       "x": "center",

@@ -2,7 +2,7 @@ import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
 import { drawFountainAnimated } from "../assets/procedural/fountain";
 import { drawOilLampAnimated, oilLampAnimPhase, oilLampDrawBounds } from "../assets/procedural/oil_lamp";
 import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
-import { decorWallDrawBounds } from "../assets/procedural/wall_align";
+import { decorWallDrawBounds, wallMountDrawBounds } from "../assets/procedural/wall_align";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TILE_SIZE } from "../world/constants";
 import { exitSkipsDoorSprite } from "../world/exitDoor";
@@ -38,6 +38,7 @@ export function furnitureActorFromInteractable(
     const isFireplace = spriteName === "fireplace";
     const isFountain = spriteName === "fountain";
     const isOilLamp = spriteName === "oil_lamp";
+    const isWallMount = Boolean(obj.wallSide) && !isOilLamp && !obj.walkableDecor;
     const isStableBooth = spriteName.startsWith("stable_booth");
     const decorW = obj.drawWidthTiles;
     const decorH = obj.drawHeightTiles;
@@ -85,10 +86,26 @@ export function furnitureActorFromInteractable(
         drawY = bounds.drawY;
         drawW = bounds.drawW;
         drawH = bounds.drawH;
+    } else if (isWallMount && roomSize && obj.wallSide) {
+        const tileW = decorW ?? 1;
+        const tileH = decorH ?? 1;
+        const bounds = wallMountDrawBounds(
+            minX,
+            minY,
+            obj.wallSide,
+            roomSize.width,
+            roomSize.height,
+            tileW,
+            tileH
+        );
+        drawX = bounds.drawX;
+        drawY = bounds.drawY;
+        drawW = bounds.drawW;
+        drawH = bounds.drawH;
     }
 
-    const sortY = hasDecorDraw || isFireplace || isFountain || isOilLamp || isStableBooth ? drawY : minY * TILE_SIZE;
-    const sortH = hasDecorDraw || isFireplace || isFountain || isOilLamp || isStableBooth ? drawH : heightTiles * TILE_SIZE;
+    const sortY = hasDecorDraw || isFireplace || isFountain || isOilLamp || isWallMount || isStableBooth ? drawY : minY * TILE_SIZE;
+    const sortH = hasDecorDraw || isFireplace || isFountain || isOilLamp || isWallMount || isStableBooth ? drawH : heightTiles * TILE_SIZE;
 
     return {
         y: sortY,

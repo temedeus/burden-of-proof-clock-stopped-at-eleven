@@ -1,10 +1,6 @@
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TILE_SIZE } from "../world/constants";
-import {
-    addFurnitureToRoom,
-    removeInteractableById,
-    setHiddenExitDoorOpen
-} from "../world/Rooms";
+import { removeInteractableById, setHiddenExitDoorOpen } from "../world/Rooms";
 import type { Room } from "../world/Room";
 
 const REVEAL_DURATION = 1.4;
@@ -13,18 +9,18 @@ function easeInOutCubic(t: number): number {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-export interface StudySecretRevealResult {
+export interface CellarSecretRevealResult {
     message: string;
     enterDialog: boolean;
 }
 
-export class StudySecretPuzzle {
+export class CellarSecretPuzzle {
     revealed = false;
     private anim: { elapsed: number; duration: number; doorOpened: boolean } | null = null;
 
     constructor(
-        private getStudyRoom: () => Room,
-        private getHiddenRoom: () => Room
+        private getCellarRoom: () => Room,
+        private getTunnelRoom: () => Room
     ) {}
 
     isAnimating(): boolean {
@@ -32,18 +28,18 @@ export class StudySecretPuzzle {
     }
 
     applyDoorState(): void {
-        setHiddenExitDoorOpen(this.getStudyRoom(), this.revealed, "hidden_room");
-        setHiddenExitDoorOpen(this.getHiddenRoom(), this.revealed, "study");
+        setHiddenExitDoorOpen(this.getCellarRoom(), this.revealed, "secret_tunnel");
+        setHiddenExitDoorOpen(this.getTunnelRoom(), this.revealed, "cellar_storage");
     }
 
     startReveal(): void {
         if (this.revealed || this.anim) return;
-        removeInteractableById(this.getStudyRoom(), "secret_bookshelf");
-        removeInteractableById(this.getHiddenRoom(), "study_passage_switch");
+        removeInteractableById(this.getCellarRoom(), "secret_cellar_barrels");
+        removeInteractableById(this.getTunnelRoom(), "cellar_passage_switch");
         this.anim = { elapsed: 0, duration: REVEAL_DURATION, doorOpened: false };
     }
 
-    update(dt: number): StudySecretRevealResult | null {
+    update(dt: number): CellarSecretRevealResult | null {
         const anim = this.anim;
         if (!anim) return null;
 
@@ -51,8 +47,8 @@ export class StudySecretPuzzle {
         const t = Math.min(1, anim.elapsed / anim.duration);
 
         if (!anim.doorOpened && t >= 0.55) {
-            setHiddenExitDoorOpen(this.getStudyRoom(), true, "hidden_room");
-            setHiddenExitDoorOpen(this.getHiddenRoom(), true, "study");
+            setHiddenExitDoorOpen(this.getCellarRoom(), true, "secret_tunnel");
+            setHiddenExitDoorOpen(this.getTunnelRoom(), true, "cellar_storage");
             anim.doorOpened = true;
         }
 
@@ -62,7 +58,7 @@ export class StudySecretPuzzle {
         return null;
     }
 
-    private finish(): StudySecretRevealResult {
+    private finish(): CellarSecretRevealResult {
         if (this.revealed) {
             this.anim = null;
             return { message: "", enterDialog: false };
@@ -71,31 +67,28 @@ export class StudySecretPuzzle {
         this.revealed = true;
         this.anim = null;
 
-        const study = this.getStudyRoom();
-        for (const x of [9, 10, 14, 15]) {
-            addFurnitureToRoom(study, { furnitureId: "bookshelves", x, y: 1, anchor: "top-left" });
-        }
-        setHiddenExitDoorOpen(study, true, "hidden_room");
-        setHiddenExitDoorOpen(this.getHiddenRoom(), true, "study");
+        const cellar = this.getCellarRoom();
+        setHiddenExitDoorOpen(cellar, true, "secret_tunnel");
+        setHiddenExitDoorOpen(this.getTunnelRoom(), true, "cellar_storage");
 
         return {
-            message: "The bookshelf grinds aside, revealing a hidden passage.",
+            message: "The barrels roll aside, revealing a hidden passage.",
             enterDialog: true
         };
     }
 
     render(ctx: CanvasRenderingContext2D, currentRoomId: string): void {
         const anim = this.anim;
-        if (!anim || currentRoomId !== "study") return;
+        if (!anim || currentRoomId !== "cellar_storage") return;
 
         const rawT = Math.min(1, anim.elapsed / anim.duration);
-        const y = TILE_SIZE;
+        const y = 16 * TILE_SIZE;
 
         if (rawT < 0.12) {
             const nudge = easeInOutCubic(rawT / 0.12) * 3;
             spriteLoader.drawSprite(
                 ctx,
-                "secret_bookshelf",
+                "secret_cellar_barrels",
                 11 * TILE_SIZE - nudge,
                 y,
                 TILE_SIZE * 3,
@@ -113,14 +106,14 @@ export class StudySecretPuzzle {
 
         for (const [from, to] of slides) {
             const x = (from + (to - from) * slideT) * TILE_SIZE;
-            spriteLoader.drawSprite(ctx, "bookshelf", x, y, TILE_SIZE, TILE_SIZE * 2);
+            spriteLoader.drawSprite(ctx, "wine_barrel", x, y, TILE_SIZE, TILE_SIZE * 2);
         }
 
         if (slideT > 0.3) {
             const fade = Math.min(1, (slideT - 0.3) / 0.7);
             ctx.save();
             ctx.globalAlpha = fade;
-            spriteLoader.drawSprite(ctx, "bookshelf", 15 * TILE_SIZE, y, TILE_SIZE, TILE_SIZE * 2);
+            spriteLoader.drawSprite(ctx, "wine_barrel", 15 * TILE_SIZE, y, TILE_SIZE, TILE_SIZE * 2);
             ctx.restore();
         }
     }
@@ -128,8 +121,8 @@ export class StudySecretPuzzle {
     isExitBlocked(fromRoomId: string, exitTargetRoom: string): boolean {
         if (this.revealed && !this.isAnimating()) return false;
         return (
-            (fromRoomId === "study" && exitTargetRoom === "hidden_room") ||
-            (fromRoomId === "hidden_room" && exitTargetRoom === "study")
+            (fromRoomId === "cellar_storage" && exitTargetRoom === "secret_tunnel") ||
+            (fromRoomId === "secret_tunnel" && exitTargetRoom === "cellar_storage")
         );
     }
 }

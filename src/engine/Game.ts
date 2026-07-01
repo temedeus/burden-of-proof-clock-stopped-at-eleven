@@ -12,6 +12,7 @@ import { RoomTransitionService } from "../systems/RoomTransitionService";
 import { MurdererChaseController, type Difficulty } from "../systems/MurdererChaseController";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
+import { CellarSecretPuzzle } from "../puzzles/CellarSecretPuzzle";
 import { isExitUnlocked, isTransitionConfirm, runPuzzleConfirm, targetRoomFromTransitionConfirm } from "../puzzles/registry";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
@@ -80,7 +81,14 @@ export class Game {
     private roomTransitions = new RoomTransitionService();
     private murdererChase: MurdererChaseController;
     private victory = new VictorySequence();
-    private studySecret = new StudySecretPuzzle(() => this.rooms.study);
+    private studySecret = new StudySecretPuzzle(
+        () => this.rooms.study,
+        () => this.rooms.hidden_room
+    );
+    private cellarSecret = new CellarSecretPuzzle(
+        () => this.rooms.cellar_storage,
+        () => this.rooms.secret_tunnel
+    );
 
     private state: GameState = "playing";
     private message: string | null = null;
@@ -130,6 +138,7 @@ export class Game {
 
         this.loadNPCs();
         this.studySecret.applyDoorState();
+        this.cellarSecret.applyDoorState();
 
         spriteLoader.load().catch((err) => console.error("Failed to load spritesheet:", err));
 
@@ -161,6 +170,7 @@ export class Game {
     private getUnlockedIds(): Set<string> {
         const ids = new Set<string>();
         if (this.studySecret.revealed) ids.add("study_secret");
+        if (this.cellarSecret.revealed) ids.add("cellar_secret");
         return ids;
     }
 
@@ -348,7 +358,10 @@ export class Game {
             this.handleRoomTransition();
         }
 
-        const revealResult = this.studySecret.update(dt);
+        const studyReveal = this.studySecret.update(dt);
+        const cellarReveal = this.cellarSecret.update(dt);
+        const revealResult =
+            studyReveal?.enterDialog ? studyReveal : cellarReveal?.enterDialog ? cellarReveal : null;
         if (revealResult?.enterDialog) {
             this.message = revealResult.message;
             this.state = "interacting";
@@ -371,6 +384,10 @@ export class Game {
                         ? runPuzzleConfirm(pending.id, {
                               study_secret: () => {
                                   this.studySecret.startReveal();
+                                  this.state = "playing";
+                              },
+                              cellar_secret: () => {
+                                  this.cellarSecret.startReveal();
                                   this.state = "playing";
                               }
                           })
@@ -428,7 +445,8 @@ export class Game {
             this.currentRoom,
             this.rooms,
             (exit) => {
-                if (this.studySecret.isExitBlocked(exit.targetRoom)) return true;
+                if (this.studySecret.isExitBlocked(this.currentRoom.id, exit.targetRoom)) return true;
+                if (this.cellarSecret.isExitBlocked(this.currentRoom.id, exit.targetRoom)) return true;
                 if (exit.requiresUnlock && !isExitUnlocked(exit.requiresUnlock, unlocked)) {
                     return true;
                 }
@@ -492,6 +510,7 @@ export class Game {
         });
 
         this.studySecret.render(ctx, this.currentRoom.id);
+        this.cellarSecret.render(ctx, this.currentRoom.id);
 
         if (this.debugMode) {
             renderDebugOverlay(ctx, this.player, this.currentRoom, this.clueSystem);

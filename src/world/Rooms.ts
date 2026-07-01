@@ -183,6 +183,53 @@ function buildExplicitFaceTiles(
     return tiles;
 }
 
+/** Interaction tiles in front of wall-mounted objects (switches, sconces with examine). */
+function buildWallMountInteractionTilesByFacing(
+    anchorX: number,
+    anchorY: number,
+    wallSide: "north" | "south" | "east" | "west",
+    roomWidth: number,
+    roomHeight: number
+): Partial<Record<PlayerFacing, { x: number; y: number }[]>> {
+    const depth = INTERACTION_FACE_DEPTH;
+    const push = (tiles: { x: number; y: number }[], x: number, y: number) => {
+        if (x >= 0 && x < roomWidth && y >= 0 && y < roomHeight) {
+            tiles.push({ x, y });
+        }
+    };
+
+    const result: Partial<Record<PlayerFacing, { x: number; y: number }[]>> = {};
+
+    switch (wallSide) {
+        case "north": {
+            const tiles: { x: number; y: number }[] = [];
+            for (let d = 1; d <= depth; d++) push(tiles, anchorX, anchorY + d);
+            result.up = tiles;
+            break;
+        }
+        case "south": {
+            const tiles: { x: number; y: number }[] = [];
+            for (let d = 1; d <= depth; d++) push(tiles, anchorX, anchorY - d);
+            result.down = tiles;
+            break;
+        }
+        case "west": {
+            const tiles: { x: number; y: number }[] = [];
+            for (let d = 1; d <= depth; d++) push(tiles, anchorX + d, anchorY);
+            result.left = tiles;
+            break;
+        }
+        case "east": {
+            const tiles: { x: number; y: number }[] = [];
+            for (let d = 1; d <= depth; d++) push(tiles, anchorX - d, anchorY);
+            result.right = tiles;
+            break;
+        }
+    }
+
+    return result;
+}
+
 function buildInteractionTiles(
     startX: number,
     startY: number,
@@ -327,10 +374,23 @@ function placeFurniture(
     }
 
     if (furniture.wallMount) {
+        const wallSide = detectOilLampWallSide(startX, startY, width, height);
         interactable.footprintTiles = [{ x: startX, y: startY }];
         interactable.tiles = [{ x: startX, y: startY }];
-        interactable.wallSide = detectOilLampWallSide(startX, startY, width, height);
-        interactable.interactionTiles = [];
+        interactable.wallSide = wallSide;
+        if (furniture.nonInteractive) {
+            interactable.interactionTiles = [];
+        } else {
+            const interactionTilesByFacing = buildWallMountInteractionTilesByFacing(
+                startX,
+                startY,
+                wallSide,
+                width,
+                height
+            );
+            interactable.interactionTilesByFacing = interactionTilesByFacing;
+            interactable.interactionTiles = unionInteractionTiles(interactionTilesByFacing);
+        }
         return interactable;
     }
 

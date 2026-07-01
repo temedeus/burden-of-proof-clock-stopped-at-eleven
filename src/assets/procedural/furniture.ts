@@ -530,6 +530,53 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    secret_cellar_barrels: {
+        nativeWidth: 96,
+        nativeHeight: 48,
+        draw(ctx) {
+            const drawBarrel = (ox: number) => {
+                grid(ctx, ox + 2, 4, 2, [
+                    "..dddd..",
+                    ".dhhhhl.",
+                    "dhhhhlll",
+                    "dhhhhlll",
+                    "dhhhhlll",
+                    ".dhhhhl.",
+                    "..dddd.."
+                ], { d: P.woodDark, h: P.wood, l: P.woodLight });
+                r(ctx, ox + 4, 10, 20, 2, P.silverDark);
+                r(ctx, ox + 4, 18, 20, 2, P.silverDark);
+                r(ctx, ox + 4, 26, 20, 2, P.silverDark);
+                r(ctx, ox + 8, 6, 2, 20, P.woodHi);
+                r(ctx, ox + 14, 5, 2, 22, P.woodDark);
+            };
+
+            drawBarrel(0);
+            drawBarrel(32);
+            drawBarrel(64);
+
+            // Rusted lever between the center casks
+            r(ctx, 46, 20, 4, 12, P.silverDark);
+            r(ctx, 47, 22, 2, 8, P.silver);
+            r(ctx, 48, 16, 6, 4, P.silverDark);
+        }
+    },
+
+    secret_passage_switch: {
+        nativeWidth: 32,
+        nativeHeight: 32,
+        draw(ctx) {
+            r(ctx, 10, 4, 12, 24, P.rockDark);
+            r(ctx, 12, 6, 8, 20, P.rock);
+            r(ctx, 14, 10, 4, 14, P.silverDark);
+            r(ctx, 15, 8, 2, 16, P.silver);
+            r(ctx, 12, 22, 8, 4, P.silverDark);
+            r(ctx, 13, 23, 6, 2, P.silver);
+            r(ctx, 6, 14, 20, 2, P.woodDark);
+            r(ctx, 8, 15, 16, 1, P.wood);
+        }
+    },
+
     wine_barrel: {
         nativeWidth: 64,
         nativeHeight: 64,

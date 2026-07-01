@@ -2,7 +2,16 @@
   "id": "courtyard",
   "width": 25,
   "height": 18,
-  "floorTile": "gravel",
+  "floorTile": "grass",
+  "gravelPath": {
+    "orientation": "vertical",
+    "widthTiles": 3,
+    "centerX": "center"
+  },
+  "perimeterWalls": {
+    "north": "manor",
+    "west": "gate_side"
+  },
   "southFenceBorder": true,
   "furniture": [
     {
@@ -12,9 +21,39 @@
       "anchor": "center"
     },
     {
-      "furnitureId": "manor_building",
-      "x": 1,
-      "y": 6,
+      "furnitureId": "tree",
+      "x": 5,
+      "y": 4,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "tree",
+      "x": 5,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "tree",
+      "x": 5,
+      "y": 14,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "tree",
+      "x": 18,
+      "y": 4,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "tree",
+      "x": 18,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "tree",
+      "x": 18,
+      "y": 14,
       "anchor": "top-left"
     },
     {

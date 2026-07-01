@@ -36,6 +36,15 @@ export interface GravelPathConfig {
     centerX: number | "center";
 }
 
+export type PerimeterWallStyle = "brick" | "wood" | "rock" | "manor" | "gate_side";
+
+export interface PerimeterWallsConfig {
+    north?: PerimeterWallStyle;
+    south?: PerimeterWallStyle;
+    east?: PerimeterWallStyle;
+    west?: PerimeterWallStyle;
+}
+
 export interface RoomConfig {
     id: string;
     width: number;
@@ -44,6 +53,8 @@ export interface RoomConfig {
     /** Perimeter wall style (default red brick). */
     wallTile?: "brick" | "wood" | "rock";
     gravelPath?: GravelPathConfig;
+    /** Override individual perimeter rows/columns (applied before southFenceBorder). */
+    perimeterWalls?: PerimeterWallsConfig;
     /** Replace the south wall row with iron fence tiles (gate gap from gravel path). */
     southFenceBorder?: boolean;
     furniture: FurniturePlacement[];

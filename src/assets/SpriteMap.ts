@@ -15,5 +15,7 @@ export const TILE_TO_SPRITE: Record<number, string> = {
     8: "ceramic",
     9: "rock",
     10: "wall_wood",
-    11: "wall_rock"
+    11: "wall_rock",
+    12: "wall_manor",
+    13: "wall_gate_west"
 };

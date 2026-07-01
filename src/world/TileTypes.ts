@@ -18,3 +18,7 @@ export const TILE_ROCK = 9;
 export const TILE_WOOD_WALL = 10;
 /** Natural stone cave / cellar wall */
 export const TILE_ROCK_WALL = 11;
+/** Gothic manor stone facade (courtyard north wall) */
+export const TILE_MANOR_WALL = 12;
+/** Side-on wrought-iron gate segment (courtyard west wall) */
+export const TILE_GATE_WALL = 13;

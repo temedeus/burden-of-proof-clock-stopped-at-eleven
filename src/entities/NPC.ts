@@ -2,7 +2,7 @@ import { Entity } from "./Entity";
 import { TILE_SIZE } from "../world/constants";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TileMap } from "../world/TileMap";
-import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_FURNITURE } from "../world/TileTypes";
+import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_FURNITURE } from "../world/TileTypes";
 
 const DEFAULT_CHASE_SPEED = 100;
 
@@ -102,7 +102,15 @@ export class NPC extends Entity {
       for (let tx = left; tx < right; tx++) {
         if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) return true;
         const tile = map.getTile(tx, ty);
-        if (tile === TILE_WALL || tile === TILE_WOOD_WALL || tile === TILE_ROCK_WALL || tile === TILE_FURNITURE) return true;
+        if (
+            tile === TILE_WALL ||
+            tile === TILE_WOOD_WALL ||
+            tile === TILE_ROCK_WALL ||
+            tile === TILE_MANOR_WALL ||
+            tile === TILE_GATE_WALL ||
+            tile === TILE_FURNITURE
+        )
+            return true;
       }
     }
     return false;

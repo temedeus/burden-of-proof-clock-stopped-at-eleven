@@ -11,13 +11,15 @@ import {
     TILE_WALL,
     TILE_WOOD_WALL,
     TILE_ROCK_WALL,
+    TILE_MANOR_WALL,
+    TILE_GATE_WALL,
     TILE_CERAMIC,
     TILE_ROCK
 } from "./TileTypes";
 import { Interactable } from "./Interactable";
 import { NPC } from "../entities/NPC";
 import { loadFurnitureCatalog } from "../content/loadCatalog";
-import type { FurnitureConfig, FurniturePlacement, GravelPathConfig, InteractionFaceConfig, RoomConfig } from "@cse/content-schema";
+import type { FurnitureConfig, FurniturePlacement, GravelPathConfig, InteractionFaceConfig, PerimeterWallStyle, PerimeterWallsConfig, RoomConfig } from "@cse/content-schema";
 import { detectOilLampWallSide } from "../assets/procedural/oil_lamp";
 import { inferWallAlign } from "../assets/procedural/wall_align";
 import { exitSkipsDoorTiles } from "./exitDoor";
@@ -466,9 +468,50 @@ function applyGravelPath(
             const x = startCol + i;
             if (x < 1 || x >= roomWidth - 1) continue;
             const idx = y * roomWidth + x;
-            if (tiles[idx] === TILE_WALL) continue;
+            if (tiles[idx] === TILE_WALL || tiles[idx] === TILE_MANOR_WALL || tiles[idx] === TILE_GATE_WALL) continue;
             tiles[idx] = TILE_GRAVEL;
         }
+    }
+}
+
+function wallTileForStyle(style: PerimeterWallStyle, perimeterWall: number): number {
+    switch (style) {
+        case "wood":
+            return TILE_WOOD_WALL;
+        case "rock":
+            return TILE_ROCK_WALL;
+        case "manor":
+            return TILE_MANOR_WALL;
+        case "gate_side":
+            return TILE_GATE_WALL;
+        default:
+            return perimeterWall;
+    }
+}
+
+function applyPerimeterWalls(
+    tiles: number[],
+    roomWidth: number,
+    roomHeight: number,
+    walls: PerimeterWallsConfig,
+    perimeterWall: number
+): void {
+    if (walls.north) {
+        const tile = wallTileForStyle(walls.north, perimeterWall);
+        for (let x = 0; x < roomWidth; x++) tiles[x] = tile;
+    }
+    if (walls.south) {
+        const tile = wallTileForStyle(walls.south, perimeterWall);
+        const row = (roomHeight - 1) * roomWidth;
+        for (let x = 0; x < roomWidth; x++) tiles[row + x] = tile;
+    }
+    if (walls.west) {
+        const tile = wallTileForStyle(walls.west, perimeterWall);
+        for (let y = 0; y < roomHeight; y++) tiles[y * roomWidth] = tile;
+    }
+    if (walls.east) {
+        const tile = wallTileForStyle(walls.east, perimeterWall);
+        for (let y = 0; y < roomHeight; y++) tiles[y * roomWidth + (roomWidth - 1)] = tile;
     }
 }
 
@@ -507,6 +550,10 @@ export function createRoomFromConfig(
     for (let y = 0; y < roomHeight; y++) {
         tiles[y * roomWidth] = perimeterWall;
         tiles[y * roomWidth + (roomWidth - 1)] = perimeterWall;
+    }
+
+    if (config.perimeterWalls) {
+        applyPerimeterWalls(tiles, roomWidth, roomHeight, config.perimeterWalls, perimeterWall);
     }
 
     if (config.gravelPath) {

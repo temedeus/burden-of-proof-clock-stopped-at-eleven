@@ -156,13 +156,13 @@
     "id": "manor_building",
     "name": "Manor house",
     "description": "The great house looms against the sky.",
-    "width": 6,
-    "height": 3,
-    "drawWidth": 12,
-    "drawHeight": 6,
+    "width": 10,
+    "height": 4,
+    "drawWidth": 22,
+    "drawHeight": 10,
     "renderAnchor": "bottom",
     "collisionRowsFromBottom": 1,
-    "collisionWidth": 4,
+    "collisionWidth": 6,
     "spriteName": "manor_building"
   },
   "fireplace": {

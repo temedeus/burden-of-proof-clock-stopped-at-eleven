@@ -283,3 +283,68 @@ export const EXTERIOR_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     }
 };
+
+/** Stone ashlar course for courtyard north manor wall (top-down tile). */
+function drawManorWallTile(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2): void {
+    r(ctx, 0, 26, 32, 6, P.shadow);
+    r(ctx, 0, 28, 32, 4, P.stone);
+    r(ctx, 0, 4, 32, 22, P.stone);
+    for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+            const ox = (row % 2) * 5;
+            const bx = 1 + col * 10 + ox;
+            const by = 6 + row * 6;
+            const tone = (col + row + variant) % 2 === 0 ? P.stoneLight : P.stone;
+            r(ctx, bx, by, 9, 5, tone);
+            r(ctx, bx, by, 9, 1, P.stoneHi);
+            r(ctx, bx, by + 4, 9, 1, P.shadow);
+        }
+    }
+    r(ctx, 0, 0, 32, 5, P.shadow);
+    r(ctx, 0, 2, 32, 2, P.stoneLight);
+    if (variant === 1) {
+        r(ctx, 11, 9, 10, 12, P.black);
+        r(ctx, 12, 11, 8, 8, P.candle);
+        r(ctx, 15, 11, 2, 8, P.outline);
+        r(ctx, 12, 14, 8, 2, P.outline);
+    } else if (variant === 2) {
+        r(ctx, 4, 7, 6, 8, P.shadow);
+        r(ctx, 5, 8, 4, 6, P.stoneLight);
+        r(ctx, 22, 8, 6, 8, P.shadow);
+        r(ctx, 23, 8, 4, 6, P.stoneLight);
+    }
+}
+
+/** West-wall fence segment — iron bars run north–south (side-on vs south fence). */
+function drawGateWallWestTile(ctx: CanvasRenderingContext2D): void {
+    r(ctx, 0, 26, 32, 6, P.stone);
+    r(ctx, 0, 26, 32, 2, P.stoneLight);
+    r(ctx, 0, 5, 11, 22, P.stone);
+    r(ctx, 0, 5, 4, 22, P.stoneLight);
+    r(ctx, 9, 5, 2, 22, P.shadow);
+    r(ctx, 3, 1, 6, 5, P.silver);
+    r(ctx, 4, 0, 4, 3, P.silverDark);
+    for (let by = 8; by < 26; by += 5) {
+        r(ctx, 12, by, 2, 18, P.silverDark);
+        r(ctx, 12, by, 1, 18, P.silver);
+    }
+    for (const ry of [10, 16, 22]) {
+        r(ctx, 12, ry, 19, 2, P.silverDark);
+        r(ctx, 12, ry, 19, 1, P.silver);
+    }
+    r(ctx, 30, 8, 2, 16, P.silverDark);
+    r(ctx, 30, 8, 1, 16, P.silver);
+}
+
+export const MANOR_WALL_SPRITES = ["wall_manor", "wall_manor_b", "wall_manor_c"] as const;
+
+export function manorWallSpriteName(x: number, y: number): (typeof MANOR_WALL_SPRITES)[number] {
+    return MANOR_WALL_SPRITES[(x * 17 + y * 31) % 3];
+}
+
+export const COURTYARD_WALL_SPRITES: Record<string, ProceduralSpriteDef> = {
+    wall_manor: tile32((ctx) => drawManorWallTile(ctx, 0)),
+    wall_manor_b: tile32((ctx) => drawManorWallTile(ctx, 1)),
+    wall_manor_c: tile32((ctx) => drawManorWallTile(ctx, 2)),
+    wall_gate_west: tile32((ctx) => drawGateWallWestTile(ctx))
+};

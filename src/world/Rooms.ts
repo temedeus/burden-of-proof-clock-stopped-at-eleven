@@ -496,15 +496,7 @@ function applyPerimeterWalls(
     walls: PerimeterWallsConfig,
     perimeterWall: number
 ): void {
-    if (walls.north) {
-        const tile = wallTileForStyle(walls.north, perimeterWall);
-        for (let x = 0; x < roomWidth; x++) tiles[x] = tile;
-    }
-    if (walls.south) {
-        const tile = wallTileForStyle(walls.south, perimeterWall);
-        const row = (roomHeight - 1) * roomWidth;
-        for (let x = 0; x < roomWidth; x++) tiles[row + x] = tile;
-    }
+    // West/east first; north last so the manor top row spans the full width (corners included).
     if (walls.west) {
         const tile = wallTileForStyle(walls.west, perimeterWall);
         for (let y = 0; y < roomHeight; y++) tiles[y * roomWidth] = tile;
@@ -512,6 +504,15 @@ function applyPerimeterWalls(
     if (walls.east) {
         const tile = wallTileForStyle(walls.east, perimeterWall);
         for (let y = 0; y < roomHeight; y++) tiles[y * roomWidth + (roomWidth - 1)] = tile;
+    }
+    if (walls.south) {
+        const tile = wallTileForStyle(walls.south, perimeterWall);
+        const row = (roomHeight - 1) * roomWidth;
+        for (let x = 0; x < roomWidth; x++) tiles[row + x] = tile;
+    }
+    if (walls.north) {
+        const tile = wallTileForStyle(walls.north, perimeterWall);
+        for (let x = 0; x < roomWidth; x++) tiles[x] = tile;
     }
 }
 

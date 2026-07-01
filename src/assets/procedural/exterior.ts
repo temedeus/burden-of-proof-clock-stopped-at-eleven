@@ -315,36 +315,84 @@ function drawManorWallTile(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2): v
     }
 }
 
-/** West-wall fence segment — iron bars run north–south (side-on vs south fence). */
-function drawGateWallWestTile(ctx: CanvasRenderingContext2D): void {
-    r(ctx, 0, 26, 32, 6, P.stone);
-    r(ctx, 0, 26, 32, 2, P.stoneLight);
-    r(ctx, 0, 5, 11, 22, P.stone);
-    r(ctx, 0, 5, 4, 22, P.stoneLight);
-    r(ctx, 9, 5, 2, 22, P.shadow);
-    r(ctx, 3, 1, 6, 5, P.silver);
-    r(ctx, 4, 0, 4, 3, P.silverDark);
-    for (let by = 8; by < 26; by += 5) {
-        r(ctx, 12, by, 2, 18, P.silverDark);
-        r(ctx, 12, by, 1, 18, P.silver);
+/** West perimeter fence — top-down oblique rail along the left edge; transparent elsewhere. */
+function drawGateWallWestTile(ctx: CanvasRenderingContext2D, withPost: boolean): void {
+    if (withPost) {
+        r(ctx, 0, 0, 10, 32, P.stone);
+        r(ctx, 0, 0, 4, 32, P.stoneLight);
+        r(ctx, 8, 0, 2, 32, P.shadow);
+        r(ctx, 1, 0, 7, 4, P.stoneHi);
+        r(ctx, 2, 1, 5, 2, P.silver);
+        r(ctx, 3, 0, 3, 2, P.silverDark);
+        r(ctx, 0, 28, 10, 4, P.stone);
+        r(ctx, 0, 28, 10, 1, P.stoneLight);
+        return;
     }
-    for (const ry of [10, 16, 22]) {
-        r(ctx, 12, ry, 19, 2, P.silverDark);
-        r(ctx, 12, ry, 19, 1, P.silver);
+
+    // Thin footing where the fence meets the ground
+    r(ctx, 0, 30, 5, 2, P.stone);
+    r(ctx, 0, 30, 5, 1, P.stoneLight);
+
+    // Fence run: a mostly straight vertical line with a gentle twist every few tiles
+    for (let y = 1; y < 30; y++) {
+        const twist = (Math.floor(y / 7) % 2) as 0 | 1;
+        const lineX = 2 + twist;
+
+        // Primary rail — the dominant straight line
+        r(ctx, lineX, y, 1, 1, P.silverDark);
+        r(ctx, lineX + 1, y, 1, 1, P.silver);
+
+        // Sparse pickets — dotted rhythm along the run
+        if (y % 5 === 2) {
+            r(ctx, lineX + 2, y, 1, 1, P.ironDark);
+        }
+
+        // Short horizontal ticks (fence depth seen from above at a slight tilt)
+        if (y % 8 === 0) {
+            r(ctx, lineX, y, 5, 1, P.silverDark);
+            r(ctx, lineX + 1, y - 1, 4, 1, P.silver);
+            r(ctx, lineX, y + 1, 3, 1, P.ironDark);
+        }
     }
-    r(ctx, 30, 8, 2, 16, P.silverDark);
-    r(ctx, 30, 8, 1, 16, P.silver);
+
+    // Top capping rail
+    r(ctx, 1, 1, 6, 2, P.silverDark);
+    r(ctx, 2, 1, 5, 1, P.silver);
+    r(ctx, 2, 2, 4, 1, P.ironDark);
+}
+
+/** East perimeter fence — mirrored west gate strip along the right edge. */
+function drawGateWallEastTile(ctx: CanvasRenderingContext2D, withPost: boolean): void {
+    ctx.save();
+    ctx.translate(32, 0);
+    ctx.scale(-1, 1);
+    drawGateWallWestTile(ctx, withPost);
+    ctx.restore();
 }
 
 export const MANOR_WALL_SPRITES = ["wall_manor", "wall_manor_b", "wall_manor_c"] as const;
 
+export const GATE_WEST_SPRITES = ["wall_gate_west", "wall_gate_west_post"] as const;
+export const GATE_EAST_SPRITES = ["wall_gate_east", "wall_gate_east_post"] as const;
+
 export function manorWallSpriteName(x: number, y: number): (typeof MANOR_WALL_SPRITES)[number] {
     return MANOR_WALL_SPRITES[(x * 17 + y * 31) % 3];
+}
+
+export function gateWestSpriteName(x: number, y: number): (typeof GATE_WEST_SPRITES)[number] {
+    return y % 4 === 0 ? "wall_gate_west_post" : "wall_gate_west";
+}
+
+export function gateEastSpriteName(x: number, y: number): (typeof GATE_EAST_SPRITES)[number] {
+    return y % 4 === 0 ? "wall_gate_east_post" : "wall_gate_east";
 }
 
 export const COURTYARD_WALL_SPRITES: Record<string, ProceduralSpriteDef> = {
     wall_manor: tile32((ctx) => drawManorWallTile(ctx, 0)),
     wall_manor_b: tile32((ctx) => drawManorWallTile(ctx, 1)),
     wall_manor_c: tile32((ctx) => drawManorWallTile(ctx, 2)),
-    wall_gate_west: tile32((ctx) => drawGateWallWestTile(ctx))
+    wall_gate_west: tile32((ctx) => drawGateWallWestTile(ctx, false)),
+    wall_gate_west_post: tile32((ctx) => drawGateWallWestTile(ctx, true)),
+    wall_gate_east: tile32((ctx) => drawGateWallEastTile(ctx, false)),
+    wall_gate_east_post: tile32((ctx) => drawGateWallEastTile(ctx, true))
 };

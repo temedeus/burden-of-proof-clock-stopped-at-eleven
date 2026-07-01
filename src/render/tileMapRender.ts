@@ -1,6 +1,6 @@
 import { spriteLoader } from "../assets/SpriteLoader";
 import { rockFloorSpriteName, rockWallSpriteName } from "../assets/procedural/tiles";
-import { manorWallSpriteName } from "../assets/procedural/exterior";
+import { manorWallSpriteName, gateWestSpriteName, gateEastSpriteName } from "../assets/procedural/exterior";
 import { TILE_TO_SPRITE } from "../assets/SpriteMap";
 import { TILE_SIZE } from "../world/constants";
 import {
@@ -29,7 +29,7 @@ export function renderTileMap(ctx: CanvasRenderingContext2D, map: TileMap): void
     }
 }
 
-function spriteUnderFurniture(map: TileMap, x: number, y: number): string {
+function underlaySpriteName(map: TileMap, x: number, y: number): string {
     const idx = y * map.width + x;
     const snap = map.terrainBeforeFurniture;
     if (snap && idx >= 0 && idx < snap.length) {
@@ -51,9 +51,25 @@ function spriteUnderFurniture(map: TileMap, x: number, y: number): string {
               : "floor";
 }
 
+function spriteUnderFurniture(map: TileMap, x: number, y: number): string {
+    return underlaySpriteName(map, x, y);
+}
+
 function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: number, y: number): void {
     const tileX = x * TILE_SIZE;
     const tileY = y * TILE_SIZE;
+
+    if (tile === TILE_GATE_WALL) {
+        const gateSprite =
+            x === 0
+                ? gateWestSpriteName(x, y)
+                : x === map.width - 1
+                  ? gateEastSpriteName(x, y)
+                  : gateWestSpriteName(x, y);
+        spriteLoader.drawSprite(ctx, underlaySpriteName(map, x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
+        spriteLoader.drawSprite(ctx, gateSprite, tileX, tileY, TILE_SIZE, TILE_SIZE);
+        return;
+    }
 
     const spriteName =
         tile === TILE_DOOR
@@ -70,8 +86,6 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                       ? rockWallSpriteName(x, y)
                       : tile === TILE_MANOR_WALL
                         ? manorWallSpriteName(x, y)
-                        : tile === TILE_GATE_WALL
-                          ? "wall_gate_west"
                     : tile === TILE_FURNITURE
                       ? spriteUnderFurniture(map, x, y)
                       : tile === TILE_FENCE

@@ -8,6 +8,11 @@
     "widthTiles": 3,
     "centerX": "center"
   },
+  "perimeterWalls": {
+    "north": "manor",
+    "west": "gate_side",
+    "east": "gate_side"
+  },
   "southFenceBorder": true,
   "furniture": [
     {

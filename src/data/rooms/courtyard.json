@@ -10,7 +10,8 @@
   },
   "perimeterWalls": {
     "north": "manor",
-    "west": "gate_side"
+    "west": "gate_side",
+    "east": "gate_side"
   },
   "southFenceBorder": true,
   "furniture": [
@@ -22,38 +23,38 @@
     },
     {
       "furnitureId": "tree",
-      "x": 5,
-      "y": 4,
+      "x": 2,
+      "y": 3,
       "anchor": "top-left"
     },
     {
       "furnitureId": "tree",
       "x": 5,
-      "y": 9,
+      "y": 3,
       "anchor": "top-left"
     },
     {
       "furnitureId": "tree",
-      "x": 5,
-      "y": 14,
+      "x": 8,
+      "y": 3,
       "anchor": "top-left"
     },
     {
       "furnitureId": "tree",
-      "x": 18,
-      "y": 4,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "tree",
-      "x": 18,
-      "y": 9,
+      "x": 15,
+      "y": 3,
       "anchor": "top-left"
     },
     {
       "furnitureId": "tree",
       "x": 18,
-      "y": 14,
+      "y": 3,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "tree",
+      "x": 21,
+      "y": 3,
       "anchor": "top-left"
     },
     {

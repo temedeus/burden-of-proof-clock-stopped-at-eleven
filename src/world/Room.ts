@@ -11,6 +11,7 @@ export interface DoorExit {
     skipDoorSprite?: boolean;
     doorSprite?: "door_wood";
     requiresUnlock?: string;
+    interactionOnly?: boolean;
 }
 
 export class Room {

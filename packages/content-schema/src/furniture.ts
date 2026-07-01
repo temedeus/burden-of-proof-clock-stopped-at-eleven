@@ -50,7 +50,7 @@ export interface FurnitureConfig {
     wallAlign?: "north" | "south";
     /** When set, interaction shows a yes/no confirmation instead of immediate examine. */
     interactionType?: "confirm";
-    /** Puzzle or handler id passed to confirmation flow (e.g. `study_secret`). */
+    /** Puzzle or handler id passed to confirmation flow (e.g. `study_secret`, `transition:cellar_storage`). */
     confirmId?: string;
     confirmPrompt?: string;
 }

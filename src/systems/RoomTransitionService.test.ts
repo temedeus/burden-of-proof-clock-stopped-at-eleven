@@ -47,6 +47,31 @@ describe("RoomTransitionService", () => {
         expect(service.roomTransitionCooldown).toBeGreaterThan(0);
     });
 
+    it("skips interaction-only exits until confirmed", () => {
+        const service = new RoomTransitionService();
+        const courtyard = makeRoom("courtyard", 10, 10, [
+            {
+                x: 5,
+                y: 5,
+                targetRoom: "cellar_storage",
+                spawnX: 5,
+                spawnY: 2,
+                interactionOnly: true
+            }
+        ]);
+        const cellar = makeRoom("cellar_storage", 10, 10, []);
+        const player = new Player("player", 5 * TILE_SIZE, 4 * TILE_SIZE);
+
+        const result = service.checkTransition(
+            player,
+            courtyard,
+            { courtyard, cellar_storage: cellar },
+            () => false
+        );
+
+        expect(result).toBeNull();
+    });
+
     it("skips blocked exits", () => {
         const service = new RoomTransitionService();
         const hall = makeRoom("hall", 10, 10, [

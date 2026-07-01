@@ -652,7 +652,8 @@ export function createRoomFromConfig(
             spawnY: resolveSpawnY(exit.spawnY, spawnH),
             ...(exit.skipDoorSprite ? { skipDoorSprite: true } : {}),
             ...(exit.doorSprite ? { doorSprite: exit.doorSprite } : {}),
-            ...(exit.requiresUnlock ? { requiresUnlock: exit.requiresUnlock } : {})
+            ...(exit.requiresUnlock ? { requiresUnlock: exit.requiresUnlock } : {}),
+            ...(exit.interactionOnly ? { interactionOnly: true } : {})
         };
     });
 

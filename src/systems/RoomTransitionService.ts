@@ -67,6 +67,7 @@ export class RoomTransitionService {
         const playerFeetCol = Math.ceil((player.x + player.width) / TILE_SIZE) - 1;
 
         for (const exit of currentRoom.exits) {
+            if (exit.interactionOnly) continue;
             if (isExitBlocked(exit)) continue;
 
             if (

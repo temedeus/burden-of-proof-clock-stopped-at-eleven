@@ -12,7 +12,7 @@ import { RoomTransitionService } from "../systems/RoomTransitionService";
 import { MurdererChaseController, type Difficulty } from "../systems/MurdererChaseController";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
-import { isExitUnlocked, runPuzzleConfirm } from "../puzzles/registry";
+import { isExitUnlocked, isTransitionConfirm, runPuzzleConfirm, targetRoomFromTransitionConfirm } from "../puzzles/registry";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
 import { renderInventoryPanel } from "./InventoryPanel";
@@ -363,16 +363,21 @@ export class Game {
             ) {
                 const pending = this.pendingConfirmation;
                 this.pendingConfirmation = null;
-                const handled = pending
-                    ? runPuzzleConfirm(pending.id, {
-                          study_secret: () => {
-                              this.studySecret.startReveal();
-                              this.state = "playing";
-                          }
-                      })
-                    : false;
-                if (!handled) {
+                if (pending && isTransitionConfirm(pending.id)) {
+                    this.transitionViaInteractionExit(targetRoomFromTransitionConfirm(pending.id));
                     this.state = "playing";
+                } else {
+                    const handled = pending
+                        ? runPuzzleConfirm(pending.id, {
+                              study_secret: () => {
+                                  this.studySecret.startReveal();
+                                  this.state = "playing";
+                              }
+                          })
+                        : false;
+                    if (!handled) {
+                        this.state = "playing";
+                    }
                 }
             } else if (this.input.wasPressed("n")) {
                 this.pendingConfirmation = null;
@@ -385,6 +390,34 @@ export class Game {
                 this.clueNotification = null;
                 this.state = "playing";
             }
+        }
+    }
+
+    private transitionViaInteractionExit(targetRoomId: string): void {
+        const exit = this.currentRoom.exits.find(
+            (e) => e.interactionOnly && e.targetRoom === targetRoomId
+        );
+        if (!exit) return;
+
+        const nextRoom = this.rooms[targetRoomId];
+        if (!nextRoom) return;
+
+        const fromRoomId = this.currentRoom.id;
+        this.roomTransitions.roomTransitionCooldown = 0.65;
+        this.currentRoom = nextRoom;
+        this.syncRoomAmbience();
+        this.roomTransitions.placePlayerAfterRoomTransition(
+            this.player,
+            fromRoomId,
+            nextRoom,
+            exit.spawnX,
+            exit.spawnY
+        );
+        this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(targetRoomId));
+
+        const murderer = this.getMurderer();
+        if (murderer?.isChasing()) {
+            this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
         }
     }
 

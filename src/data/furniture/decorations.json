@@ -250,6 +250,9 @@
     "drawHeight": 4,
     "renderAnchor": "bottom",
     "walkableDecor": true,
+    "interactionType": "confirm",
+    "confirmId": "transition:cellar_storage",
+    "confirmPrompt": "A wooden ladder drops into the darkness below. Descend into the cellars?",
     "spriteName": "cellar_hatch"
   },
   "carpet": {

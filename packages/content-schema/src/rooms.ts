@@ -22,6 +22,8 @@ export interface ExitConfig {
     doorSprite?: "door_wood";
     /** Exit is blocked until the named unlock id is satisfied (e.g. `study_secret`). */
     requiresUnlock?: string;
+    /** When true, the exit only triggers after a confirm interaction (no walk-through). */
+    interactionOnly?: boolean;
 }
 
 export interface NPCPlacement {

@@ -1,6 +1,16 @@
 /** Map confirmation ids from content to puzzle handlers. */
 export type PuzzleConfirmHandlers = Record<string, () => void>;
 
+const TRANSITION_CONFIRM_PREFIX = "transition:";
+
+export function isTransitionConfirm(id: string): boolean {
+    return id.startsWith(TRANSITION_CONFIRM_PREFIX);
+}
+
+export function targetRoomFromTransitionConfirm(id: string): string {
+    return id.slice(TRANSITION_CONFIRM_PREFIX.length);
+}
+
 export function runPuzzleConfirm(id: string, handlers: PuzzleConfirmHandlers): boolean {
     const handler = handlers[id];
     if (!handler) return false;

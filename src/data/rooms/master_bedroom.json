@@ -2,7 +2,14 @@
   "id": "master_bedroom",
   "width": 25,
   "height": 18,
-  "furniture": [],
+  "furniture": [
+    {
+      "furnitureId": "manor_lord_bed",
+      "x": "center",
+      "y": 9,
+      "anchor": "center"
+    }
+  ],
   "exits": [
     {
       "x": "center",

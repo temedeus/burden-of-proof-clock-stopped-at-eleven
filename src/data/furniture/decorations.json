@@ -182,6 +182,19 @@
     "interactionOffsetY": 0,
     "spriteName": "fireplace"
   },
+  "manor_lord_bed": {
+    "id": "manor_lord_bed",
+    "name": "Lord's bed",
+    "description": "A vast carved four-poster bed with damask hangings — the baron's own.",
+    "width": 8,
+    "height": 5,
+    "drawWidth": 8,
+    "drawHeight": 5,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 4,
+    "collisionWidth": 8,
+    "spriteName": "manor_lord_bed"
+  },
   "kitchen_table": {
     "id": "kitchen_table",
     "name": "Kitchen table",

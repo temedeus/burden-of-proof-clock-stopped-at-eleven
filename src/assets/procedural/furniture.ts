@@ -378,6 +378,79 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    manor_lord_bed: {
+        nativeWidth: 256,
+        nativeHeight: 160,
+        draw(ctx) {
+            const W = 256;
+            const H = 160;
+            // Canopy posts (four corners)
+            const post = (px: number, py: number) => {
+                r(ctx, px, py, 10, H - py - 8, P.woodDark);
+                r(ctx, px + 1, py, 8, H - py - 10, P.wood);
+                r(ctx, px + 2, py + 2, 6, 8, P.goldDark);
+                r(ctx, px + 3, py + 1, 4, 4, P.gold);
+            };
+            post(6, 4);
+            post(W - 16, 4);
+            post(6, 52);
+            post(W - 16, 52);
+
+            // Canopy valance along headboard
+            r(ctx, 4, 0, W - 8, 14, P.carpetPlum);
+            r(ctx, 6, 2, W - 12, 10, P.carpetPlumLight);
+            r(ctx, 8, 4, W - 16, 4, P.goldDark);
+            r(ctx, 20, 0, W - 40, 3, P.gold);
+
+            // Ornate headboard
+            r(ctx, 12, 12, W - 24, 22, P.woodDark);
+            r(ctx, 14, 14, W - 28, 18, P.wood);
+            r(ctx, 20, 16, W - 40, 14, P.woodHi);
+            for (let i = 0; i < 6; i++) {
+                r(ctx, 28 + i * 34, 18, 20, 10, P.woodDark);
+                r(ctx, 30 + i * 34, 20, 16, 6, P.goldDark);
+            }
+
+            // Mattress & coverlet
+            r(ctx, 16, 38, W - 32, 88, P.woodDark);
+            r(ctx, 18, 40, W - 36, 84, P.cream);
+            r(ctx, 20, 42, W - 40, 80, P.carpetPlum);
+            r(ctx, 22, 44, W - 44, 76, P.carpetPlumLight);
+            // Quilted panels
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 6; col++) {
+                    r(ctx, 28 + col * 34, 50 + row * 18, 28, 14, row % 2 === col % 2 ? P.carpetPlum : P.carpetPlumLight);
+                    r(ctx, 30 + col * 34, 52 + row * 18, 24, 2, P.goldDark);
+                }
+            }
+
+            // Pillows
+            r(ctx, 36, 44, 44, 18, P.cream);
+            r(ctx, 38, 46, 40, 14, P.white);
+            r(ctx, W - 80, 44, 44, 18, P.cream);
+            r(ctx, W - 78, 46, 40, 14, P.white);
+            r(ctx, W / 2 - 28, 42, 56, 20, P.cream);
+            r(ctx, W / 2 - 26, 44, 52, 16, P.highlight);
+
+            // Footboard
+            r(ctx, 12, 122, W - 24, 16, P.woodDark);
+            r(ctx, 14, 124, W - 28, 12, P.wood);
+            r(ctx, 16, 126, W - 32, 8, P.woodHi);
+            r(ctx, 20, 128, W - 40, 2, P.gold);
+
+            // Bed steps at foot
+            r(ctx, 40, 138, W - 80, 14, P.woodDark);
+            r(ctx, 42, 140, W - 84, 10, P.wood);
+            r(ctx, 44, 142, W - 88, 6, P.woodLight);
+
+            // Side drapery hints
+            r(ctx, 2, 20, 8, 100, P.carpetPlum);
+            r(ctx, W - 10, 20, 8, 100, P.carpetPlum);
+            r(ctx, 3, 22, 6, 96, P.carpetPlumLight);
+            r(ctx, W - 9, 22, 6, 96, P.carpetPlumLight);
+        }
+    },
+
     dining_table: {
         nativeWidth: 96,
         nativeHeight: 56,

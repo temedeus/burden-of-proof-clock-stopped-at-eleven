@@ -20,7 +20,7 @@ describe("AtticMiceController", () => {
         const beamYs = new Set(ctrl.getActors(() => 0).map((a) => a.y));
         expect(beamYs.size).toBeGreaterThan(0);
         for (const y of beamYs) {
-            expect([5 * 32 + 14, 12 * 32 + 14]).toContain(y);
+            expect(y).toBe(12 * 32 + 14);
         }
     });
 });

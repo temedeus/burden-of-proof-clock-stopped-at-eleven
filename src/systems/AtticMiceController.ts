@@ -3,7 +3,7 @@ import type { DepthActor } from "../render/roomScene";
 import { TILE_SIZE } from "../world/constants";
 
 const ATTIC_ROOM_ID = "attic";
-const BEAM_ROWS = [5, 12] as const;
+const BEAM_ROWS = [12] as const;
 const BEAM_MIN_TILE_X = 2;
 const BEAM_MAX_TILE_X = 22;
 const MOUSE_COUNT = 3;

@@ -183,6 +183,8 @@ export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void
 export interface RenderRoomSceneOptions {
     getAnimTime?: () => number;
     extraActors?: DepthActor[];
+    /** Drawn after overhead decor (roof beams, cobwebs), above the player. */
+    extraOverheadActors?: DepthActor[];
     clearColor?: string;
     /** When the canvas is translated (e.g. centered small room), skip fill — caller clears screen space first. */
     skipClear?: boolean;
@@ -239,6 +241,12 @@ export function renderRoomScene(
         .forEach((a) => a.render(ctx));
 
     overheadActors
+        .slice()
+        .sort((a, b) => a.y + a.height - (b.y + b.height))
+        .forEach((a) => a.render(ctx));
+
+    const overheadExtras = options.extraOverheadActors ?? [];
+    overheadExtras
         .slice()
         .sort((a, b) => a.y + a.height - (b.y + b.height))
         .forEach((a) => a.render(ctx));

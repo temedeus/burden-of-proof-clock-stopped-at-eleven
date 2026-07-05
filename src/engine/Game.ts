@@ -24,6 +24,7 @@ import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
 import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { gardenAmbience } from "../audio/GardenAmbience";
+import { atticMice } from "../systems/AtticMiceController";
 import { clueSounds } from "../audio/ClueSounds";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import {
@@ -257,6 +258,7 @@ export class Game {
 
     update(dt: number) {
         this.decorAnimTime += dt;
+        atticMice.update(dt, this.currentRoom.id);
         this.roomTitleBanner = tickRoomTitleBanner(this.roomTitleBanner, dt);
 
         if (this.state === "victory") {
@@ -481,6 +483,7 @@ export class Game {
     private syncRoomAmbience(): void {
         fireplaceAmbience.syncForRoom(this.currentRoom);
         gardenAmbience.syncForRoom(this.currentRoom);
+        atticMice.syncForRoom(this.currentRoom.id);
     }
 
     render(ctx: CanvasRenderingContext2D) {
@@ -511,6 +514,7 @@ export class Game {
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
             extraActors: [this.player],
+            extraOverheadActors: atticMice.getActors(() => this.decorAnimTime),
             skipClear: needsCentering
         });
 

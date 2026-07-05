@@ -19,7 +19,7 @@ export interface ExitConfig {
     /** When true, no door sprite is drawn (hidden passages, staircases). */
     skipDoorSprite?: boolean;
     /** Door sprite override (default `door`; stable uses `door_wood`). */
-    doorSprite?: "door_wood";
+    doorSprite?: "door_wood" | "door_manor";
     /** Exit is blocked until the named unlock id is satisfied (e.g. `study_secret`). */
     requiresUnlock?: string;
     /** When true, the exit only triggers after a confirm interaction (no walk-through). */

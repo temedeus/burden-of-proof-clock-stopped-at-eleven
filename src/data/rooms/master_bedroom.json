@@ -5,11 +5,12 @@
   "furniture": [],
   "exits": [
     {
-      "x": 24,
-      "y": "center",
-      "targetRoom": "landing",
-      "spawnX": 2,
-      "spawnY": "center"
+      "x": "center",
+      "y": "bottom",
+      "targetRoom": "landing_west",
+      "spawnX": "center",
+      "spawnY": 2,
+      "doorSprite": "door_manor"
     }
   ]
 }

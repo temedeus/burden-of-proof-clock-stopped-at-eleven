@@ -1,0 +1,28 @@
+{
+  "id": "landing_west",
+  "width": 14,
+  "height": 7,
+  "southFenceBorder": true,
+  "southFenceStyle": "wood",
+  "southFenceOpening": "floor",
+  "southFenceGapWidth": 0,
+  "furniture": [],
+  "exits": [
+    {
+      "x": 13,
+      "y": "center",
+      "targetRoom": "landing",
+      "spawnX": 2,
+      "spawnY": "center",
+      "skipDoorSprite": true
+    },
+    {
+      "x": "center",
+      "y": "top",
+      "targetRoom": "master_bedroom",
+      "spawnX": "center",
+      "spawnY": "bottom-2",
+      "doorSprite": "door_manor"
+    }
+  ]
+}

@@ -24,9 +24,10 @@
     {
       "x": 0,
       "y": "center",
-      "targetRoom": "master_bedroom",
-      "spawnX": 23,
-      "spawnY": "center"
+      "targetRoom": "landing_west",
+      "spawnX": 12,
+      "spawnY": "center",
+      "skipDoorSprite": true
     },
     {
       "x": 8,

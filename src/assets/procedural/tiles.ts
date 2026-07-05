@@ -892,6 +892,61 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    /** Grand double doors for the master suite — wide ornate panels, brass hardware. */
+    door_manor: {
+        nativeWidth: 96,
+        nativeHeight: 32,
+        draw(ctx) {
+            const W = 96;
+            const H = 32;
+            // Marble threshold
+            r(ctx, 0, H - 4, W, 4, P.stoneLight);
+            r(ctx, 0, H - 4, W, 1, P.stoneHi);
+            // Outer frame
+            r(ctx, 0, 0, W, H - 4, P.woodDark);
+            r(ctx, 2, 2, W - 4, H - 8, P.wood);
+            // Architrave band
+            r(ctx, 2, 2, W - 4, 5, P.woodDark);
+            r(ctx, 4, 3, W - 8, 3, P.goldDark);
+            // Carved flourish crest (center top)
+            r(ctx, 42, 3, 12, 3, P.gold);
+            r(ctx, 44, 2, 8, 1, P.gold);
+            r(ctx, 46, 4, 4, 2, P.goldDark);
+            // Left leaf
+            r(ctx, 4, 8, 40, H - 12, P.woodDark);
+            r(ctx, 6, 10, 36, H - 16, P.woodLight);
+            r(ctx, 8, 12, 14, 8, P.woodHi);
+            r(ctx, 24, 12, 14, 8, P.wood);
+            r(ctx, 8, 22, 14, H - 26, P.wood);
+            r(ctx, 24, 22, 14, H - 26, P.woodHi);
+            r(ctx, 6, 10, 2, H - 16, P.goldDark);
+            r(ctx, 40, 10, 2, H - 16, P.goldDark);
+            // Right leaf
+            r(ctx, 52, 8, 40, H - 12, P.woodDark);
+            r(ctx, 54, 10, 36, H - 16, P.woodLight);
+            r(ctx, 56, 12, 14, 8, P.wood);
+            r(ctx, 72, 12, 14, 8, P.woodHi);
+            r(ctx, 56, 22, 14, H - 26, P.woodHi);
+            r(ctx, 72, 22, 14, H - 26, P.wood);
+            r(ctx, 54, 10, 2, H - 16, P.goldDark);
+            r(ctx, 88, 10, 2, H - 16, P.goldDark);
+            // Center mullion / newel
+            r(ctx, 45, 6, 6, H - 10, P.woodDark);
+            r(ctx, 46, 4, 4, 4, P.gold);
+            r(ctx, 47, 5, 2, 2, P.goldDark);
+            // Brass handles
+            r(ctx, 38, Math.floor(H / 2) - 1, 4, 4, P.gold);
+            r(ctx, 54, Math.floor(H / 2) - 1, 4, 4, P.gold);
+            r(ctx, 39, Math.floor(H / 2), 2, 2, P.goldDark);
+            r(ctx, 55, Math.floor(H / 2), 2, 2, P.goldDark);
+            // Outline
+            r(ctx, 0, 0, W, 1, P.outline);
+            r(ctx, 0, H - 5, W, 1, P.outline);
+            r(ctx, 0, 0, 1, H - 4, P.outline);
+            r(ctx, W - 1, 0, 1, H - 4, P.outline);
+        }
+    },
+
     table: {
         nativeWidth: 32,
         nativeHeight: 32,

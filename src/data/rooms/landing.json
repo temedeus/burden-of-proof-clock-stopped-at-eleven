@@ -2,6 +2,9 @@
   "id": "landing",
   "width": 25,
   "height": 7,
+  "southFenceBorder": true,
+  "southFenceStyle": "wood",
+  "southFenceOpening": "floor",
   "furniture": [
     {
       "furnitureId": "staircase",

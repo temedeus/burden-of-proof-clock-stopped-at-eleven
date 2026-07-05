@@ -53,6 +53,8 @@ export const VALID_SPRITE_NAMES = [
     "gravel",
     "fence",
     "fence_post",
+    "banister",
+    "banister_post",
     "manor_gate",
     "manor_building",
     "fireplace",

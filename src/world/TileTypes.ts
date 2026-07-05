@@ -20,9 +20,13 @@ export const TILE_WOOD_WALL = 10;
 export const TILE_ROCK_WALL = 11;
 /** Gothic manor stone facade (courtyard north wall) */
 export const TILE_MANOR_WALL = 12;
-/** Side-on wrought-iron gate segment (courtyard west wall) */
+/** Wrought-iron gate segment (courtyard west wall) */
 export const TILE_GATE_WALL = 13;
 /** Weathered attic floorboards */
 export const TILE_ATTIC_FLOOR = 14;
 /** Exposed old-wood attic wall boards */
 export const TILE_ATTIC_WALL = 15;
+/** Indoor landing wood banister segment */
+export const TILE_BANISTER = 16;
+/** Landing banister newel post */
+export const TILE_BANISTER_POST = 17;

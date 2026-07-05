@@ -255,6 +255,27 @@ function tile32(draw: (ctx: CanvasRenderingContext2D) => void): ProceduralSprite
     return { nativeWidth: 32, nativeHeight: 32, draw: (ctx: CanvasRenderingContext2D) => draw(ctx) };
 }
 
+/** Wood stair guardrail seen from above (landing banister). */
+export function drawWoodBanisterRails(ctx: CanvasRenderingContext2D, x0: number, x1: number, y0 = 6): void {
+    r(ctx, x0, y0, x1 - x0, 3, P.woodDark);
+    r(ctx, x0, y0 + 1, x1 - x0, 1, P.woodHi);
+    r(ctx, x0, y0 + 13, x1 - x0, 2, P.woodDark);
+    r(ctx, x0, y0 + 14, x1 - x0, 1, P.wood);
+    for (let x = x0 + 3; x < x1 - 2; x += 5) {
+        r(ctx, x, y0 + 3, 2, 11, P.woodDark);
+        r(ctx, x + 1, y0 + 4, 1, 9, P.woodLight);
+    }
+}
+
+function drawWoodBanisterNewel(ctx: CanvasRenderingContext2D, x: number, y: number, h: number): void {
+    r(ctx, x, y, 12, h, P.woodDark);
+    r(ctx, x + 1, y, 10, h, P.wood);
+    r(ctx, x + 1, y, 2, h, P.woodLight);
+    r(ctx, x, y, 12, 4, P.woodHi);
+    r(ctx, x + 2, y + 2, 8, 2, P.woodLight);
+    r(ctx, x, h - 4, 12, 4, P.woodDark);
+}
+
 export const EXTERIOR_SPRITES: Record<string, ProceduralSpriteDef> = {
     fence: tile32((ctx) => {
         // Thin footing only — grass/gravel shows through the rest of the tile
@@ -266,6 +287,17 @@ export const EXTERIOR_SPRITES: Record<string, ProceduralSpriteDef> = {
     fence_post: tile32((ctx) => {
         drawGatePost(ctx, 6, 0, 32);
         drawIronFenceRails(ctx, 14, 32);
+    }),
+
+    banister: tile32((ctx) => {
+        r(ctx, 0, 26, 32, 6, P.atticWoodDark);
+        r(ctx, 0, 27, 32, 2, P.atticWood);
+        drawWoodBanisterRails(ctx, 0, 32);
+    }),
+
+    banister_post: tile32((ctx) => {
+        drawWoodBanisterNewel(ctx, 4, 0, 32);
+        drawWoodBanisterRails(ctx, 16, 32);
     }),
 
     manor_gate: {

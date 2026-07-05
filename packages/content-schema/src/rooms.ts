@@ -68,6 +68,12 @@ export interface RoomConfig {
     perimeterWalls?: PerimeterWallsConfig;
     /** Replace the south wall row with iron fence tiles (gate gap from gravel path). */
     southFenceBorder?: boolean;
+    /** Floor under the south fence opening (default gravel for outdoor rooms). */
+    southFenceOpening?: "floor" | "gravel";
+    /** Guardrail style along southFenceBorder (default iron fence). */
+    southFenceStyle?: "iron" | "wood";
+    /** Width of the south guardrail opening in tiles (default 3; 0 = solid rail). */
+    southFenceGapWidth?: number;
     furniture: FurniturePlacement[];
     exits: ExitConfig[];
     npcs?: NPCPlacement[];

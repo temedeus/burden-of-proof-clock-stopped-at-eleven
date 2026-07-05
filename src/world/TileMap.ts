@@ -13,6 +13,8 @@ import {
     TILE_GRAVEL,
     TILE_FENCE,
     TILE_FENCE_POST,
+    TILE_BANISTER,
+    TILE_BANISTER_POST,
     TILE_CERAMIC,
     TILE_ROCK,
     TILE_ATTIC_FLOOR
@@ -46,7 +48,9 @@ export class TileMap {
             tile === TILE_ATTIC_WALL ||
             tile === TILE_FURNITURE ||
             tile === TILE_FENCE ||
-            tile === TILE_FENCE_POST
+            tile === TILE_FENCE_POST ||
+            tile === TILE_BANISTER ||
+            tile === TILE_BANISTER_POST
         ) {
             return true;
         }

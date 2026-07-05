@@ -8,6 +8,8 @@ import {
     TILE_DOOR,
     TILE_FENCE,
     TILE_FENCE_POST,
+    TILE_BANISTER,
+    TILE_BANISTER_POST,
     TILE_FLOOR,
     TILE_FURNITURE,
     TILE_GRASS,
@@ -77,16 +79,17 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
         return;
     }
 
-    if (tile === TILE_FENCE || tile === TILE_FENCE_POST) {
+    if (tile === TILE_FENCE || tile === TILE_FENCE_POST || tile === TILE_BANISTER || tile === TILE_BANISTER_POST) {
         spriteLoader.drawSprite(ctx, underlaySpriteName(map, x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
-        spriteLoader.drawSprite(
-            ctx,
-            tile === TILE_FENCE ? "fence" : "fence_post",
-            tileX,
-            tileY,
-            TILE_SIZE,
-            TILE_SIZE
-        );
+        const railSprite =
+            tile === TILE_FENCE
+                ? "fence"
+                : tile === TILE_FENCE_POST
+                  ? "fence_post"
+                  : tile === TILE_BANISTER
+                    ? "banister"
+                    : "banister_post";
+        spriteLoader.drawSprite(ctx, railSprite, tileX, tileY, TILE_SIZE, TILE_SIZE);
         return;
     }
 

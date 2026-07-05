@@ -16,7 +16,9 @@ import {
     TILE_CERAMIC,
     TILE_ROCK,
     TILE_ATTIC_FLOOR,
-    TILE_ATTIC_WALL
+    TILE_ATTIC_WALL,
+    TILE_BANISTER,
+    TILE_BANISTER_POST
 } from "./TileTypes";
 import { Interactable } from "./Interactable";
 import { NPC } from "../entities/NPC";
@@ -485,18 +487,21 @@ function applySouthFenceBorder(
     roomWidth: number,
     roomHeight: number,
     gateCenterX: number,
-    gateWidthTiles: number
+    gateWidthTiles: number,
+    gapTile: number,
+    segmentTile: number,
+    postTile: number
 ): void {
     const bottomY = roomHeight - 1;
-    const gateRadius = Math.floor(gateWidthTiles / 2);
+    const gateRadius = gateWidthTiles > 0 ? Math.floor(gateWidthTiles / 2) : -1;
 
     for (let x = 0; x < roomWidth; x++) {
         const idx = bottomY * roomWidth + x;
-        if (Math.abs(x - gateCenterX) <= gateRadius) {
-            tiles[idx] = TILE_GRAVEL;
+        if (gateRadius >= 0 && Math.abs(x - gateCenterX) <= gateRadius) {
+            tiles[idx] = gapTile;
             continue;
         }
-        tiles[idx] = x === 0 || x === roomWidth - 1 ? TILE_FENCE_POST : TILE_FENCE;
+        tiles[idx] = x === 0 || x === roomWidth - 1 ? postTile : segmentTile;
     }
 }
 
@@ -658,8 +663,12 @@ export function createRoomFromConfig(
         const gateCx = gatePath
             ? resolvePosition(gatePath.centerX ?? "center", roomWidth)
             : Math.floor(roomWidth / 2);
-        const gateW = gatePath?.widthTiles ?? 3;
-        applySouthFenceBorder(tiles, roomWidth, roomHeight, gateCx, gateW);
+        const gateW = config.southFenceGapWidth ?? gatePath?.widthTiles ?? 3;
+        const gapTile = config.southFenceOpening === "floor" ? baseFloor : TILE_GRAVEL;
+        const wood = config.southFenceStyle === "wood";
+        const segmentTile = wood ? TILE_BANISTER : TILE_FENCE;
+        const postTile = wood ? TILE_BANISTER_POST : TILE_FENCE_POST;
+        applySouthFenceBorder(tiles, roomWidth, roomHeight, gateCx, gateW, gapTile, segmentTile, postTile);
     }
 
     const terrainBeforeFurniture = tiles.slice();
@@ -670,11 +679,15 @@ export function createRoomFromConfig(
             ? resolvePosition(gatePath.centerX ?? "center", roomWidth)
             : Math.floor(roomWidth / 2);
         const bottomY = roomHeight - 1;
-        const gateRadius = Math.floor((gatePath?.widthTiles ?? 3) / 2);
+        const gateRadius =
+            (config.southFenceGapWidth ?? gatePath?.widthTiles ?? 3) > 0
+                ? Math.floor((config.southFenceGapWidth ?? gatePath?.widthTiles ?? 3) / 2)
+                : -1;
+        const gapUnderlay = config.southFenceOpening === "floor" ? baseFloor : TILE_GRAVEL;
         for (let x = 0; x < roomWidth; x++) {
             const idx = bottomY * roomWidth + x;
-            if (Math.abs(x - cx) <= gateRadius) {
-                terrainBeforeFurniture[idx] = TILE_GRAVEL;
+            if (gateRadius >= 0 && Math.abs(x - cx) <= gateRadius) {
+                terrainBeforeFurniture[idx] = gapUnderlay;
             } else if (config.southFenceBorder) {
                 terrainBeforeFurniture[idx] = baseFloor;
             }

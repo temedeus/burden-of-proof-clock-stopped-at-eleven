@@ -7,7 +7,7 @@
     {
       "furnitureId": "bathtub",
       "x": 8,
-      "y": 3,
+      "y": 1,
       "anchor": "top-left"
     },
     {
@@ -25,10 +25,10 @@
   ],
   "exits": [
     {
-      "x": 0,
+      "x": 11,
       "y": "center",
       "targetRoom": "guest_room_a",
-      "spawnX": 22,
+      "spawnX": 1,
       "spawnY": "center"
     }
   ]

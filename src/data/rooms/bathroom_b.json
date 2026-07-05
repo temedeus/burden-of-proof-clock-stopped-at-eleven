@@ -6,19 +6,19 @@
   "furniture": [
     {
       "furnitureId": "bathtub",
-      "x": 8,
-      "y": 3,
+      "x": 1,
+      "y": 1,
       "anchor": "top-left"
     },
     {
       "furnitureId": "toilet",
-      "x": 1,
+      "x": 9,
       "y": 6,
       "anchor": "top-left"
     },
     {
       "furnitureId": "water_boiler",
-      "x": 1,
+      "x": 9,
       "y": 2,
       "anchor": "top-left"
     }
@@ -28,7 +28,7 @@
       "x": 0,
       "y": "center",
       "targetRoom": "guest_room_b",
-      "spawnX": 22,
+      "spawnX": 23,
       "spawnY": "center"
     }
   ]

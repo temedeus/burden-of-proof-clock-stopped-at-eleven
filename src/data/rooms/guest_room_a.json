@@ -12,10 +12,10 @@
       "spawnY": 2
     },
     {
-      "x": 24,
+      "x": 0,
       "y": "center",
       "targetRoom": "bathroom_a",
-      "spawnX": 1,
+      "spawnX": 10,
       "spawnY": "center"
     }
   ]

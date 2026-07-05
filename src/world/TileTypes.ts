@@ -22,3 +22,7 @@ export const TILE_ROCK_WALL = 11;
 export const TILE_MANOR_WALL = 12;
 /** Side-on wrought-iron gate segment (courtyard west wall) */
 export const TILE_GATE_WALL = 13;
+/** Weathered attic floorboards */
+export const TILE_ATTIC_FLOOR = 14;
+/** Exposed old-wood attic wall boards */
+export const TILE_ATTIC_WALL = 15;

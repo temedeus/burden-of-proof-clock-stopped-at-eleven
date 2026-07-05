@@ -344,6 +344,133 @@ export function rockFloorSpriteName(x: number, y: number): (typeof ROCK_FLOOR_SP
     return ROCK_FLOOR_SPRITES[(x * 17 + y * 31) % 4];
 }
 
+type AtticCrack = [number, number, number, number];
+
+function drawAtticWoodPlankBase(ctx: CanvasRenderingContext2D, variant: number): void {
+    r(ctx, 0, 0, 32, 32, P.atticWoodDark);
+    const rowH = 8;
+    for (let row = 0; row < 4; row++) {
+        const y = row * rowH;
+        const tone = (row + variant) % 2 === 0 ? P.atticWood : P.atticWoodAlt;
+        r(ctx, 0, y, 32, rowH - 1, tone);
+        r(ctx, 0, y + rowH - 1, 32, 1, P.atticWoodSeam);
+        r(ctx, 0, y, 32, 1, (row + variant) % 3 === 0 ? P.atticWoodHi : P.atticWoodLight);
+        // End-grain stagger at plank joints
+        const joint = ((row * 11 + variant * 7) % 5) * 6 + 2;
+        r(ctx, joint, y + 2, 1, rowH - 3, P.atticWoodSeam);
+    }
+    // Sparse knots / nail stains
+    const knots: [number, number][] = [
+        [4 + variant * 3, 5],
+        [22 - variant, 18],
+        [12, 26 - (variant % 2) * 4]
+    ];
+    for (const [kx, ky] of knots) {
+        r(ctx, kx, ky, 2, 2, P.atticWoodKnot);
+        r(ctx, kx + 1, ky, 1, 1, P.atticWoodDark);
+    }
+}
+
+const ATTIC_FLOOR_CRACKS: AtticCrack[][] = [
+    [
+        [4, 14, 10, 1],
+        [14, 15, 8, 1],
+        [8, 7, 1, 6]
+    ],
+    [
+        [2, 22, 14, 1],
+        [18, 6, 1, 9],
+        [20, 20, 6, 1]
+    ],
+    [
+        [10, 10, 12, 1],
+        [6, 11, 1, 5],
+        [22, 2, 1, 8]
+    ],
+    [
+        [0, 18, 16, 1],
+        [16, 19, 1, 4],
+        [24, 8, 5, 1]
+    ],
+    [
+        [7, 5, 1, 11],
+        [12, 24, 11, 1]
+    ],
+    [
+        [3, 12, 20, 1],
+        [18, 13, 1, 7],
+        [25, 21, 4, 1]
+    ]
+];
+
+function drawAtticWoodFloorCracks(ctx: CanvasRenderingContext2D, variant: number): void {
+    const cracks = ATTIC_FLOOR_CRACKS[variant % ATTIC_FLOOR_CRACKS.length];
+    for (const [x, y, w, h] of cracks) {
+        r(ctx, x, y, w, h, P.atticWoodCrack);
+        if (w >= h) {
+            r(ctx, x + Math.floor(w / 2), y, 1, 2, P.atticWoodSeam);
+        } else {
+            r(ctx, x, y + Math.floor(h / 2), 2, 1, P.atticWoodSeam);
+        }
+    }
+}
+
+function drawAtticWoodFloorVariant(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2 | 3 | 4 | 5): void {
+    drawAtticWoodPlankBase(ctx, variant);
+    if (variant % 3 !== 0) {
+        drawAtticWoodFloorCracks(ctx, variant);
+    }
+    // Fine grain scratches
+    for (let i = 0; i < 4; i++) {
+        const gx = (variant * 5 + i * 7) % 28 + 2;
+        const gy = (variant * 3 + i * 5) % 28 + 2;
+        r(ctx, gx, gy, 3, 1, P.atticWoodDark);
+    }
+}
+
+export const ATTIC_FLOOR_SPRITES = [
+    "floor_attic",
+    "floor_attic_b",
+    "floor_attic_c",
+    "floor_attic_d",
+    "floor_attic_e",
+    "floor_attic_f"
+] as const;
+
+export function atticFloorSpriteName(x: number, y: number): (typeof ATTIC_FLOOR_SPRITES)[number] {
+    return ATTIC_FLOOR_SPRITES[(x * 19 + y * 23) % ATTIC_FLOOR_SPRITES.length];
+}
+
+function drawAtticWoodWallVariant(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2): void {
+    r(ctx, 0, 0, 32, 32, P.atticWallDark);
+    for (let row = 0; row < 4; row++) {
+        const y = row * 8;
+        const tone = (row + variant) % 2 === 0 ? P.atticWall : P.atticWallAlt;
+        r(ctx, 0, y, 32, 7, tone);
+        r(ctx, 0, y + 7, 32, 1, P.atticWallSeam);
+        r(ctx, 0, y, 32, 1, P.atticWallHi);
+        r(ctx, 2 + ((row + variant) % 4) * 7, y + 3, 2, 2, P.atticWallKnot);
+    }
+    r(ctx, 0, 0, 2, 32, P.atticWallDark);
+    r(ctx, 30, 0, 2, 32, P.atticWallSeam);
+    r(ctx, 1, 0, 1, 32, P.atticWallLight);
+    r(ctx, 29, 0, 1, 32, P.shadow);
+    if (variant > 0) {
+        r(ctx, 10, 4, 1, 24, P.atticWoodCrack);
+    }
+    if (variant === 2) {
+        r(ctx, 20, 0, 1, 32, P.atticWallSeam);
+    }
+    r(ctx, 0, 0, 32, 1, P.outline);
+    r(ctx, 0, 31, 32, 1, P.outline);
+}
+
+export const ATTIC_WALL_SPRITES = ["wall_attic", "wall_attic_b", "wall_attic_c"] as const;
+
+export function atticWallSpriteName(x: number, y: number): (typeof ATTIC_WALL_SPRITES)[number] {
+    return ATTIC_WALL_SPRITES[(x * 13 + y * 29) % ATTIC_WALL_SPRITES.length];
+}
+
 const ROCK_WALL = {
     v: P.rockVoid,
     s: P.rockShadow,
@@ -635,6 +762,17 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
             r(ctx, kx, ky, 2, 1, P.floorGrain);
         }
     }),
+
+    floor_attic: tile32((ctx) => drawAtticWoodFloorVariant(ctx, 0)),
+    floor_attic_b: tile32((ctx) => drawAtticWoodFloorVariant(ctx, 1)),
+    floor_attic_c: tile32((ctx) => drawAtticWoodFloorVariant(ctx, 2)),
+    floor_attic_d: tile32((ctx) => drawAtticWoodFloorVariant(ctx, 3)),
+    floor_attic_e: tile32((ctx) => drawAtticWoodFloorVariant(ctx, 4)),
+    floor_attic_f: tile32((ctx) => drawAtticWoodFloorVariant(ctx, 5)),
+
+    wall_attic: tile32((ctx) => drawAtticWoodWallVariant(ctx, 0)),
+    wall_attic_b: tile32((ctx) => drawAtticWoodWallVariant(ctx, 1)),
+    wall_attic_c: tile32((ctx) => drawAtticWoodWallVariant(ctx, 2)),
 
     grass: tile32((ctx) => {
         // Uniform fill — no outline ring so repeated tiles blend

@@ -1,5 +1,5 @@
 import { spriteLoader } from "../assets/SpriteLoader";
-import { rockFloorSpriteName, rockWallSpriteName } from "../assets/procedural/tiles";
+import { rockFloorSpriteName, rockWallSpriteName, atticFloorSpriteName, atticWallSpriteName } from "../assets/procedural/tiles";
 import { manorWallSpriteName, gateWestSpriteName, gateEastSpriteName } from "../assets/procedural/exterior";
 import { TILE_TO_SPRITE } from "../assets/SpriteMap";
 import { TILE_SIZE } from "../world/constants";
@@ -15,7 +15,10 @@ import {
     TILE_ROCK,
     TILE_ROCK_WALL,
     TILE_MANOR_WALL,
-    TILE_GATE_WALL
+    TILE_GATE_WALL,
+    TILE_ATTIC_FLOOR,
+    TILE_ATTIC_WALL,
+    TILE_WOOD_WALL
 } from "../world/TileTypes";
 import type { TileMap } from "../world/TileMap";
 
@@ -38,6 +41,7 @@ function underlaySpriteName(map: TileMap, x: number, y: number): string {
         if (t === TILE_GRAVEL) return "gravel";
         if (t === TILE_CERAMIC) return "ceramic";
         if (t === TILE_ROCK) return rockFloorSpriteName(x, y);
+        if (t === TILE_ATTIC_FLOOR) return atticFloorSpriteName(x, y);
         if (t === TILE_FLOOR) return "floor";
     }
     return map.furnitureUnderlay === "grass"
@@ -48,7 +52,9 @@ function underlaySpriteName(map: TileMap, x: number, y: number): string {
             ? "ceramic"
             : map.furnitureUnderlay === "rock"
               ? rockFloorSpriteName(x, y)
-              : "floor";
+              : map.furnitureUnderlay === "attic_wood"
+                ? atticFloorSpriteName(x, y)
+                : "floor";
 }
 
 function spriteUnderFurniture(map: TileMap, x: number, y: number): string {
@@ -95,13 +101,19 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                   ? "ceramic"
                   : tile === TILE_ROCK
                     ? rockFloorSpriteName(x, y)
-                    : tile === TILE_ROCK_WALL
-                      ? rockWallSpriteName(x, y)
-                      : tile === TILE_MANOR_WALL
-                        ? manorWallSpriteName(x, y)
-                    : tile === TILE_FURNITURE
-                      ? spriteUnderFurniture(map, x, y)
-                      : TILE_TO_SPRITE[tile];
+                    : tile === TILE_ATTIC_FLOOR
+                      ? atticFloorSpriteName(x, y)
+                      : tile === TILE_ROCK_WALL
+                        ? rockWallSpriteName(x, y)
+                        : tile === TILE_ATTIC_WALL
+                          ? atticWallSpriteName(x, y)
+                          : tile === TILE_WOOD_WALL
+                            ? "wall_wood"
+                            : tile === TILE_MANOR_WALL
+                              ? manorWallSpriteName(x, y)
+                              : tile === TILE_FURNITURE
+                                ? spriteUnderFurniture(map, x, y)
+                                : TILE_TO_SPRITE[tile];
 
     if (spriteName) {
         spriteLoader.drawSprite(ctx, spriteName, tileX, tileY, TILE_SIZE, TILE_SIZE);

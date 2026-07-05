@@ -27,6 +27,25 @@ export const P = {
     floorSeam: "#443428",
     floorGrain: "#685040",
 
+    /** Aged attic boards — grey-brown, sun-bleached */
+    atticWood: "#4a3828",
+    atticWoodAlt: "#423020",
+    atticWoodLight: "#6a5240",
+    atticWoodHi: "#7a6450",
+    atticWoodDark: "#2a2018",
+    atticWoodSeam: "#1e1810",
+    atticWoodCrack: "#14100c",
+    atticWoodKnot: "#322820",
+
+    /** Attic perimeter walls — darker than floor boards */
+    atticWall: "#322418",
+    atticWallAlt: "#2a1c14",
+    atticWallLight: "#4a3828",
+    atticWallHi: "#544030",
+    atticWallDark: "#1a120c",
+    atticWallSeam: "#120c08",
+    atticWallKnot: "#241810",
+
     /** Rug — cool plum so it reads apart from wood furniture */
     carpetPlum: "#4a2848",
     carpetPlumLight: "#6a3a62",

@@ -2,6 +2,8 @@
   "id": "attic",
   "width": 25,
   "height": 18,
+  "floorTile": "attic_wood",
+  "wallTile": "attic_wood",
   "furniture": [
     {
       "furnitureId": "attic_roof_bar",

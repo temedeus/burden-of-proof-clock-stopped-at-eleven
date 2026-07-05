@@ -14,7 +14,9 @@ import {
     TILE_MANOR_WALL,
     TILE_GATE_WALL,
     TILE_CERAMIC,
-    TILE_ROCK
+    TILE_ROCK,
+    TILE_ATTIC_FLOOR,
+    TILE_ATTIC_WALL
 } from "./TileTypes";
 import { Interactable } from "./Interactable";
 import { NPC } from "../entities/NPC";
@@ -430,6 +432,8 @@ function floorTileForUnderlay(underlay: TileMap["furnitureUnderlay"]): number {
             return TILE_CERAMIC;
         case "rock":
             return TILE_ROCK;
+        case "attic_wood":
+            return TILE_ATTIC_FLOOR;
         default:
             return TILE_FLOOR;
     }
@@ -617,13 +621,17 @@ export function createRoomFromConfig(
                 ? TILE_CERAMIC
                 : config.floorTile === "rock"
                   ? TILE_ROCK
-                  : TILE_FLOOR;
+                  : config.floorTile === "attic_wood"
+                    ? TILE_ATTIC_FLOOR
+                    : TILE_FLOOR;
     const perimeterWall =
         config.wallTile === "wood"
             ? TILE_WOOD_WALL
             : config.wallTile === "rock"
               ? TILE_ROCK_WALL
-              : TILE_WALL;
+              : config.wallTile === "attic_wood"
+                ? TILE_ATTIC_WALL
+                : TILE_WALL;
     const tiles = new Array(roomWidth * roomHeight).fill(baseFloor);
 
     for (let x = 0; x < roomWidth; x++) {
@@ -731,7 +739,7 @@ export function createRoomFromConfig(
 
     const npcs: NPC[] = [];
 
-    const furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" =
+    const furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" =
         config.floorTile === "grass"
             ? "grass"
             : config.floorTile === "gravel"
@@ -740,7 +748,9 @@ export function createRoomFromConfig(
                 ? "ceramic"
                 : config.floorTile === "rock"
                   ? "rock"
-                  : "floor";
+                  : config.floorTile === "attic_wood"
+                    ? "attic_wood"
+                    : "floor";
 
     return new Room(
         config.id,

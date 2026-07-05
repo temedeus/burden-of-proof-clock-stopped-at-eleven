@@ -6,7 +6,14 @@
   "southFenceStyle": "wood",
   "southFenceOpening": "floor",
   "southFenceGapWidth": 0,
-  "furniture": [],
+  "furniture": [
+    {
+      "furnitureId": "armor_stand",
+      "x": 1,
+      "y": 2,
+      "anchor": "top-left"
+    }
+  ],
   "exits": [
     {
       "x": 13,

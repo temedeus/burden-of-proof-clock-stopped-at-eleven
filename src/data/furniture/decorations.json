@@ -565,5 +565,18 @@
     "collisionWidth": 1,
     "nonInteractive": true,
     "spriteName": "attic_floor_post"
+  },
+  "armor_stand": {
+    "id": "armor_stand",
+    "name": "Suit of armor",
+    "description": "A polished harness of plate mail stands at attention, halberd at its side.",
+    "width": 2,
+    "height": 3,
+    "drawWidth": 2,
+    "drawHeight": 3,
+    "renderAnchor": "bottom-left",
+    "noCollision": true,
+    "nonInteractive": true,
+    "spriteName": "armor_stand"
   }
 }

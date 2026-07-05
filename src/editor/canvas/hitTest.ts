@@ -1,5 +1,6 @@
 import type { FurniturePlacement, RoomConfig } from "@cse/content-schema";
 import { resolveDecorDrawOrigin, resolveFurnitureOrigin, resolveNpcPlacementTile, resolvePosition } from "@cse/content-schema";
+import { wallMountTileRect } from "../../assets/procedural/wall_align";
 import { TILE_SIZE } from "../../world/constants";
 
 export type FurnitureBounds = {
@@ -8,6 +9,7 @@ export type FurnitureBounds = {
     drawWidth?: number;
     drawHeight?: number;
     renderAnchor?: import("@cse/content-schema").RenderAnchor;
+    wallMount?: boolean;
 };
 
 export function gridSizeFromCanvas(canvasWidth: number, canvasHeight: number): { width: number; height: number } {
@@ -38,6 +40,14 @@ export function getPlacementRect(
     grid: { width: number; height: number }
 ): { x: number; y: number; w: number; h: number } {
     const { startX, startY } = resolveFurnitureOrigin(placement, furniture, grid.width, grid.height);
+
+    if (furniture.wallMount) {
+        const tileW = furniture.drawWidth ?? 1;
+        const tileH = furniture.drawHeight ?? 1;
+        const rect = wallMountTileRect(startX, startY, grid.width, grid.height, tileW, tileH);
+        return { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+    }
+
     const hasDecorDraw =
         (furniture.drawWidth != null && furniture.drawWidth !== furniture.width) ||
         (furniture.drawHeight != null && furniture.drawHeight !== furniture.height) ||

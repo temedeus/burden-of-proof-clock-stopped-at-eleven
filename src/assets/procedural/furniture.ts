@@ -838,5 +838,54 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         draw(ctx, w = 32, h = 224) {
             drawAtticFloorPost(ctx, w, h);
         }
+    },
+
+    armor_stand: {
+        nativeWidth: 64,
+        nativeHeight: 96,
+        draw(ctx) {
+            // Wooden display plinth
+            r(ctx, 18, 78, 28, 14, P.woodDark);
+            r(ctx, 20, 80, 24, 10, P.wood);
+            r(ctx, 28, 72, 8, 8, P.woodDark);
+            r(ctx, 30, 74, 4, 6, P.woodLight);
+            // Poleaxe haft leaning east
+            r(ctx, 48, 20, 4, 58, P.woodDark);
+            r(ctx, 49, 18, 2, 6, P.iron);
+            r(ctx, 44, 12, 12, 10, P.ironDark);
+            r(ctx, 46, 10, 8, 4, P.iron);
+            r(ctx, 48, 8, 4, 4, P.silver);
+            // Leg greaves
+            r(ctx, 22, 62, 10, 16, P.ironDark);
+            r(ctx, 34, 62, 10, 16, P.iron);
+            r(ctx, 24, 64, 6, 12, P.silverDark);
+            r(ctx, 36, 64, 6, 12, P.silver);
+            // Cuirass / tassets
+            r(ctx, 20, 42, 26, 22, P.ironDark);
+            r(ctx, 22, 44, 22, 18, P.iron);
+            r(ctx, 24, 46, 8, 14, P.silverDark);
+            r(ctx, 34, 46, 8, 14, P.silver);
+            r(ctx, 30, 50, 4, 10, P.ironDark);
+            // Pauldrons
+            r(ctx, 14, 34, 14, 14, P.iron);
+            r(ctx, 38, 34, 14, 14, P.ironDark);
+            r(ctx, 16, 36, 10, 10, P.silver);
+            r(ctx, 40, 36, 10, 10, P.silverDark);
+            // Gorget ring
+            r(ctx, 24, 30, 18, 6, P.iron);
+            r(ctx, 26, 31, 14, 4, P.silverDark);
+            // Great helm (top-down)
+            r(ctx, 22, 10, 22, 22, P.ironDark);
+            r(ctx, 24, 12, 18, 18, P.iron);
+            r(ctx, 26, 14, 14, 14, P.silverDark);
+            r(ctx, 28, 16, 10, 10, P.silver);
+            r(ctx, 30, 22, 6, 2, P.ironDark);
+            r(ctx, 31, 23, 4, 1, P.black);
+            // Crest plume
+            r(ctx, 30, 4, 6, 8, P.red);
+            r(ctx, 31, 2, 4, 4, P.redLight);
+            // West-wall shadow (flush to wall)
+            r(ctx, 0, 8, 4, 80, P.shadow);
+        }
     }
 };

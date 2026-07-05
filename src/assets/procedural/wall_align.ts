@@ -1,4 +1,5 @@
 import { TILE_SIZE } from "../../world/constants";
+import { detectOilLampWallSide } from "./oil_lamp";
 
 export type WallAlign = "north" | "south";
 
@@ -55,5 +56,49 @@ export function wallMountDrawBounds(
             return { drawX: 0, drawY: anchorY * ts, drawW, drawH };
         case "east":
             return { drawX: (roomW - 1) * ts - drawW + ts, drawY: anchorY * ts, drawW, drawH };
+    }
+}
+
+/** Tile-space bounds for a wall-mounted prop (matches `wallMountDrawBounds`). */
+export function wallMountTileRect(
+    anchorX: number,
+    anchorY: number,
+    roomW: number,
+    roomH: number,
+    tileW = 1,
+    tileH = 1
+): { x: number; y: number; w: number; h: number; wallSide: WallSide } {
+    const wallSide = detectOilLampWallSide(anchorX, anchorY, roomW, roomH);
+    switch (wallSide) {
+        case "north":
+            return { x: anchorX, y: 0, w: tileW, h: tileH, wallSide };
+        case "south":
+            return { x: anchorX, y: roomH - tileH, w: tileW, h: tileH, wallSide };
+        case "west":
+            return { x: 0, y: anchorY, w: tileW, h: tileH, wallSide };
+        case "east":
+            return { x: roomW - tileW, y: anchorY, w: tileW, h: tileH, wallSide };
+    }
+}
+
+/** Snap a dragged wall-mount anchor to the nearest perimeter wall. */
+export function snapWallMountAnchor(
+    anchorX: number,
+    anchorY: number,
+    roomW: number,
+    roomH: number,
+    tileW: number,
+    tileH: number
+): { x: number; y: number } {
+    const wallSide = detectOilLampWallSide(anchorX, anchorY, roomW, roomH);
+    switch (wallSide) {
+        case "north":
+            return { x: Math.max(0, Math.min(roomW - tileW, anchorX)), y: 0 };
+        case "south":
+            return { x: Math.max(0, Math.min(roomW - tileW, anchorX)), y: roomH - 1 };
+        case "west":
+            return { x: 0, y: Math.max(0, Math.min(roomH - tileH, anchorY)) };
+        case "east":
+            return { x: roomW - 1, y: Math.max(0, Math.min(roomH - tileH, anchorY)) };
     }
 }

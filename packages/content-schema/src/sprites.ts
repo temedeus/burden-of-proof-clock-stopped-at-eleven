@@ -82,6 +82,7 @@ export const VALID_SPRITE_NAMES = [
     "wine_barrel",
     "wine_rack",
     "oil_lamp",
+    "armor_stand",
     "spider_web",
     "spider_web_tr",
     "spider_web_bl",

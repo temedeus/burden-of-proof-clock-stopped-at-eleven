@@ -1,4 +1,5 @@
 import { TILE_SIZE } from "../../../world/constants";
+import { snapWallMountAnchor } from "../../../assets/procedural/wall_align";
 import { hitTestFurniture } from "../hitTest";
 import type { ActiveDrag, LayoutTargetHandler, LayoutTargetHost, PointerContext } from "./types";
 
@@ -90,6 +91,28 @@ export const furnitureHandler: LayoutTargetHandler = {
         const placement = ctx.room.furniture[drag.index];
         if (!placement) return;
         const config = host.furnitureById[placement.furnitureId];
+        if (!config) return;
+
+        if (config.wallMount) {
+            const tileW = config.drawWidth ?? 1;
+            const tileH = config.drawHeight ?? 1;
+            const anchorX = ctx.tile.x - drag.offsetX;
+            const anchorY = ctx.tile.y - drag.offsetY;
+            const snapped = snapWallMountAnchor(
+                anchorX,
+                anchorY,
+                ctx.grid.width,
+                ctx.grid.height,
+                tileW,
+                tileH
+            );
+            placement.x = snapped.x;
+            placement.y = snapped.y;
+            placement.anchor = "top-left";
+            host.markDirty(ctx.room);
+            return;
+        }
+
         const maxX = Math.max(0, ctx.grid.width - config.width);
         const maxY = Math.max(0, ctx.grid.height - config.height);
         placement.x = Math.max(0, Math.min(maxX, ctx.tile.x - drag.offsetX));

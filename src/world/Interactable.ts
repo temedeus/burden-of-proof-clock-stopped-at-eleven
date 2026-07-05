@@ -1,3 +1,5 @@
+import type { RenderAnchor } from "@cse/content-schema";
+
 export interface Interactable {
     id: string;
     name: string;
@@ -18,10 +20,16 @@ export interface Interactable {
     /** Optional render size in tiles (defaults to collision footprint from tiles) */
     drawWidthTiles?: number;
     drawHeightTiles?: number;
+    drawOffsetXPx?: number;
+    drawOffsetYPx?: number;
     /** Where the collision footprint sits relative to the drawn sprite */
-    renderAnchor?: "center" | "bottom";
+    renderAnchor?: RenderAnchor;
     /** Floor decal: no blocking; drawn beneath NPCs/player (see Game render pass). */
     walkableDecor?: boolean;
+    /** Depth-sorted decor with no blocking tiles (e.g. overhead roof timbers). */
+    noCollision?: boolean;
+    /** Drawn above player/NPCs (e.g. roof cross-beams). */
+    overheadDecor?: boolean;
     /** No examine prompt or clue pickup. */
     nonInteractive?: boolean;
     /** Wall sconce orientation (oil lamps). */

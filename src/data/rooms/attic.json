@@ -4,6 +4,54 @@
   "height": 18,
   "furniture": [
     {
+      "furnitureId": "attic_roof_bar",
+      "x": 1,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "attic_roof_bar",
+      "x": 1,
+      "y": 12,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "attic_floor_post",
+      "x": 6,
+      "y": 8,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "attic_floor_post",
+      "x": 18,
+      "y": 8,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "attic_floor_post",
+      "x": 6,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "attic_floor_post",
+      "x": 18,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "spider_web",
+      "x": 6,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "spider_web_tr",
+      "x": 18,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
       "furnitureId": "staircase",
       "x": "center",
       "y": 17,

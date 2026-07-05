@@ -43,6 +43,28 @@ export function grid(
     }
 }
 
+/** Vertical mirror copy for symmetric sprites */
+export function mirrorV(
+    ctx: CanvasRenderingContext2D,
+    w: number,
+    h: number,
+    cy: number
+): void {
+    const img = ctx.getImageData(0, 0, w, h);
+    for (let y = 0; y < cy; y++) {
+        for (let x = 0; x < w; x++) {
+            const ti = (y * w + x) * 4;
+            const bi = ((h - 1 - y) * w + x) * 4;
+            for (let i = 0; i < 4; i++) {
+                const t = img.data[ti + i];
+                img.data[ti + i] = img.data[bi + i];
+                img.data[bi + i] = t;
+            }
+        }
+    }
+    ctx.putImageData(img, 0, 0);
+}
+
 /** Horizontal mirror copy for symmetric sprites */
 export function mirrorH(
     ctx: CanvasRenderingContext2D,

@@ -1,8 +1,14 @@
 import type { FurniturePlacement, RoomConfig } from "@cse/content-schema";
-import { resolveFurnitureOrigin, resolveNpcPlacementTile, resolvePosition } from "@cse/content-schema";
+import { resolveDecorDrawOrigin, resolveFurnitureOrigin, resolveNpcPlacementTile, resolvePosition } from "@cse/content-schema";
 import { TILE_SIZE } from "../../world/constants";
 
-export type FurnitureBounds = { width: number; height: number };
+export type FurnitureBounds = {
+    width: number;
+    height: number;
+    drawWidth?: number;
+    drawHeight?: number;
+    renderAnchor?: import("@cse/content-schema").RenderAnchor;
+};
 
 export function gridSizeFromCanvas(canvasWidth: number, canvasHeight: number): { width: number; height: number } {
     return {
@@ -32,6 +38,16 @@ export function getPlacementRect(
     grid: { width: number; height: number }
 ): { x: number; y: number; w: number; h: number } {
     const { startX, startY } = resolveFurnitureOrigin(placement, furniture, grid.width, grid.height);
+    const hasDecorDraw =
+        (furniture.drawWidth != null && furniture.drawWidth !== furniture.width) ||
+        (furniture.drawHeight != null && furniture.drawHeight !== furniture.height) ||
+        (furniture.renderAnchor != null && furniture.renderAnchor !== "bottom" && furniture.renderAnchor !== "center");
+
+    if (hasDecorDraw) {
+        const { ix, iy, iw, ih } = resolveDecorDrawOrigin(startX, startY, furniture);
+        return { x: ix, y: iy, w: iw, h: ih };
+    }
+
     return { x: startX, y: startY, w: furniture.width, h: furniture.height };
 }
 

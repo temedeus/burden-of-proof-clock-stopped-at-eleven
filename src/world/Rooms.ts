@@ -23,7 +23,7 @@ import type { FurnitureConfig, FurniturePlacement, GravelPathConfig, Interaction
 import { detectOilLampWallSide } from "../assets/procedural/oil_lamp";
 import { inferWallAlign } from "../assets/procedural/wall_align";
 import { exitSkipsDoorTiles } from "./exitDoor";
-import { getCollisionTileRange, resolvePosition, resolveSpawnY } from "@cse/content-schema";
+import { getCollisionTileRange, resolveDecorDrawOrigin, resolvePosition, resolveSpawnY } from "@cse/content-schema";
 
 const furnitureConfigs = loadFurnitureCatalog();
 
@@ -60,23 +60,7 @@ function getDrawTileOrigin(
     startY: number,
     furniture: FurnitureConfig
 ): { ix: number; iy: number; iw: number; ih: number } {
-    const iw = furniture.drawWidth ?? furniture.width;
-    const ih = furniture.drawHeight ?? furniture.height;
-
-    let ix: number;
-    let iy: number;
-    if (furniture.renderAnchor === "bottom") {
-        ix = startX + Math.floor((furniture.width - iw) / 2);
-        iy = startY + furniture.height - ih;
-    } else if (furniture.renderAnchor === "center") {
-        ix = startX + Math.floor((furniture.width - iw) / 2);
-        iy = startY + Math.floor((furniture.height - ih) / 2);
-    } else {
-        ix = startX;
-        iy = startY;
-    }
-
-    return { ix, iy, iw, ih };
+    return resolveDecorDrawOrigin(startX, startY, furniture);
 }
 
 function hasLegacyInteraction(furniture: FurnitureConfig): boolean {
@@ -237,21 +221,7 @@ function buildInteractionTiles(
     roomWidth: number,
     roomHeight: number
 ): { x: number; y: number }[] {
-    const iw = furniture.drawWidth ?? furniture.width;
-    const ih = furniture.drawHeight ?? furniture.height;
-
-    let ix: number;
-    let iy: number;
-    if (furniture.renderAnchor === "bottom") {
-        ix = startX + Math.floor((furniture.width - iw) / 2);
-        iy = startY + furniture.height - ih;
-    } else if (furniture.renderAnchor === "center") {
-        ix = startX + Math.floor((furniture.width - iw) / 2);
-        iy = startY + Math.floor((furniture.height - ih) / 2);
-    } else {
-        ix = startX;
-        iy = startY;
-    }
+    const { ix, iy, iw, ih } = getDrawTileOrigin(startX, startY, furniture);
 
     const tiles: { x: number; y: number }[] = [];
     const interactW = furniture.interactionWidth ?? iw;
@@ -351,7 +321,11 @@ function placeFurniture(
             ? { drawWidthTiles: furniture.drawWidth, drawHeightTiles: furniture.drawHeight }
             : {}),
         ...(furniture.renderAnchor ? { renderAnchor: furniture.renderAnchor } : {}),
+        ...(furniture.drawOffsetX != null ? { drawOffsetXPx: furniture.drawOffsetX } : {}),
+        ...(furniture.drawOffsetY != null ? { drawOffsetYPx: furniture.drawOffsetY } : {}),
         ...(furniture.walkableDecor ? { walkableDecor: true } : {}),
+        ...(furniture.noCollision ? { noCollision: true } : {}),
+        ...(furniture.overheadDecor ? { overheadDecor: true } : {}),
         ...(furniture.nonInteractive ? { nonInteractive: true } : {}),
         ...(furniture.interactionType === "confirm"
             ? {
@@ -408,6 +382,11 @@ function placeFurniture(
     }
 
     interactable.footprintTiles = buildFootprintTiles(startX, startY, furniture, width, height);
+
+    if (furniture.noCollision || furniture.overheadDecor) {
+        interactable.interactionTiles = [];
+        return interactable;
+    }
 
     if (furniture.wallAlign) {
         interactable.wallAlign = furniture.wallAlign;

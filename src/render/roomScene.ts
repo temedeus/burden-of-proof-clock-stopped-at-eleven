@@ -3,6 +3,7 @@ import { drawFountainAnimated } from "../assets/procedural/fountain";
 import { drawOilLampAnimated, oilLampAnimPhase, oilLampDrawBounds } from "../assets/procedural/oil_lamp";
 import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
 import { decorWallDrawBounds, wallMountDrawBounds } from "../assets/procedural/wall_align";
+import { resolveDecorDrawRectPx } from "@cse/content-schema";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { drawWineBarrelsAtAnchors } from "./wineBarrelDraw";
 import { TILE_SIZE } from "../world/constants";
@@ -56,18 +57,19 @@ export function furnitureActorFromInteractable(
         drawX = minX * TILE_SIZE;
         drawY = minY * TILE_SIZE;
     } else if (hasDecorDraw) {
-        drawW = decorW * TILE_SIZE;
-        drawH = decorH * TILE_SIZE;
-        const footW = widthTiles * TILE_SIZE;
-        const footH = heightTiles * TILE_SIZE;
-        const baseX = minX * TILE_SIZE + (footW - drawW) / 2;
-        if (obj.renderAnchor === "bottom") {
-            drawX = baseX;
-            drawY = (maxY + 1) * TILE_SIZE - drawH;
-        } else {
-            drawX = baseX;
-            drawY = minY * TILE_SIZE + (footH - drawH) / 2;
-        }
+        const decorRect = resolveDecorDrawRectPx(minX, minY, {
+            width: widthTiles,
+            height: heightTiles,
+            drawWidth: decorW,
+            drawHeight: decorH,
+            renderAnchor: obj.renderAnchor,
+            drawOffsetX: obj.drawOffsetXPx,
+            drawOffsetY: obj.drawOffsetYPx
+        }, TILE_SIZE);
+        drawW = decorRect.drawW;
+        drawH = decorRect.drawH;
+        drawX = decorRect.drawX;
+        drawY = decorRect.drawY;
     } else {
         drawW = widthTiles * TILE_SIZE;
         drawH = heightTiles * TILE_SIZE;
@@ -205,12 +207,15 @@ export function renderRoomScene(
 
     const rugActors: DepthActor[] = [];
     const furnitureActors: DepthActor[] = [];
+    const overheadActors: DepthActor[] = [];
     for (const obj of room.interactables) {
         const actor = furnitureActorFromInteractable(obj, getAnimTime, {
             width: room.map.width,
             height: room.map.height
         });
-        if (obj.walkableDecor) {
+        if (obj.overheadDecor) {
+            overheadActors.push(actor);
+        } else if (obj.walkableDecor) {
             rugActors.push(actor);
         } else {
             furnitureActors.push(actor);
@@ -229,6 +234,11 @@ export function renderRoomScene(
     ];
 
     actors
+        .slice()
+        .sort((a, b) => a.y + a.height - (b.y + b.height))
+        .forEach((a) => a.render(ctx));
+
+    overheadActors
         .slice()
         .sort((a, b) => a.y + a.height - (b.y + b.height))
         .forEach((a) => a.render(ctx));

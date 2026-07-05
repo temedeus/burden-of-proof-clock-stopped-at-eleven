@@ -1,4 +1,7 @@
+import type { RenderAnchor } from "./furniture";
 import type { FurniturePlacement, PositionToken, RoomConfig, SpawnYToken } from "./rooms";
+
+export type { RenderAnchor };
 
 /** Default room size for new rooms / game viewport (800×600 at 32px per tile). */
 export const DEFAULT_ROOM_TILE_WIDTH = 25;
@@ -9,9 +12,17 @@ export const GAME_CANVAS_TILE_WIDTH = DEFAULT_ROOM_TILE_WIDTH;
 /** @deprecated Use DEFAULT_ROOM_TILE_HEIGHT */
 export const GAME_CANVAS_TILE_HEIGHT = DEFAULT_ROOM_TILE_HEIGHT;
 
-export interface FurnitureBoundsConfig {
+export interface DecorDrawConfig {
     width: number;
     height: number;
+    drawWidth?: number;
+    drawHeight?: number;
+    renderAnchor?: RenderAnchor;
+    drawOffsetX?: number;
+    drawOffsetY?: number;
+}
+
+export interface FurnitureBoundsConfig extends DecorDrawConfig {
     /** Horizontal extent of collision rows; defaults to `width`, centered on the placement footprint. */
     collisionWidth?: number;
     collisionRowsFromBottom?: number;
@@ -20,7 +31,67 @@ export interface FurnitureBoundsConfig {
     /** Skip footprint rows before top-row collision begins. */
     collisionInsetTop?: number;
     walkableDecor?: boolean;
+    noCollision?: boolean;
+    overheadDecor?: boolean;
     wallMount?: boolean;
+}
+
+/** Tile origin of the draw footprint relative to placement footprint (for oversized / corner decor). */
+export function resolveDecorDrawOrigin(
+    startX: number,
+    startY: number,
+    furniture: DecorDrawConfig
+): { ix: number; iy: number; iw: number; ih: number } {
+    const iw = furniture.drawWidth ?? furniture.width;
+    const ih = furniture.drawHeight ?? furniture.height;
+    const anchor = furniture.renderAnchor ?? "top-left";
+
+    let ix: number;
+    let iy: number;
+    switch (anchor) {
+        case "bottom":
+            ix = startX + Math.floor((furniture.width - iw) / 2);
+            iy = startY + furniture.height - ih;
+            break;
+        case "center":
+            ix = startX + Math.floor((furniture.width - iw) / 2);
+            iy = startY + Math.floor((furniture.height - ih) / 2);
+            break;
+        case "top-right":
+            ix = startX + furniture.width - iw;
+            iy = startY;
+            break;
+        case "bottom-left":
+            ix = startX;
+            iy = startY + furniture.height - ih;
+            break;
+        case "bottom-right":
+            ix = startX + furniture.width - iw;
+            iy = startY + furniture.height - ih;
+            break;
+        case "top-left":
+        default:
+            ix = startX;
+            iy = startY;
+            break;
+    }
+
+    return { ix, iy, iw, ih };
+}
+
+export function resolveDecorDrawRectPx(
+    startX: number,
+    startY: number,
+    furniture: DecorDrawConfig,
+    tileSize: number
+): { drawX: number; drawY: number; drawW: number; drawH: number } {
+    const { ix, iy, iw, ih } = resolveDecorDrawOrigin(startX, startY, furniture);
+    return {
+        drawX: ix * tileSize + (furniture.drawOffsetX ?? 0),
+        drawY: iy * tileSize + (furniture.drawOffsetY ?? 0),
+        drawW: iw * tileSize,
+        drawH: ih * tileSize
+    };
 }
 
 /** Resolve furniture/exit anchor tokens to tile coordinates (edge-aligned). */

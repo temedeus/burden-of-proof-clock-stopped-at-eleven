@@ -1,5 +1,13 @@
 import type { SpriteName } from "./sprites";
 
+export type RenderAnchor =
+    | "center"
+    | "bottom"
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right";
+
 /** Tile strip on one side of the draw footprint used for examine when the player faces that direction. */
 export interface InteractionFaceConfig {
     width: number;
@@ -19,6 +27,9 @@ export interface FurnitureConfig {
     /** Draw size in tiles (optional; defaults to width×height). Collision uses width×height only. */
     drawWidth?: number;
     drawHeight?: number;
+    /** Pixel nudge after anchor resolution (e.g. align corner decor to beam art). */
+    drawOffsetX?: number;
+    drawOffsetY?: number;
     /** Examine/clue area within the draw footprint; defaults to full draw size. */
     interactionWidth?: number;
     interactionHeight?: number;
@@ -31,7 +42,7 @@ export interface FurnitureConfig {
         east?: InteractionFaceConfig;
         west?: InteractionFaceConfig;
     };
-    renderAnchor?: "center" | "bottom";
+    renderAnchor?: RenderAnchor;
     /** Horizontal extent of collision rows; defaults to `width`, centered on the placement footprint. */
     collisionWidth?: number;
     /** If set, only the bottom N rows are solid; upper rows stay walkable (e.g. fountain base). */
@@ -42,6 +53,10 @@ export interface FurnitureConfig {
     collisionInsetTop?: number;
     /** Render only: no tile blocking (e.g. floor carpet). */
     walkableDecor?: boolean;
+    /** Tall decor drawn in the depth-sorted pass but with no collision tiles (e.g. roof beams). */
+    noCollision?: boolean;
+    /** Non-interactive decor drawn above the player (e.g. overhead roof timbers). */
+    overheadDecor?: boolean;
     /** Examine / clues disabled (e.g. wall sconces). */
     nonInteractive?: boolean;
     /** Anchored to a perimeter wall tile; no footprint blocking. */

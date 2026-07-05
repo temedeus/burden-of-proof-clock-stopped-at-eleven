@@ -1,5 +1,5 @@
 import { P } from "./palette";
-import { grid, r } from "./pixel";
+import { grid, mirrorH, mirrorV, r } from "./pixel";
 import { drawFireplaceStone } from "./fireplace";
 import { drawOilLampNorthBase } from "./oil_lamp";
 import type { ProceduralSpriteDef } from "./types";
@@ -31,6 +31,153 @@ function drawWineBarrelTopDown(ctx: CanvasRenderingContext2D, ox: number, oy: nu
     r(ctx, ox + 3 * cell, oy + 2 * cell, cell, 8 * cell, P.woodHi);
     r(ctx, ox + 7 * cell, oy + cell, cell, 9 * cell, P.woodDark);
     r(ctx, ox + 6 * cell, oy + 4 * cell, 2 * cell, 2 * cell, P.shadow);
+}
+
+const COBWEB_COLORS = { l: P.light, c: P.cream, h: P.highlight, m: P.mid };
+
+/** Pre-baked top-left corner cobweb (px=1, transparent background). */
+const COBWEB_TL_ROWS = [
+    "ccccccccccccccccccccccccccccccccccccccccccccccccc...............",
+    "cllllllc.llllllllllllllcll.h....................................",
+    "cllllllclllll......h...c..llllllllllllllll......................",
+    "clll.lcllllh.lllll.h...c...h..............lllllllll.............",
+    "cllllcclllhlll....lllllc...h....................................",
+    "clllcc..l.ll..lll..h..clllll....................................",
+    "cllccll..ll.ll...lll..c...h.lllll...............................",
+    "ccclll.l.h.ll.ll..h.llc...h......lllll..........................",
+    "cllll.l.l....ll.ll....clll............lllll.....................",
+    "clllllhl.l..m.lllllll.c..hll...............lllll................",
+    "c.lhlll.l.l.....l.lllcl..h..lll.................lll.............",
+    "chlllll.l..l....hll.cllll......lll..............................",
+    "c.lll.ll.l..l.hh...cl..llll.......lll...........................",
+    "c.ll.lll..l..l.....cml..h..ll........lll........................",
+    "c.ll.l.ll..l.hl...c...ll.....ll.........lll.....................",
+    "c.l.ll.lc..lh..l.c....h.ll.....ll..........lll..................",
+    "c..ll.l.lcc.l...c.....h...l......ll...........lll...............",
+    "c..ll.lhl.lc.l.c.l...h.....ll......ll............ll.............",
+    "c..llhl..ll.ccc...l.h........l.......ll.........................",
+    "chhlhl.l.l.lc.c....l..........ll.......ll.......................",
+    "c..l.l.l..lc...c..h.l...........ll.......ll.....................",
+    "c..l.l..lcc.l...cc...l............l........ll...................",
+    "c...ccccc..ll..hhlc...l............ll........ll.................",
+    "ccccll..l..l.lh..l.....l.............l.........ll...............",
+    "c...l.l..l.hll....l.....l.............ll.........ll.............",
+    "c...l.l.hlh.l.l....l.....l..............ll......................",
+    "c...lhlh.l...l.l....l.....l...............l.....................",
+    "chhhl.l...l..l.l.....l.....l...............ll...................",
+    "c...l..l..l...l.l....l......l................l..................",
+    "c....l.l..l...l.l.....l.......................ll................",
+    "c....l.l...l...l.l.....l........................ll..............",
+    "c....l.l...l...l.l......l.........................l.............",
+    "c....l..l...l...l.l.....l.......................................",
+    "c....l..l...l...l.l......l......................................",
+    "c....l..l...l....l.l......l.....................................",
+    "c.....l.l....l...l..l......l....................................",
+    "c.....l..l...l....l.l......l....................................",
+    "c.....l..l...l.......l......l...................................",
+    "c.....l..l....l......l.......l..................................",
+    "c.....l..l....l.......l.......l.................................",
+    "c.....l...l...l.......l.......l.................................",
+    "c......l..l....l.......l.......l................................",
+    "c......l..l....l........l.......l...............................",
+    "c......l.......l........l........l..............................",
+    "c......l........l........l.......l..............................",
+    "c......l........l........l........l.............................",
+    "c......l.........l........l........l............................",
+    "c.......l........l........l.........l...........................",
+    "c.......l........l.........l........l...........................",
+    "........l.........l........l.........l..........................",
+    "........l.........l.........l.........l.........................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................"
+];
+
+function drawCobwebGrid(ctx: CanvasRenderingContext2D): void {
+    grid(ctx, 0, 0, 1, COBWEB_TL_ROWS, COBWEB_COLORS);
+}
+
+/** Squat horizontal roof timber (runs east–west under the ridge). */
+function drawAtticRoofBeamH(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const beamH = Math.min(28, Math.floor(h * 0.45));
+    const top = 4;
+    r(ctx, 2, top, w - 4, beamH, P.woodDark);
+    r(ctx, 4, top + 2, w - 8, beamH - 4, P.wood);
+    r(ctx, 4, top + 2, w - 8, 4, P.woodLight);
+    r(ctx, 4, top + beamH - 6, w - 8, 2, P.woodDark);
+    // Iron strap at each end
+    for (const bx of [2, w - 10]) {
+        r(ctx, bx, top, 8, beamH + 2, P.silverDark);
+        r(ctx, bx + 1, top + 2, 6, beamH - 2, P.silver);
+    }
+    // Wood grain
+    for (let gx = 12; gx < w - 12; gx += 14) {
+        r(ctx, gx, top + 8, 2, beamH - 12, P.woodHi);
+    }
+    // Shadow cast below the beam
+    r(ctx, 6, top + beamH + 2, w - 12, Math.max(4, h - top - beamH - 4), P.shadow);
+}
+
+/** Short vertical brace hanging from a roof beam. */
+function drawAtticRoofBeamV(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const cx = Math.floor(w / 2) - 5;
+    r(ctx, cx, 0, 10, h - 8, P.woodDark);
+    r(ctx, cx + 2, 2, 6, h - 12, P.wood);
+    r(ctx, cx + 2, 2, 2, h - 12, P.woodLight);
+    r(ctx, cx + 1, 0, 8, 6, P.woodDark);
+    r(ctx, cx + 2, 1, 6, 4, P.woodHi);
+    // Bottom peg
+    r(ctx, cx - 2, h - 10, 14, 6, P.woodDark);
+    r(ctx, cx, h - 8, 10, 4, P.wood);
+}
+
+/** Full-width attic cross-beam (scales to room interior width). */
+function drawAtticRoofBar(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const beamH = Math.min(20, Math.max(12, Math.floor(h * 0.65)));
+    const top = Math.max(0, Math.floor((h - beamH) / 2));
+    r(ctx, 0, top, w, beamH, P.woodDark);
+    r(ctx, 2, top + 2, w - 4, beamH - 4, P.wood);
+    r(ctx, 2, top + 2, w - 4, 3, P.woodLight);
+    r(ctx, 2, top + beamH - 5, w - 4, 2, P.woodDark);
+    for (let gx = 10; gx < w - 10; gx += 16) {
+        r(ctx, gx, top + 6, 2, beamH - 10, P.woodHi);
+    }
+    // Iron straps where posts meet the beam (tile offsets from bar origin)
+    for (const tileOff of [5, 17]) {
+        const bx = tileOff * 32 - 4;
+        if (bx > 4 && bx < w - 12) {
+            r(ctx, bx, top - 1, 8, beamH + 2, P.silverDark);
+            r(ctx, bx + 1, top + 1, 6, beamH - 2, P.silver);
+        }
+    }
+}
+
+/** Tall support post — collision only at the floor footing. */
+function drawAtticFloorPost(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const cx = Math.floor(w / 2) - 5;
+    const footingH = Math.min(28, Math.floor(h * 0.12));
+    const postTop = Math.floor(h * 0.06);
+    const postBottom = h - footingH;
+    r(ctx, cx, postTop, 10, postBottom - postTop, P.woodDark);
+    r(ctx, cx + 2, postTop + 2, 6, postBottom - postTop - 4, P.wood);
+    r(ctx, cx + 2, postTop + 2, 2, postBottom - postTop - 4, P.woodLight);
+    r(ctx, cx + 1, postTop, 8, 6, P.woodHi);
+    r(ctx, cx - 4, h - footingH, 18, footingH, P.woodDark);
+    r(ctx, cx - 2, h - footingH + 4, 14, footingH - 6, P.wood);
+    r(ctx, cx - 2, h - footingH + 4, 14, 3, P.woodLight);
+    for (let ny = postTop + 12; ny < postBottom - 8; ny += 28) {
+        r(ctx, cx + 6, ny, 2, 2, P.silverDark);
+    }
 }
 
 function pitEllipseDist(x: number, y: number, cx: number, cy: number, rx: number, ry: number): number {
@@ -622,6 +769,74 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
             drawOilLampNorthBase(ctx);
             r(ctx, 14, 18, 4, 8, P.fireOrange);
             r(ctx, 15, 16, 2, 4, P.fireYellow);
+        }
+    },
+
+    spider_web: {
+        nativeWidth: 64,
+        nativeHeight: 64,
+        draw(ctx) {
+            drawCobwebGrid(ctx);
+        }
+    },
+
+    spider_web_tr: {
+        nativeWidth: 64,
+        nativeHeight: 64,
+        draw(ctx, w = 64, h = 64) {
+            drawCobwebGrid(ctx);
+            mirrorH(ctx, w, h, Math.floor(w / 2));
+        }
+    },
+
+    spider_web_bl: {
+        nativeWidth: 64,
+        nativeHeight: 64,
+        draw(ctx, w = 64, h = 64) {
+            drawCobwebGrid(ctx);
+            mirrorV(ctx, w, h, Math.floor(h / 2));
+        }
+    },
+
+    spider_web_br: {
+        nativeWidth: 64,
+        nativeHeight: 64,
+        draw(ctx, w = 64, h = 64) {
+            drawCobwebGrid(ctx);
+            mirrorH(ctx, w, h, Math.floor(w / 2));
+            mirrorV(ctx, w, h, Math.floor(h / 2));
+        }
+    },
+
+    attic_roof_beam_h: {
+        nativeWidth: 96,
+        nativeHeight: 64,
+        draw(ctx, w = 96, h = 64) {
+            drawAtticRoofBeamH(ctx, w, h);
+        }
+    },
+
+    attic_roof_bar: {
+        nativeWidth: 736,
+        nativeHeight: 32,
+        draw(ctx, w = 736, h = 32) {
+            drawAtticRoofBar(ctx, w, h);
+        }
+    },
+
+    attic_roof_beam_v: {
+        nativeWidth: 32,
+        nativeHeight: 128,
+        draw(ctx, w = 32, h = 128) {
+            drawAtticRoofBeamV(ctx, w, h);
+        }
+    },
+
+    attic_floor_post: {
+        nativeWidth: 32,
+        nativeHeight: 224,
+        draw(ctx, w = 32, h = 224) {
+            drawAtticFloorPost(ctx, w, h);
         }
     }
 };

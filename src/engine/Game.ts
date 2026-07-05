@@ -54,6 +54,7 @@ const ROOM_DISPLAY_TITLES: Record<string, string> = {
     hidden_room: "Hidden Room",
     stable: "Stable",
     landing: "Landing",
+    landing_east: "East Landing",
     guest_room_a: "Guest Room A",
     guest_room_b: "Guest Room B",
     bathroom_a: "Bathroom A",

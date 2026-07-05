@@ -64,8 +64,8 @@
     {
       "x": "center",
       "y": "bottom",
-      "targetRoom": "maid_room",
-      "spawnX": "center",
+      "targetRoom": "landing_east",
+      "spawnX": 15,
       "spawnY": 2
     }
   ]

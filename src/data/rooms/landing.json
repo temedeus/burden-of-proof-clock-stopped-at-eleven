@@ -1,12 +1,12 @@
 {
   "id": "landing",
   "width": 25,
-  "height": 18,
+  "height": 7,
   "furniture": [
     {
       "furnitureId": "staircase",
       "x": "center",
-      "y": 17,
+      "y": 6,
       "anchor": "center"
     }
   ],
@@ -21,23 +21,31 @@
     {
       "x": 0,
       "y": "center",
-      "targetRoom": "guest_room_a",
-      "spawnX": 17,
-      "spawnY": "center"
-    },
-    {
-      "x": "bottom",
-      "y": "center",
-      "targetRoom": "guest_room_b",
-      "spawnX": 1,
-      "spawnY": "center"
-    },
-    {
-      "x": "center",
-      "y": "top",
       "targetRoom": "master_bedroom",
+      "spawnX": 23,
+      "spawnY": "center"
+    },
+    {
+      "x": 8,
+      "y": "top",
+      "targetRoom": "guest_room_a",
       "spawnX": "center",
-      "spawnY": "bottom-3"
+      "spawnY": "bottom-2"
+    },
+    {
+      "x": 17,
+      "y": "top",
+      "targetRoom": "guest_room_b",
+      "spawnX": "center",
+      "spawnY": "bottom-2"
+    },
+    {
+      "x": 24,
+      "y": "center",
+      "targetRoom": "landing_east",
+      "spawnX": 1,
+      "spawnY": "center",
+      "skipDoorSprite": true
     }
   ]
 }

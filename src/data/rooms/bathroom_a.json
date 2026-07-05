@@ -25,11 +25,11 @@
   ],
   "exits": [
     {
-      "x": "center",
-      "y": "top",
+      "x": 0,
+      "y": "center",
       "targetRoom": "guest_room_a",
-      "spawnX": "center",
-      "spawnY": "bottom-2"
+      "spawnX": 22,
+      "spawnY": "center"
     }
   ]
 }

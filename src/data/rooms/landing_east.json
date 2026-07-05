@@ -1,0 +1,38 @@
+{
+  "id": "landing_east",
+  "width": 18,
+  "height": 7,
+  "furniture": [
+    {
+      "furnitureId": "staircase",
+      "x": 15,
+      "y": 1,
+      "anchor": "center"
+    }
+  ],
+  "exits": [
+    {
+      "x": 0,
+      "y": "center",
+      "targetRoom": "landing",
+      "spawnX": 23,
+      "spawnY": "center",
+      "skipDoorSprite": true
+    },
+    {
+      "x": 8,
+      "y": "top",
+      "targetRoom": "maid_room",
+      "spawnX": "center",
+      "spawnY": "bottom-2"
+    },
+    {
+      "x": 15,
+      "y": "top",
+      "targetRoom": "attic",
+      "spawnX": "center",
+      "spawnY": "bottom-3",
+      "skipDoorSprite": true
+    }
+  ]
+}

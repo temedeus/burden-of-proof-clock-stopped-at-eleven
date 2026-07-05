@@ -2,28 +2,14 @@
   "id": "maid_room",
   "width": 25,
   "height": 18,
-  "furniture": [
-    {
-      "furnitureId": "staircase",
-      "x": "center",
-      "y": 1,
-      "anchor": "center"
-    }
-  ],
+  "furniture": [],
   "exits": [
     {
       "x": "center",
       "y": "bottom",
-      "targetRoom": "master_bedroom",
-      "spawnX": "center",
-      "spawnY": 1
-    },
-    {
-      "x": "center",
-      "y": "top",
-      "targetRoom": "attic",
-      "spawnX": "center",
-      "spawnY": "bottom-3"
+      "targetRoom": "landing_east",
+      "spawnX": 8,
+      "spawnY": 2
     }
   ]
 }

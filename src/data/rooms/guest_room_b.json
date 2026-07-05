@@ -5,18 +5,18 @@
   "furniture": [],
   "exits": [
     {
-      "x": 0,
-      "y": "center",
-      "targetRoom": "landing",
-      "spawnX": 17,
-      "spawnY": "center"
-    },
-    {
       "x": "center",
       "y": "bottom",
+      "targetRoom": "landing",
+      "spawnX": 17,
+      "spawnY": 2
+    },
+    {
+      "x": 24,
+      "y": "center",
       "targetRoom": "bathroom_b",
-      "spawnX": "center",
-      "spawnY": 1
+      "spawnX": 1,
+      "spawnY": "center"
     }
   ]
 }

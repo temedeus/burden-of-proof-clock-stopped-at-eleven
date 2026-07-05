@@ -60,6 +60,7 @@ const ROOM_DISPLAY_TITLES: Record<string, string> = {
     guest_room_b: "Guest Room B",
     bathroom_a: "Bathroom A",
     bathroom_b: "Bathroom B",
+    bathroom_master: "Master Bathroom",
     master_bedroom: "Master Bedroom",
     maid_room: "Maid Room",
     attic: "Attic",

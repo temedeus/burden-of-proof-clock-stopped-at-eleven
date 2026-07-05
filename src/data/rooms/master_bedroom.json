@@ -11,6 +11,13 @@
       "spawnX": "center",
       "spawnY": 2,
       "doorSprite": "door_manor"
+    },
+    {
+      "x": 24,
+      "y": "center",
+      "targetRoom": "bathroom_master",
+      "spawnX": 1,
+      "spawnY": "center"
     }
   ]
 }

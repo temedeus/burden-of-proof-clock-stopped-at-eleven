@@ -126,4 +126,36 @@ describe("guest room bathroom doors", () => {
         const exit = rooms.guest_room_b.exits.find((e) => e.targetRoom === "bathroom_b");
         expect(exit?.x).toBe(24);
     });
+
+    it("puts master bedroom bathroom door on the east wall", () => {
+        const exit = rooms.master_bedroom.exits.find((e) => e.targetRoom === "bathroom_master");
+        expect(exit?.x).toBe(24);
+    });
+});
+
+describe("bathroom master (master east, bathroom west door)", () => {
+    const rooms = loadRoomCatalog();
+    const bathroom = createRoomFromConfig(rooms.bathroom_master, undefined, undefined, rooms);
+    const master = createRoomFromConfig(rooms.master_bedroom, undefined, undefined, rooms);
+
+    it("round-trips through the west bathroom door", () => {
+        const service = new RoomTransitionService();
+        const player = new Player("player", 0, 0);
+        service.placePlayerAfterRoomTransition(player, "master_bedroom", bathroom, 1, 4);
+
+        let blocked = false;
+        for (let x = player.x; x >= 0; x -= 8) {
+            if (playerBlocksAt(player, x, player.y, bathroom.map)) blocked = true;
+        }
+        expect(blocked).toBe(false);
+
+        player.x = 0;
+        const back = service.checkTransition(
+            player,
+            bathroom,
+            { bathroom_master: bathroom, master_bedroom: master },
+            () => false
+        );
+        expect(back?.targetRoomId).toBe("master_bedroom");
+    });
 });

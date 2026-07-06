@@ -1,5 +1,5 @@
 import { spriteLoader } from "../assets/SpriteLoader";
-import { rockFloorSpriteName, rockWallSpriteName, atticFloorSpriteName, atticWallSpriteName } from "../assets/procedural/tiles";
+import { rockFloorSpriteName, rockWallSpriteName, atticFloorSpriteName, atticWallSpriteName, manorInteriorWallDraw } from "../assets/procedural/tiles";
 import { manorWallSpriteName, gateWestSpriteName, gateEastSpriteName } from "../assets/procedural/exterior";
 import { TILE_TO_SPRITE } from "../assets/SpriteMap";
 import { TILE_SIZE } from "../world/constants";
@@ -15,6 +15,7 @@ import {
     TILE_GRASS,
     TILE_GRAVEL,
     TILE_ROCK,
+    TILE_WALL,
     TILE_ROCK_WALL,
     TILE_MANOR_WALL,
     TILE_GATE_WALL,
@@ -126,6 +127,12 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                                   : tile === TILE_FURNITURE
                                     ? spriteUnderFurniture(map, x, y)
                                     : TILE_TO_SPRITE[tile];
+
+    if (tile === TILE_WALL) {
+        const { sprite, flipX, flipY } = manorInteriorWallDraw(x, y, map.width, map.height);
+        spriteLoader.drawSprite(ctx, sprite, tileX, tileY, TILE_SIZE, TILE_SIZE, flipX, flipY);
+        return;
+    }
 
     if (spriteName) {
         spriteLoader.drawSprite(ctx, spriteName, tileX, tileY, TILE_SIZE, TILE_SIZE);

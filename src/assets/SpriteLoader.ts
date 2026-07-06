@@ -53,7 +53,9 @@ export class SpriteLoader {
         dx: number,
         dy: number,
         width?: number,
-        height?: number
+        height?: number,
+        flipX = false,
+        flipY = false
     ): void {
         const drawWidth = width ?? TILE_SIZE;
         const drawHeight = height ?? TILE_SIZE;
@@ -79,17 +81,25 @@ export class SpriteLoader {
             return;
         }
 
-        ctx.drawImage(
-            canvas,
-            0,
-            0,
-            canvas.width,
-            canvas.height,
-            dx,
-            dy,
-            drawWidth,
-            drawHeight
-        );
+        if (flipX || flipY) {
+            ctx.save();
+            ctx.translate(dx + (flipX ? drawWidth : 0), dy + (flipY ? drawHeight : 0));
+            ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+            ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, drawWidth, drawHeight);
+            ctx.restore();
+        } else {
+            ctx.drawImage(
+                canvas,
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+                dx,
+                dy,
+                drawWidth,
+                drawHeight
+            );
+        }
 
         ctx.imageSmoothingEnabled = prevSmoothing;
     }

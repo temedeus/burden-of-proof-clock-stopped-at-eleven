@@ -1,5 +1,7 @@
 export const VALID_SPRITE_NAMES = [
     "wall",
+    "wall_v",
+    "wall_corner",
     "wall_wood",
     "wall_attic",
     "wall_attic_b",

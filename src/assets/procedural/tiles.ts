@@ -704,26 +704,106 @@ export function rockWallSpriteName(x: number, y: number): (typeof ROCK_WALL_SPRI
     return ROCK_WALL_SPRITES[(x * 23 + y * 37) % 4];
 }
 
+const WOOD_WALL_GRAIN_H: [number, number][] = [
+    [4, 5],
+    [17, 2],
+    [25, 11],
+    [9, 18],
+    [22, 24],
+    [6, 27]
+];
+
+function drawWoodPlanksHorizontal(
+    ctx: CanvasRenderingContext2D,
+    x0 = 0,
+    y0 = 0,
+    w = 32,
+    h = 32
+): void {
+    r(ctx, x0, y0, w, h, P.woodDark);
+    for (let row = 0; row < 4; row++) {
+        const y = y0 + row * 8;
+        if (y >= y0 + h) break;
+        const plankH = Math.min(7, y0 + h - y - 1);
+        r(ctx, x0, y, w, plankH, row % 2 === 0 ? P.wood : P.woodLight);
+        if (y + plankH < y0 + h) {
+            r(ctx, x0, y + plankH, w, 1, P.woodDark);
+        }
+        r(ctx, x0, y, w, 1, row % 2 === 0 ? P.woodHi : P.wood);
+    }
+    for (const [gx, gy] of WOOD_WALL_GRAIN_H) {
+        if (gx >= x0 && gx + 2 <= x0 + w && gy >= y0 && gy + 1 <= y0 + h) {
+            r(ctx, gx, gy, 2, 1, P.woodDark);
+        }
+    }
+}
+
+function drawWoodPlanksVertical(
+    ctx: CanvasRenderingContext2D,
+    x0 = 0,
+    y0 = 0,
+    w = 32,
+    h = 32
+): void {
+    r(ctx, x0, y0, w, h, P.woodDark);
+    for (let col = 0; col < 4; col++) {
+        const x = x0 + col * 8;
+        if (x >= x0 + w) break;
+        const plankW = Math.min(7, x0 + w - x - 1);
+        r(ctx, x, y0, plankW, h, col % 2 === 0 ? P.wood : P.woodLight);
+        if (x + plankW < x0 + w) {
+            r(ctx, x + plankW, y0, 1, h, P.woodDark);
+        }
+        r(ctx, x, y0, 1, h, col % 2 === 0 ? P.woodHi : P.wood);
+    }
+    for (const [gx, gy] of WOOD_WALL_GRAIN_H) {
+        if (gx + 1 >= x0 && gx + 1 < x0 + w && gy >= y0 && gy + 2 <= y0 + h) {
+            r(ctx, gx + 1, gy, 1, 2, P.woodDark);
+        }
+    }
+}
+
+/** End-grain corner post where two plank runs meet. */
+function drawWoodCornerPost(ctx: CanvasRenderingContext2D, size = 10): void {
+    r(ctx, 0, 0, size, size, P.woodDark);
+    for (let ring = 0; ring < 3; ring++) {
+        const inset = 2 + ring * 2;
+        const s = size - inset * 2;
+        if (s > 0) {
+            r(ctx, inset, inset, s, s, ring % 2 === 0 ? P.wood : P.woodLight);
+        }
+    }
+    r(ctx, Math.floor(size / 2) - 1, Math.floor(size / 2) - 1, 2, 2, P.woodHi);
+}
+
+export function manorInteriorWallDraw(
+    x: number,
+    y: number,
+    mapW: number,
+    mapH: number
+): { sprite: string; flipX: boolean; flipY: boolean } {
+    const north = y === 0;
+    const south = y === mapH - 1;
+    const west = x === 0;
+    const east = x === mapW - 1;
+
+    if (north && west) return { sprite: "wall_corner", flipX: false, flipY: false };
+    if (north && east) return { sprite: "wall_corner", flipX: true, flipY: false };
+    if (south && west) return { sprite: "wall_corner", flipX: false, flipY: true };
+    if (south && east) return { sprite: "wall_corner", flipX: true, flipY: true };
+    if (west || east) return { sprite: "wall_v", flipX: east, flipY: false };
+    return { sprite: "wall", flipX: false, flipY: false };
+}
+
 export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
-    wall: tile32((ctx) => {
-        grid(ctx, 0, 0, 2, [
-            "oooooooooooooooo",
-            "obBbBbBbBbBbBbBo",
-            "oBsBsBsBsBsBsBsBo",
-            "obBbBbBbBbBbBbBo",
-            "oBsBsBsBsBsBsBsBo",
-            "obBbBbBbBbBbBbBo",
-            "oBsBsBsBsBsBsBsBo",
-            "obBbBbBbBbBbBbBo",
-            "oBsBsBsBsBsBsBsBo",
-            "obBbBbBbBbBbBbBo",
-            "oBsBsBsBsBsBsBsBo",
-            "obBbBbBbBbBbBbBo",
-            "oBsBsBsBsBsBsBsBo",
-            "obBbBbBbBbBbBbBo",
-            "oBsBsBsBsBsBsBsBo",
-            "oooooooooooooooo"
-        ], C);
+    wall: tile32((ctx) => drawWoodPlanksHorizontal(ctx)),
+
+    wall_v: tile32((ctx) => drawWoodPlanksVertical(ctx)),
+
+    wall_corner: tile32((ctx) => {
+        drawWoodPlanksHorizontal(ctx);
+        drawWoodPlanksVertical(ctx, 0, 0, 8, 32);
+        drawWoodCornerPost(ctx, 10);
     }),
 
     wall_wood: tile32((ctx) => {

@@ -26,6 +26,19 @@ For the level editor and case authoring backend, see **[src/editor/README.md](sr
 
 For architecture and content authoring overview, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
+For agent/coding-assistant instructions, see **[AGENTS.md](AGENTS.md)**.
+
+---
+
+## Development
+
+```bash
+pnpm typecheck    # TypeScript check
+pnpm test         # unit tests
+pnpm build        # production build
+pnpm preview      # preview production build
+```
+
 ---
 
 ## Game

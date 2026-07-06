@@ -50,21 +50,25 @@ When returning an edited copy to a coding agent, ask it to **map your edits to t
 ### Overview (text diagram)
 
 ```
-                         ┌──────── Landing ────────┬──────── Guest Room B ── Bathroom B
-                         │                         │
-                    Hall ┤                    Master Bedroom ── Maid Room ── Attic
-                    / | \                         │
-         Dining ─ Kitchen   Library ─ Study ═ Hidden Room ═ Secret Tunnel
-            |        |                              ║                ║
-         Garden   Courtyard ─ Stable                 ║                ║
-                      |                              ║                ║
-               Cellar Storage ─ Wine Cellar          ═════════════════╝
+              Guest A ── Bath A          Guest B ── Bath B
+                  \         /                \         /
+         Landing ─ Landing West ─ Master Bedroom ─ Master Bathroom
+            |  \       |                              |
+            |   \  Landing East ─ Maid Room            |
+            |    \        |                            |
+           Hall      Attic                             |
+          / | \                                          |
+ Dining ─ Kitchen   Library ─ Study ═ Hidden Room ═ Secret Tunnel
+    |        |                              ║                ║
+ Garden   Courtyard ─ Stable                 ║                ║
+              |                              ║                ║
+       Cellar Storage ─ Wine Cellar          ═════════════════╝
 ```
 
 `═` = secret passages (locked until puzzle solved).  
-Hall is the central hub; the player begins here.
+Hall is the central hub; the player begins here. The upstairs landing splits into **west** (master suite) and **east** (staff rooms and attic).
 
-### All rooms (20)
+### All rooms (23)
 
 | ID | Display name |
 |----|--------------|
@@ -77,10 +81,13 @@ Hall is the central hub; the player begins here.
 | `courtyard` | Courtyard |
 | `stable` | Stable |
 | `landing` | Landing |
+| `landing_west` | West Landing |
+| `landing_east` | East Landing |
 | `guest_room_a` | Guest Room A |
 | `guest_room_b` | Guest Room B |
 | `bathroom_a` | Bathroom A |
 | `bathroom_b` | Bathroom B |
+| `bathroom_master` | Master Bathroom |
 | `master_bedroom` | Master Bedroom |
 | `maid_room` | Maid Room |
 | `attic` | Attic |
@@ -117,20 +124,26 @@ Each line is a bidirectional connection unless noted.
 | From | To | Notes |
 |------|-----|-------|
 | **landing** | hall | South (stairs) |
+| **landing** | landing_west | West; no door sprite |
+| **landing** | landing_east | East; no door sprite |
 | **landing** | guest_room_a | |
 | **landing** | guest_room_b | |
-| **landing** | master_bedroom | |
+| **landing_west** | landing | East; no door sprite |
+| **landing_west** | master_bedroom | North; manor door |
+| **landing_east** | landing | West; no door sprite |
+| **landing_east** | maid_room | North |
+| **landing_east** | attic | North; no door sprite |
 | **guest_room_a** | landing | |
 | **guest_room_a** | bathroom_a | |
 | **guest_room_b** | landing | |
 | **guest_room_b** | bathroom_b | |
 | **bathroom_a** | guest_room_a | |
 | **bathroom_b** | guest_room_b | |
-| **master_bedroom** | landing | |
-| **master_bedroom** | maid_room | |
-| **maid_room** | master_bedroom | |
-| **maid_room** | attic | |
-| **attic** | maid_room | |
+| **master_bedroom** | landing_west | South; manor door |
+| **master_bedroom** | bathroom_master | East |
+| **bathroom_master** | master_bedroom | West |
+| **maid_room** | landing_east | South |
+| **attic** | landing_east | South |
 
 #### Outbuildings & cellars
 

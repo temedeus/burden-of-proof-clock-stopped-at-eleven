@@ -97,9 +97,9 @@
     {
       "clueId": "silver_key",
       "roomId": "hall",
-      "furnitureId": "bookshelves",
+      "furnitureId": "staircase",
       "furnitureIndex": 0,
-      "hint": "Something glints between the books on the lower shelf."
+      "hint": "Something glints between the stone steps."
     },
     {
       "clueId": "wilting_rose",

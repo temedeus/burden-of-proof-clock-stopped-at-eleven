@@ -26,6 +26,10 @@ export const TILE_GATE_WALL = 13;
 export const TILE_ATTIC_FLOOR = 14;
 /** Exposed old-wood attic wall boards */
 export const TILE_ATTIC_WALL = 15;
+/** Polished pale marble ballroom floor */
+export const TILE_MARBLE = 18;
+/** Pale plaster ballroom wall */
+export const TILE_PALE_WALL = 19;
 /** Indoor landing wood banister segment */
 export const TILE_BANISTER = 16;
 /** Landing banister newel post */

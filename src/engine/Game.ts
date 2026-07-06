@@ -46,6 +46,7 @@ const POLICE_NPC_IDS = ["police", "police2"];
 const ROOM_DISPLAY_TITLES: Record<string, string> = {
     library: "Library",
     hall: "Hall",
+    dancing_room: "Dancing Room",
     study: "Study",
     kitchen: "Kitchen",
     garden: "Garden",

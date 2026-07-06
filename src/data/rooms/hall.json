@@ -4,24 +4,6 @@
   "height": 18,
   "furniture": [
     {
-      "furnitureId": "bookshelves",
-      "x": 1,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 2,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 3,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
       "furnitureId": "staircase",
       "x": "center",
       "y": 1,
@@ -55,6 +37,20 @@
       "y": "top",
       "targetRoom": "landing",
       "spawnX": "center",
+      "spawnY": "bottom-2"
+    },
+    {
+      "x": 8,
+      "y": "top",
+      "targetRoom": "dancing_room",
+      "spawnX": 8,
+      "spawnY": "bottom-2"
+    },
+    {
+      "x": 16,
+      "y": "top",
+      "targetRoom": "dancing_room",
+      "spawnX": 16,
       "spawnY": "bottom-2"
     }
   ],

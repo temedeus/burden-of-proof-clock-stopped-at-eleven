@@ -58,9 +58,9 @@ export interface RoomConfig {
     id: string;
     width: number;
     height: number;
-    floorTile?: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood";
+    floorTile?: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" | "marble";
     /** Perimeter wall style (default red brick). */
-    wallTile?: "brick" | "wood" | "rock" | "attic_wood";
+    wallTile?: "brick" | "wood" | "rock" | "attic_wood" | "pale";
     gravelPath?: GravelPathConfig;
     /** Multiple gravel paths (merged with `gravelPath` when present). */
     gravelPaths?: GravelPathConfig[];

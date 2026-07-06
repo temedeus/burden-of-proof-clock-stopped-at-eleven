@@ -17,6 +17,8 @@ import {
     TILE_ROCK,
     TILE_ATTIC_FLOOR,
     TILE_ATTIC_WALL,
+    TILE_MARBLE,
+    TILE_PALE_WALL,
     TILE_BANISTER,
     TILE_BANISTER_POST
 } from "./TileTypes";
@@ -436,6 +438,8 @@ function floorTileForUnderlay(underlay: TileMap["furnitureUnderlay"]): number {
             return TILE_ROCK;
         case "attic_wood":
             return TILE_ATTIC_FLOOR;
+        case "marble":
+            return TILE_MARBLE;
         default:
             return TILE_FLOOR;
     }
@@ -628,7 +632,9 @@ export function createRoomFromConfig(
                   ? TILE_ROCK
                   : config.floorTile === "attic_wood"
                     ? TILE_ATTIC_FLOOR
-                    : TILE_FLOOR;
+                    : config.floorTile === "marble"
+                      ? TILE_MARBLE
+                      : TILE_FLOOR;
     const perimeterWall =
         config.wallTile === "wood"
             ? TILE_WOOD_WALL
@@ -636,7 +642,9 @@ export function createRoomFromConfig(
               ? TILE_ROCK_WALL
               : config.wallTile === "attic_wood"
                 ? TILE_ATTIC_WALL
-                : TILE_WALL;
+                : config.wallTile === "pale"
+                  ? TILE_PALE_WALL
+                  : TILE_WALL;
     const tiles = new Array(roomWidth * roomHeight).fill(baseFloor);
 
     for (let x = 0; x < roomWidth; x++) {
@@ -752,7 +760,7 @@ export function createRoomFromConfig(
 
     const npcs: NPC[] = [];
 
-    const furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" =
+    const furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" | "marble" =
         config.floorTile === "grass"
             ? "grass"
             : config.floorTile === "gravel"
@@ -763,7 +771,9 @@ export function createRoomFromConfig(
                   ? "rock"
                   : config.floorTile === "attic_wood"
                     ? "attic_wood"
-                    : "floor";
+                    : config.floorTile === "marble"
+                      ? "marble"
+                      : "floor";
 
     return new Room(
         config.id,

@@ -1,0 +1,24 @@
+{
+  "id": "dancing_room",
+  "width": 25,
+  "height": 14,
+  "floorTile": "marble",
+  "wallTile": "pale",
+  "furniture": [],
+  "exits": [
+    {
+      "x": 8,
+      "y": "bottom",
+      "targetRoom": "hall",
+      "spawnX": 8,
+      "spawnY": 2
+    },
+    {
+      "x": 16,
+      "y": "bottom",
+      "targetRoom": "hall",
+      "spawnX": 16,
+      "spawnY": 2
+    }
+  ]
+}

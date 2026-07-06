@@ -842,6 +842,42 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         r(ctx, 31, 0, 1, 32, P.grout);
     }),
 
+    floor_marble: tile32((ctx) => {
+        r(ctx, 0, 0, 32, 32, P.marbleLight);
+        r(ctx, 0, 0, 32, 1, P.marbleShadow);
+        r(ctx, 0, 0, 1, 32, P.marbleShadow);
+        r(ctx, 31, 0, 1, 32, P.marbleVein);
+        r(ctx, 0, 31, 32, 1, P.marbleVein);
+        const veins: [number, number, number, number][] = [
+            [4, 6, 12, 1],
+            [18, 3, 10, 1],
+            [8, 14, 16, 1],
+            [2, 22, 14, 1],
+            [20, 18, 8, 1],
+            [14, 26, 12, 1]
+        ];
+        for (const [x, y, w, h] of veins) {
+            r(ctx, x, y, w, h, P.marbleVein);
+        }
+        r(ctx, 10, 10, 3, 2, P.marble);
+        r(ctx, 22, 8, 2, 3, P.marbleShadow);
+    }),
+
+    wall_pale: tile32((ctx) => {
+        r(ctx, 0, 0, 32, 32, P.paleWall);
+        for (let row = 0; row < 4; row++) {
+            const y = row * 8;
+            r(ctx, 0, y, 32, 7, row % 2 === 0 ? P.paleWall : P.paleWallAlt);
+            r(ctx, 0, y + 7, 32, 1, P.paleWallTrim);
+        }
+        r(ctx, 0, 0, 32, 2, P.paleWallGold);
+        r(ctx, 0, 30, 32, 2, P.paleWallTrim);
+        r(ctx, 0, 0, 2, 32, P.paleWallTrim);
+        r(ctx, 30, 0, 2, 32, P.paleWallTrim);
+        r(ctx, 4, 12, 24, 1, P.paleWallGold);
+        r(ctx, 4, 20, 24, 1, P.paleWallGold);
+    }),
+
     rock: tile32((ctx) => drawRockFloorVariant(ctx, 0)),
     rock_b: tile32((ctx) => drawRockFloorVariant(ctx, 1)),
     rock_c: tile32((ctx) => drawRockFloorVariant(ctx, 2)),

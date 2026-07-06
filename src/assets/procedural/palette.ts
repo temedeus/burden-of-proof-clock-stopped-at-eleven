@@ -129,6 +129,16 @@ export const P = {
     ceramicDark: "#c8d4dc",
     grout: "#a8b4bc",
 
+    marble: "#f0ece8",
+    marbleLight: "#faf8f6",
+    marbleVein: "#d8d0c8",
+    marbleShadow: "#e4dcd4",
+
+    paleWall: "#f2ede6",
+    paleWallAlt: "#e8e2da",
+    paleWallTrim: "#d4c8b8",
+    paleWallGold: "#c8b888",
+
     rockVoid: "#121016",
     rockShadow: "#1a181e",
     rockDark: "#242228",

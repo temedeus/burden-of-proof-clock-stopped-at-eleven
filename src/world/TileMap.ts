@@ -17,7 +17,9 @@ import {
     TILE_BANISTER_POST,
     TILE_CERAMIC,
     TILE_ROCK,
-    TILE_ATTIC_FLOOR
+    TILE_ATTIC_FLOOR,
+    TILE_MARBLE,
+    TILE_PALE_WALL
 } from "./TileTypes";
 import { NPC } from "../entities/NPC";
 import { renderTileMap } from "../render/tileMapRender";
@@ -28,7 +30,7 @@ export class TileMap {
         public height: number,
         public tiles: number[],
         /** Fallback when `terrainBeforeFurniture` is absent (interior rooms use parquet `floor`) */
-        public furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" = "floor",
+        public furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" | "marble" = "floor",
         /** Snapshot of terrain before furniture was placed; transparent props show grass/gravel/floor per cell */
         public terrainBeforeFurniture: number[] | null = null
     ) {}
@@ -46,6 +48,7 @@ export class TileMap {
             tile === TILE_MANOR_WALL ||
             tile === TILE_GATE_WALL ||
             tile === TILE_ATTIC_WALL ||
+            tile === TILE_PALE_WALL ||
             tile === TILE_FURNITURE ||
             tile === TILE_FENCE ||
             tile === TILE_FENCE_POST ||

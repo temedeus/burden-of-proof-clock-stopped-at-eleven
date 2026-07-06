@@ -380,74 +380,120 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
 
     manor_lord_bed: {
         nativeWidth: 256,
-        nativeHeight: 160,
+        nativeHeight: 256,
         draw(ctx) {
             const W = 256;
-            const H = 160;
-            // Canopy posts (four corners)
-            const post = (px: number, py: number) => {
-                r(ctx, px, py, 10, H - py - 8, P.woodDark);
-                r(ctx, px + 1, py, 8, H - py - 10, P.wood);
-                r(ctx, px + 2, py + 2, 6, 8, P.goldDark);
-                r(ctx, px + 3, py + 1, 4, 4, P.gold);
+            const H = 256;
+
+            // Floor shadow under frame
+            r(ctx, 18, 28, W - 36, H - 40, P.shadow);
+
+            const drawPost = (px: number, py: number, h: number) => {
+                r(ctx, px, py, 12, h, P.woodDark);
+                r(ctx, px + 1, py + 1, 10, h - 2, P.wood);
+                r(ctx, px + 2, py + 2, 8, 6, P.woodHi);
+                r(ctx, px + 3, py + 1, 6, 4, P.goldDark);
             };
-            post(6, 4);
-            post(W - 16, 4);
-            post(6, 52);
-            post(W - 16, 52);
 
-            // Canopy valance along headboard
-            r(ctx, 4, 0, W - 8, 14, P.carpetPlum);
-            r(ctx, 6, 2, W - 12, 10, P.carpetPlumLight);
-            r(ctx, 8, 4, W - 16, 4, P.goldDark);
-            r(ctx, 20, 0, W - 40, 3, P.gold);
+            // Four-poster legs
+            drawPost(10, 8, H - 28);
+            drawPost(W - 22, 8, H - 28);
+            drawPost(10, 72, H - 92);
+            drawPost(W - 22, 72, H - 92);
 
-            // Ornate headboard
-            r(ctx, 12, 12, W - 24, 22, P.woodDark);
-            r(ctx, 14, 14, W - 28, 18, P.wood);
-            r(ctx, 20, 16, W - 40, 14, P.woodHi);
-            for (let i = 0; i < 6; i++) {
-                r(ctx, 28 + i * 34, 18, 20, 10, P.woodDark);
-                r(ctx, 30 + i * 34, 20, 16, 6, P.goldDark);
+            // Side rails
+            r(ctx, 16, 72, W - 32, 4, P.woodDark);
+            r(ctx, 16, H - 36, W - 32, 4, P.woodDark);
+            r(ctx, 16, 72, 4, H - 108, P.wood);
+            r(ctx, W - 20, 72, 4, H - 108, P.wood);
+
+            // Mattress base
+            r(ctx, 20, 76, W - 40, H - 112, P.woodDark);
+            r(ctx, 22, 78, W - 44, H - 116, P.cream);
+            r(ctx, 24, 80, W - 48, H - 120, P.highlight);
+
+            // Sheet — soft lengthwise folds toward foot
+            for (let i = 0; i < 5; i++) {
+                const fx = 32 + i * 38;
+                r(ctx, fx, 88, 20, H - 128, P.white);
+                r(ctx, fx + 2, 90, 2, H - 132, P.highlight);
             }
 
-            // Mattress & coverlet
-            r(ctx, 16, 38, W - 32, 88, P.woodDark);
-            r(ctx, 18, 40, W - 36, 84, P.cream);
-            r(ctx, 20, 42, W - 40, 80, P.carpetPlum);
-            r(ctx, 22, 44, W - 44, 76, P.carpetPlumLight);
-            // Quilted panels
-            for (let row = 0; row < 4; row++) {
+            // Coverlet / counterpane (slightly shorter than mattress)
+            r(ctx, 26, 96, W - 52, H - 132, P.carpetPlum);
+            r(ctx, 28, 98, W - 56, H - 136, P.carpetPlumLight);
+            for (let row = 0; row < 5; row++) {
                 for (let col = 0; col < 6; col++) {
-                    r(ctx, 28 + col * 34, 50 + row * 18, 28, 14, row % 2 === col % 2 ? P.carpetPlum : P.carpetPlumLight);
-                    r(ctx, 30 + col * 34, 52 + row * 18, 24, 2, P.goldDark);
+                    const qx = 34 + col * 32;
+                    const qy = 104 + row * 26;
+                    r(ctx, qx, qy, 26, 20, (row + col) % 2 ? P.carpetPlum : P.carpetPlumLight);
+                    r(ctx, qx + 2, qy + 2, 22, 1, P.goldDark);
                 }
             }
 
-            // Pillows
-            r(ctx, 36, 44, 44, 18, P.cream);
-            r(ctx, 38, 46, 40, 14, P.white);
-            r(ctx, W - 80, 44, 44, 18, P.cream);
-            r(ctx, W - 78, 46, 40, 14, P.white);
-            r(ctx, W / 2 - 28, 42, 56, 20, P.cream);
-            r(ctx, W / 2 - 26, 44, 52, 16, P.highlight);
+            // Pillows at headboard
+            const pillow = (px: number) => {
+                r(ctx, px, 78, 52, 22, P.cream);
+                r(ctx, px + 2, 80, 48, 18, P.white);
+                r(ctx, px + 4, 82, 44, 2, P.highlight);
+                r(ctx, px + 6, 86, 40, 8, P.highlight);
+            };
+            pillow(36);
+            pillow(W - 88);
+            r(ctx, W / 2 - 34, 76, 68, 24, P.cream);
+            r(ctx, W / 2 - 32, 78, 64, 20, P.white);
+
+            // Carved headboard (north)
+            r(ctx, 14, 56, W - 28, 24, P.woodDark);
+            r(ctx, 16, 58, W - 32, 20, P.wood);
+            r(ctx, 20, 60, W - 40, 16, P.woodHi);
+            for (let i = 0; i < 5; i++) {
+                r(ctx, 32 + i * 40, 62, 24, 12, P.woodDark);
+                r(ctx, 34 + i * 40, 64, 20, 8, P.goldDark);
+            }
+
+            // Canopy cornice along headboard
+            r(ctx, 8, 48, W - 16, 10, P.carpetPlum);
+            r(ctx, 10, 50, W - 20, 6, P.carpetPlumLight);
+            r(ctx, 12, 48, W - 24, 2, P.gold);
+
+            // North drapes tied back to the sides (left bundle)
+            r(ctx, 0, 44, 28, 48, P.carpetPlum);
+            r(ctx, 2, 46, 24, 44, P.carpetPlumLight);
+            r(ctx, 4, 48, 20, 40, P.carpetPlum);
+            r(ctx, 22, 52, 8, 10, P.gold);
+            r(ctx, 24, 54, 4, 6, P.goldDark);
+            // Fold highlights / swag curves
+            r(ctx, 6, 56, 14, 3, P.carpetPlumLight);
+            r(ctx, 8, 64, 12, 3, P.highlight);
+            r(ctx, 10, 72, 10, 3, P.carpetPlumLight);
+            r(ctx, 12, 80, 8, 3, P.highlight);
+            r(ctx, 0, 88, 18, 24, P.carpetPlum);
+            r(ctx, 2, 92, 14, 18, P.carpetPlumLight);
+
+            // North drapes tied back to the sides (right bundle)
+            r(ctx, W - 28, 44, 28, 48, P.carpetPlum);
+            r(ctx, W - 26, 46, 24, 44, P.carpetPlumLight);
+            r(ctx, W - 24, 48, 20, 40, P.carpetPlum);
+            r(ctx, W - 30, 52, 8, 10, P.gold);
+            r(ctx, W - 28, 54, 4, 6, P.goldDark);
+            r(ctx, W - 20, 56, 14, 3, P.carpetPlumLight);
+            r(ctx, W - 20, 64, 12, 3, P.highlight);
+            r(ctx, W - 18, 72, 10, 3, P.carpetPlumLight);
+            r(ctx, W - 16, 80, 8, 3, P.highlight);
+            r(ctx, W - 18, 88, 18, 24, P.carpetPlum);
+            r(ctx, W - 16, 92, 14, 18, P.carpetPlumLight);
 
             // Footboard
-            r(ctx, 12, 122, W - 24, 16, P.woodDark);
-            r(ctx, 14, 124, W - 28, 12, P.wood);
-            r(ctx, 16, 126, W - 32, 8, P.woodHi);
-            r(ctx, 20, 128, W - 40, 2, P.gold);
+            r(ctx, 14, H - 40, W - 28, 14, P.woodDark);
+            r(ctx, 16, H - 38, W - 32, 10, P.wood);
+            r(ctx, 18, H - 36, W - 36, 6, P.woodHi);
+            r(ctx, 24, H - 34, W - 48, 2, P.gold);
 
-            // Bed steps at foot
-            r(ctx, 40, 138, W - 80, 14, P.woodDark);
-            r(ctx, 42, 140, W - 84, 10, P.wood);
-            r(ctx, 44, 142, W - 88, 6, P.woodLight);
-
-            // Side drapery hints
-            r(ctx, 2, 20, 8, 100, P.carpetPlum);
-            r(ctx, W - 10, 20, 8, 100, P.carpetPlum);
-            r(ctx, 3, 22, 6, 96, P.carpetPlumLight);
-            r(ctx, W - 9, 22, 6, 96, P.carpetPlumLight);
+            // Bed step at foot
+            r(ctx, 48, H - 26, W - 96, 12, P.woodDark);
+            r(ctx, 50, H - 24, W - 100, 8, P.wood);
+            r(ctx, 52, H - 22, W - 104, 4, P.woodLight);
         }
     },
 
@@ -640,6 +686,69 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
             r(ctx, 7, 25, 34, 1, P.goldDark);
             r(ctx, 6, 7, 1, 18, P.goldDark);
             r(ctx, 41, 7, 1, 18, P.goldDark);
+        }
+    },
+
+    manor_carpet: {
+        nativeWidth: 480,
+        nativeHeight: 352,
+        draw(ctx) {
+            const W = 480;
+            const H = 352;
+            const border = 14;
+
+            r(ctx, 0, 6, W, H - 12, P.carpetBorder);
+            r(ctx, 6, 0, W - 12, H, P.carpetBorder);
+            r(ctx, border, border + 4, W - border * 2, H - border * 2 - 8, P.carpetPlum);
+            r(ctx, border + 6, border + 10, W - border * 2 - 12, H - border * 2 - 20, P.carpetPlumLight);
+
+            r(ctx, 28, 32, W - 56, H - 64, P.carpetBorder);
+            r(ctx, 36, 40, W - 72, H - 80, P.carpetRed);
+            r(ctx, 44, 48, W - 88, H - 96, P.carpetRedLight);
+
+            const cornerMedallion = (cx: number, cy: number) => {
+                r(ctx, cx, cy, 48, 40, P.carpetPlum);
+                r(ctx, cx + 4, cy + 4, 40, 32, P.goldDark);
+                r(ctx, cx + 10, cy + 10, 28, 20, P.carpetRedLight);
+                r(ctx, cx + 18, cy + 16, 12, 8, P.gold);
+            };
+            cornerMedallion(52, 56);
+            cornerMedallion(W - 100, 56);
+            cornerMedallion(52, H - 96);
+            cornerMedallion(W - 100, H - 96);
+
+            const cx = W / 2 - 56;
+            const cy = H / 2 - 44;
+            r(ctx, cx, cy, 112, 88, P.carpetPlum);
+            r(ctx, cx + 4, cy + 4, 104, 80, P.goldDark);
+            r(ctx, cx + 12, cy + 12, 88, 64, P.carpetRed);
+            r(ctx, cx + 20, cy + 20, 72, 48, P.carpetRedLight);
+            r(ctx, cx + 36, cy + 32, 40, 24, P.gold);
+            r(ctx, cx + 44, cy + 38, 24, 12, P.carpetPlumLight);
+
+            for (let i = 0; i < 8; i++) {
+                const ox = 100 + i * 36;
+                r(ctx, ox, 60, 20, 6, P.goldDark);
+                r(ctx, ox + 2, 62, 16, 2, P.gold);
+                r(ctx, ox, H - 66, 20, 6, P.goldDark);
+                r(ctx, ox + 2, H - 64, 16, 2, P.gold);
+            }
+            for (let i = 0; i < 5; i++) {
+                const oy = 100 + i * 36;
+                r(ctx, 60, oy, 6, 20, P.goldDark);
+                r(ctx, 62, oy + 2, 2, 16, P.gold);
+                r(ctx, W - 66, oy, 6, 20, P.goldDark);
+                r(ctx, W - 64, oy + 2, 2, 16, P.gold);
+            }
+
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 10; col++) {
+                    if (row > 1 && row < 4 && col > 2 && col < 7) continue;
+                    const px = 80 + col * 32;
+                    const py = 80 + row * 32;
+                    r(ctx, px, py, 12, 12, (row + col) % 2 ? P.carpetPlum : P.carpetRedLight);
+                }
+            }
         }
     },
 

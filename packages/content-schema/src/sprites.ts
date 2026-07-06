@@ -67,6 +67,7 @@ export const VALID_SPRITE_NAMES = [
     "staircase",
     "cellar_hatch",
     "carpet",
+    "manor_carpet",
     "ceramic",
     "rock",
     "rock_b",

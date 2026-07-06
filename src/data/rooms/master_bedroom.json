@@ -4,9 +4,15 @@
   "height": 18,
   "furniture": [
     {
+      "furnitureId": "manor_carpet",
+      "x": "center",
+      "y": 7,
+      "anchor": "center"
+    },
+    {
       "furnitureId": "manor_lord_bed",
       "x": "center",
-      "y": 9,
+      "y": 5,
       "anchor": "center"
     }
   ],

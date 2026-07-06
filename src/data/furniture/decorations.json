@@ -187,11 +187,11 @@
     "name": "Lord's bed",
     "description": "A vast carved four-poster bed with damask hangings — the baron's own.",
     "width": 8,
-    "height": 5,
+    "height": 8,
     "drawWidth": 8,
-    "drawHeight": 5,
+    "drawHeight": 8,
     "renderAnchor": "bottom",
-    "collisionRowsFromBottom": 4,
+    "collisionRowsFromBottom": 6,
     "collisionWidth": 8,
     "spriteName": "manor_lord_bed"
   },
@@ -281,6 +281,19 @@
     "walkableDecor": true,
     "spriteName": "carpet",
     "clues": []
+  },
+  "manor_carpet": {
+    "id": "manor_carpet",
+    "name": "Persian rug",
+    "description": "An enormous hand-knotted carpet sprawls across the lord's chamber.",
+    "width": 15,
+    "height": 11,
+    "drawWidth": 15,
+    "drawHeight": 11,
+    "renderAnchor": "center",
+    "walkableDecor": true,
+    "nonInteractive": true,
+    "spriteName": "manor_carpet"
   },
   "bathtub": {
     "id": "bathtub",

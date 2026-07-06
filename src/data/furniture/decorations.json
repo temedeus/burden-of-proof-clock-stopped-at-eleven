@@ -601,8 +601,8 @@
     "drawWidth": 2,
     "drawHeight": 3,
     "renderAnchor": "bottom-left",
-    "noCollision": true,
-    "nonInteractive": true,
+    "collisionRowsFromBottom": 3,
+    "collisionWidth": 2,
     "spriteName": "armor_stand"
   }
 }

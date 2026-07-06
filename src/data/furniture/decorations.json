@@ -182,6 +182,53 @@
     "interactionOffsetY": 0,
     "spriteName": "fireplace"
   },
+  "crummy_bed": {
+    "id": "crummy_bed",
+    "name": "Crummy bed",
+    "description": "A narrow iron bed with a thin mattress and a threadbare blanket.",
+    "width": 4,
+    "height": 4,
+    "drawWidth": 4,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 3,
+    "collisionWidth": 4,
+    "spriteName": "crummy_bed"
+  },
+  "old_shelf": {
+    "id": "old_shelf",
+    "name": "Old shelf",
+    "description": "A battered wooden shelf, half empty and thick with dust.",
+    "width": 1,
+    "height": 2,
+    "spriteName": "old_shelf"
+  },
+  "writing_table": {
+    "id": "writing_table",
+    "name": "Writing table",
+    "description": "A small desk scarred by ink stains, with a ledger and quill.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 3,
+    "drawHeight": 3,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 2,
+    "spriteName": "writing_table"
+  },
+  "small_bucket": {
+    "id": "small_bucket",
+    "name": "Small bucket",
+    "description": "A dented tin pail.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "bottom-left",
+    "collisionRowsFromBottom": 1,
+    "collisionWidth": 1,
+    "spriteName": "small_bucket"
+  },
   "manor_lord_bed": {
     "id": "manor_lord_bed",
     "name": "Lord's bed",

@@ -1022,6 +1022,134 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    crummy_bed: {
+        nativeWidth: 128,
+        nativeHeight: 128,
+        draw(ctx) {
+            const W = 128;
+            const H = 128;
+
+            r(ctx, 10, 20, W - 20, H - 28, P.shadow);
+
+            // Worn iron frame
+            const leg = (px: number, py: number) => {
+                r(ctx, px, py, 6, H - py - 16, P.ironDark);
+                r(ctx, px + 1, py + 1, 4, H - py - 18, P.iron);
+            };
+            leg(12, 24);
+            leg(W - 18, 24);
+            leg(12, 72);
+            leg(W - 18, 72);
+
+            r(ctx, 14, 24, W - 28, 3, P.ironDark);
+            r(ctx, 14, H - 28, W - 28, 3, P.ironDark);
+            r(ctx, 14, 24, 3, H - 52, P.iron);
+            r(ctx, W - 17, 24, 3, H - 52, P.iron);
+
+            // Thin stained mattress
+            r(ctx, 18, 28, W - 36, H - 56, P.woodDark);
+            r(ctx, 20, 30, W - 40, H - 60, P.cream);
+            r(ctx, 22, 32, W - 44, H - 64, P.highlight);
+            r(ctx, 28, 38, 18, 10, P.wood);
+            r(ctx, 54, 50, 22, 8, P.woodDark);
+            r(ctx, 78, 42, 14, 12, P.wood);
+
+            // Lumpy threadbare blanket
+            r(ctx, 22, 44, W - 44, H - 72, P.maidBlack);
+            r(ctx, 24, 46, W - 48, H - 76, P.woodDark);
+            for (let i = 0; i < 4; i++) {
+                r(ctx, 26 + i * 22, 48 + (i % 2) * 4, 18, H - 80, P.maidBlack);
+            }
+
+            // Flat pillow
+            r(ctx, 28, 30, 36, 14, P.cream);
+            r(ctx, 30, 32, 32, 10, P.white);
+            r(ctx, 32, 34, 28, 2, P.highlight);
+        }
+    },
+
+    old_shelf: {
+        nativeWidth: 32,
+        nativeHeight: 48,
+        draw(ctx) {
+            r(ctx, 2, 0, 28, 48, P.woodDark);
+            r(ctx, 4, 2, 24, 44, P.wood);
+            for (let y = 6; y < 44; y += 12) {
+                r(ctx, 4, y, 24, 2, P.woodLight);
+            }
+            // Chipped edges and dust
+            r(ctx, 2, 10, 3, 4, P.shadow);
+            r(ctx, 26, 30, 4, 3, P.shadow);
+            r(ctx, 6, 8, 8, 6, P.cream);
+            r(ctx, 7, 9, 6, 4, P.highlight);
+            r(ctx, 18, 10, 4, 8, P.water);
+            r(ctx, 19, 9, 2, 2, P.waterLight);
+            r(ctx, 8, 22, 10, 5, P.woodDark);
+            r(ctx, 9, 23, 8, 3, P.cream);
+            r(ctx, 20, 34, 6, 6, P.woodLight);
+            r(ctx, 21, 35, 4, 4, P.woodDark);
+            r(ctx, 2, 0, 2, 48, P.outline);
+            r(ctx, 28, 0, 2, 48, P.outline);
+        }
+    },
+
+    writing_table: {
+        nativeWidth: 48,
+        nativeHeight: 48,
+        draw(ctx) {
+            drawWoodTabletop(ctx, 4, 14, 40, 8);
+            drawTableLegs(ctx, [8, 34], 22, 46);
+
+            // Ink-stained ledger
+            r(ctx, 10, 6, 16, 10, P.cream);
+            r(ctx, 11, 7, 14, 8, P.white);
+            r(ctx, 12, 9, 10, 1, P.woodDark);
+            r(ctx, 12, 11, 8, 1, P.woodDark);
+            r(ctx, 13, 13, 6, 1, P.woodDark);
+            r(ctx, 18, 8, 6, 6, P.shadow);
+
+            // Inkwell and quill
+            r(ctx, 30, 8, 8, 6, P.woodDark);
+            r(ctx, 31, 9, 6, 4, P.black);
+            r(ctx, 32, 10, 4, 2, P.water);
+            r(ctx, 36, 4, 2, 10, P.wood);
+            r(ctx, 37, 2, 1, 4, P.highlight);
+
+            // Scuff marks on surface
+            r(ctx, 22, 16, 10, 2, P.wood);
+            r(ctx, 8, 18, 6, 1, P.woodDark);
+        }
+    },
+
+    small_bucket: {
+        nativeWidth: 32,
+        nativeHeight: 32,
+        draw(ctx) {
+            // Floor shadow
+            r(ctx, 6, 22, 20, 8, P.shadow);
+
+            // Dented tin pail — slightly oval from above
+            r(ctx, 8, 10, 16, 18, P.ironDark);
+            r(ctx, 9, 11, 14, 16, P.iron);
+            r(ctx, 10, 12, 12, 14, P.silverDark);
+            r(ctx, 11, 14, 10, 10, P.silver);
+            // Rim
+            r(ctx, 8, 10, 16, 3, P.iron);
+            r(ctx, 9, 10, 14, 1, P.silver);
+            // Dent
+            r(ctx, 14, 16, 4, 6, P.ironDark);
+            r(ctx, 15, 17, 2, 4, P.shadow);
+            // Bail handle
+            r(ctx, 6, 8, 3, 3, P.ironDark);
+            r(ctx, 23, 8, 3, 3, P.ironDark);
+            r(ctx, 7, 6, 18, 3, P.iron);
+            r(ctx, 8, 7, 16, 1, P.silverDark);
+            // Dark interior
+            r(ctx, 12, 15, 8, 6, P.ironDark);
+            r(ctx, 13, 16, 6, 4, P.shadow);
+        }
+    },
+
     armor_stand: {
         nativeWidth: 64,
         nativeHeight: 96,

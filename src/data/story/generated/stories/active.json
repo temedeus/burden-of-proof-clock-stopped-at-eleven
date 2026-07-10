@@ -83,7 +83,7 @@
     {
       "clueId": "torn_page",
       "roomId": "library",
-      "furnitureId": "table",
+      "furnitureId": "reading_table",
       "furnitureIndex": 0,
       "hint": "Pages are scattered across the table. One sheet was torn out deliberately."
     },

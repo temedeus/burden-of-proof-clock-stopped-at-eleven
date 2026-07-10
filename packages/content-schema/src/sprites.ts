@@ -93,6 +93,7 @@ export const VALID_SPRITE_NAMES = [
     "wine_barrel",
     "wine_rack",
     "writing_table",
+    "reading_table",
     "oil_lamp",
     "vanity_table",
     "old_shelf",

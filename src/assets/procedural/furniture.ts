@@ -1217,6 +1217,40 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    reading_table: {
+        nativeWidth: 64,
+        nativeHeight: 32,
+        draw(ctx) {
+            drawWoodTabletop(ctx, 4, 12, 56, 10);
+            drawTableLegs(ctx, [10, 50], 22, 30);
+
+            // Green banker's lamp
+            r(ctx, 8, 2, 10, 12, P.green);
+            r(ctx, 10, 0, 6, 4, P.gold);
+            r(ctx, 11, 4, 4, 8, P.greenLight);
+            r(ctx, 12, 10, 2, 2, P.gold);
+
+            // Open book
+            r(ctx, 22, 4, 22, 10, P.cream);
+            r(ctx, 23, 5, 9, 8, P.white);
+            r(ctx, 34, 5, 9, 8, P.white);
+            r(ctx, 32, 5, 2, 8, P.woodDark);
+            r(ctx, 24, 7, 6, 1, P.woodDark);
+            r(ctx, 24, 9, 5, 1, P.woodDark);
+            r(ctx, 35, 7, 6, 1, P.woodDark);
+
+            // Scattered pages
+            r(ctx, 46, 6, 8, 6, P.cream);
+            r(ctx, 47, 7, 6, 4, P.white);
+            r(ctx, 48, 8, 4, 1, P.woodDark);
+
+            // Book stack
+            r(ctx, 52, 8, 6, 5, P.red);
+            r(ctx, 54, 5, 5, 6, P.blue);
+            r(ctx, 56, 7, 4, 4, P.green);
+        }
+    },
+
     stuffed_moose: {
         nativeWidth: 64,
         nativeHeight: 96,

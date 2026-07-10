@@ -3,5 +3,6 @@
   "name": "Bookshelves",
   "description": "Rows of leather-bound volumes.",
   "width": 1,
-  "height": 2
+  "height": 2,
+  "collisionRowsFromBottom": 1
 }

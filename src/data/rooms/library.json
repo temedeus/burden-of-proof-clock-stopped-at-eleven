@@ -4,7 +4,7 @@
   "height": 18,
   "furniture": [
     {
-      "furnitureId": "table",
+      "furnitureId": "reading_table",
       "x": "center",
       "y": "center",
       "anchor": "center"
@@ -25,11 +25,7 @@
       "furnitureId": "bookshelves",
       "x": 3,
       "y": 1,
-      "anchor": "top-left",
-      "clues": [
-        "torn_page"
-      ],
-      "description": "Rows of leather-bound volumes. Some seem recently disturbed."
+      "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
@@ -41,6 +37,318 @@
       "furnitureId": "bookshelves",
       "x": 5,
       "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 6,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 18,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 19,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 20,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 21,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 22,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 23,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 17,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 18,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 19,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 20,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 21,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 22,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 23,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 1,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 2,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 3,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 4,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 5,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 6,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 7,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 8,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 16,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 17,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 18,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 19,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 20,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 21,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 22,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 1,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 2,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 3,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 4,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 5,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 6,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 7,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 8,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 9,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 10,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 11,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 12,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 13,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 14,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 15,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 16,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 17,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 18,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 19,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 20,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 21,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 22,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 23,
+      "y": 15,
       "anchor": "top-left"
     }
   ],
@@ -63,13 +371,13 @@
   "npcs": [
     {
       "npcId": "butler",
-      "x": 5,
-      "y": 3
+      "x": 8,
+      "y": 4
     },
     {
       "npcId": "baron",
-      "x": 12,
-      "y": 8
+      "x": 18,
+      "y": 9
     }
   ]
 }

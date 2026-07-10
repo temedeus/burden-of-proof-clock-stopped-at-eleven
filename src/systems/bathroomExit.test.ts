@@ -124,7 +124,7 @@ describe("guest room bathroom doors", () => {
 
     it("puts guest room B bathroom door on the east wall", () => {
         const exit = rooms.guest_room_b.exits.find((e) => e.targetRoom === "bathroom_b");
-        expect(exit?.x).toBe(24);
+        expect(exit?.x).toBe(17);
     });
 
     it("puts master bedroom bathroom door on the east wall", () => {

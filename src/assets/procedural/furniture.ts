@@ -1022,6 +1022,102 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    guest_bed: {
+        nativeWidth: 192,
+        nativeHeight: 192,
+        draw(ctx) {
+            const W = 192;
+            const H = 192;
+
+            r(ctx, 12, 24, W - 24, H - 32, P.shadow);
+
+            const leg = (px: number, py: number) => {
+                r(ctx, px, py, 8, H - py - 20, P.woodDark);
+                r(ctx, px + 1, py + 1, 6, H - py - 22, P.wood);
+            };
+            leg(16, 32);
+            leg(W - 24, 32);
+            leg(16, 108);
+            leg(W - 24, 108);
+
+            r(ctx, 20, 32, W - 40, 4, P.woodDark);
+            r(ctx, 20, H - 36, W - 40, 4, P.woodDark);
+            r(ctx, 20, 32, 4, H - 68, P.wood);
+            r(ctx, W - 24, 32, 4, H - 68, P.wood);
+
+            r(ctx, 24, 36, W - 48, H - 72, P.cream);
+            r(ctx, 26, 38, W - 52, H - 76, P.white);
+            r(ctx, 28, 42, W - 56, H - 84, P.highlight);
+
+            r(ctx, 30, 56, W - 60, H - 100, P.carpetPlumLight);
+            r(ctx, 32, 58, W - 64, H - 104, P.carpetPlum);
+            for (let i = 0; i < 4; i++) {
+                r(ctx, 36 + i * 36, 60, 30, H - 108, P.carpetPlumLight);
+            }
+
+            r(ctx, 36, 38, 44, 18, P.cream);
+            r(ctx, 38, 40, 40, 14, P.white);
+            r(ctx, W - 80, 38, 44, 18, P.cream);
+            r(ctx, W - 78, 40, 40, 14, P.white);
+
+            r(ctx, 18, 28, W - 36, 8, P.wood);
+            r(ctx, 20, 30, W - 40, 4, P.woodHi);
+        }
+    },
+
+    vanity_table: {
+        nativeWidth: 48,
+        nativeHeight: 64,
+        draw(ctx) {
+            drawWoodTabletop(ctx, 6, 28, 36, 8);
+            drawTableLegs(ctx, [10, 32], 36, 60);
+
+            r(ctx, 10, 4, 28, 22, P.woodDark);
+            r(ctx, 12, 6, 24, 18, P.silverDark);
+            r(ctx, 14, 8, 20, 14, P.glass);
+            r(ctx, 16, 10, 16, 10, P.glassHi);
+            r(ctx, 18, 12, 12, 6, P.highlight);
+            r(ctx, 20, 14, 8, 2, P.white);
+
+            r(ctx, 14, 24, 20, 4, P.wood);
+            r(ctx, 16, 22, 4, 6, P.goldDark);
+            r(ctx, 28, 22, 4, 6, P.goldDark);
+
+            r(ctx, 12, 32, 6, 4, P.cream);
+            r(ctx, 30, 33, 5, 3, P.gold);
+        }
+    },
+
+    manor_vanity: {
+        nativeWidth: 64,
+        nativeHeight: 80,
+        draw(ctx) {
+            drawWoodTabletop(ctx, 4, 34, 56, 10);
+            drawTableLegs(ctx, [8, 46], 44, 76);
+
+            r(ctx, 6, 2, 52, 30, P.woodDark);
+            r(ctx, 8, 4, 48, 26, P.goldDark);
+            r(ctx, 10, 6, 44, 22, P.gold);
+            r(ctx, 12, 8, 40, 18, P.glass);
+            r(ctx, 14, 10, 36, 14, P.glassHi);
+            r(ctx, 18, 14, 28, 6, P.highlight);
+            r(ctx, 22, 16, 20, 2, P.white);
+
+            for (let i = 0; i < 5; i++) {
+                r(ctx, 10 + i * 10, 4, 2, 4, P.gold);
+            }
+
+            r(ctx, 8, 30, 48, 4, P.wood);
+            r(ctx, 10, 28, 6, 8, P.gold);
+            r(ctx, 48, 28, 6, 8, P.gold);
+
+            r(ctx, 10, 36, 8, 5, P.cream);
+            r(ctx, 22, 37, 10, 4, P.gold);
+            r(ctx, 36, 36, 6, 5, P.wine);
+            r(ctx, 46, 37, 8, 4, P.goldDark);
+        }
+    },
+
     crummy_bed: {
         nativeWidth: 128,
         nativeHeight: 128,

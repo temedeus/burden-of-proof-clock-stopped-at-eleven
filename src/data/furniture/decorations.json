@@ -195,6 +195,45 @@
     "collisionWidth": 4,
     "spriteName": "crummy_bed"
   },
+  "guest_bed": {
+    "id": "guest_bed",
+    "name": "Guest bed",
+    "description": "A comfortable oak bed with fresh linen and a folded counterpane.",
+    "width": 6,
+    "height": 6,
+    "drawWidth": 6,
+    "drawHeight": 6,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 4,
+    "collisionWidth": 6,
+    "spriteName": "guest_bed"
+  },
+  "vanity_table": {
+    "id": "vanity_table",
+    "name": "Vanity table",
+    "description": "A modest dressing table with a looking-glass and a few guest toiletries.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 3,
+    "drawHeight": 4,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 2,
+    "spriteName": "vanity_table"
+  },
+  "manor_vanity": {
+    "id": "manor_vanity",
+    "name": "Dressing table",
+    "description": "An ornate vanity with a gilt-framed mirror and silver-backed brushes.",
+    "width": 3,
+    "height": 2,
+    "drawWidth": 4,
+    "drawHeight": 5,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 3,
+    "spriteName": "manor_vanity"
+  },
   "old_shelf": {
     "id": "old_shelf",
     "name": "Old shelf",

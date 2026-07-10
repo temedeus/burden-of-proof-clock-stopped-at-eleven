@@ -1,8 +1,21 @@
 {
   "id": "guest_room_a",
-  "width": 25,
-  "height": 18,
-  "furniture": [],
+  "width": 18,
+  "height": 13,
+  "furniture": [
+    {
+      "furnitureId": "guest_bed",
+      "x": "center",
+      "y": 2,
+      "anchor": "center"
+    },
+    {
+      "furnitureId": "vanity_table",
+      "x": 14,
+      "y": 2,
+      "anchor": "top-left"
+    }
+  ],
   "exits": [
     {
       "x": "center",

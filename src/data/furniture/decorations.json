@@ -678,6 +678,19 @@
     "nonInteractive": true,
     "spriteName": "attic_floor_post"
   },
+  "stuffed_moose": {
+    "id": "stuffed_moose",
+    "name": "Stuffed moose",
+    "description": "A glass-eyed bull moose looms over the room, antlers spread wide above a mahogany plaque.",
+    "width": 2,
+    "height": 3,
+    "drawWidth": 2,
+    "drawHeight": 3,
+    "renderAnchor": "bottom-left",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 2,
+    "spriteName": "stuffed_moose"
+  },
   "armor_stand": {
     "id": "armor_stand",
     "name": "Suit of armor",

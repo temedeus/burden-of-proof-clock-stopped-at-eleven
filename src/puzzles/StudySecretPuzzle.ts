@@ -72,7 +72,7 @@ export class StudySecretPuzzle {
         this.anim = null;
 
         const study = this.getStudyRoom();
-        for (const x of [9, 10, 14, 15]) {
+        for (const x of [6, 7, 11, 12]) {
             addFurnitureToRoom(study, { furnitureId: "bookshelves", x, y: 1, anchor: "top-left" });
         }
         setHiddenExitDoorOpen(study, true, "hidden_room");
@@ -96,7 +96,7 @@ export class StudySecretPuzzle {
             spriteLoader.drawSprite(
                 ctx,
                 "secret_bookshelf",
-                11 * TILE_SIZE - nudge,
+                8 * TILE_SIZE - nudge,
                 y,
                 TILE_SIZE * 3,
                 TILE_SIZE * 2
@@ -106,9 +106,9 @@ export class StudySecretPuzzle {
 
         const slideT = easeInOutCubic((rawT - 0.12) / 0.88);
         const slides: [number, number][] = [
-            [11, 9],
-            [12, 10],
-            [13, 14]
+            [8, 6],
+            [9, 7],
+            [10, 11]
         ];
 
         for (const [from, to] of slides) {
@@ -120,7 +120,7 @@ export class StudySecretPuzzle {
             const fade = Math.min(1, (slideT - 0.3) / 0.7);
             ctx.save();
             ctx.globalAlpha = fade;
-            spriteLoader.drawSprite(ctx, "bookshelf", 15 * TILE_SIZE, y, TILE_SIZE, TILE_SIZE * 2);
+            spriteLoader.drawSprite(ctx, "bookshelf", 12 * TILE_SIZE, y, TILE_SIZE, TILE_SIZE * 2);
             ctx.restore();
         }
     }

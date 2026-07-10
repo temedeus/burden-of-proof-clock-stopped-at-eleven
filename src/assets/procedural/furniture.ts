@@ -1217,6 +1217,34 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    stuffed_moose: {
+        nativeWidth: 64,
+        nativeHeight: 96,
+        draw(ctx) {
+            r(ctx, 8, 72, 48, 20, P.woodDark);
+            r(ctx, 10, 74, 44, 16, P.wood);
+            r(ctx, 12, 76, 40, 2, P.woodHi);
+
+            r(ctx, 14, 44, 36, 30, P.horseCoat);
+            r(ctx, 16, 46, 32, 26, P.horseCoatMid);
+            r(ctx, 18, 30, 28, 20, P.horseCoatLight);
+            r(ctx, 22, 34, 20, 14, P.horseCoat);
+            r(ctx, 24, 38, 16, 8, P.horseMuzzle);
+
+            r(ctx, 8, 18, 8, 16, P.woodDark);
+            r(ctx, 10, 14, 6, 12, P.wood);
+            r(ctx, 46, 18, 8, 16, P.woodDark);
+            r(ctx, 48, 14, 6, 12, P.wood);
+            r(ctx, 12, 8, 10, 8, P.woodDark);
+            r(ctx, 42, 8, 10, 8, P.woodDark);
+            r(ctx, 28, 4, 8, 10, P.woodDark);
+
+            r(ctx, 20, 20, 4, 4, P.black);
+            r(ctx, 40, 20, 4, 4, P.black);
+            r(ctx, 30, 24, 4, 3, P.horseNostril);
+        }
+    },
+
     small_bucket: {
         nativeWidth: 32,
         nativeHeight: 32,

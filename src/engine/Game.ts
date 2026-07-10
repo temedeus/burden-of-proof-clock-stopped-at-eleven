@@ -292,7 +292,7 @@ export class Game {
         }
 
         if (this.state === "playing") {
-            this.player.update(dt, this.input, this.currentRoom.map, this.currentRoom.npcs);
+            this.player.update(dt, this.input, this.currentRoom.map, this.currentRoom.npcs, this.currentRoom.interactables);
             this.roomTransitions.tickCooldown(dt);
 
             const chaseTick = this.murdererChase.tick(dt);

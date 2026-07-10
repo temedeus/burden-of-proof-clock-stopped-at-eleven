@@ -7,6 +7,8 @@ import { NPC } from "./NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
 import type { CharacterPose } from "../assets/procedural/characters";
 import { footstepSounds } from "../audio/FootstepSounds";
+import { resolveFootstepSound } from "../audio/footstepSurface";
+import type { Interactable } from "../world/Interactable";
 
 export type Facing = "up" | "down" | "left" | "right";
 
@@ -28,7 +30,7 @@ export class Player extends Entity {
         this.spriteName = spriteName;
     }
 
-    update(dt: number, input: Input, map: TileMap, npcs: NPC[] = []) {
+    update(dt: number, input: Input, map: TileMap, npcs: NPC[] = [], interactables: Interactable[] = []) {
         let dx = 0;
         let dy = 0;
 
@@ -48,7 +50,12 @@ export class Player extends Entity {
         } else {
             this.animTime = 0;
         }
-        footstepSounds.updateWalkAnim(this.animTime, this.isMoving);
+        const surface = resolveFootstepSound(this.x, this.y, this.width, this.height, interactables);
+        footstepSounds.updateWalkAnim(
+            this.animTime,
+            this.isMoving,
+            surface === "glass" ? "glass" : "default"
+        );
 
         const moveX = dx * this.speed * dt;
         const moveY = dy * this.speed * dt;

@@ -41,4 +41,5 @@ export interface Interactable {
     confirmId?: string;
     confirmPrompt?: string;
     interactionSound?: string;
+    footstepSound?: string;
 }

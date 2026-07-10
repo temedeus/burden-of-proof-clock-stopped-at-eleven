@@ -741,6 +741,7 @@
     "drawHeight": 2,
     "renderAnchor": "center",
     "walkableDecor": true,
+    "footstepSound": "glass",
     "spriteName": "clock_glass_shards"
   },
   "grand_piano": {

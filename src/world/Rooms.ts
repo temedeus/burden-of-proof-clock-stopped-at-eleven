@@ -340,7 +340,8 @@ function placeFurniture(
                   confirmPrompt: furniture.confirmPrompt
               }
             : {}),
-        ...(furniture.interactionSound ? { interactionSound: furniture.interactionSound } : {})
+        ...(furniture.interactionSound ? { interactionSound: furniture.interactionSound } : {}),
+        ...(furniture.footstepSound ? { footstepSound: furniture.footstepSound } : {})
     };
 
     let startX: number;

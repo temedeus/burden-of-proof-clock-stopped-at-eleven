@@ -70,6 +70,8 @@ export interface FurnitureConfig {
     confirmPrompt?: string;
     /** Procedural sound played on examine (e.g. `piano`). */
     interactionSound?: string;
+    /** Footstep variant when walking over this walkable decor (e.g. `glass`). */
+    footstepSound?: string;
 }
 
 /** Merge table, bookshelves, and decoration map into one furniture catalog. */

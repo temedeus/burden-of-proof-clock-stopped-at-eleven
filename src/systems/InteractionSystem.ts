@@ -12,6 +12,7 @@ export interface InteractionResult {
     speaker?: string; // NPC name if talking to NPC
     speakerId?: string; // NPC id (e.g. "cook") for game logic
     confirmation?: { id: string; prompt: string };
+    interactionSound?: string;
 }
 
 export class InteractionSystem {
@@ -115,7 +116,8 @@ export class InteractionSystem {
                     
                     return {
                         description: obj.description,
-                        clues: newClues // Only return newly collected clues
+                        clues: newClues,
+                        ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
                     };
                 }
             }

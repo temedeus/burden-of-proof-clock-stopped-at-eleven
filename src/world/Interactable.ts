@@ -40,4 +40,5 @@ export interface Interactable {
     interactionType?: "confirm";
     confirmId?: string;
     confirmPrompt?: string;
+    interactionSound?: string;
 }

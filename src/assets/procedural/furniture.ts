@@ -1355,5 +1355,137 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
             // West-wall shadow (flush to wall)
             r(ctx, 0, 8, 4, 80, P.shadow);
         }
+    },
+
+    hall_clock: {
+        nativeWidth: 64,
+        nativeHeight: 160,
+        draw(ctx) {
+            r(ctx, 8, 0, 48, 156, P.woodDark);
+            r(ctx, 10, 2, 44, 152, P.wood);
+            r(ctx, 12, 4, 40, 4, P.woodHi);
+            r(ctx, 12, 150, 40, 4, P.woodDark);
+
+            // Hood pediment
+            r(ctx, 6, 0, 52, 14, P.woodDark);
+            r(ctx, 10, 2, 44, 10, P.wood);
+            r(ctx, 28, 0, 8, 6, P.gold);
+
+            // Face bezel
+            r(ctx, 14, 18, 36, 40, P.goldDark);
+            r(ctx, 16, 20, 32, 36, P.cream);
+            r(ctx, 18, 22, 28, 32, P.white);
+
+            // Hour markers
+            for (let i = 0; i < 12; i++) {
+                const angle = (i * Math.PI) / 6 - Math.PI / 2;
+                const cx = 32 + Math.cos(angle) * 11;
+                const cy = 38 + Math.sin(angle) * 11;
+                r(ctx, Math.floor(cx) - 1, Math.floor(cy) - 1, 2, 2, P.woodDark);
+            }
+
+            // Hands stopped at eleven
+            r(ctx, 31, 24, 2, 12, P.black);
+            r(ctx, 24, 37, 10, 2, P.black);
+
+            // Broken glazed door
+            r(ctx, 12, 16, 40, 44, P.gold);
+            r(ctx, 14, 18, 36, 40, P.waterLight);
+            r(ctx, 16, 20, 32, 36, P.highlight);
+            r(ctx, 22, 28, 14, 16, P.woodDark);
+            r(ctx, 18, 24, 6, 8, P.waterHi);
+            r(ctx, 36, 34, 8, 6, P.waterHi);
+            r(ctx, 28, 42, 10, 4, P.white);
+            r(ctx, 20, 48, 4, 3, P.waterLight);
+            r(ctx, 40, 22, 3, 5, P.highlight);
+
+            // Waist moulding
+            r(ctx, 10, 62, 44, 6, P.woodDark);
+            r(ctx, 12, 64, 40, 2, P.woodHi);
+
+            // Pendulum chamber with broken glass
+            r(ctx, 14, 72, 36, 52, P.woodDark);
+            r(ctx, 16, 74, 32, 48, P.shadow);
+            r(ctx, 20, 78, 24, 40, P.waterLight);
+            r(ctx, 26, 88, 12, 20, P.highlight);
+            r(ctx, 22, 100, 8, 4, P.white);
+            r(ctx, 34, 92, 5, 6, P.waterHi);
+            r(ctx, 30, 78, 8, 30, P.silverDark);
+            r(ctx, 31, 104, 6, 14, P.gold);
+            r(ctx, 32, 118, 4, 4, P.goldDark);
+
+            // Base plinth
+            r(ctx, 6, 148, 52, 10, P.woodDark);
+            r(ctx, 8, 150, 48, 6, P.wood);
+            r(ctx, 2, 12, 4, 136, P.shadow);
+        }
+    },
+
+    clock_glass_shards: {
+        nativeWidth: 96,
+        nativeHeight: 64,
+        draw(ctx) {
+            const shard = (x: number, y: number, w: number, h: number, c: string) => {
+                r(ctx, x, y, w, h, c);
+                r(ctx, x, y, w, 1, P.white);
+                r(ctx, x + w - 1, y, 1, h, P.waterLight);
+            };
+            shard(8, 20, 10, 6, P.waterLight);
+            shard(22, 28, 8, 5, P.highlight);
+            shard(34, 18, 12, 7, P.waterHi);
+            shard(50, 32, 9, 4, P.waterLight);
+            shard(62, 22, 7, 8, P.highlight);
+            shard(74, 30, 11, 5, P.waterHi);
+            shard(18, 38, 6, 4, P.white);
+            shard(44, 40, 8, 3, P.waterLight);
+            shard(58, 42, 5, 5, P.highlight);
+            r(ctx, 6, 48, 84, 2, P.shadow);
+        }
+    },
+
+    grand_piano: {
+        nativeWidth: 160,
+        nativeHeight: 96,
+        draw(ctx) {
+            // Curved body
+            r(ctx, 18, 28, 120, 52, P.black);
+            r(ctx, 20, 30, 116, 48, P.woodDark);
+            r(ctx, 24, 34, 108, 40, P.black);
+            r(ctx, 120, 36, 24, 36, P.woodDark);
+            r(ctx, 128, 40, 16, 28, P.black);
+
+            // Open lid
+            r(ctx, 16, 18, 118, 14, P.black);
+            r(ctx, 18, 20, 114, 10, P.woodDark);
+            r(ctx, 20, 22, 110, 6, P.shadow);
+            r(ctx, 24, 16, 100, 4, P.woodDark);
+
+            // Keyboard
+            r(ctx, 28, 48, 72, 10, P.cream);
+            for (let i = 0; i < 18; i++) {
+                const kx = 30 + i * 4;
+                r(ctx, kx, 50, 3, 6, i % 2 ? P.white : P.cream);
+                if (i % 3 !== 2 && i < 17) {
+                    r(ctx, kx + 2, 50, 2, 4, P.black);
+                }
+            }
+
+            // Music stand
+            r(ctx, 52, 34, 24, 12, P.black);
+            r(ctx, 54, 36, 20, 8, P.woodDark);
+            r(ctx, 56, 38, 16, 4, P.cream);
+
+            // Legs
+            r(ctx, 30, 74, 8, 18, P.woodDark);
+            r(ctx, 118, 74, 8, 18, P.woodDark);
+            r(ctx, 136, 70, 6, 22, P.woodDark);
+            r(ctx, 32, 76, 4, 4, P.goldDark);
+            r(ctx, 120, 76, 4, 4, P.goldDark);
+
+            // Bench hint
+            r(ctx, 46, 82, 36, 8, P.woodDark);
+            r(ctx, 48, 84, 32, 4, P.wood);
+            r(ctx, 14, 56, 6, 28, P.shadow);
+        }
     }
 };

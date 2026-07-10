@@ -339,7 +339,8 @@ function placeFurniture(
                   confirmId: furniture.confirmId,
                   confirmPrompt: furniture.confirmPrompt
               }
-            : {})
+            : {}),
+        ...(furniture.interactionSound ? { interactionSound: furniture.interactionSound } : {})
     };
 
     let startX: number;

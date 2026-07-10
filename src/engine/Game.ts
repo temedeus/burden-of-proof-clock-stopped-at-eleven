@@ -26,6 +26,7 @@ import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { gardenAmbience } from "../audio/GardenAmbience";
 import { atticMice } from "../systems/AtticMiceController";
 import { clueSounds } from "../audio/ClueSounds";
+import { pianoSounds } from "../audio/PianoSounds";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import {
     createRoomTitleBanner,
@@ -321,6 +322,9 @@ export class Game {
                     }
 
                     this.message = result.description;
+                    if (result.interactionSound === "piano") {
+                        pianoSounds.playChord();
+                    }
                     if (result.clues.length > 0) {
                         clueSounds.playFound();
                         this.clueNotification = { clueId: result.clues[0] };

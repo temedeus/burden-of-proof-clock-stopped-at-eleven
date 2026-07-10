@@ -8,6 +8,24 @@
       "x": "center",
       "y": 1,
       "anchor": "center"
+    },
+    {
+      "furnitureId": "hall_clock",
+      "x": 21,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "clock_glass_shards",
+      "x": 20,
+      "y": 6,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "grand_piano",
+      "x": 2,
+      "y": 13,
+      "anchor": "top-left"
     }
   ],
   "exits": [

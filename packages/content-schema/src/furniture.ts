@@ -68,6 +68,8 @@ export interface FurnitureConfig {
     /** Puzzle or handler id passed to confirmation flow (e.g. `study_secret`, `transition:cellar_storage`). */
     confirmId?: string;
     confirmPrompt?: string;
+    /** Procedural sound played on examine (e.g. `piano`). */
+    interactionSound?: string;
 }
 
 /** Merge table, bookshelves, and decoration map into one furniture catalog. */

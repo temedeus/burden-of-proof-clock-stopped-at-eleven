@@ -105,7 +105,10 @@ export const VALID_SPRITE_NAMES = [
     "attic_roof_beam_h",
     "attic_roof_bar",
     "attic_roof_beam_v",
-    "attic_floor_post"
+    "attic_floor_post",
+    "hall_clock",
+    "clock_glass_shards",
+    "grand_piano"
 ] as const;
 
 export type SpriteName = (typeof VALID_SPRITE_NAMES)[number];

@@ -717,5 +717,44 @@
     "collisionRowsFromBottom": 3,
     "collisionWidth": 2,
     "spriteName": "armor_stand"
+  },
+  "hall_clock": {
+    "id": "hall_clock",
+    "name": "Grand hall clock",
+    "description": "A tall case clock frozen at eleven. The glazed door is shattered — splinters still litter the floor below.",
+    "width": 2,
+    "height": 5,
+    "drawWidth": 2,
+    "drawHeight": 5,
+    "renderAnchor": "top-left",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 2,
+    "spriteName": "hall_clock"
+  },
+  "clock_glass_shards": {
+    "id": "clock_glass_shards",
+    "name": "Broken glass",
+    "description": "Shards of the clock's door lie scattered across the boards.",
+    "width": 3,
+    "height": 2,
+    "drawWidth": 3,
+    "drawHeight": 2,
+    "renderAnchor": "center",
+    "walkableDecor": true,
+    "spriteName": "clock_glass_shards"
+  },
+  "grand_piano": {
+    "id": "grand_piano",
+    "name": "Grand piano",
+    "description": "Ebony keys yellow with age. A sour chord clatters when you touch them.",
+    "width": 4,
+    "height": 3,
+    "drawWidth": 5,
+    "drawHeight": 3,
+    "renderAnchor": "bottom-left",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 4,
+    "spriteName": "grand_piano",
+    "interactionSound": "piano"
   }
 }

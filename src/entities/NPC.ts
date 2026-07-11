@@ -10,6 +10,7 @@ export class NPC extends Entity {
   width = TILE_SIZE * 2;
   height = TILE_SIZE * 2;
   private spriteName: string = "npc_male";
+  private showNameLabel = true;
   private chasing = false;
   private chaseSpeed = DEFAULT_CHASE_SPEED;
   private fleeing = false;
@@ -21,9 +22,11 @@ export class NPC extends Entity {
     y: number,
     public name: string,
     public role?: string,
-    spriteName?: string
+    spriteName?: string,
+    showNameLabel = true
   ) {
     super(id, x, y);
+    this.showNameLabel = showNameLabel;
     // Determine sprite based on role or use provided sprite name
     if (spriteName) {
       this.spriteName = spriteName;
@@ -120,6 +123,8 @@ export class NPC extends Entity {
     // Render NPC sprite from spritesheet, scaled to occupy 4 tiles (2x2)
     spriteLoader.drawSprite(ctx, this.spriteName, this.x, this.y, this.width, this.height);
     
+    if (!this.showNameLabel) return;
+
     // Render name above NPC
     ctx.fillStyle = "#fff";
     ctx.font = "16px serif";

@@ -37,6 +37,7 @@ export const VALID_SPRITE_NAMES = [
     "female_detective",
     "male_detective",
     "baron",
+    "baron_body",
     "baroness",
     "maid",
     "worker_man",

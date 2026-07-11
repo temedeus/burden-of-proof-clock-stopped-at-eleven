@@ -311,7 +311,8 @@ export class Game {
                 const result = this.interaction.interact(
                     this.player,
                     this.currentRoom,
-                    this.npcDialogs
+                    this.npcDialogs,
+                    this.content.npcs
                 );
 
                 if (result) {

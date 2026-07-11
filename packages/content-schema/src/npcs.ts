@@ -13,5 +13,9 @@ export interface NPCConfig {
     name: string;
     role?: string;
     spriteName?: string;
+    /** When "examine", interaction shows dialog text as a description (no speaker prefix). */
+    interactionMode?: "dialog" | "examine";
+    /** When false, the name label is not drawn above the sprite. */
+    showNameLabel?: boolean;
     dialog: NPCDialogConfig;
 }

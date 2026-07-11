@@ -236,17 +236,67 @@ function humanoid(style: HumanoidStyle): ProceduralSpriteDef {
     };
 }
 
+const BARON_STYLE: HumanoidStyle = {
+    coat: P.black,
+    coatLight: P.shadow,
+    hair: P.highlight,
+    hat: P.black,
+    hatBand: P.gold,
+    pants: P.black
+};
+
+/** Baron Blackwood lying dead on the floor with a blood pool beneath. */
+function drawDeadBaronBody(ctx: CanvasRenderingContext2D): void {
+    const s = BARON_STYLE;
+    const skin = P.skin;
+
+    // Blood pool spreading on the floor
+    r(ctx, 2, 33, 28, 5, P.brickDark);
+    r(ctx, 4, 34, 24, 3, P.red);
+    r(ctx, 6, 35, 20, 2, P.redLight);
+    r(ctx, 10, 36, 12, 1, P.brick);
+
+    // Legs (sprawled to the right)
+    r(ctx, 22, 24, 6, 4, s.pants!);
+    r(ctx, 27, 25, 5, 4, s.pants!);
+    r(ctx, 24, 28, 4, 3, P.shoeBrown);
+    r(ctx, 29, 28, 4, 3, P.shoeBrown);
+
+    // Torso on its back
+    r(ctx, 8, 20, 16, 10, s.coat);
+    r(ctx, 9, 21, 14, 4, s.coatLight);
+    r(ctx, 14, 22, 6, 4, P.red);
+    r(ctx, 15, 23, 4, 2, P.brickDark);
+
+    // Arms outstretched
+    r(ctx, 4, 22, 5, 3, s.coat);
+    r(ctx, 23, 21, 5, 3, s.coat);
+    r(ctx, 3, 23, 3, 3, skin);
+    r(ctx, 25, 22, 3, 3, skin);
+
+    // Head tilted to the left
+    r(ctx, 2, 16, 8, 8, skin);
+    r(ctx, 2, 16, 8, 3, s.hair);
+    r(ctx, 1, 17, 2, 4, s.hair);
+    r(ctx, 4, 20, 2, 1, P.outline);
+    r(ctx, 7, 20, 2, 1, P.outline);
+
+    // Hat fallen beside the head
+    r(ctx, 0, 22, 7, 3, s.hat!);
+    r(ctx, 1, 23, 5, 1, s.hatBand!);
+}
+
 export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
     female_detective: humanoid(PLAYER_CHARACTER_STYLES.female_detective),
     male_detective: humanoid(PLAYER_CHARACTER_STYLES.male_detective),
-    baron: humanoid({
-        coat: P.black,
-        coatLight: P.shadow,
-        hair: P.highlight,
-        hat: P.black,
-        hatBand: P.gold,
-        pants: P.black
-    }),
+    baron: humanoid(BARON_STYLE),
+    baron_body: {
+        nativeWidth: 32,
+        nativeHeight: 40,
+        draw(ctx) {
+            drawDeadBaronBody(ctx);
+        }
+    },
     baroness: humanoid({
         coat: P.carpetRed,
         coatLight: P.carpetRedLight,

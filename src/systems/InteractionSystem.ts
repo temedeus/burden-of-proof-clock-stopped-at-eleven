@@ -5,6 +5,7 @@ import { getInteractionTilesForFacing, tileBounds } from "../world/interactableT
 import { ClueSystem } from "./ClueSystem";
 import { DialogSystem } from "./DialogSystem";
 import { NPC } from "../entities/NPC";
+import type { NPCConfig } from "@cse/content-schema";
 
 export interface InteractionResult {
     description: string;
@@ -22,7 +23,12 @@ export class InteractionSystem {
         this.dialogSystem = new DialogSystem(clueSystem);
     }
 
-    interact(player: Player, room: Room, npcDialogs?: Record<string, any>): InteractionResult | null {
+    interact(
+        player: Player,
+        room: Room,
+        npcDialogs?: Record<string, any>,
+        npcConfigs?: Record<string, NPCConfig>
+    ): InteractionResult | null {
         const { x, y } = this.getTargetTile(player);
 
         // Check NPCs first - check if NPC is in the direction player is facing and adjacent
@@ -53,13 +59,27 @@ export class InteractionSystem {
             
             // NPC must be adjacent AND the target tile must overlap with NPC (facing direction matters)
             if (horizontalAdjacent && verticalAdjacent && targetOverlapsNPC) {
+                const npcConfig = npcConfigs?.[npc.id];
+                const interactionMode = npcConfig?.interactionMode ?? "dialog";
                 if (npcDialogs && npcDialogs[npc.id]) {
                     const dialog = this.dialogSystem.getDialog(npcDialogs[npc.id]);
+                    if (interactionMode === "examine") {
+                        return {
+                            description: dialog,
+                            clues: []
+                        };
+                    }
                     return {
                         description: `${npc.name}: ${dialog}`,
                         clues: [],
                         speaker: npc.name,
                         speakerId: npc.id
+                    };
+                }
+                if (interactionMode === "examine") {
+                    return {
+                        description: "There is nothing more to learn here.",
+                        clues: []
                     };
                 }
                 return {

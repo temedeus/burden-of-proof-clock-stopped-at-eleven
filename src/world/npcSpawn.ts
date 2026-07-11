@@ -19,7 +19,15 @@ export function spawnRoomNpcs(
         const npcX = resolveNpcPlacementTile(placement.x, grid.width) * TILE_SIZE;
         const npcY = resolveNpcPlacementTile(placement.y, grid.height) * TILE_SIZE;
         room.npcs.push(
-            new NPC(npcConfig.id, npcX, npcY, npcConfig.name, npcConfig.role, npcConfig.spriteName)
+            new NPC(
+                npcConfig.id,
+                npcX,
+                npcY,
+                npcConfig.name,
+                npcConfig.role,
+                npcConfig.spriteName,
+                npcConfig.showNameLabel !== false
+            )
         );
     }
 }

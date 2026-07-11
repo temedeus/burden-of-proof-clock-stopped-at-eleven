@@ -1,7 +1,7 @@
 {
   "title": "Clock Stopped at Eleven",
   "victim": {
-    "name": "Lord Blackwood",
+    "name": "Baron Blackwood",
     "roomId": "hall",
     "time": "eleven o'clock"
   },
@@ -24,12 +24,6 @@
       "motive": "Dismissal threatened after a ruined banquet.",
       "opportunity": "The kitchen adjoins the dining room.",
       "alibi": "Insists the roast was in the oven all night."
-    },
-    {
-      "npcId": "baron",
-      "motive": "An inheritance dispute with the victim.",
-      "opportunity": "Private meeting in the library before dinner.",
-      "alibi": "Retired early to the study, or so he says."
     },
     {
       "npcId": "baroness",
@@ -144,16 +138,6 @@
         {
           "requiresClue": "bloody_apron",
           "dialog": "That apron is mine, but the stain— that's sauce, surely."
-        }
-      ]
-    },
-    {
-      "npcId": "baron",
-      "default": "I retired early. These old bones need rest.",
-      "conditions": [
-        {
-          "requiresClue": "torn_page",
-          "dialog": "The ledger? Absurd. I was nowhere near the library after dinner."
         }
       ]
     },

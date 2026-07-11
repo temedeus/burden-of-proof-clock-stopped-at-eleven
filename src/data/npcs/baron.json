@@ -2,8 +2,10 @@
   "id": "baron",
   "name": "Baron Blackwood",
   "role": "Baron",
-  "spriteName": "baron",
+  "spriteName": "baron_body",
+  "interactionMode": "examine",
+  "showNameLabel": false,
   "dialog": {
-    "default": "I trust you are finding everything in order, Detective. This household has seen better days."
+    "default": "Baron Blackwood lies dead on the marble floor. Blood has pooled beneath his body, dark and still. His evening coat is torn at the chest. The hall clock stopped at eleven — the moment he died."
   }
 }

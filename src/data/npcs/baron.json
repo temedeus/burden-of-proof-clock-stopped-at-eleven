@@ -9,6 +9,6 @@
   "walkable": true,
   "footstepSound": "squish",
   "dialog": {
-    "default": "Baron Blackwood lies dead on the marble floor. Blood has pooled beneath his body, dark and still. His evening coat is torn at the chest. The hall clock stopped at eleven — the moment he died."
+    "default": "Baron Blackwood lies dead on the marble floor. Blood has pooled beneath his body, dark and still. His evening coat is torn at the chest. Faint broom marks streak through the blood — someone tried to clean the scene. The hall clock stopped at eleven — the moment he died."
   }
 }

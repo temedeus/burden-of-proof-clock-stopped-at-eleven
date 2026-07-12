@@ -37,5 +37,12 @@
       "spawnX": 8,
       "spawnY": 2
     }
+  ],
+  "npcs": [
+    {
+      "npcId": "maid",
+      "x": "center",
+      "y": 6
+    }
   ]
 }

@@ -11,6 +11,7 @@ import { ClueSystem } from "../systems/ClueSystem";
 const CLUE_CHAIN = [
     "examined_body",
     "examined_clock",
+    "maid_statement",
     "torn_appointment_note",
     "burned_ledger_page",
     "blackwoods_journal",
@@ -127,6 +128,10 @@ describe("active story investigation flow", () => {
             false
         );
         clueSystem.addClue("examined_clock");
+        expect(clueSystem.canCollectClue("torn_appointment_note", story.generatedClues, assignment)).toBe(
+            false
+        );
+        clueSystem.addClue("maid_statement");
         expect(clueSystem.canCollectClue("torn_appointment_note", story.generatedClues, assignment)).toBe(
             true
         );

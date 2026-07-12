@@ -83,6 +83,8 @@ export function applyStoryDialogOverrides(
     for (const override of casePacket.npcDialogOverrides ?? []) {
         merged[override.npcId] = {
             default: override.default,
+            ...(override.requiresClues ? { requiresClues: override.requiresClues } : {}),
+            ...(override.blockedDialog ? { blockedDialog: override.blockedDialog } : {}),
             conditions: override.conditions
         };
     }

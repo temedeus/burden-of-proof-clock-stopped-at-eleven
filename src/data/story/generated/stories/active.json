@@ -16,8 +16,8 @@
     {
       "npcId": "maid",
       "motive": "A secret debt to a moneylender.",
-      "opportunity": "Cleaning duty near the study that evening.",
-      "alibi": "Says she was in the kitchen polishing silver."
+      "opportunity": "Her nightly rounds put her in the hall around eleven o'clock.",
+      "alibi": "Claims she saw the Baron heading to the library with papers during her rounds."
     },
     {
       "npcId": "cook",
@@ -54,6 +54,10 @@
       "summary": "Rain has darkened the gravel paths. The fountain murmurs in the silence."
     },
     {
+      "roomId": "maid_room",
+      "summary": "A modest room for the household staff — neat, but plainly furnished."
+    },
+    {
       "roomId": "kitchen",
       "summary": "Copper pots hang gleaming, but something feels wrong tonight."
     },
@@ -70,21 +74,28 @@
     {
       "id": "examined_body",
       "name": "Body Examined",
-      "description": "Baron Blackwood was stabbed in the chest. He died where he fell.",
+      "description": "Baron Blackwood was stabbed in the chest. Blood has pooled beneath him, streaked with broom marks — someone tried to clean the scene.",
       "hideFromInventory": true
     },
     {
       "id": "examined_clock",
       "name": "Clock Examined",
-      "description": "The grandfather clock stopped at eleven. The glazed door was shattered from within.",
+      "description": "The grandfather clock stopped at eleven o'clock. The glazed door was shattered from within.",
+      "hideFromInventory": true
+    },
+    {
+      "id": "maid_statement",
+      "name": "Maid Interviewed",
+      "description": "Mrs. Clarke saw the Baron heading toward the library with papers, looking worried.",
+      "requiresClues": ["examined_body", "examined_clock"],
       "hideFromInventory": true
     },
     {
       "id": "torn_appointment_note",
       "name": "Torn Appointment Note",
       "description": "A torn note mentions a meeting in the Study at half past ten.",
-      "requiresClues": ["examined_body", "examined_clock"],
-      "blockedHint": "Nothing here stands out yet. The hall may hold more answers."
+      "requiresClues": ["maid_statement"],
+      "blockedHint": "The library may hold answers, but Mrs. Clarke upstairs may know more about the Baron's movements."
     },
     {
       "id": "burned_ledger_page",
@@ -141,14 +152,20 @@
       "clueId": "examined_body",
       "roomId": "hall",
       "npcId": "baron",
-      "hint": "Baron Blackwood lies dead on the marble floor. Blood has pooled beneath his body, dark and still."
+      "hint": "Baron Blackwood lies dead on the marble floor. Blood has pooled beneath his body, dark and still. Faint broom marks streak through the blood — someone tried to clean the scene."
     },
     {
       "clueId": "examined_clock",
       "roomId": "hall",
       "furnitureId": "hall_clock",
       "furnitureIndex": 0,
-      "hint": "The clock hands are frozen at eleven. The glass door is shattered — as if struck from inside."
+      "hint": "The clock hands are frozen at eleven o'clock. The glass door is shattered — as if struck from inside."
+    },
+    {
+      "clueId": "maid_statement",
+      "roomId": "maid_room",
+      "npcId": "maid",
+      "hint": "Mrs. Clarke was finishing her rounds when she saw the Baron heading toward the library carrying several papers. He looked worried."
     },
     {
       "clueId": "torn_appointment_note",
@@ -213,12 +230,16 @@
       "default": "The scene is secured, Detective. Examine everything before you question anyone.",
       "conditions": [
         {
-          "requiresClue": "murder_weapon",
+          "requiresClues": ["murder_weapon", "maid_statement", "examined_body", "examined_clock"],
           "dialog": "You have the evidence. Confront the killer, then report to me."
         },
         {
+          "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
+          "dialog": "It appears Mrs. Clarke's statement checks out."
+        },
+        {
           "requiresClues": ["examined_body", "examined_clock"],
-          "dialog": "The Baron was last seen carrying papers toward the Library. Start there."
+          "dialog": "Mrs. Clarke was making her nightly rounds around eleven o'clock. Her room is upstairs — I'd start there."
         }
       ]
     },
@@ -227,20 +248,20 @@
       "default": "My husband... I cannot bear to look at him. Please — find who did this.",
       "conditions": [
         {
+          "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
+          "dialog": "Poor Mrs. Clarke... I should never have doubted her."
+        },
+        {
           "requiresClues": ["examined_body", "examined_clock"],
-          "dialog": "He left the hall with a sheaf of papers. I thought he was going to the Library."
+          "dialog": "Mrs. Clarke was on her rounds at eleven. Those broom marks near his body... her room is upstairs. I hate to think it."
         }
       ]
     },
     {
       "npcId": "maid",
-      "default": "I've never seen the household like this. The Baron was kind to us all.",
-      "conditions": [
-        {
-          "requiresClues": ["examined_body", "examined_clock"],
-          "dialog": "I heard him tell Mr. Thompson he had business in the Library before dinner."
-        }
-      ]
+      "default": "I was finishing my rounds when I saw the Baron heading toward the library carrying several papers. He looked worried.",
+      "requiresClues": ["examined_body", "examined_clock"],
+      "blockedDialog": "Mrs. Clarke keeps her eyes down. She won't say much until you've examined the scene downstairs."
     },
     {
       "npcId": "cook",
@@ -253,6 +274,14 @@
         {
           "requiresClue": "smuggling_documents",
           "dialog": "Those papers... They prove nothing. I was framed!"
+        },
+        {
+          "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
+          "dialog": "She's a good girl. I cannot believe anyone suspected her."
+        },
+        {
+          "requiresClues": ["examined_body", "examined_clock"],
+          "dialog": "The maid was doing her rounds at eleven. They say there are broom marks by the body. Her room is on the east landing, upstairs."
         }
       ]
     },
@@ -261,8 +290,12 @@
       "default": "Good evening, Detective. I trust you will be discreet.",
       "conditions": [
         {
-          "requiresClue": "torn_appointment_note",
+          "requiresClues": ["torn_appointment_note", "maid_statement", "examined_body", "examined_clock"],
           "dialog": "The Baron did go to the Study after the Library. I showed him in myself."
+        },
+        {
+          "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
+          "dialog": "Mrs. Clarke is a diligent woman. I am relieved her name is cleared."
         }
       ]
     },

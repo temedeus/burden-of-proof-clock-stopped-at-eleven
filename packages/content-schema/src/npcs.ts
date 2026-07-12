@@ -26,6 +26,8 @@ export interface NPCConfig {
     showNameLabel?: boolean;
     /** When set with interactionMode \"examine\", grants this clue on first examine. */
     examineClueId?: string;
+    /** When set with interactionMode \"dialog\", grants this clue on first successful dialog (after requiresClues gate). */
+    dialogClueId?: string;
     /** Floor body / rug-like NPC: player walks over, drawn beneath actors. */
     walkable?: boolean;
     /** Footstep variant when walking over this walkable NPC (e.g. `squish`). */

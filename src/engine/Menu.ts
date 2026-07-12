@@ -3,26 +3,44 @@ import { loadSettings, setMuteSounds } from "./Settings";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { shouldShowTouchControls } from "./platform";
 
-export type MenuScreen = "main" | "difficulty" | "character_select" | "pause" | "settings" | "game_over";
+export type MenuScreen = "main" | "character_select" | "pause" | "settings" | "game_over";
 
 export type MenuAction =
-    | { type: "start"; difficulty: "easy" | "medium" | "hard"; character: "male_detective" | "female_detective" }
+    | { type: "start"; character: "male_detective" | "female_detective" }
     | { type: "open_settings" }
-    | { type: "open_difficulty" }
     | { type: "resume" }
     | { type: "quit_to_menu" }
     | { type: "back" }
     | null;
 
-const MENU_COLOR = "#2a1f1f";
 const MENU_ACCENT = "#8b4513";
 const TEXT_COLOR = "#e8e0d5";
 const HOVER_COLOR = "#c4a574";
 
+type CharacterId = "female_detective" | "male_detective";
+
+interface CharacterOption {
+    id: CharacterId;
+    label: string;
+    description: string;
+}
+
+const CHARACTER_OPTIONS: CharacterOption[] = [
+    {
+        id: "female_detective",
+        label: "Female Detective",
+        description: "Sharp-eyed and methodical — nothing escapes her notice."
+    },
+    {
+        id: "male_detective",
+        label: "Male Detective",
+        description: "Calm under pressure, with years of experience on difficult cases."
+    }
+];
+
 export class Menu {
     private selectedIndex = 0;
     private input: Input;
-    private pendingDifficulty: "easy" | "medium" | "hard" = "medium";
 
     constructor(
         private canvas: HTMLCanvasElement,
@@ -47,18 +65,19 @@ export class Menu {
         const h = this.canvas.height;
 
         if (this.screen === "character_select") {
-            const centerX = w / 2;
-            const sideOffset = 140;
-            if (x < centerX - sideOffset / 2) {
-                this.selectedIndex = 0;
-                return null;
-            }
-            if (x > centerX + sideOffset / 2) {
-                this.selectedIndex = 1;
-                return null;
-            }
-            if (y > h * 0.75) {
-                return this.activateItem(this.getMenuItems()[this.selectedIndex]);
+            const layout = this.getCharacterSelectLayout(w, h);
+            for (let i = 0; i < layout.slots.length; i++) {
+                const slot = layout.slots[i];
+                const pad = 12;
+                if (
+                    x >= slot.x - pad &&
+                    x <= slot.x + slot.w + pad &&
+                    y >= slot.y - pad &&
+                    y <= slot.y + slot.h + pad
+                ) {
+                    this.selectedIndex = i;
+                    return this.activateItem(this.getMenuItems()[i]);
+                }
             }
             return null;
         }
@@ -77,24 +96,51 @@ export class Menu {
         return null;
     }
 
+    private getMenuTypography(h: number): { title: string; item: string; itemBold: string; hint: string; lineHeight: number } {
+        const touch = shouldShowTouchControls();
+        const scale = h / 600;
+        const titlePx = Math.round((touch ? 42 : 36) * scale);
+        const itemPx = Math.round((touch ? 34 : 26) * scale);
+        const hintPx = Math.round((touch ? 20 : 18) * scale);
+        const lineHeight = Math.round((touch ? 68 : 54) * scale);
+        return {
+            title: `bold ${titlePx}px serif`,
+            item: `${itemPx}px serif`,
+            itemBold: `bold ${itemPx}px serif`,
+            hint: `${hintPx}px serif`,
+            lineHeight
+        };
+    }
+
     private getListLayout(h: number): { startY: number; lineHeight: number; count: number } | null {
         const items = this.getMenuItems();
         if (items.length === 0) return null;
 
-        switch (this.screen) {
-            case "main":
-                return { startY: h * 0.42, lineHeight: 44, count: items.length };
-            case "difficulty":
-                return { startY: h * 0.4, lineHeight: 44, count: items.length };
-            case "pause":
-                return { startY: h * 0.42, lineHeight: 44, count: items.length };
-            case "settings":
-                return { startY: h * 0.42, lineHeight: 44, count: items.length };
-            case "game_over":
-                return { startY: h * 0.52, lineHeight: 44, count: items.length };
-            default:
-                return null;
-        }
+        const { lineHeight } = this.getMenuTypography(h);
+        const startY = h * (this.screen === "game_over" ? 0.52 : 0.42);
+        return { startY, lineHeight, count: items.length };
+    }
+
+    private getCharacterSelectLayout(w: number, h: number): {
+        spriteSize: number;
+        centerY: number;
+        slots: { id: CharacterId; x: number; y: number; w: number; h: number }[];
+        descriptionY: number;
+    } {
+        const spriteSize = Math.min(Math.round(w * 0.22), Math.round(h * 0.28));
+        const gap = Math.max(32, w * 0.1);
+        const centerY = h * 0.4;
+        const femaleX = w / 2 - gap / 2 - spriteSize;
+        const maleX = w / 2 + gap / 2;
+        return {
+            spriteSize,
+            centerY,
+            slots: [
+                { id: "female_detective", x: femaleX, y: centerY - spriteSize / 2, w: spriteSize, h: spriteSize },
+                { id: "male_detective", x: maleX, y: centerY - spriteSize / 2, w: spriteSize, h: spriteSize }
+            ],
+            descriptionY: centerY + spriteSize / 2 + Math.round(h * 0.08)
+        };
     }
 
     update(): MenuAction {
@@ -104,11 +150,11 @@ export class Menu {
         const escape = this.input.wasPressed("escape");
 
         if (escape) {
-            if (this.screen === "settings" || this.screen === "difficulty") {
+            if (this.screen === "settings") {
                 return { type: "back" };
             }
             if (this.screen === "character_select") {
-                this.setScreen("difficulty");
+                this.setScreen("main");
                 return null;
             }
             if (this.screen === "pause") {
@@ -144,17 +190,8 @@ export class Menu {
                     { id: "start", label: "Start Game" },
                     { id: "settings", label: "Settings" }
                 ];
-            case "difficulty":
-                return [
-                    { id: "easy", label: "Easy" },
-                    { id: "medium", label: "Medium" },
-                    { id: "hard", label: "Hard" }
-                ];
             case "character_select":
-                return [
-                    { id: "female_detective", label: "Female Detective" },
-                    { id: "male_detective", label: "Male Detective" }
-                ];
+                return CHARACTER_OPTIONS.map((c) => ({ id: c.id, label: c.label }));
             case "pause":
                 return [
                     { id: "resume", label: "Resume" },
@@ -173,24 +210,12 @@ export class Menu {
     private activateItem(item: { id: string; label: string }): MenuAction {
         switch (item.id) {
             case "start":
-                this.setScreen("difficulty");
-                return null;
-            case "easy":
-                this.pendingDifficulty = "easy";
-                this.setScreen("character_select");
-                return null;
-            case "medium":
-                this.pendingDifficulty = "medium";
-                this.setScreen("character_select");
-                return null;
-            case "hard":
-                this.pendingDifficulty = "hard";
                 this.setScreen("character_select");
                 return null;
             case "female_detective":
-                return { type: "start", difficulty: this.pendingDifficulty, character: "female_detective" };
+                return { type: "start", character: "female_detective" };
             case "male_detective":
-                return { type: "start", difficulty: this.pendingDifficulty, character: "male_detective" };
+                return { type: "start", character: "male_detective" };
             case "settings":
                 if (this.screen === "main") return { type: "open_settings" };
                 if (this.screen === "pause") return { type: "open_settings" };
@@ -218,21 +243,13 @@ export class Menu {
             ctx.fillStyle = "rgba(0,0,0,0.58)";
             ctx.fillRect(0, 0, w, h);
 
+            const type = this.getMenuTypography(h);
             ctx.fillStyle = MENU_ACCENT;
-            ctx.font = "bold 36px serif";
+            ctx.font = type.title;
             ctx.textAlign = "center";
             ctx.fillText("Murder at Blackwood Manor", w / 2, h * 0.28);
 
-            const items = this.getMenuItems();
-            const startY = h * 0.42;
-            const lineHeight = 44;
-            ctx.font = "22px serif";
-            for (let i = 0; i < items.length; i++) {
-                const label = items[i].label;
-                const y = startY + i * lineHeight;
-                ctx.fillStyle = i === this.selectedIndex ? HOVER_COLOR : TEXT_COLOR;
-                ctx.fillText(label, w / 2, y);
-            }
+            this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.42);
             ctx.textAlign = "left";
             return;
         }
@@ -255,110 +272,114 @@ export class Menu {
             return;
         }
 
-        const title = this.screen === "difficulty" ? "Select Difficulty" : "Paused";
-
+        const type = this.getMenuTypography(h);
         ctx.fillStyle = MENU_ACCENT;
-        ctx.font = "bold 36px serif";
+        ctx.font = type.title;
         ctx.textAlign = "center";
-        ctx.fillText(title, w / 2, h * 0.28);
+        ctx.fillText("Paused", w / 2, h * 0.28);
 
-        const items = this.getMenuItems();
-        const startY = this.screen === "difficulty" ? h * 0.4 : h * 0.42;
-        const lineHeight = 44;
+        this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.42);
+        ctx.textAlign = "left";
+    }
 
-        ctx.font = "22px serif";
+    private renderMenuList(
+        ctx: CanvasRenderingContext2D,
+        w: number,
+        h: number,
+        items: { id: string; label: string }[],
+        startY: number
+    ): void {
+        const type = this.getMenuTypography(h);
+        ctx.textAlign = "center";
+
         for (let i = 0; i < items.length; i++) {
             const label =
                 items[i].id === "mute_toggle"
                     ? `Mute sounds: ${loadSettings().muteSounds ? "On" : "Off"}`
                     : items[i].label;
-            const y = startY + i * lineHeight;
-            ctx.fillStyle = i === this.selectedIndex ? HOVER_COLOR : TEXT_COLOR;
+            const y = startY + i * type.lineHeight;
+            const selected = i === this.selectedIndex;
+            ctx.font = selected ? type.itemBold : type.item;
+            ctx.fillStyle = selected ? HOVER_COLOR : TEXT_COLOR;
             ctx.fillText(label, w / 2, y);
         }
-
-        ctx.textAlign = "left";
     }
 
     private renderCharacterSelect(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-        const zoomedSize = 160;
-        const smallSize = 80;
-        const centerX = w / 2;
-        const centerY = h * 0.52;
-        const sideOffset = 140;
-
-        const characters: { id: "female_detective" | "male_detective"; label: string }[] = [
-            { id: "female_detective", label: "Female Detective" },
-            { id: "male_detective", label: "Male Detective" }
-        ];
+        const type = this.getMenuTypography(h);
+        const layout = this.getCharacterSelectLayout(w, h);
+        const selected = CHARACTER_OPTIONS[this.selectedIndex];
 
         ctx.fillStyle = MENU_ACCENT;
-        ctx.font = "bold 36px serif";
+        ctx.font = type.title;
         ctx.textAlign = "center";
-        ctx.fillText("Select Character", centerX, h * 0.2);
+        ctx.fillText("Select Character", w / 2, h * 0.16);
 
-        ctx.font = "18px serif";
+        ctx.font = type.hint;
         ctx.fillStyle = TEXT_COLOR;
         const charHint = shouldShowTouchControls()
-            ? "Tap a character    Tap below to confirm"
-            : "← → to choose    Enter to confirm    Esc to back";
-        ctx.fillText(charHint, centerX, h * 0.28);
+            ? "Tap a character to play"
+            : "← → to choose    Enter to confirm    Esc to go back";
+        ctx.fillText(charHint, w / 2, h * 0.24);
 
-        const female = characters[0];
-        const male = characters[1];
+        for (let i = 0; i < CHARACTER_OPTIONS.length; i++) {
+            const character = CHARACTER_OPTIONS[i];
+            const slot = layout.slots[i];
+            const isSelected = i === this.selectedIndex;
 
-        if (this.selectedIndex === 0) {
-            spriteLoader.drawSprite(ctx, male.id, centerX + sideOffset - smallSize / 2, centerY - smallSize / 2, smallSize, smallSize);
-            spriteLoader.drawSprite(ctx, female.id, centerX - zoomedSize / 2, centerY - zoomedSize / 2, zoomedSize, zoomedSize);
-            ctx.fillStyle = HOVER_COLOR;
-            ctx.font = "bold 20px serif";
-            ctx.fillText(female.label, centerX, centerY + zoomedSize / 2 + 28);
-        } else {
-            spriteLoader.drawSprite(ctx, female.id, centerX - sideOffset - smallSize / 2, centerY - smallSize / 2, smallSize, smallSize);
-            spriteLoader.drawSprite(ctx, male.id, centerX - zoomedSize / 2, centerY - zoomedSize / 2, zoomedSize, zoomedSize);
-            ctx.fillStyle = HOVER_COLOR;
-            ctx.font = "bold 20px serif";
-            ctx.fillText(male.label, centerX, centerY + zoomedSize / 2 + 28);
+            if (isSelected) {
+                const pad = 8;
+                ctx.strokeStyle = HOVER_COLOR;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(
+                    slot.x - pad,
+                    slot.y - pad,
+                    slot.w + pad * 2,
+                    slot.h + pad * 2
+                );
+            }
+
+            ctx.save();
+            ctx.globalAlpha = isSelected ? 1 : 0.45;
+            spriteLoader.drawSprite(ctx, character.id, slot.x, slot.y, slot.w, slot.h);
+            ctx.restore();
+
+            ctx.font = isSelected ? type.itemBold : type.item;
+            ctx.fillStyle = isSelected ? HOVER_COLOR : TEXT_COLOR;
+            ctx.fillText(character.label, slot.x + slot.w / 2, slot.y + slot.h + Math.round(h * 0.04));
         }
 
+        ctx.font = type.itemBold;
+        ctx.fillStyle = HOVER_COLOR;
+        ctx.fillText(selected.label, w / 2, layout.descriptionY);
+
+        ctx.font = type.hint;
         ctx.fillStyle = TEXT_COLOR;
-        ctx.font = "16px serif";
-        const playHint = shouldShowTouchControls() ? "Tap below to play" : "Press Enter to play";
-        ctx.fillText(playHint, centerX, h * 0.88);
+        ctx.fillText(selected.description, w / 2, layout.descriptionY + type.lineHeight * 0.55);
+
         ctx.textAlign = "left";
     }
 
     private renderGameOver(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        const type = this.getMenuTypography(h);
         ctx.fillStyle = "#8b0000";
-        ctx.font = "bold 42px serif";
+        ctx.font = type.title;
         ctx.textAlign = "center";
         ctx.fillText("Game Over", w / 2, h * 0.35);
         ctx.fillStyle = TEXT_COLOR;
-        ctx.font = "20px serif";
+        ctx.font = type.hint;
         ctx.fillText("The murderer has caught you.", w / 2, h * 0.42);
-        ctx.font = "22px serif";
-        const y = h * 0.52;
-        ctx.fillStyle = this.selectedIndex === 0 ? HOVER_COLOR : TEXT_COLOR;
-        ctx.fillText("Back to Menu", w / 2, y);
+        this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.52);
         ctx.textAlign = "left";
     }
 
     private renderSettings(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        const type = this.getMenuTypography(h);
         ctx.fillStyle = MENU_ACCENT;
-        ctx.font = "bold 36px serif";
+        ctx.font = type.title;
         ctx.textAlign = "center";
         ctx.fillText("Settings", w / 2, h * 0.28);
-
-        const mute = loadSettings().muteSounds;
-        const items = this.getMenuItems();
-        const startY = h * 0.42;
-        const lineHeight = 44;
-
-        ctx.font = "22px serif";
-        ctx.fillStyle = this.selectedIndex === 0 ? HOVER_COLOR : TEXT_COLOR;
-        ctx.fillText(`Mute sounds: ${mute ? "On" : "Off"}`, w / 2, startY);
-        ctx.fillStyle = this.selectedIndex === 1 ? HOVER_COLOR : TEXT_COLOR;
-        ctx.fillText("Back", w / 2, startY + lineHeight);
+        this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.42);
         ctx.textAlign = "left";
     }
 

@@ -24,7 +24,7 @@ const sharedInput = new Input();
 const menu = new Menu(canvas, "main", sharedInput);
 const touchControls = new TouchControls(sharedInput, document.getElementById("touch-controls")!);
 let introScreen: IntroScreen | null = null;
-let pendingStart: { difficulty: "easy" | "medium" | "hard"; character: "female_detective" | "male_detective" } | null = null;
+let pendingStart: { character: "female_detective" | "male_detective" } | null = null;
 
 const loop = new Loop();
 
@@ -46,12 +46,13 @@ function setupAudioUnlock(): void {
 }
 
 function setupCanvasPointer(): void {
-    if (!shouldShowTouchControls()) return;
-
     canvas.addEventListener(
         "pointerdown",
         (e) => {
-            if (e.pointerType !== "touch" && !isSimulateMobile()) return;
+            const touchUi = shouldShowTouchControls();
+            if (!touchUi && e.pointerType !== "mouse") return;
+            if (touchUi && e.pointerType !== "touch" && !isSimulateMobile()) return;
+
             unlockAudio();
             const { x, y } = clientToCanvas(canvas, e.clientX, e.clientY);
 
@@ -118,11 +119,11 @@ function handleMenuAction(action: MenuAction): void {
     switch (action.type) {
         case "start":
             unlockAudio();
-            pendingStart = { difficulty: action.difficulty, character: action.character };
+            pendingStart = { character: action.character };
             introScreen = new IntroScreen(sharedInput, action.character, () => {
                 if (!pendingStart) return;
                 game = new Game(ctx, {
-                    difficulty: pendingStart.difficulty,
+                    difficulty: "medium",
                     playerSprite: pendingStart.character,
                     onMenuRequest: () => {
                         appScreen = "pause_menu";
@@ -151,8 +152,7 @@ function handleMenuAction(action: MenuAction): void {
             updateTouchControlsVisibility();
             break;
         case "open_settings":
-        case "open_difficulty":
-            menu.setScreen(action.type === "open_settings" ? "settings" : "difficulty");
+            menu.setScreen("settings");
             break;
         case "resume":
             appScreen = "playing";

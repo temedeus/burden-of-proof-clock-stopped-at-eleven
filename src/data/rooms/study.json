@@ -55,7 +55,7 @@
       "spawnY": 2
     },
     {
-      "x": "center",
+      "x": 9,
       "y": "top",
       "targetRoom": "hidden_room",
       "spawnX": "center",

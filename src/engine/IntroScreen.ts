@@ -14,7 +14,7 @@ interface CharacterSlide {
 const CHARACTER_SLIDES: CharacterSlide[] = [
     { spriteName: "npc_male", name: "Mr. Thompson", role: "Butler", line: "The manor's steadfast butler." },
     { spriteName: "maid", name: "Mrs. Clarke", role: "Maid", line: "Keeps the halls in order." },
-    { spriteName: "worker_man", name: "Chef Pierre", role: "Cook", line: "Prepares every meal at the manor." },
+    { spriteName: "worker_man", name: "Ytte", role: "Cook", line: "Prepares every meal at the manor." },
     { spriteName: "baron", name: "Baron Blackwood", role: "Baron", line: "Master of Blackwood Manor." },
     { spriteName: "baroness", name: "Lady Blackwood", role: "Baroness", line: "The lady of the house." },
     { spriteName: "worker_man", name: "The Groundskeeper", role: "Worker", line: "Tends the grounds by day." },

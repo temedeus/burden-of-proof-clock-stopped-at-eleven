@@ -100,7 +100,7 @@
     {
       "id": "burned_ledger_page",
       "name": "Burned Ledger Page",
-      "description": "A ledger page, partly burned. It lists payments to Chef Pierre — amounts that do not match any kitchen supply.",
+      "description": "A ledger page, partly burned. It lists payments to Ytte — amounts that do not match any kitchen supply.",
       "requiresClues": ["torn_appointment_note"],
       "blockedHint": "The desk looks untouched. Perhaps the library holds a lead."
     },
@@ -121,14 +121,14 @@
     {
       "id": "smuggling_documents",
       "name": "Smuggling Documents",
-      "description": "Forged shipping manifests and ledgers — Chef Pierre's handwriting is on every page.",
+      "description": "Forged shipping manifests and ledgers — Ytte's handwriting is on every page.",
       "requiresClues": ["silver_key"],
       "blockedHint": "The cabinet is locked tight. You need the right key."
     },
     {
       "id": "bloody_apron",
       "name": "Bloody Apron",
-      "description": "A kitchen apron stiff with dried blood. It belongs to the chef.",
+      "description": "A kitchen apron stiff with dried blood. It belongs to Ytte.",
       "requiresClues": ["smuggling_documents"],
       "blockedHint": "The kitchen table looks ordinary for now."
     },
@@ -179,7 +179,7 @@
       "roomId": "study",
       "furnitureId": "table",
       "furnitureIndex": 0,
-      "hint": "Ashes in the grate hold a charred ledger page — payments to the chef that should not exist."
+      "hint": "Ashes in the grate hold a charred ledger page — payments to Ytte that should not exist."
     },
     {
       "clueId": "blackwoods_journal",
@@ -200,7 +200,7 @@
       "roomId": "hidden_room",
       "furnitureId": "locked_cabinet",
       "furnitureIndex": 0,
-      "hint": "Inside the cabinet: forged manifests and ledgers in Chef Pierre's hand."
+      "hint": "Inside the cabinet: forged manifests and ledgers in Ytte's hand."
     },
     {
       "clueId": "bloody_apron",
@@ -397,7 +397,7 @@
       "conditions": [
         {
           "requiresClue": "bloody_apron",
-          "dialog": "Saw Chef Pierre slip down toward the cellars late last night, apron bundled under his arm."
+          "dialog": "Saw Ytte slip down toward the cellars late last night, apron bundled under his arm."
         }
       ]
     }

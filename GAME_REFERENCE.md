@@ -8,7 +8,7 @@
 
 **Setting:** A Victorian-style country manor with main floor (hall, dining, kitchen, library, study, garden), upstairs bedrooms, outbuildings (courtyard, stable), cellars, and two hidden areas linked by a secret tunnel.
 
-**Content model:** Rooms, NPCs, furniture, and base dialog live in `src/data/*.json`. Each playable case is a **story packet** (`src/data/story/generated/stories/active.json`) that assigns clues to furniture or NPCs, sets the culprit, and overrides NPC dialog. The active case is *Clock Stopped at Eleven* — victim **Baron Blackwood** (body in the Hall), culprit **Chef Pierre** (cook).
+**Content model:** Rooms, NPCs, furniture, and base dialog live in `src/data/*.json`. Each playable case is a **story packet** (`src/data/story/generated/stories/active.json`) that assigns clues to furniture or NPCs, sets the culprit, and overrides NPC dialog. The active case is *Clock Stopped at Eleven* — victim **Baron Blackwood** (body in the Hall), culprit **Ytte** (cook).
 
 **Investigation flow:** Clues form a **dependency chain** — each discovery unlocks the next. See [Investigation order](#investigation-order-active-story) and [Active story clues](#active-story-clues-10-required).
 
@@ -189,7 +189,7 @@ Switches in **hidden_room** and **secret_tunnel** can reopen passages from the f
 
 | Room | NPCs |
 |------|------|
-| hall | Baron Blackwood (baron — **dead body**, examine), Mrs. Clarke (maid), Chef Pierre (cook), Lady Blackwood (baroness), Inspector Walsh (police) |
+| hall | Baron Blackwood (baron — **dead body**, examine), Mrs. Clarke (maid), Ytte (cook), Lady Blackwood (baroness), Inspector Walsh (police) |
 | library | Mr. Thompson (butler) |
 | kitchen | Groundskeeper (worker_man) |
 | study | Constable Reed (police2), Stable Boy (worker_boy) |
@@ -206,7 +206,7 @@ Dialog and player-facing text come from several layers. At runtime, **story over
 |------|----------|
 | `src/data/npcs/baron.json` | Baron Blackwood — examine-only corpse (`examineClueId`: `examined_body`) |
 | `src/data/npcs/butler.json` | Mr. Thompson — default dialog |
-| `src/data/npcs/cook.json` | Chef Pierre — default dialog |
+| `src/data/npcs/cook.json` | Ytte — default dialog |
 | `src/data/npcs/baroness.json` | Lady Blackwood — default only |
 | `src/data/npcs/police.json` | Inspector Walsh — default only |
 | `src/data/npcs/police2.json` | Constable Reed — default only |
@@ -269,7 +269,7 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 |-----|------------------------|
 | Inspector Walsh | Scene briefing → Library lead after body + clock → final report prompt after weapon found |
 | Lady Blackwood / Mrs. Clarke | Grief → Library papers lead after body + clock |
-| Chef Pierre | Alibi → nervous after smuggling docs → accusation line after murder weapon |
+| Ytte | Alibi → nervous after smuggling docs → accusation line after murder weapon |
 | Mr. Thompson | Study lead after torn appointment note |
 | Groundskeeper | Cellar lead after bloody apron |
 
@@ -286,7 +286,7 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 7. **Kitchen** — Bloody Apron; groundskeeper mentions cellar.
 8. **Cellar Storage** — Cellar Evidence (blood crate); open barrel passage → Wine Cellar.
 9. **Wine Cellar** — Murder Weapon (rear barrel).
-10. **Hall** — Confront Chef Pierre → report to Inspector Walsh.
+10. **Hall** — Confront Ytte → report to Inspector Walsh.
 
 ---
 
@@ -312,10 +312,10 @@ Clues may declare **`requiresClues`** (all must be found first) and **`blockedHi
 | `examined_body` | Body Examined | — | hall | baron NPC (`examineClueId`) | *(baron examine text)* |
 | `examined_clock` | Clock Examined | — | hall | hall_clock | Frozen at eleven; shattered glass |
 | `torn_appointment_note` | Torn Appointment Note | body + clock | library | reading_table | Torn note — Baron expected in Study |
-| `burned_ledger_page` | Burned Ledger Page | torn note | study | table | Charred ledger page — payments to chef |
+| `burned_ledger_page` | Burned Ledger Page | torn note | study | table | Charred ledger page — payments to Ytte |
 | `blackwoods_journal` | Blackwood's Journal | burned ledger | hidden_room | writing_table | Journal warns of smuggling + missing key |
 | `silver_key` | Silver Key | journal | garden | fountain | Key glinting in fountain basin |
-| `smuggling_documents` | Smuggling Documents | silver key | hidden_room | locked_cabinet (confirm) | Forged manifests in Pierre's hand |
+| `smuggling_documents` | Smuggling Documents | silver key | hidden_room | locked_cabinet (confirm) | Forged manifests in Ytte's hand |
 | `bloody_apron` | Bloody Apron | smuggling docs | kitchen | kitchen_table | Bloody apron on chair |
 | `cellar_evidence` | Cellar Evidence | bloody apron | cellar_storage | blood_crate | Stained crate; drag marks to wine cellar |
 | `murder_weapon` | Murder Weapon | cellar evidence | wine_cellar | wine_barrel #8 | Carving knife behind rear barrel |
@@ -345,7 +345,7 @@ Clues unlock conditional NPC lines via `requiresClue` in NPC JSON or `npcDialogO
 
 Collect all required clues → talk to the **murderer** (active story: **cook**) → talk to **Inspector Walsh** or **Constable Reed** to trigger the victory sequence.
 
-**Murderer (active story):** `cook` (Chef Pierre)  
+**Murderer (active story):** `cook` (Ytte)  
 **Victim:** Baron Blackwood, hall, eleven o'clock
 
 ---

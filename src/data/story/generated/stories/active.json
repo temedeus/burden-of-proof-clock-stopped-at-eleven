@@ -268,12 +268,104 @@
       "default": "The roast was perfect. I was in the kitchen all evening — ask anyone.",
       "conditions": [
         {
-          "requiresClue": "murder_weapon",
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note",
+            "burned_ledger_page",
+            "blackwoods_journal",
+            "silver_key",
+            "smuggling_documents",
+            "bloody_apron",
+            "cellar_evidence",
+            "murder_weapon"
+          ],
           "dialog": "You cannot prove I— Stay back! I won't go quietly!"
         },
         {
-          "requiresClue": "smuggling_documents",
-          "dialog": "Those papers... They prove nothing. I was framed!"
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note",
+            "burned_ledger_page",
+            "blackwoods_journal",
+            "silver_key",
+            "smuggling_documents",
+            "bloody_apron",
+            "cellar_evidence"
+          ],
+          "dialog": "The cellars? I haven't been down there in weeks! You're chasing ghosts, Detective — leave me alone!"
+        },
+        {
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note",
+            "burned_ledger_page",
+            "blackwoods_journal",
+            "silver_key",
+            "smuggling_documents",
+            "bloody_apron"
+          ],
+          "dialog": "That apron isn't mine! Someone planted it — you have to believe me!"
+        },
+        {
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note",
+            "burned_ledger_page",
+            "blackwoods_journal",
+            "silver_key",
+            "smuggling_documents"
+          ],
+          "dialog": "Those papers... Forged, every one! My handwriting? Anyone could copy that — I was framed!"
+        },
+        {
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note",
+            "burned_ledger_page",
+            "blackwoods_journal",
+            "silver_key"
+          ],
+          "dialog": "A key from the fountain? I don't know anything about that. Why are you still questioning me?"
+        },
+        {
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note",
+            "burned_ledger_page",
+            "blackwoods_journal"
+          ],
+          "dialog": "Smuggling? In this house? I — I don't know what you're talking about. The Baron's journal lies."
+        },
+        {
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note",
+            "burned_ledger_page"
+          ],
+          "dialog": "Payments to me? Absurd. Whoever wrote that ledger page doesn't know the first thing about running a kitchen."
+        },
+        {
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note"
+          ],
+          "dialog": "The Baron had papers with him? I saw nothing. I was at my station all evening — the roast wouldn't watch itself."
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],

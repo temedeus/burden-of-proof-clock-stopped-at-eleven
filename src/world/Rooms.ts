@@ -648,10 +648,11 @@ export function createRoomFromConfig(
                 : config.wallTile === "pale"
                   ? TILE_PALE_WALL
                   : TILE_WALL;
+    const northWallRow = config.northClerestoryRows ?? 0;
     const tiles = new Array(roomWidth * roomHeight).fill(baseFloor);
 
     for (let x = 0; x < roomWidth; x++) {
-        tiles[x] = perimeterWall;
+        tiles[northWallRow * roomWidth + x] = perimeterWall;
         tiles[(roomHeight - 1) * roomWidth + x] = perimeterWall;
     }
 
@@ -783,6 +784,7 @@ export function createRoomFromConfig(
         new TileMap(roomWidth, roomHeight, tiles, furnitureUnderlay, terrainBeforeFurniture),
         exits,
         interactables,
-        npcs
+        npcs,
+        northWallRow
     );
 }

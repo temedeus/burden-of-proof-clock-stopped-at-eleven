@@ -61,6 +61,8 @@ export interface RoomConfig {
     floorTile?: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" | "marble";
     /** Perimeter wall style (default red brick). */
     wallTile?: "brick" | "wood" | "rock" | "attic_wood" | "pale";
+    /** Rows above the north wall reserved for overhead clerestory windows (wall + collision shift down). */
+    northClerestoryRows?: number;
     gravelPath?: GravelPathConfig;
     /** Multiple gravel paths (merged with `gravelPath` when present). */
     gravelPaths?: GravelPathConfig[];

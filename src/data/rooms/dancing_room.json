@@ -1,32 +1,33 @@
 {
   "id": "dancing_room",
   "width": 25,
-  "height": 14,
+  "height": 18,
   "floorTile": "marble",
   "wallTile": "pale",
+  "northClerestoryRows": 2,
   "furniture": [
     {
       "furnitureId": "grand_piano",
       "x": 2,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "fancy_chair",
-      "x": 23,
       "y": 3,
       "anchor": "top-left"
     },
     {
       "furnitureId": "fancy_chair",
       "x": 23,
-      "y": 6,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "fancy_chair",
       "x": 23,
-      "y": 9,
+      "y": 8,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "fancy_chair",
+      "x": 23,
+      "y": 11,
       "anchor": "top-left"
     }
   ],

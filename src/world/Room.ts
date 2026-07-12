@@ -20,6 +20,8 @@ export class Room {
         public map: TileMap,
         public exits: DoorExit[],
         public interactables: Interactable[],
-        public npcs: NPC[] = []
+        public npcs: NPC[] = [],
+        /** Rows above the north wall used for overhead clerestory art (collision wall sits below). */
+        public northClerestoryRows = 0
     ) {}
 }

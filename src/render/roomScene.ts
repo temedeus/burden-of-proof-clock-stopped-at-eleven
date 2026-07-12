@@ -1,5 +1,6 @@
 import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
 import { drawFountainAnimated } from "../assets/procedural/fountain";
+import { drawBallroomClerestoryWindows } from "../assets/procedural/ballroom_windows";
 import { drawOilLampAnimated, oilLampAnimPhase, oilLampDrawBounds } from "../assets/procedural/oil_lamp";
 import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
 import { decorWallDrawBounds, wallMountDrawBounds } from "../assets/procedural/wall_align";
@@ -205,6 +206,9 @@ export function renderRoomScene(
     }
 
     renderTileMap(ctx, room.map);
+    if (room.northClerestoryRows > 0) {
+        drawBallroomClerestoryWindows(ctx, room.map.width, room.northClerestoryRows);
+    }
     drawDoorSprites(ctx, room);
 
     const rugActors: DepthActor[] = [];

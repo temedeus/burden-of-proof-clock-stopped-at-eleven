@@ -2,7 +2,7 @@ import { Entity } from "./Entity";
 import { Input } from "../engine/Input";
 import { TILE_SIZE } from "../world/constants";
 import { TileMap } from "../world/TileMap";
-import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_FURNITURE } from "../world/TileTypes";
+import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_ATTIC_WALL, TILE_PALE_WALL, TILE_FURNITURE } from "../world/TileTypes";
 import { NPC } from "./NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
 import type { CharacterPose } from "../assets/procedural/characters";
@@ -99,7 +99,9 @@ export class Player extends Entity {
                     tile === TILE_WOOD_WALL ||
                     tile === TILE_ROCK_WALL ||
                     tile === TILE_MANOR_WALL ||
-                    tile === TILE_GATE_WALL
+                    tile === TILE_GATE_WALL ||
+                    tile === TILE_ATTIC_WALL ||
+                    tile === TILE_PALE_WALL
                 ) {
                     return true;
                 }

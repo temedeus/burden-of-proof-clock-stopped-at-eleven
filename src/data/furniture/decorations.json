@@ -329,6 +329,19 @@
     "renderAnchor": "bottom",
     "spriteName": "drinking_chair"
   },
+  "fancy_chair": {
+    "id": "fancy_chair",
+    "name": "Gilded chair",
+    "description": "Velvet upholstery and gilt carving — meant for watching, not dancing.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 3,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 1,
+    "collisionWidth": 1,
+    "spriteName": "fancy_chair"
+  },
   "dining_table": {
     "id": "dining_table",
     "name": "Dining table",

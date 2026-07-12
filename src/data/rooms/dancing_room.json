@@ -4,7 +4,32 @@
   "height": 14,
   "floorTile": "marble",
   "wallTile": "pale",
-  "furniture": [],
+  "furniture": [
+    {
+      "furnitureId": "grand_piano",
+      "x": 2,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "fancy_chair",
+      "x": 23,
+      "y": 3,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "fancy_chair",
+      "x": 23,
+      "y": 6,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "fancy_chair",
+      "x": 23,
+      "y": 9,
+      "anchor": "top-left"
+    }
+  ],
   "exits": [
     {
       "x": 8,

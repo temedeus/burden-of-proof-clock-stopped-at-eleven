@@ -90,11 +90,11 @@ export class FootstepSounds {
         if (!ctx) return;
 
         const t = ctx.currentTime;
-        const duration = 0.16;
-        const pitchJitter = Math.random() * 40;
+        const duration = 0.2;
+        const pitchJitter = Math.random() * 25;
 
         const master = ctx.createGain();
-        master.gain.setValueAtTime(MASTER_GAIN * 2.2, t);
+        master.gain.setValueAtTime(MASTER_GAIN * 0.95, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
         master.connect(ctx.destination);
 
@@ -102,7 +102,7 @@ export class FootstepSounds {
         const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
         const samples = buffer.getChannelData(0);
         for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * 0.22));
+            const env = Math.exp(-i / (sampleCount * 0.35));
             samples[i] = (Math.random() * 2 - 1) * env;
         }
 
@@ -110,12 +110,12 @@ export class FootstepSounds {
         noise.buffer = buffer;
 
         const filter = ctx.createBiquadFilter();
-        filter.type = "bandpass";
-        filter.frequency.value = 280 + pitchJitter;
-        filter.Q.value = 0.8;
+        filter.type = "lowpass";
+        filter.frequency.value = 140 + pitchJitter;
+        filter.Q.value = 0.5;
 
         const noiseGain = ctx.createGain();
-        noiseGain.gain.value = 1.1;
+        noiseGain.gain.value = 0.55;
 
         noise.connect(filter);
         filter.connect(noiseGain);
@@ -124,29 +124,34 @@ export class FootstepSounds {
         noise.stop(t + duration);
 
         const squelch = ctx.createOscillator();
-        squelch.type = "triangle";
-        squelch.frequency.setValueAtTime(160 + pitchJitter, t);
-        squelch.frequency.exponentialRampToValueAtTime(55, t + duration * 0.9);
+        squelch.type = "sine";
+        squelch.frequency.setValueAtTime(95 + pitchJitter, t);
+        squelch.frequency.exponentialRampToValueAtTime(38, t + duration * 0.95);
 
         const squelchGain = ctx.createGain();
-        squelchGain.gain.setValueAtTime(0.85, t);
-        squelchGain.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.75);
+        squelchGain.gain.setValueAtTime(0.001, t);
+        squelchGain.gain.linearRampToValueAtTime(0.42, t + 0.012);
+        squelchGain.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.85);
 
         squelch.connect(squelchGain);
         squelchGain.connect(master);
         squelch.start(t);
         squelch.stop(t + duration);
 
-        const slap = ctx.createOscillator();
-        slap.type = "sine";
-        slap.frequency.setValueAtTime(420 + pitchJitter * 0.5, t + 0.01);
-        const slapGain = ctx.createGain();
-        slapGain.gain.setValueAtTime(0.12, t + 0.01);
-        slapGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-        slap.connect(slapGain);
-        slapGain.connect(master);
-        slap.start(t + 0.01);
-        slap.stop(t + 0.05);
+        const wet = ctx.createOscillator();
+        wet.type = "sine";
+        wet.frequency.setValueAtTime(72 + pitchJitter * 0.6, t + 0.018);
+        wet.frequency.exponentialRampToValueAtTime(32, t + duration);
+
+        const wetGain = ctx.createGain();
+        wetGain.gain.setValueAtTime(0.001, t + 0.018);
+        wetGain.gain.linearRampToValueAtTime(0.22, t + 0.03);
+        wetGain.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.9);
+
+        wet.connect(wetGain);
+        wetGain.connect(master);
+        wet.start(t + 0.018);
+        wet.stop(t + duration);
     }
 
     playGlassCrackle(): void {

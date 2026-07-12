@@ -1214,6 +1214,40 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    locked_cabinet: {
+        nativeWidth: 32,
+        nativeHeight: 48,
+        draw(ctx) {
+            r(ctx, 4, 2, 24, 44, P.ironDark);
+            r(ctx, 6, 4, 20, 40, P.iron);
+            r(ctx, 6, 14, 20, 2, P.ironDark);
+            r(ctx, 6, 26, 20, 2, P.ironDark);
+            r(ctx, 13, 20, 6, 8, P.shadow);
+            r(ctx, 14, 22, 4, 4, P.black);
+            r(ctx, 15, 24, 2, 2, P.gold);
+            r(ctx, 8, 8, 6, 4, P.ironDark);
+            r(ctx, 18, 30, 8, 6, P.ironDark);
+            r(ctx, 4, 2, 2, 44, P.outline);
+            r(ctx, 26, 2, 2, 44, P.outline);
+        }
+    },
+
+    blood_crate: {
+        nativeWidth: 32,
+        nativeHeight: 32,
+        draw(ctx) {
+            r(ctx, 4, 10, 24, 16, P.woodDark);
+            r(ctx, 6, 12, 20, 12, P.wood);
+            r(ctx, 4, 10, 24, 2, P.woodLight);
+            r(ctx, 4, 20, 24, 2, P.woodLight);
+            r(ctx, 8, 14, 10, 5, P.red);
+            r(ctx, 10, 15, 6, 3, P.brickDark);
+            r(ctx, 2, 26, 28, 4, P.brickDark);
+            r(ctx, 4, 27, 22, 2, P.red);
+            r(ctx, 20, 28, 8, 2, P.brick);
+        }
+    },
+
     writing_table: {
         nativeWidth: 48,
         nativeHeight: 48,

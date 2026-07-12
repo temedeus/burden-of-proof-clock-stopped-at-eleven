@@ -4,12 +4,6 @@
   "role": "Cook",
   "spriteName": "worker_man",
   "dialog": {
-    "default": "Dinner will be ready at eight. I hope nothing spoils the evening.",
-    "conditions": [
-      {
-        "requiresClue": "torn_page",
-        "dialog": "That page... You shouldn't have found that. Now you've left me no choice."
-      }
-    ]
+    "default": "The roast was perfect. I was in the kitchen all evening — ask anyone."
   }
 }

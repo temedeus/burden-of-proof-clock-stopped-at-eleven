@@ -8,7 +8,9 @@
 
 **Setting:** A Victorian-style country manor with main floor (hall, dining, kitchen, library, study, garden), upstairs bedrooms, outbuildings (courtyard, stable), cellars, and two hidden areas linked by a secret tunnel.
 
-**Content model:** Rooms, NPCs, furniture, and base dialog live in `src/data/*.json`. Each playable case is a **story packet** (`src/data/story/generated/stories/*.json`) that assigns clues to furniture, sets the culprit, and overrides NPC dialog. The active case is *Clock Stopped at Eleven* — victim Lord Blackwood, culprit the cook.
+**Content model:** Rooms, NPCs, furniture, and base dialog live in `src/data/*.json`. Each playable case is a **story packet** (`src/data/story/generated/stories/active.json`) that assigns clues to furniture or NPCs, sets the culprit, and overrides NPC dialog. The active case is *Clock Stopped at Eleven* — victim **Baron Blackwood** (body in the Hall), culprit **Chef Pierre** (cook).
+
+**Investigation flow:** Clues form a **dependency chain** — each discovery unlocks the next. See [Investigation order](#investigation-order-active-story) and [Active story clues](#active-story-clues-10-required).
 
 **This document** maps rooms and connections, lists where dialog text is defined, and catalogs all clues for the active story.
 
@@ -21,6 +23,9 @@ When returning an edited copy to a coding agent, ask it to **map your edits to t
 | If you changed… | Apply it in… |
 |-----------------|--------------|
 | Clue name, description, location, examine hint | `src/data/story/generated/stories/active.json` — `generatedClues`, `clueAssignments` |
+| Clue prerequisites (`requiresClues`), blocked hint, hide from inventory | `active.json` — `generatedClues` (`requiresClues`, `blockedHint`, `hideFromInventory`) |
+| NPC-assigned clues (e.g. body examine) | `active.json` — `clueAssignments` with `npcId`; NPC JSON — `examineClueId` |
+| Confirm-gated clues (cabinet unlock) | Furniture JSON — `interactionType: "confirm"`; `Game.ts` — puzzle handler (e.g. `hidden_cabinet`) |
 | Who committed the murder, victim, suspects | `active.json` — `culpritNpcId`, `victim`, `suspects` |
 | NPC default or conditional dialog (active case) | `active.json` — `npcDialogOverrides` |
 | Base NPC dialog (no story / fallback) | `src/data/npcs/<npc_id>.json` — `dialog` |
@@ -68,7 +73,7 @@ When returning an edited copy to a coding agent, ask it to **map your edits to t
 `═` = secret passages (locked until puzzle solved).  
 Hall is the central hub; the player begins here. The upstairs landing splits into **west** (master suite) and **east** (staff rooms and attic).
 
-### All rooms (23)
+### All rooms (24)
 
 | ID | Display name |
 |----|--------------|
@@ -78,6 +83,7 @@ Hall is the central hub; the player begins here. The upstairs landing splits int
 | `library` | Library |
 | `study` | Study |
 | `garden` | Garden |
+| `dancing_room` | Dancing Room |
 | `courtyard` | Courtyard |
 | `stable` | Stable |
 | `landing` | Landing |
@@ -108,6 +114,8 @@ Each line is a bidirectional connection unless noted.
 | **hall** | library | South |
 | **hall** | garden | South (outdoor) |
 | **hall** | landing | North (stairs) |
+| **hall** | dancing_room | North (two doors) |
+| **dancing_room** | hall | South (two doors) |
 | **dining** | hall | |
 | **dining** | kitchen | West |
 | **dining** | garden | North; no door sprite (open passage) |
@@ -171,8 +179,9 @@ Each line is a bidirectional connection unless noted.
 
 | Unlock ID | Trigger | Rooms opened | Reveal message |
 |-----------|---------|--------------|----------------|
-| `study_secret` | Pull loose book on secret bookshelf in **study** | study ↔ hidden_room | “The bookshelf grinds aside, revealing a hidden passage.” |
-| `cellar_secret` | Pull lever between barrels in **cellar_storage** | cellar_storage ↔ secret_tunnel | “The barrels roll aside, revealing a hidden passage.” |
+| `study_secret` | Pull loose book on secret bookshelf in **study** (requires `burned_ledger_page`) | study ↔ hidden_room | “The bookshelf grinds aside, revealing a hidden passage.” |
+| `cellar_secret` | Pull lever between barrels in **cellar_storage** (requires `cellar_evidence`) | cellar_storage ↔ secret_tunnel | “The barrels roll aside, revealing a hidden passage.” |
+| `hidden_cabinet` | Confirm on **locked cabinet** in hidden room (requires `silver_key`) | — | Grants `smuggling_documents` clue |
 
 Switches in **hidden_room** and **secret_tunnel** can reopen passages from the far side.
 
@@ -180,8 +189,8 @@ Switches in **hidden_room** and **secret_tunnel** can reopen passages from the f
 
 | Room | NPCs |
 |------|------|
-| hall | Mrs. Clarke (maid), Chef Pierre (cook), Lady Blackwood (baroness), Inspector Walsh (police) |
-| library | Mr. Thompson (butler), Baron Blackwood (baron) |
+| hall | Baron Blackwood (baron — **dead body**, examine), Mrs. Clarke (maid), Chef Pierre (cook), Lady Blackwood (baroness), Inspector Walsh (police) |
+| library | Mr. Thompson (butler) |
 | kitchen | Groundskeeper (worker_man) |
 | study | Constable Reed (police2), Stable Boy (worker_boy) |
 
@@ -195,16 +204,15 @@ Dialog and player-facing text come from several layers. At runtime, **story over
 
 | File | Contents |
 |------|----------|
-| `src/data/npcs/butler.json` | Mr. Thompson — default + conditional (base game: `torn_page`) |
-| `src/data/npcs/cook.json` | Chef Pierre — default + conditional (base game: `torn_page`; murderer confession line) |
-| `src/data/npcs/maid.json` | Mrs. Clarke — default only |
-| `src/data/npcs/baron.json` | Baron Blackwood — default only |
+| `src/data/npcs/baron.json` | Baron Blackwood — examine-only corpse (`examineClueId`: `examined_body`) |
+| `src/data/npcs/butler.json` | Mr. Thompson — default dialog |
+| `src/data/npcs/cook.json` | Chef Pierre — default dialog |
 | `src/data/npcs/baroness.json` | Lady Blackwood — default only |
 | `src/data/npcs/police.json` | Inspector Walsh — default only |
 | `src/data/npcs/police2.json` | Constable Reed — default only |
 | `src/data/npcs/worker_man.json` | Groundskeeper — default only |
 | `src/data/npcs/worker_boy.json` | Stable Boy — default only |
-| `src/data/story/generated/stories/active.json` | **Active story overrides** — `npcDialogOverrides` for butler, maid, cook, baron, baroness (replaces base NPC files when story is active) |
+| `src/data/story/generated/stories/active.json` | **Active story overrides** — `npcDialogOverrides` for police, baroness, maid, cook, butler, groundskeeper |
 
 ### Intro & menu (TypeScript, hardcoded)
 
@@ -237,8 +245,9 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 
 ### Dialog resolution
 
-- **NPC talk:** `src/systems/DialogSystem.ts` picks `conditions[].dialog` when `requiresClue` is satisfied, else `default`.
-- **Rendering:** `src/systems/InteractionSystem.ts` formats as `"Name: line"`; `src/render/GameHud.ts` draws the message box.
+- **NPC talk:** `src/systems/DialogSystem.ts` — `requiresClues` / `requiresClue` on conditions; most-specific condition wins.
+- **Clue gating:** `src/systems/InteractionSystem.ts` — blocked hint when prerequisites missing; confirm puzzles gated via `confirmRequiresClues` on furniture.
+- **Rendering:** `src/systems/InteractionSystem.ts` formats dialog as `"Name: line"`; examine corpses show plain description.
 
 ### Base NPC dialog (used when no story override)
 
@@ -256,13 +265,28 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 
 ### Active story NPC overrides (`active.json`)
 
-| NPC | Default | Conditional |
-|-----|---------|-------------|
-| Butler | “Good evening. I trust you will be discreet.” | `silver_key` → denies ownership |
-| Maid | “I've finished in the kitchen, if that is what you need.” | `torn_page` → library alibi |
-| Cook | “The roast was perfect. I have nothing to hide.” | `bloody_apron` → stain excuse |
-| Baron | “I retired early. These old bones need rest.” | `torn_page` → ledger denial |
-| Baroness | “The garden air helps me think. Do not disturb me long.” | `wilting_rose` → rose gift |
+| NPC | Role in investigation |
+|-----|------------------------|
+| Inspector Walsh | Scene briefing → Library lead after body + clock → final report prompt after weapon found |
+| Lady Blackwood / Mrs. Clarke | Grief → Library papers lead after body + clock |
+| Chef Pierre | Alibi → nervous after smuggling docs → accusation line after murder weapon |
+| Mr. Thompson | Study lead after torn appointment note |
+| Groundskeeper | Cellar lead after bloody apron |
+
+---
+
+## Investigation order (active story)
+
+1. **Hall** — Examine Baron body + grandfather clock; talk to Walsh, Baroness, maid, cook.
+2. **Library** — Torn Appointment Note; talk to butler → Study.
+3. **Study** — Burned Ledger Page; pull secret bookshelf → Hidden Room.
+4. **Hidden Room** — Blackwood's Journal on writing desk.
+5. **Garden** — Silver Key in fountain.
+6. **Hidden Room** — Unlock locked cabinet → Smuggling Documents.
+7. **Kitchen** — Bloody Apron; groundskeeper mentions cellar.
+8. **Cellar Storage** — Cellar Evidence (blood crate); open barrel passage → Wine Cellar.
+9. **Wine Cellar** — Murder Weapon (rear barrel).
+10. **Hall** — Confront Chef Pierre → report to Inspector Walsh.
 
 ---
 
@@ -279,15 +303,24 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 
 Without an active story, only `torn_page` is required to accuse the murderer (`getRequiredClueIds` fallback).
 
-### Active story clues (5 required)
+Clues may declare **`requiresClues`** (all must be found first) and **`blockedHint`** (shown when prerequisites are missing). **`hideFromInventory`** omits a clue from the inventory panel but still counts toward the win condition.
 
-| ID | Name | Description | Location | Furniture | Examine hint |
-|----|------|-------------|----------|-----------|--------------|
-| `torn_page` | Torn Page | A torn page from a ledger, the ink still fresh. | library | table (index 0) | Pages are scattered across the table. One sheet was torn out deliberately. |
-| `bloody_apron` | Stained Apron | A kitchen apron with a faint rust-coloured stain. | kitchen | kitchen_table (index 0) | A stained apron hangs over the back of a chair. |
-| `silver_key` | Silver Key | A small key that does not match any obvious lock in the hall. | hall | bookshelves (index 0) | Something glints between the books on the lower shelf. |
-| `wilting_rose` | Wilting Rose | A rose dropped near the fountain, petals crushed underfoot. | garden | fountain (index 0) | Petals float in the fountain basin. |
-| `charred_note` | Charred Note | Most of a note burned away; only a time remains legible: eleven. | dining | fireplace (index 0) | Ashes in the grate still smell of burnt paper. |
+### Active story clues (10 required)
+
+| ID | Name | Requires | Location | Source | Examine hint |
+|----|------|----------|----------|--------|--------------|
+| `examined_body` | Body Examined | — | hall | baron NPC (`examineClueId`) | *(baron examine text)* |
+| `examined_clock` | Clock Examined | — | hall | hall_clock | Frozen at eleven; shattered glass |
+| `torn_appointment_note` | Torn Appointment Note | body + clock | library | reading_table | Torn note — Baron expected in Study |
+| `burned_ledger_page` | Burned Ledger Page | torn note | study | table | Charred ledger page — payments to chef |
+| `blackwoods_journal` | Blackwood's Journal | burned ledger | hidden_room | writing_table | Journal warns of smuggling + missing key |
+| `silver_key` | Silver Key | journal | garden | fountain | Key glinting in fountain basin |
+| `smuggling_documents` | Smuggling Documents | silver key | hidden_room | locked_cabinet (confirm) | Forged manifests in Pierre's hand |
+| `bloody_apron` | Bloody Apron | smuggling docs | kitchen | kitchen_table | Bloody apron on chair |
+| `cellar_evidence` | Cellar Evidence | bloody apron | cellar_storage | blood_crate | Stained crate; drag marks to wine cellar |
+| `murder_weapon` | Murder Weapon | cellar evidence | wine_cellar | wine_barrel #8 | Carving knife behind rear barrel |
+
+*Hidden from inventory:* `examined_body`, `examined_clock`
 
 ### Base catalog clue (`clues.json`)
 
@@ -313,16 +346,21 @@ Clues unlock conditional NPC lines via `requiresClue` in NPC JSON or `npcDialogO
 Collect all required clues → talk to the **murderer** (active story: **cook**) → talk to **Inspector Walsh** or **Constable Reed** to trigger the victory sequence.
 
 **Murderer (active story):** `cook` (Chef Pierre)  
-**Victim:** Lord Blackwood, hall, eleven o'clock
+**Victim:** Baron Blackwood, hall, eleven o'clock
 
 ---
 
 ## Room narratives (active story)
 
-Applied to all interactables in these rooms when the story loads:
+Applied to generic furniture in these rooms (clue and confirm objects keep their own hints):
 
 | Room | Summary |
 |------|---------|
 | hall | The grand hall feels colder than it should. Something happened here recently. |
 | library | Books are out of place, as if someone searched in haste. |
-| dining | The table is set, but one chair was pushed back violently. |
+| study | The desk has been disturbed. Ashes in the grate still smell of burnt paper. |
+| hidden_room | A secret chamber behind the study shelves — the Baron's private retreat. |
+| garden | Rain has darkened the gravel paths. The fountain murmurs in the silence. |
+| kitchen | Copper pots hang gleaming, but something feels wrong tonight. |
+| cellar_storage | The air is damp and close. Barrels and crates crowd the stone floor. |
+| wine_cellar | Rows of casks stretch into the gloom. Footsteps echo on the flagstones. |

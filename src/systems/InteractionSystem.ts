@@ -1,7 +1,9 @@
+import type { CollectibleClue } from "../world/Interactable";
 import { Player } from "../entities/Player";
 import { Room } from "../world/Room";
 import { TILE_SIZE } from "../world/constants";
 import { getInteractionTilesForFacing, tileBounds } from "../world/interactableTiles";
+import { DEFAULT_BLOCKED_CLUE_HINT } from "@cse/content-schema";
 import { ClueSystem } from "./ClueSystem";
 import { DialogSystem } from "./DialogSystem";
 import { NPC } from "../entities/NPC";
@@ -64,9 +66,15 @@ export class InteractionSystem {
                 if (npcDialogs && npcDialogs[npc.id]) {
                     const dialog = this.dialogSystem.getDialog(npcDialogs[npc.id]);
                     if (interactionMode === "examine") {
+                        const clues: string[] = [];
+                        const examineClueId = npcConfig?.examineClueId;
+                        if (examineClueId && !this.clueSystem.hasClue(examineClueId)) {
+                            this.clueSystem.addClue(examineClueId);
+                            clues.push(examineClueId);
+                        }
                         return {
                             description: dialog,
-                            clues: []
+                            clues
                         };
                     }
                     return {
@@ -113,6 +121,27 @@ export class InteractionSystem {
 
                 if (horizontalAdjacent && verticalAdjacent) {
                     if (obj.interactionType === "confirm" && obj.confirmId && obj.confirmPrompt) {
+                        if (
+                            obj.confirmGrantsClueId &&
+                            this.clueSystem.hasClue(obj.confirmGrantsClueId)
+                        ) {
+                            return {
+                                description: obj.description,
+                                clues: [],
+                                ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
+                            };
+                        }
+                        if (
+                            obj.confirmRequiresClues?.length &&
+                            !this.clueSystem.hasAllPrerequisites(obj.confirmRequiresClues)
+                        ) {
+                            return {
+                                description:
+                                    obj.blockedConfirmHint ?? DEFAULT_BLOCKED_CLUE_HINT,
+                                clues: [],
+                                ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
+                            };
+                        }
                         return {
                             description: "",
                             clues: [],
@@ -123,20 +152,27 @@ export class InteractionSystem {
                         };
                     }
 
-                    // Only add clues that haven't been collected yet
-                    const newClues: string[] = [];
-                    if (obj.clues) {
-                        for (const clueId of obj.clues) {
-                            if (!this.clueSystem.hasClue(clueId)) {
-                                this.clueSystem.addClue(clueId);
-                                newClues.push(clueId);
-                            }
+                    const collectibleEntries = this.getCollectibleEntries(obj);
+                    const pending = collectibleEntries.find((entry) => !this.clueSystem.hasClue(entry.clueId));
+                    if (pending) {
+                        if (!this.clueSystem.hasAllPrerequisites(pending.requiresClues)) {
+                            return {
+                                description: pending.blockedHint,
+                                clues: [],
+                                ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
+                            };
                         }
+                        this.clueSystem.addClue(pending.clueId);
+                        return {
+                            description: pending.hint,
+                            clues: [pending.clueId],
+                            ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
+                        };
                     }
-                    
+
                     return {
                         description: obj.description,
-                        clues: newClues,
+                        clues: [],
                         ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
                     };
                 }
@@ -144,6 +180,22 @@ export class InteractionSystem {
         }
 
         return null;
+    }
+
+    private getCollectibleEntries(obj: {
+        collectibleClues?: CollectibleClue[];
+        clues?: string[];
+        description: string;
+    }): CollectibleClue[] {
+        if (obj.collectibleClues && obj.collectibleClues.length > 0) {
+            return obj.collectibleClues;
+        }
+        return (obj.clues ?? []).map((clueId) => ({
+            clueId,
+            requiresClues: [],
+            blockedHint: DEFAULT_BLOCKED_CLUE_HINT,
+            hint: obj.description
+        }));
     }
 
     private getTargetTile(player: Player) {

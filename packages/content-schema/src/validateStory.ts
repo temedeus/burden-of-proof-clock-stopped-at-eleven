@@ -1,4 +1,5 @@
 import { listFurnitureSlots } from "./normalizeStory";
+import { detectClueDependencyCycles, mergeRequiredClueIds } from "./cluePrerequisites";
 import type { RoomConfig } from "./rooms";
 import { MIN_STORY_CLUE_COUNT, type StoryCasePacket } from "./story";
 import type { ValidationIssue } from "./validate";
@@ -124,6 +125,28 @@ export function validateStoryCasePacket(
         if (!isNonEmptyString(clue.description)) {
             issues.push({ roomId: storyId, message: `generatedClue '${clue.id}' missing description.` });
         }
+        for (const req of clue.requiresClues ?? []) {
+            if (!isNonEmptyString(req)) {
+                issues.push({ roomId: storyId, message: `generatedClue '${clue.id}' has invalid requiresClues entry.` });
+            } else if (req === clue.id) {
+                issues.push({ roomId: storyId, message: `generatedClue '${clue.id}' cannot require itself.` });
+            }
+        }
+    }
+
+    for (const clue of p.generatedClues ?? []) {
+        for (const req of clue.requiresClues ?? []) {
+            if (!generatedClueIds.has(req) && !baseClueIds.has(req)) {
+                issues.push({
+                    roomId: storyId,
+                    message: `generatedClue '${clue.id}' requires unknown clue '${req}'.`
+                });
+            }
+        }
+    }
+
+    for (const cycle of detectClueDependencyCycles(p.generatedClues ?? [], p.clueAssignments ?? [])) {
+        issues.push({ roomId: storyId, message: cycle });
     }
 
     const allClueIds = new Set([...baseClueIds, ...generatedClueIds]);
@@ -177,7 +200,14 @@ export function validateStoryCasePacket(
         if (!roomIds.has(assignment.roomId)) {
             issues.push({ roomId: storyId, message: `Invalid clueAssignments roomId '${assignment.roomId}'.` });
         }
-        if (assignment.furnitureId) {
+        if (assignment.npcId) {
+            if (!npcIds.has(assignment.npcId)) {
+                issues.push({
+                    roomId: storyId,
+                    message: `clue '${assignment.clueId}' references unknown npc '${assignment.npcId}'.`
+                });
+            }
+        } else if (assignment.furnitureId) {
             const index = assignment.furnitureIndex ?? 0;
             if (Object.keys(rooms).length > 0 && !furnitureSlotExists(rooms, assignment.roomId, assignment.furnitureId, index)) {
                 issues.push({
@@ -185,9 +215,28 @@ export function validateStoryCasePacket(
                     message: `clue '${assignment.clueId}' references missing furniture '${assignment.furnitureId}' (#${index}) in room '${assignment.roomId}'.`
                 });
             }
+        } else {
+            issues.push({
+                roomId: storyId,
+                message: `clueAssignments for '${assignment.clueId}' must specify furnitureId or npcId.`
+            });
         }
         if (!isNonEmptyString(assignment.hint)) {
             issues.push({ roomId: storyId, message: `clueAssignments for '${assignment.clueId}' missing hint.` });
+        }
+        for (const req of assignment.requiresClues ?? []) {
+            if (!allClueIds.has(req)) {
+                issues.push({
+                    roomId: storyId,
+                    message: `clueAssignments for '${assignment.clueId}' requires unknown clue '${req}'.`
+                });
+            }
+            if (req === assignment.clueId) {
+                issues.push({
+                    roomId: storyId,
+                    message: `clueAssignments for '${assignment.clueId}' cannot require itself.`
+                });
+            }
         }
     }
 
@@ -216,12 +265,23 @@ export function validateStoryCasePacket(
         if (!isNonEmptyString(dialog.default)) {
             issues.push({ roomId: storyId, message: `NPC '${dialog.npcId}' override missing default dialog.` });
         }
-        for (const condition of dialog.conditions ?? []) {
-            if (condition.requiresClue && !allClueIds.has(condition.requiresClue)) {
+        for (const req of dialog.requiresClues ?? []) {
+            if (!allClueIds.has(req)) {
                 issues.push({
                     roomId: storyId,
-                    message: `Invalid requiresClue '${condition.requiresClue}' for npc '${dialog.npcId}'.`
+                    message: `Invalid requiresClues '${req}' for npc '${dialog.npcId}'.`
                 });
+            }
+        }
+        for (const condition of dialog.conditions ?? []) {
+            const required = mergeRequiredClueIds(condition.requiresClue, condition.requiresClues);
+            for (const req of required) {
+                if (!allClueIds.has(req)) {
+                    issues.push({
+                        roomId: storyId,
+                        message: `Invalid requiresClue '${req}' for npc '${dialog.npcId}'.`
+                    });
+                }
             }
             if (!isNonEmptyString(condition.dialog)) {
                 issues.push({ roomId: storyId, message: `Conditional dialog for npc '${dialog.npcId}' is empty.` });

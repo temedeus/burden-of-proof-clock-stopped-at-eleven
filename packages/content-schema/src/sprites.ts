@@ -93,6 +93,8 @@ export const VALID_SPRITE_NAMES = [
     "stuffed_moose",
     "small_bucket",
     "wine_barrel",
+    "blood_crate",
+    "locked_cabinet",
     "wine_rack",
     "writing_table",
     "reading_table",

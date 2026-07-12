@@ -33,6 +33,9 @@
     .case-clue-row textarea { height: 52px; margin-bottom: 4px; resize: vertical; }
     #furniture-clue-hint { height: 72px; }
     #clue-assignments-summary { font-size: 12px; line-height: 1.45; white-space: pre-wrap; max-height: 120px; overflow-y: auto; }
+    #clue-chain-preview { font-size: 11px; line-height: 1.45; white-space: pre-wrap; max-height: 160px; overflow-y: auto; margin: 0 0 10px 0; padding: 8px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #b8d4a8; }
+    #clue-editor label.checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: #ccc; font-size: 13px; }
+    #clue-editor label.checkbox-row input { width: auto; margin: 0; }
     #play-case-link { display: inline-block; margin-bottom: 8px; color: #8ec8ff; font-size: 13px; }
     .story-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .story-actions button { margin-bottom: 0; }
@@ -111,13 +114,15 @@
         <button id="delete-selected-door-btn">Delete Selected Door</button>
       </div>
       <div id="clues-section" class="mode-section">
-        <p class="hint-text">Pick a clue to edit. Add or remove clues as needed; the game requires finding <strong>all</strong> of them before accusing the culprit.</p>
+        <p class="hint-text">Pick a clue to edit. Add or remove clues as needed; clues can require earlier discoveries. The game requires finding <strong>all</strong> of them before accusing the culprit.</p>
         <label for="clue-select">Edit clue</label>
         <select id="clue-select"></select>
         <div class="clue-toolbar">
           <button id="add-clue-btn" type="button">+ Add clue</button>
           <button id="remove-clue-btn" type="button">Remove clue</button>
         </div>
+        <label for="clue-chain-preview">Dependency chain</label>
+        <pre id="clue-chain-preview" class="clue-chain-preview">—</pre>
         <div id="clue-editor"></div>
       </div>
 

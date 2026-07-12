@@ -1,4 +1,4 @@
-import type { ClueAssignment, GeneratedClue, RoomConfig, StoryCasePacket } from "@cse/content-schema";
+import type { ClueAssignment, FurnitureConfig, GeneratedClue, RoomConfig, StoryCasePacket } from "@cse/content-schema";
 import { ACTIVE_STORY_ID, MIN_STORY_CLUE_COUNT, validateStoryCasePacket } from "@cse/content-schema";
 import activeStoryFallback from "../data/story/generated/stories/active.json";
 
@@ -7,6 +7,7 @@ export interface CaseEditorDeps {
     workingRooms: Record<string, RoomConfig>;
     npcIds: string[];
     clueCatalogIds: string[];
+    furnitureById: Record<string, FurnitureConfig>;
     reportIssue: (message: string) => void;
     onSelectionBadgeExtra: (extra: string) => void;
 }
@@ -47,6 +48,26 @@ function decodeFurnitureValue(value: string): { furnitureId: string; furnitureIn
     return { furnitureId, furnitureIndex };
 }
 
+function npcOptionsForRoom(room: RoomConfig | undefined): { npcId: string; label: string }[] {
+    if (!room) return [];
+    return (room.npcs ?? []).map((placement) => ({
+        npcId: placement.npcId,
+        label: placement.npcId
+    }));
+}
+
+export function parseRequiresCluesInput(raw: string): string[] | undefined {
+    const ids = raw
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+    return ids.length > 0 ? ids : undefined;
+}
+
+export function formatRequiresCluesInput(ids?: string[]): string {
+    return ids?.join(", ") ?? "";
+}
+
 function uniqueClueId(base: string, existing: Set<string>): string {
     let id = base.replace(/[^a-z0-9_]/gi, "_").toLowerCase() || "clue";
     let candidate = id;
@@ -74,6 +95,9 @@ export class CaseEditor {
 
     private roomSelect!: HTMLSelectElement;
     private furnitureSelect!: HTMLSelectElement;
+    private npcSelect!: HTMLSelectElement;
+    private sourceSelect!: HTMLSelectElement;
+    private readonly clueChainPreview: HTMLPreElement;
 
     constructor(
         private readonly deps: CaseEditorDeps,
@@ -86,6 +110,7 @@ export class CaseEditor {
         this.clueEditorRoot = root.querySelector("#clue-editor") as HTMLDivElement;
         this.playCaseLink = root.querySelector("#play-case-link") as HTMLAnchorElement;
         this.caseDirtyStatus = root.querySelector("#case-dirty-status") as HTMLParagraphElement;
+        this.clueChainPreview = root.querySelector("#clue-chain-preview") as HTMLPreElement;
 
         root.querySelector("#validate-case-btn")?.addEventListener("click", () => this.validateCase());
         root.querySelector("#save-case-btn")?.addEventListener("click", () => void this.saveCase());
@@ -141,12 +166,14 @@ export class CaseEditor {
         if (!placement || !room) return;
 
         const furnitureIndex = CaseEditor.furnitureInstanceIndex(room, listIndex);
-        const clueId = (this.workingCase.clueAssignments ?? []).find(
+        const furnitureClueId = (this.workingCase.clueAssignments ?? []).find(
             (a) =>
                 a.roomId === roomId &&
                 a.furnitureId === placement.furnitureId &&
                 (a.furnitureIndex ?? 0) === furnitureIndex
         )?.clueId;
+
+        const clueId = furnitureClueId;
 
         const clueName =
             clueId &&
@@ -183,27 +210,59 @@ export class CaseEditor {
             <input type="text" id="clue-field-name" />
             <label>Description</label>
             <textarea id="clue-field-description"></textarea>
+            <label>Requires clues (comma-separated ids)</label>
+            <input type="text" id="clue-field-requires-clues" placeholder="e.g. examined_body, examined_clock" />
+            <label>Blocked hint (when prerequisites missing)</label>
+            <textarea id="clue-field-blocked-hint" placeholder="Shown instead of examine hint until requirements are met"></textarea>
+            <label class="checkbox-row"><input type="checkbox" id="clue-field-hide-inventory" /> Hide from inventory panel</label>
             <label>Room</label>
             <select id="clue-field-room">${roomOptions}</select>
-            <label>Furniture in room</label>
+            <label>Assignment source</label>
+            <select id="clue-field-source">
+              <option value="furniture">Furniture examine</option>
+              <option value="npc">NPC examine</option>
+              <option value="confirm">Confirm puzzle (furniture)</option>
+            </select>
+            <label id="clue-field-furniture-label">Furniture in room</label>
             <select id="clue-field-furniture"></select>
+            <label id="clue-field-npc-label">NPC in room</label>
+            <select id="clue-field-npc"></select>
             <label>Examine hint</label>
-            <textarea id="clue-field-hint" placeholder="Shown when examining this object"></textarea>
+            <textarea id="clue-field-hint" placeholder="Shown when examining this object (or after confirm)"></textarea>
         `;
 
         this.roomSelect = this.clueEditorRoot.querySelector("#clue-field-room") as HTMLSelectElement;
         this.furnitureSelect = this.clueEditorRoot.querySelector("#clue-field-furniture") as HTMLSelectElement;
+        this.npcSelect = this.clueEditorRoot.querySelector("#clue-field-npc") as HTMLSelectElement;
+        this.sourceSelect = this.clueEditorRoot.querySelector("#clue-field-source") as HTMLSelectElement;
 
         this.roomSelect.addEventListener("change", () => {
             this.refreshFurnitureSelect();
+            this.refreshNpcSelect();
+            this.syncCurrentClueFromForm();
+        });
+        this.sourceSelect.addEventListener("change", () => {
+            this.refreshAssignmentSourceUi();
             this.syncCurrentClueFromForm();
         });
 
-        for (const id of ["clue-field-id", "clue-field-name", "clue-field-description", "clue-field-hint"]) {
+        for (const id of [
+            "clue-field-id",
+            "clue-field-name",
+            "clue-field-description",
+            "clue-field-requires-clues",
+            "clue-field-blocked-hint",
+            "clue-field-hint"
+        ]) {
             const el = this.clueEditorRoot.querySelector(`#${id}`);
             el?.addEventListener("input", () => this.syncCurrentClueFromForm());
         }
+        const hideInventoryEl = this.clueEditorRoot.querySelector("#clue-field-hide-inventory");
+        hideInventoryEl?.addEventListener("change", () => this.syncCurrentClueFromForm());
         this.furnitureSelect.addEventListener("change", () => this.syncCurrentClueFromForm());
+        this.npcSelect.addEventListener("change", () => this.syncCurrentClueFromForm());
+
+        this.refreshAssignmentSourceUi();
 
         this.formBuilt = true;
     }
@@ -237,6 +296,7 @@ export class CaseEditor {
         }
         this.selectedClueIndex = Math.min(prevIndex, clues.length - 1);
         this.clueSelect.selectedIndex = this.selectedClueIndex;
+        this.refreshDependencyPreview();
     }
 
     private refreshRoomSelect(): void {
@@ -250,6 +310,60 @@ export class CaseEditor {
         if (prev && roomIds.includes(prev)) this.roomSelect.value = prev;
         else if (roomIds[0]) this.roomSelect.value = roomIds[0];
         this.refreshFurnitureSelect();
+        this.refreshNpcSelect();
+    }
+
+    private refreshNpcSelect(): void {
+        if (!this.formBuilt) return;
+        const roomId = this.roomSelect.value;
+        const room = this.deps.workingRooms[roomId];
+        const options = npcOptionsForRoom(room);
+        const prev = this.npcSelect.value;
+
+        if (options.length === 0) {
+            this.npcSelect.innerHTML = '<option value="">— no NPCs in room —</option>';
+            return;
+        }
+
+        this.npcSelect.innerHTML = options
+            .map((o) => `<option value="${o.npcId}">${o.label}</option>`)
+            .join("");
+
+        if (prev && [...this.npcSelect.options].some((o) => o.value === prev)) {
+            this.npcSelect.value = prev;
+        } else {
+            this.npcSelect.value = options[0].npcId;
+        }
+    }
+
+    private refreshAssignmentSourceUi(): void {
+        if (!this.formBuilt) return;
+        const source = this.sourceSelect.value;
+        const furnitureLabel = this.clueEditorRoot.querySelector("#clue-field-furniture-label") as HTMLLabelElement;
+        const npcLabel = this.clueEditorRoot.querySelector("#clue-field-npc-label") as HTMLLabelElement;
+        const showFurniture = source === "furniture" || source === "confirm";
+        furnitureLabel.style.display = showFurniture ? "block" : "none";
+        this.furnitureSelect.style.display = showFurniture ? "block" : "none";
+        npcLabel.style.display = source === "npc" ? "block" : "none";
+        this.npcSelect.style.display = source === "npc" ? "block" : "none";
+    }
+
+    private refreshDependencyPreview(): void {
+        if (!this.clueChainPreview) return;
+        const clues = this.getClues();
+        if (clues.length === 0) {
+            this.clueChainPreview.textContent = "—";
+            return;
+        }
+        this.clueChainPreview.textContent = clues
+            .map((clue, index) => {
+                const reqs =
+                    clue.requiresClues && clue.requiresClues.length > 0
+                        ? clue.requiresClues.join(" + ")
+                        : "(start)";
+                return `${index + 1}. ${clue.name || clue.id}  ←  ${reqs}`;
+            })
+            .join("\n");
     }
 
     private refreshFurnitureSelect(): void {
@@ -289,24 +403,45 @@ export class CaseEditor {
         const idEl = this.clueEditorRoot.querySelector("#clue-field-id") as HTMLInputElement;
         const nameEl = this.clueEditorRoot.querySelector("#clue-field-name") as HTMLInputElement;
         const descEl = this.clueEditorRoot.querySelector("#clue-field-description") as HTMLTextAreaElement;
+        const requiresEl = this.clueEditorRoot.querySelector("#clue-field-requires-clues") as HTMLInputElement;
+        const blockedEl = this.clueEditorRoot.querySelector("#clue-field-blocked-hint") as HTMLTextAreaElement;
+        const hideEl = this.clueEditorRoot.querySelector("#clue-field-hide-inventory") as HTMLInputElement;
         const hintEl = this.clueEditorRoot.querySelector("#clue-field-hint") as HTMLTextAreaElement;
 
         idEl.value = clue?.id ?? "";
         nameEl.value = clue?.name ?? "";
         descEl.value = clue?.description ?? "";
+        requiresEl.value = formatRequiresCluesInput(clue?.requiresClues);
+        blockedEl.value = clue?.blockedHint ?? assignment?.blockedHint ?? "";
+        hideEl.checked = clue?.hideFromInventory ?? false;
         hintEl.value = assignment?.hint ?? "";
 
         if (assignment?.roomId && [...this.roomSelect.options].some((o) => o.value === assignment.roomId)) {
             this.roomSelect.value = assignment.roomId;
         }
         this.refreshFurnitureSelect();
+        this.refreshNpcSelect();
 
-        if (assignment?.furnitureId) {
+        if (assignment?.npcId) {
+            this.sourceSelect.value = "npc";
+            if ([...this.npcSelect.options].some((o) => o.value === assignment.npcId)) {
+                this.npcSelect.value = assignment.npcId!;
+            }
+        } else if (assignment?.furnitureId) {
             const value = encodeFurnitureValue(assignment.furnitureId, assignment.furnitureIndex ?? 0);
             if ([...this.furnitureSelect.options].some((o) => o.value === value)) {
                 this.furnitureSelect.value = value;
             }
+            this.sourceSelect.value =
+                this.deps.furnitureById[assignment.furnitureId]?.interactionType === "confirm"
+                    ? "confirm"
+                    : "furniture";
+        } else {
+            this.sourceSelect.value = "furniture";
         }
+
+        this.refreshAssignmentSourceUi();
+        this.refreshDependencyPreview();
     }
 
     private syncCurrentClueFromForm(): void {
@@ -320,6 +455,9 @@ export class CaseEditor {
         const idEl = this.clueEditorRoot.querySelector("#clue-field-id") as HTMLInputElement;
         const nameEl = this.clueEditorRoot.querySelector("#clue-field-name") as HTMLInputElement;
         const descEl = this.clueEditorRoot.querySelector("#clue-field-description") as HTMLTextAreaElement;
+        const requiresEl = this.clueEditorRoot.querySelector("#clue-field-requires-clues") as HTMLInputElement;
+        const blockedEl = this.clueEditorRoot.querySelector("#clue-field-blocked-hint") as HTMLTextAreaElement;
+        const hideEl = this.clueEditorRoot.querySelector("#clue-field-hide-inventory") as HTMLInputElement;
         const hintEl = this.clueEditorRoot.querySelector("#clue-field-hint") as HTMLTextAreaElement;
 
         const existingIds = new Set(clues.map((c, i) => (i === this.selectedClueIndex ? "" : c.id)).filter(Boolean));
@@ -331,25 +469,44 @@ export class CaseEditor {
         const clue: GeneratedClue = {
             id,
             name: nameEl.value.trim() || `Clue ${this.selectedClueIndex + 1}`,
-            description: descEl.value.trim() || "Something seems out of place."
+            description: descEl.value.trim() || "Something seems out of place.",
+            requiresClues: parseRequiresCluesInput(requiresEl.value),
+            blockedHint: blockedEl.value.trim() || undefined,
+            hideFromInventory: hideEl.checked ? true : undefined
         };
         clues[this.selectedClueIndex] = clue;
 
-        const furniture = decodeFurnitureValue(this.furnitureSelect.value);
         const roomId = this.roomSelect.value || Object.keys(this.deps.workingRooms)[0] || "hall";
+        const hint = hintEl.value.trim() || "Something here relates to the case…";
+        const source = this.sourceSelect.value;
 
-        assignments[this.selectedClueIndex] = {
-            clueId: clue.id,
-            roomId,
-            furnitureId: furniture?.furnitureId,
-            furnitureIndex: furniture?.furnitureIndex ?? 0,
-            hint: hintEl.value.trim() || "Something here relates to the case…"
-        };
+        let assignment: ClueAssignment;
+        if (source === "npc") {
+            assignment = {
+                clueId: clue.id,
+                roomId,
+                npcId: this.npcSelect.value,
+                hint,
+                blockedHint: clue.blockedHint
+            };
+        } else {
+            const furniture = decodeFurnitureValue(this.furnitureSelect.value);
+            assignment = {
+                clueId: clue.id,
+                roomId,
+                furnitureId: furniture?.furnitureId,
+                furnitureIndex: furniture?.furnitureIndex ?? 0,
+                hint,
+                blockedHint: clue.blockedHint
+            };
+        }
+        assignments[this.selectedClueIndex] = assignment;
 
         const option = this.clueSelect.options[this.selectedClueIndex];
         if (option) {
             option.textContent = `${this.selectedClueIndex + 1}. ${clue.name || clue.id}`;
         }
+        this.refreshDependencyPreview();
         this.markCaseDirty();
     }
 

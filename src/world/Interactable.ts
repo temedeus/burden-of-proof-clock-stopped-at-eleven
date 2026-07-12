@@ -1,5 +1,12 @@
 import type { RenderAnchor } from "@cse/content-schema";
 
+export interface CollectibleClue {
+    clueId: string;
+    requiresClues: string[];
+    blockedHint: string;
+    hint: string;
+}
+
 export interface Interactable {
     id: string;
     name: string;
@@ -15,6 +22,8 @@ export interface Interactable {
         Record<"up" | "down" | "left" | "right", { x: number; y: number }[]>
     >;
     clues?: string[];
+    /** Story-assigned clues with prerequisite metadata (preferred over bare clues[]). */
+    collectibleClues?: CollectibleClue[];
     /** When set, Game renders this sprite (garden / exterior / interior atlases) instead of id-based mapping */
     spriteName?: string;
     /** Optional render size in tiles (defaults to collision footprint from tiles) */
@@ -40,6 +49,12 @@ export interface Interactable {
     interactionType?: "confirm";
     confirmId?: string;
     confirmPrompt?: string;
+    /** All listed clues must be discovered before the confirm prompt is offered. */
+    confirmRequiresClues?: string[];
+    /** Examine text when confirmRequiresClues are not yet satisfied. */
+    blockedConfirmHint?: string;
+    /** When set, finding this clue id replaces the confirm prompt with a plain examine. */
+    confirmGrantsClueId?: string;
     interactionSound?: string;
     footstepSound?: string;
     /** Walkable footprint used only for footstep sounds; nothing is drawn. */

@@ -337,7 +337,13 @@ function placeFurniture(
             ? {
                   interactionType: "confirm" as const,
                   confirmId: furniture.confirmId,
-                  confirmPrompt: furniture.confirmPrompt
+                  confirmPrompt: furniture.confirmPrompt,
+                  ...(furniture.confirmRequiresClues?.length
+                      ? { confirmRequiresClues: furniture.confirmRequiresClues }
+                      : {}),
+                  ...(furniture.blockedConfirmHint
+                      ? { blockedConfirmHint: furniture.blockedConfirmHint }
+                      : {})
               }
             : {}),
         ...(furniture.interactionSound ? { interactionSound: furniture.interactionSound } : {}),

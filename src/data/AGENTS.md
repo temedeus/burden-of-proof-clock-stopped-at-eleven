@@ -38,8 +38,8 @@ Edit `src/data/story/generated/stories/active.json`:
 
 | Field | Purpose |
 |-------|---------|
-| `generatedClues` | Clue id, name, description |
-| `clueAssignments` | room, furniture index, examine hint |
+| `generatedClues` | Clue id, name, description; optional `requiresClues`, `blockedHint`, `hideFromInventory` |
+| `clueAssignments` | room, furniture index **or** `npcId`, examine hint |
 | `culpritNpcId` | Murderer NPC id |
 | `npcDialogOverrides` | Per-NPC dialog replacing base JSON when story is active |
 | `roomNarratives` | Atmosphere text applied to interactables per room |
@@ -70,6 +70,9 @@ Checks room layout, NPC placement (each once), furniture/sprite references, stor
 | If you changed… | Apply in… |
 |-----------------|-----------|
 | Clue name, description, location, examine hint | `active.json` — `generatedClues`, `clueAssignments` |
+| Clue prerequisites, blocked hint, hide from inventory | `active.json` — `generatedClues` |
+| NPC examine clue (e.g. body) | `active.json` — `clueAssignments` with `npcId`; `src/data/npcs/<id>.json` — `examineClueId` |
+| Confirm-gated clue | furniture JSON — `interactionType: "confirm"`, `confirmRequiresClues`; `Game.ts` puzzle handler |
 | Culprit, victim, suspects | `active.json` — `culpritNpcId`, `victim`, `suspects` |
 | NPC dialog (active case) | `active.json` — `npcDialogOverrides` |
 | NPC dialog (fallback) | `src/data/npcs/<id>.json` |

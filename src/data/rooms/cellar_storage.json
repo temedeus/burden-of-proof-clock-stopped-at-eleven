@@ -64,6 +64,24 @@
       "x": 10,
       "y": 15,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "blood_crate",
+      "x": 4,
+      "y": 10,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 6,
+      "y": 12,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wine_barrel",
+      "x": 18,
+      "y": 12,
+      "anchor": "top-left"
     }
   ],
   "exits": [

@@ -1,3 +1,4 @@
+export * from "./cluePrerequisites";
 export * from "./rooms";
 export * from "./npcs";
 export * from "./furniture";

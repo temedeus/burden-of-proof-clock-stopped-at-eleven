@@ -1,3 +1,5 @@
+import type { DialogCondition } from "./npcs";
+
 export interface StoryVictim {
     name: string;
     roomId: string;
@@ -20,6 +22,12 @@ export interface GeneratedClue {
     id: string;
     name: string;
     description: string;
+    /** All listed clues must be discovered before this clue can be collected. */
+    requiresClues?: string[];
+    /** Examine text when prerequisites are not yet satisfied. */
+    blockedHint?: string;
+    /** When true, clue counts toward the case but is omitted from the inventory panel. */
+    hideFromInventory?: boolean;
 }
 
 export interface ClueAssignment {
@@ -29,7 +37,13 @@ export interface ClueAssignment {
     furnitureId?: string;
     /** Which instance when the same furnitureId appears multiple times in a room (0-based). */
     furnitureIndex?: number;
+    /** When set, the clue is collected by examining this NPC (see examineClueId on NPC config). */
+    npcId?: string;
     hint: string;
+    /** Overrides or extends generatedClue.requiresClues for this placement. */
+    requiresClues?: string[];
+    /** Overrides generatedClue.blockedHint for this placement. */
+    blockedHint?: string;
 }
 
 /** Default clue count for new stories (editor may add or remove clues). */
@@ -44,10 +58,11 @@ export const ACTIVE_STORY_ID = "active";
 export interface NPCDialogOverride {
     npcId: string;
     default: string;
-    conditions?: Array<{
-        requiresClue?: string;
-        dialog: string;
-    }>;
+    /** All listed clues must be discovered before default dialog is shown. */
+    requiresClues?: string[];
+    /** Shown when requiresClues gate is not satisfied (dialog mode only). */
+    blockedDialog?: string;
+    conditions?: DialogCondition[];
 }
 
 export interface StoryCasePacket {

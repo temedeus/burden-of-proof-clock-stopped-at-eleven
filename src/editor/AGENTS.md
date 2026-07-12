@@ -16,7 +16,7 @@ Or run separately: `pnpm dev:editor:backend` + `pnpm dev:editor`.
 ## Workflow
 
 1. **Rooms** — Place furniture, NPCs, doors. Save via `Save Room` / `Save All`.
-2. **Story** — Set title, culprit. Use Clues tab for clue assignments.
+2. **Story** — Set title, culprit. Use **Clues tab** for assignments: prerequisites (`requiresClues`), blocked hint, hide from inventory, and source (furniture / NPC / confirm). Dependency chain preview updates as you edit.
 3. **Validate** — `Validate Story`, then `Save Story`.
 4. **Verify** — `pnpm validate` from repo root.
 5. **Playtest** — `http://localhost:5173/?story=active`

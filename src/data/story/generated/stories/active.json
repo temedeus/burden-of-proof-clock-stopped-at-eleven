@@ -21,8 +21,8 @@
     },
     {
       "npcId": "cook",
-      "motive": "Dismissal threatened after a ruined banquet.",
-      "opportunity": "The kitchen adjoins the dining room.",
+      "motive": "Smuggling operation exposed — the Baron was about to turn him in.",
+      "opportunity": "The kitchen adjoins the dining room and cellar routes.",
       "alibi": "Insists the roast was in the oven all night."
     },
     {
@@ -42,112 +42,237 @@
       "summary": "Books are out of place, as if someone searched in haste."
     },
     {
-      "roomId": "dining",
-      "summary": "The table is set, but one chair was pushed back violently."
+      "roomId": "study",
+      "summary": "The desk has been disturbed. Ashes in the grate still smell of burnt paper."
+    },
+    {
+      "roomId": "hidden_room",
+      "summary": "A secret chamber behind the study shelves — the Baron's private retreat."
+    },
+    {
+      "roomId": "garden",
+      "summary": "Rain has darkened the gravel paths. The fountain murmurs in the silence."
+    },
+    {
+      "roomId": "kitchen",
+      "summary": "Copper pots hang gleaming, but something feels wrong tonight."
+    },
+    {
+      "roomId": "cellar_storage",
+      "summary": "The air is damp and close. Barrels and crates crowd the stone floor."
+    },
+    {
+      "roomId": "wine_cellar",
+      "summary": "Rows of casks stretch into the gloom. Footsteps echo on the flagstones."
     }
   ],
   "generatedClues": [
     {
-      "id": "torn_page",
-      "name": "Torn Page",
-      "description": "A torn page from a ledger, the ink still fresh."
+      "id": "examined_body",
+      "name": "Body Examined",
+      "description": "Baron Blackwood was stabbed in the chest. He died where he fell.",
+      "hideFromInventory": true
     },
     {
-      "id": "bloody_apron",
-      "name": "Stained Apron",
-      "description": "A kitchen apron with a faint rust-coloured stain."
+      "id": "examined_clock",
+      "name": "Clock Examined",
+      "description": "The grandfather clock stopped at eleven. The glazed door was shattered from within.",
+      "hideFromInventory": true
+    },
+    {
+      "id": "torn_appointment_note",
+      "name": "Torn Appointment Note",
+      "description": "A torn note mentions a meeting in the Study at half past ten.",
+      "requiresClues": ["examined_body", "examined_clock"],
+      "blockedHint": "Nothing here stands out yet. The hall may hold more answers."
+    },
+    {
+      "id": "burned_ledger_page",
+      "name": "Burned Ledger Page",
+      "description": "A ledger page, partly burned. It lists payments to Chef Pierre — amounts that do not match any kitchen supply.",
+      "requiresClues": ["torn_appointment_note"],
+      "blockedHint": "The desk looks untouched. Perhaps the library holds a lead."
+    },
+    {
+      "id": "blackwoods_journal",
+      "name": "Blackwood's Journal",
+      "description": "The Baron's journal warns of a smuggling ring and a missing silver key to a locked cabinet.",
+      "requiresClues": ["burned_ledger_page"],
+      "blockedHint": "The desk is bare. The study may yet yield a way in."
     },
     {
       "id": "silver_key",
       "name": "Silver Key",
-      "description": "A small key that does not match any obvious lock in the hall."
+      "description": "A small silver key, cold to the touch. It must belong to the cabinet in the hidden room.",
+      "requiresClues": ["blackwoods_journal"],
+      "blockedHint": "The fountain yields nothing of interest yet."
     },
     {
-      "id": "wilting_rose",
-      "name": "Wilting Rose",
-      "description": "A rose dropped near the fountain, petals crushed underfoot."
+      "id": "smuggling_documents",
+      "name": "Smuggling Documents",
+      "description": "Forged shipping manifests and ledgers — Chef Pierre's handwriting is on every page.",
+      "requiresClues": ["silver_key"],
+      "blockedHint": "The cabinet is locked tight. You need the right key."
     },
     {
-      "id": "charred_note",
-      "name": "Charred Note",
-      "description": "Most of a note burned away; only a time remains legible: eleven."
+      "id": "bloody_apron",
+      "name": "Bloody Apron",
+      "description": "A kitchen apron stiff with dried blood. It belongs to the chef.",
+      "requiresClues": ["smuggling_documents"],
+      "blockedHint": "The kitchen table looks ordinary for now."
+    },
+    {
+      "id": "cellar_evidence",
+      "name": "Cellar Evidence",
+      "description": "A blood-stained crate, drag marks on the floor, and barrels recently shifted to hide something.",
+      "requiresClues": ["bloody_apron"],
+      "blockedHint": "Nothing suspicious in the cellar storage yet."
+    },
+    {
+      "id": "murder_weapon",
+      "name": "Murder Weapon",
+      "description": "A carving knife wedged behind the barrels, wiped clean but flecked with blood.",
+      "requiresClues": ["cellar_evidence"],
+      "blockedHint": "The barrels look undisturbed."
     }
   ],
   "clueAssignments": [
     {
-      "clueId": "torn_page",
+      "clueId": "examined_body",
+      "roomId": "hall",
+      "npcId": "baron",
+      "hint": "Baron Blackwood lies dead on the marble floor. Blood has pooled beneath his body, dark and still."
+    },
+    {
+      "clueId": "examined_clock",
+      "roomId": "hall",
+      "furnitureId": "hall_clock",
+      "furnitureIndex": 0,
+      "hint": "The clock hands are frozen at eleven. The glass door is shattered — as if struck from inside."
+    },
+    {
+      "clueId": "torn_appointment_note",
       "roomId": "library",
       "furnitureId": "reading_table",
       "furnitureIndex": 0,
-      "hint": "Pages are scattered across the table. One sheet was torn out deliberately."
+      "hint": "A torn appointment note lies among the books — the Baron was expected in the Study."
+    },
+    {
+      "clueId": "burned_ledger_page",
+      "roomId": "study",
+      "furnitureId": "table",
+      "furnitureIndex": 0,
+      "hint": "Ashes in the grate hold a charred ledger page — payments to the chef that should not exist."
+    },
+    {
+      "clueId": "blackwoods_journal",
+      "roomId": "hidden_room",
+      "furnitureId": "writing_table",
+      "furnitureIndex": 0,
+      "hint": "Blackwood's journal lies open on the desk, warning of smuggling and a missing silver key."
+    },
+    {
+      "clueId": "silver_key",
+      "roomId": "garden",
+      "furnitureId": "fountain",
+      "furnitureIndex": 0,
+      "hint": "Something glints at the bottom of the fountain basin — a small silver key."
+    },
+    {
+      "clueId": "smuggling_documents",
+      "roomId": "hidden_room",
+      "furnitureId": "locked_cabinet",
+      "furnitureIndex": 0,
+      "hint": "Inside the cabinet: forged manifests and ledgers in Chef Pierre's hand."
     },
     {
       "clueId": "bloody_apron",
       "roomId": "kitchen",
       "furnitureId": "kitchen_table",
       "furnitureIndex": 0,
-      "hint": "A stained apron hangs over the back of a chair."
+      "hint": "A bloody apron hangs over the back of a chair."
     },
     {
-      "clueId": "silver_key",
-      "roomId": "hall",
-      "furnitureId": "staircase",
+      "clueId": "cellar_evidence",
+      "roomId": "cellar_storage",
+      "furnitureId": "blood_crate",
       "furnitureIndex": 0,
-      "hint": "Something glints between the stone steps."
+      "hint": "A blood-stained crate sits crooked on the floor. Drag marks lead toward the wine cellar."
     },
     {
-      "clueId": "wilting_rose",
-      "roomId": "garden",
-      "furnitureId": "fountain",
-      "furnitureIndex": 0,
-      "hint": "Petals float in the fountain basin."
-    },
-    {
-      "clueId": "charred_note",
-      "roomId": "dining",
-      "furnitureId": "fireplace",
-      "furnitureIndex": 0,
-      "hint": "Ashes in the grate still smell of burnt paper."
+      "clueId": "murder_weapon",
+      "roomId": "wine_cellar",
+      "furnitureId": "wine_barrel",
+      "furnitureIndex": 8,
+      "hint": "Behind the rearmost barrel — a carving knife, flecked with blood."
     }
   ],
   "npcDialogOverrides": [
     {
-      "npcId": "butler",
-      "default": "Good evening. I trust you will be discreet.",
+      "npcId": "police",
+      "default": "The scene is secured, Detective. Examine everything before you question anyone.",
       "conditions": [
         {
-          "requiresClue": "silver_key",
-          "dialog": "That key? It is not mine. I have not seen it before tonight."
-        }
-      ]
-    },
-    {
-      "npcId": "maid",
-      "default": "I've finished in the kitchen, if that is what you need.",
-      "conditions": [
+          "requiresClue": "murder_weapon",
+          "dialog": "You have the evidence. Confront the killer, then report to me."
+        },
         {
-          "requiresClue": "torn_page",
-          "dialog": "The library? I dusted there earlier. I did not touch the ledger."
-        }
-      ]
-    },
-    {
-      "npcId": "cook",
-      "default": "The roast was perfect. I have nothing to hide.",
-      "conditions": [
-        {
-          "requiresClue": "bloody_apron",
-          "dialog": "That apron is mine, but the stain— that's sauce, surely."
+          "requiresClues": ["examined_body", "examined_clock"],
+          "dialog": "The Baron was last seen carrying papers toward the Library. Start there."
         }
       ]
     },
     {
       "npcId": "baroness",
-      "default": "The garden air helps me think. Do not disturb me long.",
+      "default": "My husband... I cannot bear to look at him. Please — find who did this.",
       "conditions": [
         {
-          "requiresClue": "wilting_rose",
-          "dialog": "That rose was a gift. I left it by the fountain hours ago."
+          "requiresClues": ["examined_body", "examined_clock"],
+          "dialog": "He left the hall with a sheaf of papers. I thought he was going to the Library."
+        }
+      ]
+    },
+    {
+      "npcId": "maid",
+      "default": "I've never seen the household like this. The Baron was kind to us all.",
+      "conditions": [
+        {
+          "requiresClues": ["examined_body", "examined_clock"],
+          "dialog": "I heard him tell Mr. Thompson he had business in the Library before dinner."
+        }
+      ]
+    },
+    {
+      "npcId": "cook",
+      "default": "The roast was perfect. I was in the kitchen all evening — ask anyone.",
+      "conditions": [
+        {
+          "requiresClue": "murder_weapon",
+          "dialog": "You cannot prove I— Stay back! I won't go quietly!"
+        },
+        {
+          "requiresClue": "smuggling_documents",
+          "dialog": "Those papers... They prove nothing. I was framed!"
+        }
+      ]
+    },
+    {
+      "npcId": "butler",
+      "default": "Good evening, Detective. I trust you will be discreet.",
+      "conditions": [
+        {
+          "requiresClue": "torn_appointment_note",
+          "dialog": "The Baron did go to the Study after the Library. I showed him in myself."
+        }
+      ]
+    },
+    {
+      "npcId": "worker_man",
+      "default": "I keep to the grounds. Heard shouting from the house, but I saw nothing.",
+      "conditions": [
+        {
+          "requiresClue": "bloody_apron",
+          "dialog": "Saw Chef Pierre slip down toward the cellars late last night, apron bundled under his arm."
         }
       ]
     }

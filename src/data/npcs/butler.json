@@ -4,12 +4,6 @@
   "role": "Butler",
   "spriteName": "npc_male",
   "dialog": {
-    "default": "Good evening, sir. Is there anything I can help you with?",
-    "conditions": [
-      {
-        "requiresClue": "torn_page",
-        "dialog": "Ah, I see you've found that torn page. That's quite interesting... I remember seeing something similar in the master's study late last night."
-      }
-    ]
+    "default": "Good evening, Detective. I trust you will be discreet."
   }
 }

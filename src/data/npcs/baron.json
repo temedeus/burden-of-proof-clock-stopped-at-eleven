@@ -4,6 +4,7 @@
   "role": "Baron",
   "spriteName": "baron_body",
   "interactionMode": "examine",
+  "examineClueId": "examined_body",
   "showNameLabel": false,
   "walkable": true,
   "footstepSound": "squish",

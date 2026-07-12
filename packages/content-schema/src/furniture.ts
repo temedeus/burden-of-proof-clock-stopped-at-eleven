@@ -68,6 +68,10 @@ export interface FurnitureConfig {
     /** Puzzle or handler id passed to confirmation flow (e.g. `study_secret`, `transition:cellar_storage`). */
     confirmId?: string;
     confirmPrompt?: string;
+    /** All listed clues must be discovered before the confirm prompt is offered. */
+    confirmRequiresClues?: string[];
+    /** Examine text when confirmRequiresClues are not yet satisfied. */
+    blockedConfirmHint?: string;
     /** Procedural sound played on examine (e.g. `piano`). */
     interactionSound?: string;
     /** Footstep variant when walking over this walkable decor (e.g. `glass`). */

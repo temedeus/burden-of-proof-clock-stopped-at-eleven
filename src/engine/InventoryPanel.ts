@@ -1,5 +1,5 @@
 import { ClueSystem } from "../systems/ClueSystem";
-import { buildClueCatalog, getClueDisplay, type ClueCatalog } from "../content/clueCatalog";
+import { buildClueCatalog, getClueDisplay, getInventoryClueIds, type ClueCatalog } from "../content/clueCatalog";
 import { shouldShowTouchControls } from "./platform";
 
 /**
@@ -10,7 +10,7 @@ export function renderInventoryPanel(
     clueSystem: ClueSystem,
     catalog: ClueCatalog = buildClueCatalog()
 ): void {
-    const clues = clueSystem.getAllClues();
+    const clues = getInventoryClueIds(clueSystem.getAllClues(), catalog);
 
     // Dark overlay
     ctx.fillStyle = "rgba(0, 0, 0, 0.8)";

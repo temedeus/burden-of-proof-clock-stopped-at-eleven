@@ -455,7 +455,9 @@
     "spriteName": "secret_bookshelf",
     "interactionType": "confirm",
     "confirmId": "study_secret",
-    "confirmPrompt": "One volume sits loose on the shelf, almost asking to be pulled. Will you tug it free?"
+    "confirmPrompt": "One volume sits loose on the shelf, almost asking to be pulled. Will you tug it free?",
+    "confirmRequiresClues": ["burned_ledger_page"],
+    "blockedConfirmHint": "The shelves look ordinary. Perhaps the study desk holds more answers first."
   },
   "study_passage_switch": {
     "id": "study_passage_switch",
@@ -487,7 +489,9 @@
     },
     "interactionType": "confirm",
     "confirmId": "cellar_secret",
-    "confirmPrompt": "A rusted lever is tucked between the casks. Pull it to roll the barrels aside?"
+    "confirmPrompt": "A rusted lever is tucked between the casks. Pull it to roll the barrels aside?",
+    "confirmRequiresClues": ["cellar_evidence"],
+    "blockedConfirmHint": "The barrels look undisturbed. Search the storage room first."
   },
   "cellar_passage_switch": {
     "id": "cellar_passage_switch",
@@ -767,6 +771,37 @@
     "footstepOnlyDecor": true,
     "footstepSound": "squish",
     "nonInteractive": true
+  },
+  "locked_cabinet": {
+    "id": "locked_cabinet",
+    "name": "Locked cabinet",
+    "description": "A heavy iron cabinet bolted to the stone wall.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 2,
+    "spriteName": "locked_cabinet",
+    "interactionType": "confirm",
+    "confirmId": "hidden_cabinet",
+    "confirmPrompt": "The silver key fits the lock. Open the cabinet?",
+    "confirmRequiresClues": ["silver_key"],
+    "blockedConfirmHint": "The cabinet is locked tight. You need the right key."
+  },
+  "blood_crate": {
+    "id": "blood_crate",
+    "name": "Stained crate",
+    "description": "A wooden crate dragged across the floor. Dark smears trail away toward the wine cellar.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 2,
+    "collisionWidth": 2,
+    "spriteName": "blood_crate"
   },
   "grand_piano": {
     "id": "grand_piano",

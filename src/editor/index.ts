@@ -66,6 +66,7 @@ const caseEditor = new CaseEditor(
         workingRooms,
         npcIds: Object.keys(content.npcs),
         clueCatalogIds: Object.keys(cluesCatalog),
+        furnitureById,
         reportIssue: (message) => {
             issuesEl.textContent = message;
         },

@@ -139,7 +139,9 @@ export class Game {
         if (resolved) {
             this.activeStory = resolved;
             this.clueCatalog = buildClueCatalog(this.activeStory.casePacket.generatedClues);
-            applyStoryToRooms(this.rooms, this.activeStory.casePacket);
+            applyStoryToRooms(this.rooms, this.activeStory.casePacket, {
+                hasClue: (id) => this.clueSystem.hasClue(id)
+            });
         }
 
         this.loadNPCs();
@@ -187,6 +189,34 @@ export class Game {
 
     private getRoomDisplayTitle(roomId: string): string {
         return ROOM_DISPLAY_TITLES[roomId] ?? roomId.charAt(0).toUpperCase() + roomId.slice(1);
+    }
+
+    private refreshStoryState(): void {
+        if (!this.activeStory) return;
+        applyStoryToRooms(this.rooms, this.activeStory.casePacket, {
+            hasClue: (id) => this.clueSystem.hasClue(id)
+        });
+    }
+
+    private getClueAssignmentHint(clueId: string): string {
+        const assignment = this.activeStory?.casePacket.clueAssignments.find(
+            (entry) => entry.clueId === clueId
+        );
+        return assignment?.hint ?? "You found something important.";
+    }
+
+    private grantConfirmClue(clueId: string): void {
+        if (this.clueSystem.hasClue(clueId)) {
+            this.message = this.getClueAssignmentHint(clueId);
+            this.state = "interacting";
+            return;
+        }
+        this.clueSystem.addClue(clueId);
+        this.refreshStoryState();
+        clueSounds.playFound();
+        this.clueNotification = { clueId };
+        this.message = this.getClueAssignmentHint(clueId);
+        this.state = "interacting";
     }
 
     private loadNPCs(): void {
@@ -329,6 +359,7 @@ export class Game {
                     if (result.clues.length > 0) {
                         clueSounds.playFound();
                         this.clueNotification = { clueId: result.clues[0] };
+                        this.refreshStoryState();
                     }
                     if (
                         result.speakerId === this.getMurdererNpcId() &&
@@ -405,6 +436,9 @@ export class Game {
                               cellar_secret: () => {
                                   this.cellarSecret.startReveal();
                                   this.state = "playing";
+                              },
+                              hidden_cabinet: () => {
+                                  this.grantConfirmClue("smuggling_documents");
                               }
                           })
                         : false;

@@ -34,6 +34,18 @@
       "x": 9,
       "y": 11,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "writing_table",
+      "x": 4,
+      "y": 4,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "locked_cabinet",
+      "x": 12,
+      "y": 4,
+      "anchor": "top-left"
     }
   ],
   "exits": [

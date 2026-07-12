@@ -113,4 +113,34 @@ describe("validateStoryCasePacket", () => {
         );
         expect(issues.some((i) => i.message.includes("clue_2"))).toBe(true);
     });
+
+    it("flags clue dependency cycles", () => {
+        const issues = validateStoryCasePacket(
+            "active",
+            validPacket({
+                generatedClues: [
+                    { id: "clue_1", name: "One", description: "First", requiresClues: ["clue_2"] },
+                    { id: "clue_2", name: "Two", description: "Second", requiresClues: ["clue_1"] }
+                ],
+                clueAssignments: [
+                    {
+                        clueId: "clue_1",
+                        roomId: "library",
+                        furnitureId: "table",
+                        furnitureIndex: 0,
+                        hint: "One"
+                    },
+                    {
+                        clueId: "clue_2",
+                        roomId: "library",
+                        furnitureId: "table",
+                        furnitureIndex: 0,
+                        hint: "Two"
+                    }
+                ]
+            }),
+            context
+        );
+        expect(issues.some((i) => i.message.includes("cycle"))).toBe(true);
+    });
 });

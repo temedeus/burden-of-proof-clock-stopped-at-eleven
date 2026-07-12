@@ -26,7 +26,9 @@ export function spawnRoomNpcs(
                 npcConfig.name,
                 npcConfig.role,
                 npcConfig.spriteName,
-                npcConfig.showNameLabel !== false
+                npcConfig.showNameLabel !== false,
+                npcConfig.walkable === true,
+                npcConfig.footstepSound
             )
         );
     }

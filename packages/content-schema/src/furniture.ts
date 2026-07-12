@@ -72,6 +72,8 @@ export interface FurnitureConfig {
     interactionSound?: string;
     /** Footstep variant when walking over this walkable decor (e.g. `glass`). */
     footstepSound?: string;
+    /** Walkable footprint used only for footstep sounds; nothing is drawn. */
+    footstepOnlyDecor?: boolean;
 }
 
 /** Merge table, bookshelves, and decoration map into one furniture catalog. */

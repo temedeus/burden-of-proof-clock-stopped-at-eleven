@@ -211,6 +211,7 @@ export function renderRoomScene(
     const furnitureActors: DepthActor[] = [];
     const overheadActors: DepthActor[] = [];
     for (const obj of room.interactables) {
+        if (obj.footstepOnlyDecor) continue;
         const actor = furnitureActorFromInteractable(obj, getAnimTime, {
             width: room.map.width,
             height: room.map.height
@@ -229,9 +230,24 @@ export function renderRoomScene(
         .sort((a, b) => a.y + a.height - (b.y + b.height))
         .forEach((a) => a.render(ctx));
 
+    const floorNpcActors: DepthActor[] = [];
+    const standingNpcActors: DepthActor[] = [];
+    for (const npc of room.npcs) {
+        if (npc.walkable) {
+            floorNpcActors.push(npc);
+        } else {
+            standingNpcActors.push(npc);
+        }
+    }
+
+    floorNpcActors
+        .slice()
+        .sort((a, b) => a.y + a.height - (b.y + b.height))
+        .forEach((a) => a.render(ctx));
+
     const actors: DepthActor[] = [
         ...furnitureActors,
-        ...room.npcs,
+        ...standingNpcActors,
         ...(options.extraActors ?? [])
     ];
 

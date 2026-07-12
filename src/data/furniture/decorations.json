@@ -744,6 +744,17 @@
     "footstepSound": "glass",
     "spriteName": "clock_glass_shards"
   },
+  "baron_blood_pool": {
+    "id": "baron_blood_pool",
+    "name": "Blood pool",
+    "description": "Blood has pooled beneath the body.",
+    "width": 2,
+    "height": 2,
+    "walkableDecor": true,
+    "footstepOnlyDecor": true,
+    "footstepSound": "squish",
+    "nonInteractive": true
+  },
   "grand_piano": {
     "id": "grand_piano",
     "name": "Grand piano",

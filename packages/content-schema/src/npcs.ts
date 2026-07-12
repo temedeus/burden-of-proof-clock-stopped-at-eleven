@@ -17,5 +17,9 @@ export interface NPCConfig {
     interactionMode?: "dialog" | "examine";
     /** When false, the name label is not drawn above the sprite. */
     showNameLabel?: boolean;
+    /** Floor body / rug-like NPC: player walks over, drawn beneath actors. */
+    walkable?: boolean;
+    /** Footstep variant when walking over this walkable NPC (e.g. `squish`). */
+    footstepSound?: string;
     dialog: NPCDialogConfig;
 }

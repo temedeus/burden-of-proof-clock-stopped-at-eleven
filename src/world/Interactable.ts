@@ -42,4 +42,6 @@ export interface Interactable {
     confirmPrompt?: string;
     interactionSound?: string;
     footstepSound?: string;
+    /** Walkable footprint used only for footstep sounds; nothing is drawn. */
+    footstepOnlyDecor?: boolean;
 }

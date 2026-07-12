@@ -341,7 +341,8 @@ function placeFurniture(
               }
             : {}),
         ...(furniture.interactionSound ? { interactionSound: furniture.interactionSound } : {}),
-        ...(furniture.footstepSound ? { footstepSound: furniture.footstepSound } : {})
+        ...(furniture.footstepSound ? { footstepSound: furniture.footstepSound } : {}),
+        ...(furniture.footstepOnlyDecor ? { footstepOnlyDecor: true } : {})
     };
 
     let startX: number;

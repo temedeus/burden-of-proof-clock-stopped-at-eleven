@@ -4,7 +4,7 @@ const WALK_STEP_FPS = 8;
 /** Audible but still softer than typical SFX */
 const MASTER_GAIN = 0.14;
 
-export type FootstepSurface = "default" | "glass";
+export type FootstepSurface = "default" | "glass" | "squish";
 
 /**
  * Short procedural foot taps (filtered noise + soft thump) via Web Audio API.
@@ -23,6 +23,8 @@ export class FootstepSounds {
         this.lastFrame = frame;
         if (surface === "glass") {
             this.playGlassCrackle();
+        } else if (surface === "squish") {
+            this.playSquish();
         } else {
             this.playStep();
         }
@@ -81,6 +83,70 @@ export class FootstepSounds {
         oscGain.connect(master);
         osc.start(t);
         osc.stop(t + duration);
+    }
+
+    playSquish(): void {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        const t = ctx.currentTime;
+        const duration = 0.16;
+        const pitchJitter = Math.random() * 40;
+
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(MASTER_GAIN * 2.2, t);
+        master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+        master.connect(ctx.destination);
+
+        const sampleCount = Math.floor(ctx.sampleRate * duration);
+        const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
+        const samples = buffer.getChannelData(0);
+        for (let i = 0; i < sampleCount; i++) {
+            const env = Math.exp(-i / (sampleCount * 0.22));
+            samples[i] = (Math.random() * 2 - 1) * env;
+        }
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.value = 280 + pitchJitter;
+        filter.Q.value = 0.8;
+
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.value = 1.1;
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(master);
+        noise.start(t);
+        noise.stop(t + duration);
+
+        const squelch = ctx.createOscillator();
+        squelch.type = "triangle";
+        squelch.frequency.setValueAtTime(160 + pitchJitter, t);
+        squelch.frequency.exponentialRampToValueAtTime(55, t + duration * 0.9);
+
+        const squelchGain = ctx.createGain();
+        squelchGain.gain.setValueAtTime(0.85, t);
+        squelchGain.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.75);
+
+        squelch.connect(squelchGain);
+        squelchGain.connect(master);
+        squelch.start(t);
+        squelch.stop(t + duration);
+
+        const slap = ctx.createOscillator();
+        slap.type = "sine";
+        slap.frequency.setValueAtTime(420 + pitchJitter * 0.5, t + 0.01);
+        const slapGain = ctx.createGain();
+        slapGain.gain.setValueAtTime(0.12, t + 0.01);
+        slapGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+        slap.connect(slapGain);
+        slapGain.connect(master);
+        slap.start(t + 0.01);
+        slap.stop(t + 0.05);
     }
 
     playGlassCrackle(): void {

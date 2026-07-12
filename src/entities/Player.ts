@@ -50,12 +50,6 @@ export class Player extends Entity {
         } else {
             this.animTime = 0;
         }
-        const surface = resolveFootstepSound(this.x, this.y, this.width, this.height, interactables);
-        footstepSounds.updateWalkAnim(
-            this.animTime,
-            this.isMoving,
-            surface === "glass" ? "glass" : "default"
-        );
 
         const moveX = dx * this.speed * dt;
         const moveY = dy * this.speed * dt;
@@ -65,6 +59,9 @@ export class Player extends Entity {
 
         // move Y, then resolve collision
         this.tryMove(0, moveY, map, npcs);
+
+        const surface = resolveFootstepSound(this.x, this.y, this.width, this.height, interactables, npcs);
+        footstepSounds.updateWalkAnim(this.animTime, this.isMoving, surface ?? "default");
     }
 
     private tryMove(dx: number, dy: number, map: TileMap, npcs: NPC[] = []) {
@@ -126,6 +123,7 @@ export class Player extends Entity {
         const playerFeetRowBottom = y + this.height;
 
         for (const npc of npcs) {
+            if (npc.walkable) continue;
             const npcFeetTileX = Math.floor((npc.x + npc.width / 2) / TILE_SIZE);
             const npcFeetRowTop = npc.y + npc.height - TILE_SIZE;
             const npcFeetRowBottom = npc.y + npc.height;

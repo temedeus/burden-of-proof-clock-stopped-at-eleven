@@ -11,6 +11,8 @@ export class NPC extends Entity {
   height = TILE_SIZE * 2;
   private spriteName: string = "npc_male";
   private showNameLabel = true;
+  readonly walkable: boolean;
+  readonly footstepSound?: string;
   private chasing = false;
   private chaseSpeed = DEFAULT_CHASE_SPEED;
   private fleeing = false;
@@ -23,10 +25,14 @@ export class NPC extends Entity {
     public name: string,
     public role?: string,
     spriteName?: string,
-    showNameLabel = true
+    showNameLabel = true,
+    walkable = false,
+    footstepSound?: string
   ) {
     super(id, x, y);
     this.showNameLabel = showNameLabel;
+    this.walkable = walkable;
+    this.footstepSound = footstepSound;
     // Determine sprite based on role or use provided sprite name
     if (spriteName) {
       this.spriteName = spriteName;

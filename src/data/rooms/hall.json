@@ -26,6 +26,12 @@
       "x": 2,
       "y": 13,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "baron_blood_pool",
+      "x": 12,
+      "y": 11,
+      "anchor": "top-left"
     }
   ],
   "exits": [

@@ -22,19 +22,16 @@ type CharacterId = "female_detective" | "male_detective";
 interface CharacterOption {
     id: CharacterId;
     label: string;
-    description: string;
 }
 
 const CHARACTER_OPTIONS: CharacterOption[] = [
     {
         id: "female_detective",
-        label: "Female Detective",
-        description: "Sharp-eyed and methodical — nothing escapes her notice."
+        label: "Female Detective"
     },
     {
         id: "male_detective",
-        label: "Male Detective",
-        description: "Calm under pressure, with years of experience on difficult cases."
+        label: "Male Detective"
     }
 ];
 
@@ -66,17 +63,28 @@ export class Menu {
 
         if (this.screen === "character_select") {
             const layout = this.getCharacterSelectLayout(w, h);
+            const type = this.getMenuTypography(h);
+
+            if (layout.continueButton) {
+                const btn = layout.continueButton;
+                if (x >= btn.x && x <= btn.x + btn.w && y >= btn.y && y <= btn.y + btn.h) {
+                    return this.activateItem(this.getMenuItems()[this.selectedIndex]);
+                }
+            }
+
             for (let i = 0; i < layout.slots.length; i++) {
                 const slot = layout.slots[i];
                 const pad = 12;
+                const labelY = slot.y + slot.h + layout.labelGap;
+                const labelBottom = labelY + type.lineHeight * 0.4;
                 if (
                     x >= slot.x - pad &&
                     x <= slot.x + slot.w + pad &&
                     y >= slot.y - pad &&
-                    y <= slot.y + slot.h + pad
+                    y <= labelBottom + pad
                 ) {
                     this.selectedIndex = i;
-                    return this.activateItem(this.getMenuItems()[i]);
+                    return null;
                 }
             }
             return null;
@@ -124,22 +132,39 @@ export class Menu {
     private getCharacterSelectLayout(w: number, h: number): {
         spriteSize: number;
         centerY: number;
+        labelGap: number;
         slots: { id: CharacterId; x: number; y: number; w: number; h: number }[];
-        descriptionY: number;
+        continueButton: { x: number; y: number; w: number; h: number } | null;
     } {
+        const touch = shouldShowTouchControls();
         const spriteSize = Math.min(Math.round(w * 0.22), Math.round(h * 0.28));
         const gap = Math.max(32, w * 0.1);
         const centerY = h * 0.4;
+        const labelGap = Math.round(h * 0.085);
         const femaleX = w / 2 - gap / 2 - spriteSize;
         const maleX = w / 2 + gap / 2;
+
+        let continueButton: { x: number; y: number; w: number; h: number } | null = null;
+        if (touch) {
+            const btnW = Math.min(280, Math.round(w * 0.5));
+            const btnH = Math.round(h * 0.09);
+            continueButton = {
+                x: (w - btnW) / 2,
+                y: h * 0.82 - btnH / 2,
+                w: btnW,
+                h: btnH
+            };
+        }
+
         return {
             spriteSize,
             centerY,
+            labelGap,
             slots: [
                 { id: "female_detective", x: femaleX, y: centerY - spriteSize / 2, w: spriteSize, h: spriteSize },
                 { id: "male_detective", x: maleX, y: centerY - spriteSize / 2, w: spriteSize, h: spriteSize }
             ],
-            descriptionY: centerY + spriteSize / 2 + Math.round(h * 0.08)
+            continueButton
         };
     }
 
@@ -308,7 +333,7 @@ export class Menu {
     private renderCharacterSelect(ctx: CanvasRenderingContext2D, w: number, h: number): void {
         const type = this.getMenuTypography(h);
         const layout = this.getCharacterSelectLayout(w, h);
-        const selected = CHARACTER_OPTIONS[this.selectedIndex];
+        const touch = shouldShowTouchControls();
 
         ctx.fillStyle = MENU_ACCENT;
         ctx.font = type.title;
@@ -317,8 +342,8 @@ export class Menu {
 
         ctx.font = type.hint;
         ctx.fillStyle = TEXT_COLOR;
-        const charHint = shouldShowTouchControls()
-            ? "Tap a character to play"
+        const charHint = touch
+            ? "Tap a character, then Continue"
             : "← → to choose    Enter to confirm    Esc to go back";
         ctx.fillText(charHint, w / 2, h * 0.24);
 
@@ -346,16 +371,26 @@ export class Menu {
 
             ctx.font = isSelected ? type.itemBold : type.item;
             ctx.fillStyle = isSelected ? HOVER_COLOR : TEXT_COLOR;
-            ctx.fillText(character.label, slot.x + slot.w / 2, slot.y + slot.h + Math.round(h * 0.04));
+            ctx.fillText(
+                character.label,
+                slot.x + slot.w / 2,
+                slot.y + slot.h + layout.labelGap
+            );
         }
 
-        ctx.font = type.itemBold;
-        ctx.fillStyle = HOVER_COLOR;
-        ctx.fillText(selected.label, w / 2, layout.descriptionY);
-
-        ctx.font = type.hint;
-        ctx.fillStyle = TEXT_COLOR;
-        ctx.fillText(selected.description, w / 2, layout.descriptionY + type.lineHeight * 0.55);
+        if (layout.continueButton) {
+            const btn = layout.continueButton;
+            ctx.fillStyle = MENU_ACCENT;
+            ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+            ctx.strokeStyle = HOVER_COLOR;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+            ctx.font = type.itemBold;
+            ctx.fillStyle = TEXT_COLOR;
+            ctx.textBaseline = "middle";
+            ctx.fillText("Continue", btn.x + btn.w / 2, btn.y + btn.h / 2);
+            ctx.textBaseline = "alphabetic";
+        }
 
         ctx.textAlign = "left";
     }

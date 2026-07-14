@@ -101,23 +101,30 @@
     {
       "id": "torn_appointment_note",
       "name": "Torn Appointment Note",
-      "description": "A torn note mentions a meeting in the Study at half past ten. If the Baron was investigating something, his bedroom may hold more answers.",
+      "description": "A torn note mentions a meeting in the Study at half past ten.",
       "requiresClues": ["maid_statement"],
       "blockedHint": "The library may hold answers, but Mrs. Clarke upstairs may know more about the Baron's movements."
+    },
+    {
+      "id": "burned_ledger_page",
+      "name": "Burned Ledger Page",
+      "description": "A ledger page, partly burned. It lists payments to Ytte — amounts that do not match any kitchen supply. The Baron kept his private papers in the master bedroom.",
+      "requiresClues": ["torn_appointment_note"],
+      "blockedHint": "The grate looks cold. The library note mentioned a meeting in the Study."
     },
     {
       "id": "rusty_old_key",
       "name": "Rusty Old Key",
       "description": "A tarnished iron key — it looks like it belongs to an old lock somewhere in the manor.",
-      "requiresClues": ["torn_appointment_note"],
-      "blockedHint": "Nothing here yet. The library note may point somewhere private."
+      "requiresClues": ["burned_ledger_page"],
+      "blockedHint": "The chambers look undisturbed. The charred ledger in the Study may explain what the Baron was hiding here."
     },
     {
       "id": "barons_diary",
       "name": "Baron's Diary",
       "description": "The Baron's diary mentions that the original manor floor plans are stored in an old attic chest.",
-      "requiresClues": ["torn_appointment_note"],
-      "blockedHint": "Nothing else stands out in the bedroom yet."
+      "requiresClues": ["burned_ledger_page"],
+      "blockedHint": "Nothing stands out yet. The charred ledger in the Study may point to what the Baron concealed in his chambers."
     },
     {
       "id": "manor_floor_plans",
@@ -134,18 +141,11 @@
       "blockedHint": "The chest looks empty until you have opened it with the key."
     },
     {
-      "id": "burned_ledger_page",
-      "name": "Burned Ledger Page",
-      "description": "A ledger page, partly burned. It lists payments to Ytte — amounts that do not match any kitchen supply.",
-      "requiresClues": ["estate_documents"],
-      "blockedHint": "The desk looks untouched. The Baron's bedroom and attic may hold more answers."
-    },
-    {
       "id": "blackwoods_journal",
       "name": "Blackwood's Journal",
       "description": "The Baron's journal warns of a smuggling ring and a missing silver key to a locked cabinet.",
       "requiresClues": ["burned_ledger_page"],
-      "blockedHint": "The desk is bare. The study may yet yield a way in."
+      "blockedHint": "The writing desk looks untouched."
     },
     {
       "id": "silver_key",
@@ -208,7 +208,14 @@
       "roomId": "library",
       "furnitureId": "reading_table",
       "furnitureIndex": 0,
-      "hint": "A torn appointment note lies among the books — the Baron was expected in the Study.\n\nIf the Baron was investigating something, perhaps I should check his bedroom."
+      "hint": "A torn appointment note lies among the books — the Baron was expected in the Study at half past ten.\n\nI should search the Study before anywhere else."
+    },
+    {
+      "clueId": "burned_ledger_page",
+      "roomId": "study",
+      "furnitureId": "table",
+      "furnitureIndex": 0,
+      "hint": "Ashes in the grate hold a charred ledger page — payments to Ytte that should not exist.\n\nThe Baron kept his private papers in the master bedroom. What was he hiding there?"
     },
     {
       "clueId": "rusty_old_key",
@@ -237,13 +244,6 @@
       "furnitureId": "attic_old_chest",
       "furnitureIndex": 0,
       "hint": "Beneath the floor plans lie old estate documents — the Hidden Room can be reached from both the Study and the Cellar."
-    },
-    {
-      "clueId": "burned_ledger_page",
-      "roomId": "study",
-      "furnitureId": "table",
-      "furnitureIndex": 0,
-      "hint": "Ashes in the grate hold a charred ledger page — payments to Ytte that should not exist."
     },
     {
       "clueId": "blackwoods_journal",

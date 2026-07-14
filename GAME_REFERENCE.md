@@ -179,7 +179,7 @@ Each line is a bidirectional connection unless noted.
 
 | Unlock ID | Trigger | Rooms opened | Reveal message |
 |-----------|---------|--------------|----------------|
-| `study_secret` | Pull loose book on secret bookshelf in **study** (requires `burned_ledger_page`) | study ↔ hidden_room | “The bookshelf grinds aside, revealing a hidden passage.” |
+| `study_secret` | Pull loose book on secret bookshelf in **study** (requires `manor_floor_plans`) | study ↔ hidden_room | “The bookshelf grinds aside, revealing a hidden passage.” |
 | `cellar_secret` | Pull lever between barrels in **cellar_storage** (requires `cellar_evidence`) | cellar_storage ↔ secret_tunnel | “The barrels roll aside, revealing a hidden passage.” |
 | `hidden_cabinet` | Confirm on **locked cabinet** in hidden room (requires `silver_key`) | — | Grants `smuggling_documents` clue |
 

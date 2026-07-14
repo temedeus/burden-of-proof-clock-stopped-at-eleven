@@ -13,11 +13,11 @@ const CLUE_CHAIN = [
     "examined_clock",
     "maid_statement",
     "torn_appointment_note",
+    "burned_ledger_page",
     "rusty_old_key",
     "barons_diary",
     "manor_floor_plans",
     "estate_documents",
-    "burned_ledger_page",
     "blackwoods_journal",
     "silver_key",
     "smuggling_documents",
@@ -141,13 +141,19 @@ describe("active story investigation flow", () => {
             true
         );
         clueSystem.addClue("torn_appointment_note");
+        const ledgerAssignment = story.clueAssignments.find((e) => e.clueId === "burned_ledger_page");
+        expect(clueSystem.canCollectClue("burned_ledger_page", story.generatedClues, ledgerAssignment)).toBe(
+            true
+        );
+        clueSystem.addClue("burned_ledger_page");
+        const keyAssignment = story.clueAssignments.find((e) => e.clueId === "rusty_old_key");
+        expect(clueSystem.canCollectClue("rusty_old_key", story.generatedClues, keyAssignment)).toBe(true);
         clueSystem.addClue("rusty_old_key");
         clueSystem.addClue("barons_diary");
         clueSystem.addClue("manor_floor_plans");
         clueSystem.addClue("estate_documents");
-        const ledgerAssignment = story.clueAssignments.find((e) => e.clueId === "burned_ledger_page");
         expect(clueSystem.canCollectClue("burned_ledger_page", story.generatedClues, ledgerAssignment)).toBe(
-            true
+            false
         );
     });
 });

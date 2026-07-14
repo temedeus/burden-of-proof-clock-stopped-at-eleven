@@ -61,6 +61,11 @@ function setupCanvasPointer(): void {
                 return;
             }
 
+            if (appScreen === "playing" && game?.isInventoryOpen()) {
+                game.handleInventoryPointer(x, y);
+                return;
+            }
+
             if (
                 appScreen === "main_menu" ||
                 appScreen === "pause_menu" ||

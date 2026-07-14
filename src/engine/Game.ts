@@ -16,11 +16,11 @@ import { CellarSecretPuzzle } from "../puzzles/CellarSecretPuzzle";
 import { isExitUnlocked, isTransitionConfirm, runPuzzleConfirm, targetRoomFromTransitionConfirm } from "../puzzles/registry";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
-import { renderInventoryPanel } from "./InventoryPanel";
+import { InventoryPanel } from "./InventoryPanel";
 import { renderClueNotification } from "./ClueNotification";
-import { loadGameContent } from "../content/loadGameContent";
+import { loadGameContent, loadFurnitureCatalog } from "../content/loadGameContent";
 import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
-import { buildClueCatalog, type ClueCatalog } from "../content/clueCatalog";
+import { buildClueCatalog, getInventoryClueIds, type ClueCatalog } from "../content/clueCatalog";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
 import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { gardenAmbience } from "../audio/GardenAmbience";
@@ -108,6 +108,8 @@ export class Game {
 
     private roomTitleBanner: RoomTitleBanner | null = null;
     private decorAnimTime = 0;
+    private inventoryPanel = new InventoryPanel();
+    private furnitureCatalog = loadFurnitureCatalog();
 
     constructor(
         private ctx: CanvasRenderingContext2D,
@@ -287,6 +289,16 @@ export class Game {
         return this.victory.isWaitingForInput();
     }
 
+    isInventoryOpen(): boolean {
+        return this.state === "inventory";
+    }
+
+    handleInventoryPointer(x: number, y: number): void {
+        if (this.state !== "inventory") return;
+        const layout = this.inventoryPanel.getLayoutForHitTest(this.ctx, this.clueSystem, this.clueCatalog);
+        this.inventoryPanel.handlePointer(x, y, this.clueSystem, this.clueCatalog, layout);
+    }
+
     returnToMenuFromVictory(): void {
         this.onVictoryComplete?.();
     }
@@ -316,8 +328,22 @@ export class Game {
             if (this.state === "inventory") {
                 this.state = "playing";
             } else if (this.state === "playing") {
+                this.inventoryPanel.reset();
                 this.state = "inventory";
             }
+            return;
+        }
+
+        if (this.state === "inventory") {
+            const clues = getInventoryClueIds(this.clueSystem.getAllClues(), this.clueCatalog);
+            const layout = this.inventoryPanel.getLayoutForHitTest(this.ctx, this.clueSystem, this.clueCatalog);
+            this.inventoryPanel.update(
+                this.input,
+                this.clueSystem,
+                this.clueCatalog,
+                layout.cols,
+                clues.length
+            );
             return;
         }
 
@@ -534,7 +560,14 @@ export class Game {
 
     render(ctx: CanvasRenderingContext2D) {
         if (this.state === "inventory") {
-            renderInventoryPanel(ctx, this.clueSystem, this.clueCatalog);
+            this.inventoryPanel.render(
+                ctx,
+                this.clueSystem,
+                this.clueCatalog,
+                this.activeStory?.casePacket.clueAssignments,
+                this.furnitureCatalog,
+                this.content.npcs
+            );
             return;
         }
 

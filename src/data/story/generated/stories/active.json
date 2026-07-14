@@ -10,8 +10,8 @@
     "Ytte: You found the knife. Of course you did — you were always going to end up down here.",
     "Ytte: The Baron uncovered the smuggling ledger. He meant to hand me to the police at dawn.",
     "Ytte: Years of work — my family's future — gone because his conscience woke up at the wrong hour.",
-    "Ytte: So I stopped the clock at eleven and made sure he never reached that study meeting.",
-    "Ytte: You think you're clever, Detective? No one walks out of here with what you know!"
+    "Ytte: That sweet girl almost took the blame for me — a lucky accident, that one. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
+    "Ytte: But no worries, Detective. I won't be letting you out of this wine cellar."
   ],
   "suspects": [
     {
@@ -24,7 +24,7 @@
       "npcId": "maid",
       "motive": "A secret debt to a moneylender.",
       "opportunity": "Her nightly rounds put her in the hall around eleven o'clock.",
-      "alibi": "Claims she saw the Baron heading to the library with papers during her rounds."
+      "alibi": "Says she panicked at the scene and may have disturbed evidence before she could think straight."
     },
     {
       "npcId": "cook",
@@ -89,19 +89,19 @@
     {
       "id": "examined_body",
       "name": "Body Examined",
-      "description": "Baron Blackwood was stabbed in the chest. Blood has pooled beneath him, streaked with broom marks — someone tried to clean the scene.",
+      "description": "Baron Blackwood was stabbed in the chest. Blood has pooled beneath him, streaked with broom marks — suspicious at first glance.",
       "hideFromInventory": true
     },
     {
       "id": "examined_clock",
       "name": "Clock Examined",
-      "description": "The grandfather clock stopped at eleven o'clock. The glazed door was shattered from within.",
+      "description": "The grandfather clock stopped at eleven o'clock. The glazed door lies shattered on the floor.",
       "hideFromInventory": true
     },
     {
       "id": "maid_statement",
       "name": "Maid Interviewed",
-      "description": "Mrs. Clarke saw the Baron heading toward the library with papers, looking worried.",
+      "description": "Mrs. Clarke panicked at the body in the dark, swept her broom through the blood, and accidentally shattered the hall clock while fleeing. Earlier she saw the Baron heading to the library with papers.",
       "requiresClues": ["examined_body", "examined_clock"],
       "hideFromInventory": true
     },
@@ -195,20 +195,20 @@
       "clueId": "examined_body",
       "roomId": "hall",
       "npcId": "baron",
-      "hint": "Baron Blackwood lies dead on the marble floor. Blood has pooled beneath his body, dark and still. Faint broom marks streak through the blood — someone tried to clean the scene."
+      "hint": "Baron Blackwood lies dead on the marble floor. Blood has pooled beneath his body, dark and still. Faint broom marks streak through the blood — someone may have tried to clean the scene."
     },
     {
       "clueId": "examined_clock",
       "roomId": "hall",
       "furnitureId": "hall_clock",
       "furnitureIndex": 0,
-      "hint": "The clock hands are frozen at eleven o'clock. The glass door is shattered — as if struck from inside."
+      "hint": "The clock hands are frozen at eleven o'clock. The glass door is shattered — splinters litter the boards below."
     },
     {
       "clueId": "maid_statement",
       "roomId": "maid_room",
       "npcId": "maid",
-      "hint": "Mrs. Clarke was finishing her rounds when she saw the Baron heading toward the library carrying several papers. He looked worried."
+      "hint": "Mrs. Clarke wrings her hands, near tears.\n\n\"When I came through on my rounds it was dark. I saw the master on the floor and I panicked — I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing.\n\nI ran for help and struck the hall clock on my way out — the glass shattered and it stopped at eleven. I'm so sorry.\n\nBefore that awful moment, I had seen him heading toward the library with several papers. He looked worried.\""
     },
     {
       "clueId": "torn_appointment_note",
@@ -322,7 +322,7 @@
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
-          "dialog": "It appears Mrs. Clarke's statement checks out."
+          "dialog": "Mrs. Clarke's confession explains the broom marks and the clock. A frightened woman, not a killer — keep searching."
         },
         {
           "requiresClues": ["examined_body", "examined_clock"],
@@ -336,7 +336,7 @@
       "conditions": [
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
-          "dialog": "Poor Mrs. Clarke... I should never have doubted her."
+          "dialog": "Poor Mrs. Clarke... She was half mad with fright. I should never have doubted her."
         },
         {
           "requiresClues": ["examined_body", "examined_clock"],
@@ -346,7 +346,7 @@
     },
     {
       "npcId": "maid",
-      "default": "I was finishing my rounds when I saw the Baron heading toward the library carrying several papers. He looked worried.",
+      "default": "When I came through on my rounds it was dark. I saw the master on the floor and I panicked — I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing. I ran for help and struck the hall clock on my way out — the glass shattered and it stopped at eleven. I'm so sorry. Before that awful moment, I had seen him heading toward the library with several papers. He looked worried.",
       "requiresClues": ["examined_body", "examined_clock"],
       "blockedDialog": "Mrs. Clarke keeps her eyes down. She won't say much until you've examined the scene downstairs."
     },

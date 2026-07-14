@@ -6,8 +6,8 @@ export const DEFAULT_MURDERER_MONOLOGUE = [
     "Ytte: You found the knife. Of course you did — you were always going to end up down here.",
     "Ytte: The Baron uncovered the smuggling ledger. He meant to hand me to the police at dawn.",
     "Ytte: Years of work — my family's future — gone because his conscience woke up at the wrong hour.",
-    "Ytte: So I stopped the clock at eleven and made sure he never reached that study meeting.",
-    "Ytte: You think you're clever, Detective? No one walks out of here with what you know!"
+    "Ytte: That sweet girl almost took the blame for me — a lucky accident, that one. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
+    "Ytte: But no worries, Detective. I won't be letting you out of this wine cellar."
 ] as const;
 
 export function doorwayNpcPosition(room: Room): { x: number; y: number } {

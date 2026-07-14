@@ -6,6 +6,13 @@
     "time": "eleven o'clock"
   },
   "culpritNpcId": "cook",
+  "culpritConfrontationMonologue": [
+    "Ytte: You found the knife. Of course you did — you were always going to end up down here.",
+    "Ytte: The Baron uncovered the smuggling ledger. He meant to hand me to the police at dawn.",
+    "Ytte: Years of work — my family's future — gone because his conscience woke up at the wrong hour.",
+    "Ytte: So I stopped the clock at eleven and made sure he never reached that study meeting.",
+    "Ytte: You think you're clever, Detective? No one walks out of here with what you know!"
+  ],
   "suspects": [
     {
       "npcId": "butler",
@@ -365,7 +372,7 @@
             "cellar_evidence",
             "murder_weapon"
           ],
-          "dialog": "You cannot prove I— Stay back! I won't go quietly!"
+          "dialog": "Stay back! I'm not going down for this — not while I still have a chance!"
         },
         {
           "requiresClues": [

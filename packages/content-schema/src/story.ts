@@ -76,6 +76,8 @@ export interface StoryCasePacket {
     generatedClues: GeneratedClue[];
     clueAssignments: ClueAssignment[];
     npcDialogOverrides: NPCDialogOverride[];
+    /** Lines shown when the culprit confronts the player after the final clue. */
+    culpritConfrontationMonologue?: string[];
 }
 
 export interface StoryManifestEntry {

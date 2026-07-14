@@ -10,6 +10,7 @@ import { InteractionSystem } from "../systems/InteractionSystem";
 import { ClueSystem } from "../systems/ClueSystem";
 import { RoomTransitionService } from "../systems/RoomTransitionService";
 import { MurdererChaseController, type Difficulty } from "../systems/MurdererChaseController";
+import { MurdererConfrontation } from "../systems/MurdererConfrontation";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
 import { CellarSecretPuzzle } from "../puzzles/CellarSecretPuzzle";
@@ -86,6 +87,7 @@ export class Game {
     private interaction = new InteractionSystem(this.clueSystem);
     private roomTransitions = new RoomTransitionService();
     private murdererChase: MurdererChaseController;
+    private murdererConfrontation: MurdererConfrontation;
     private victory = new VictorySequence();
     private studySecret = new StudySecretPuzzle(
         () => this.rooms.study,
@@ -123,6 +125,7 @@ export class Game {
         }
     ) {
         this.murdererChase = new MurdererChaseController(options?.difficulty ?? "medium");
+        this.murdererConfrontation = new MurdererConfrontation();
         this.onMenuRequest = options?.onMenuRequest;
         this.onGameOver = options?.onGameOver;
         this.onVictoryComplete = options?.onVictoryComplete;
@@ -141,6 +144,9 @@ export class Game {
         if (resolved) {
             this.activeStory = resolved;
             this.clueCatalog = buildClueCatalog(this.activeStory.casePacket.generatedClues);
+            this.murdererConfrontation = new MurdererConfrontation(
+                this.activeStory.casePacket.culpritConfrontationMonologue
+            );
             applyStoryToRooms(this.rooms, this.activeStory.casePacket, {
                 hasClue: (id) => this.clueSystem.hasClue(id)
             });
@@ -269,6 +275,43 @@ export class Game {
         targetRoom.npcs.push(npc);
     }
 
+    private startMurdererConfrontation(): void {
+        if (this.murdererConfrontation.complete || this.murdererConfrontation.active) return;
+        if (!this.clueSystem.hasClue("murder_weapon")) return;
+
+        const murderer = this.getMurderer();
+        if (!murderer) return;
+
+        this.murdererConfrontation.start(murderer, this.currentRoom, (npc, room, x, y) =>
+            this.moveNPCToRoom(npc, room, x, y)
+        );
+        this.message = this.murdererConfrontation.getCurrentLine();
+        const npcCfg = this.content.npcs[this.getMurdererNpcId()];
+        talkSounds.startDialogue(
+            inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
+            extractSpokenLine(this.message, "Ytte")
+        );
+        this.state = "interacting";
+    }
+
+    private advanceMurdererConfrontation(): void {
+        const advance = this.murdererConfrontation.advance();
+        if (advance === "continue") {
+            this.message = this.murdererConfrontation.getCurrentLine();
+            const npcCfg = this.content.npcs[this.getMurdererNpcId()];
+            talkSounds.startDialogue(
+                inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
+                extractSpokenLine(this.message, "Ytte")
+            );
+            return;
+        }
+
+        talkSounds.stopDialogue();
+        this.murdererChase.triggerAccusation();
+        this.message = "Ytte is after you! Find a police officer before he catches you!";
+        this.state = "interacting";
+    }
+
     private startVictorySequence(policeId: string): void {
         const police = this.getNPCById(policeId);
         const murderer = this.getMurderer();
@@ -386,13 +429,10 @@ export class Game {
                         clueSounds.playFound();
                         this.clueNotification = { clueId: result.clues[0] };
                         this.refreshStoryState();
-                    }
-                    if (
-                        result.speakerId === this.getMurdererNpcId() &&
-                        this.getRequiredClueIds().every((c) => this.clueSystem.hasClue(c))
-                    ) {
-                        this.murdererChase.triggerAccusation();
-                        this.message = result.description + " Find a police officer!";
+                        if (result.clues.includes("murder_weapon")) {
+                            this.startMurdererConfrontation();
+                            return;
+                        }
                     }
                     if (
                         result.speakerId &&
@@ -481,6 +521,10 @@ export class Game {
             }
         } else if (this.state === "interacting") {
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
+                if (this.murdererConfrontation.active) {
+                    this.advanceMurdererConfrontation();
+                    return;
+                }
                 talkSounds.stopDialogue();
                 this.message = null;
                 this.clueNotification = null;

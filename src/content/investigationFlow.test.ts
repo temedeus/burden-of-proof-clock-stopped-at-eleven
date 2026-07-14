@@ -13,6 +13,10 @@ const CLUE_CHAIN = [
     "examined_clock",
     "maid_statement",
     "torn_appointment_note",
+    "rusty_old_key",
+    "barons_diary",
+    "manor_floor_plans",
+    "estate_documents",
     "burned_ledger_page",
     "blackwoods_journal",
     "silver_key",
@@ -48,11 +52,12 @@ describe("active story investigation flow", () => {
             expect(hasAllPrerequisites(requires, (id) => owned.has(id as (typeof CLUE_CHAIN)[number]))).toBe(
                 true
             );
-            if (requires.length > 0) {
-                const before = new Set(CLUE_CHAIN.slice(0, i - 1));
-                expect(
-                    hasAllPrerequisites(requires, (id) => before.has(id as (typeof CLUE_CHAIN)[number]))
-                ).toBe(false);
+            for (const requiredClueId of requires) {
+                const requiredIndex = CLUE_CHAIN.indexOf(requiredClueId as (typeof CLUE_CHAIN)[number]);
+                expect(requiredIndex, `${clueId} requires unknown clue ${requiredClueId}`).toBeGreaterThanOrEqual(
+                    0
+                );
+                expect(requiredIndex, `${clueId} requires a later clue ${requiredClueId}`).toBeLessThan(i);
             }
         }
     });
@@ -133,6 +138,15 @@ describe("active story investigation flow", () => {
         );
         clueSystem.addClue("maid_statement");
         expect(clueSystem.canCollectClue("torn_appointment_note", story.generatedClues, assignment)).toBe(
+            true
+        );
+        clueSystem.addClue("torn_appointment_note");
+        clueSystem.addClue("rusty_old_key");
+        clueSystem.addClue("barons_diary");
+        clueSystem.addClue("manor_floor_plans");
+        clueSystem.addClue("estate_documents");
+        const ledgerAssignment = story.clueAssignments.find((e) => e.clueId === "burned_ledger_page");
+        expect(clueSystem.canCollectClue("burned_ledger_page", story.generatedClues, ledgerAssignment)).toBe(
             true
         );
     });

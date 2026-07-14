@@ -135,6 +135,13 @@ export class InteractionSystem {
                             obj.confirmGrantsClueId &&
                             this.clueSystem.hasClue(obj.confirmGrantsClueId)
                         ) {
+                            const collectibleResult = this.collectEligibleClues(obj);
+                            if (collectibleResult) {
+                                return {
+                                    ...collectibleResult,
+                                    ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
+                                };
+                            }
                             return {
                                 description: obj.description,
                                 clues: [],
@@ -162,20 +169,10 @@ export class InteractionSystem {
                         };
                     }
 
-                    const collectibleEntries = this.getCollectibleEntries(obj);
-                    const pending = collectibleEntries.find((entry) => !this.clueSystem.hasClue(entry.clueId));
-                    if (pending) {
-                        if (!this.clueSystem.hasAllPrerequisites(pending.requiresClues)) {
-                            return {
-                                description: pending.blockedHint,
-                                clues: [],
-                                ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
-                            };
-                        }
-                        this.clueSystem.addClue(pending.clueId);
+                    const collectibleResult = this.collectEligibleClues(obj);
+                    if (collectibleResult) {
                         return {
-                            description: pending.hint,
-                            clues: [pending.clueId],
+                            ...collectibleResult,
                             ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
                         };
                     }
@@ -190,6 +187,34 @@ export class InteractionSystem {
         }
 
         return null;
+    }
+
+    private collectEligibleClues(obj: {
+        collectibleClues?: CollectibleClue[];
+        clues?: string[];
+        description: string;
+    }): InteractionResult | null {
+        const collectibleEntries = this.getCollectibleEntries(obj);
+        const pending = collectibleEntries.filter((entry) => !this.clueSystem.hasClue(entry.clueId));
+        if (pending.length === 0) return null;
+
+        const eligible = pending.filter((entry) =>
+            this.clueSystem.hasAllPrerequisites(entry.requiresClues)
+        );
+        if (eligible.length === 0) {
+            return {
+                description: pending[0].blockedHint,
+                clues: []
+            };
+        }
+
+        for (const entry of eligible) {
+            this.clueSystem.addClue(entry.clueId);
+        }
+        return {
+            description: eligible.map((entry) => entry.hint).join("\n\n"),
+            clues: eligible.map((entry) => entry.clueId)
+        };
     }
 
     private getCollectibleEntries(obj: {

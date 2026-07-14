@@ -399,7 +399,12 @@ function placeFurniture(
     interactable.footprintTiles = buildFootprintTiles(startX, startY, furniture, width, height);
 
     if (furniture.noCollision || furniture.overheadDecor) {
-        interactable.interactionTiles = [];
+        if (!furniture.nonInteractive && !furniture.overheadDecor) {
+            interactable.tiles = interactable.footprintTiles.map((tile) => ({ ...tile }));
+            interactable.interactionTiles = [...interactable.footprintTiles];
+        } else {
+            interactable.interactionTiles = [];
+        }
         return interactable;
     }
 

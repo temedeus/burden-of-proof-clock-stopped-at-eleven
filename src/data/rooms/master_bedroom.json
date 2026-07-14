@@ -20,6 +20,12 @@
       "x": 2,
       "y": 5,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bedside_table",
+      "x": 5,
+      "y": 6,
+      "anchor": "top-left"
     }
   ],
   "exits": [

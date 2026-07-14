@@ -1546,5 +1546,82 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
             r(ctx, 48, 84, 32, 4, P.wood);
             r(ctx, 14, 56, 6, 28, P.shadow);
         }
+    },
+
+    bedside_table: {
+        nativeWidth: 48,
+        nativeHeight: 48,
+        draw(ctx) {
+            drawWoodTabletop(ctx, 8, 20, 32, 6);
+            drawTableLegs(ctx, [12, 30], 18, 44);
+
+            // Diary
+            r(ctx, 12, 10, 14, 12, P.woodDark);
+            r(ctx, 13, 11, 12, 10, P.cream);
+            r(ctx, 14, 12, 10, 1, P.shadow);
+            r(ctx, 14, 14, 8, 1, P.shadow);
+
+            // Key
+            r(ctx, 30, 14, 8, 8, P.ironDark);
+            r(ctx, 31, 15, 6, 6, P.iron);
+            r(ctx, 36, 17, 8, 3, P.iron);
+            r(ctx, 42, 15, 3, 7, P.ironDark);
+
+            // Drawer handle
+            r(ctx, 20, 24, 8, 2, P.iron);
+        }
+    },
+
+    rusty_old_key: {
+        nativeWidth: 32,
+        nativeHeight: 32,
+        draw(ctx) {
+            r(ctx, 10, 8, 10, 10, P.ironDark);
+            r(ctx, 11, 9, 8, 8, P.iron);
+            r(ctx, 12, 10, 6, 6, P.silverDark);
+            r(ctx, 20, 12, 12, 4, P.iron);
+            r(ctx, 28, 10, 4, 8, P.ironDark);
+            r(ctx, 29, 11, 2, 6, P.silver);
+            r(ctx, 13, 12, 2, 2, P.black);
+            r(ctx, 11, 16, 2, 2, P.brick);
+            r(ctx, 15, 14, 2, 2, P.brick);
+        }
+    },
+
+    barons_diary: {
+        nativeWidth: 32,
+        nativeHeight: 32,
+        draw(ctx) {
+            r(ctx, 6, 8, 20, 18, P.woodDark);
+            r(ctx, 7, 9, 18, 16, P.cream);
+            r(ctx, 8, 10, 16, 14, P.white);
+            r(ctx, 6, 8, 4, 18, P.wood);
+            r(ctx, 7, 9, 2, 16, P.woodLight);
+            for (let y = 12; y < 22; y += 3) {
+                r(ctx, 11, y, 12, 1, P.highlight);
+            }
+            r(ctx, 10, 12, 8, 2, P.shadow);
+            r(ctx, 22, 8, 2, 18, P.outline);
+        }
+    },
+
+    attic_old_chest: {
+        nativeWidth: 48,
+        nativeHeight: 40,
+        draw(ctx) {
+            r(ctx, 4, 12, 40, 24, P.woodDark);
+            r(ctx, 6, 14, 36, 20, P.wood);
+            r(ctx, 6, 14, 36, 4, P.woodLight);
+            r(ctx, 4, 30, 40, 6, P.woodDark);
+            r(ctx, 8, 18, 32, 2, P.woodLight);
+            r(ctx, 8, 24, 32, 2, P.woodLight);
+            r(ctx, 20, 20, 8, 6, P.ironDark);
+            r(ctx, 21, 21, 6, 4, P.iron);
+            r(ctx, 23, 22, 2, 2, P.brick);
+            r(ctx, 2, 10, 44, 4, P.woodDark);
+            r(ctx, 4, 8, 40, 4, P.wood);
+            r(ctx, 2, 34, 4, 4, P.woodDark);
+            r(ctx, 42, 34, 4, 4, P.woodDark);
+        }
     }
 };

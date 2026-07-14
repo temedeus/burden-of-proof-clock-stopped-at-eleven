@@ -439,6 +439,9 @@ export class Game {
                               },
                               hidden_cabinet: () => {
                                   this.grantConfirmClue("smuggling_documents");
+                              },
+                              attic_chest: () => {
+                                  this.grantConfirmClue("manor_floor_plans");
                               }
                           })
                         : false;

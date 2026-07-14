@@ -88,8 +88,14 @@ export function applyStoryToRooms(
         if (!target) continue;
 
         if (target.interactionType === "confirm") {
-            target.confirmGrantsClueId = assignment.clueId;
-            target.description = assignment.hint;
+            if (target.confirmGrantsClueId == null) {
+                target.confirmGrantsClueId = assignment.clueId;
+                target.description = assignment.hint;
+            } else {
+                const collectible = buildCollectibleClue(assignment, generatedClues);
+                target.collectibleClues = [...(target.collectibleClues ?? []), collectible];
+                target.clues = [...(target.clues ?? []), assignment.clueId];
+            }
             continue;
         }
 
@@ -101,12 +107,15 @@ export function applyStoryToRooms(
     for (const room of Object.values(rooms)) {
         for (const target of room.interactables) {
             if (!target.collectibleClues?.length) continue;
-            const pending = target.collectibleClues.find((entry) => !hasClue(entry.clueId));
-            if (!pending) continue;
-            if (hasAllPrerequisites(pending.requiresClues, hasClue)) {
-                target.description = pending.hint;
+            const pending = target.collectibleClues.filter((entry) => !hasClue(entry.clueId));
+            if (pending.length === 0) continue;
+            const eligible = pending.filter((entry) =>
+                hasAllPrerequisites(entry.requiresClues, hasClue)
+            );
+            if (eligible.length > 0) {
+                target.description = eligible.map((entry) => entry.hint).join("\n\n");
             } else {
-                target.description = pending.blockedHint;
+                target.description = pending[0].blockedHint;
             }
         }
     }

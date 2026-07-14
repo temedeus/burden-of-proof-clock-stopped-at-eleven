@@ -70,4 +70,40 @@ describe("InteractionSystem clue gating", () => {
         expect(result?.clues).toEqual(["second"]);
         expect(clueSystem.hasClue("second")).toBe(true);
     });
+
+    it("collects every eligible clue on the same object in one interaction", () => {
+        const clueSystem = new ClueSystem();
+        clueSystem.addClue("gate");
+        const interaction = new InteractionSystem(clueSystem);
+        const table: Interactable = {
+            id: "bedside_table",
+            name: "Table",
+            description: "fallback",
+            tiles: [{ x: 3, y: 3 }, { x: 4, y: 3 }],
+            interactionTiles: [{ x: 3, y: 4 }, { x: 4, y: 4 }],
+            collectibleClues: [
+                {
+                    clueId: "key",
+                    requiresClues: ["gate"],
+                    blockedHint: "Too early.",
+                    hint: "Found a key."
+                },
+                {
+                    clueId: "diary",
+                    requiresClues: ["gate"],
+                    blockedHint: "Too early.",
+                    hint: "Found a diary."
+                }
+            ]
+        };
+        const room = roomWithTable(table);
+        const player = new Player("player", 3 * TILE_SIZE, 4 * TILE_SIZE);
+        player.facing = "up";
+
+        const result = interaction.interact(player, room);
+        expect(result?.description).toBe("Found a key.\n\nFound a diary.");
+        expect(result?.clues).toEqual(["key", "diary"]);
+        expect(clueSystem.hasClue("key")).toBe(true);
+        expect(clueSystem.hasClue("diary")).toBe(true);
+    });
 });

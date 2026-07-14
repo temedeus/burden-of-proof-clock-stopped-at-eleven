@@ -42,6 +42,14 @@
       "summary": "Books are out of place, as if someone searched in haste."
     },
     {
+      "roomId": "master_bedroom",
+      "summary": "The Baron's private chambers — undisturbed at a glance, but something feels searched."
+    },
+    {
+      "roomId": "attic",
+      "summary": "Dust motes swirl in the rafters. Forgotten trunks and old beams crowd the space."
+    },
+    {
       "roomId": "study",
       "summary": "The desk has been disturbed. Ashes in the grate still smell of burnt paper."
     },
@@ -93,16 +101,44 @@
     {
       "id": "torn_appointment_note",
       "name": "Torn Appointment Note",
-      "description": "A torn note mentions a meeting in the Study at half past ten.",
+      "description": "A torn note mentions a meeting in the Study at half past ten. If the Baron was investigating something, his bedroom may hold more answers.",
       "requiresClues": ["maid_statement"],
       "blockedHint": "The library may hold answers, but Mrs. Clarke upstairs may know more about the Baron's movements."
+    },
+    {
+      "id": "rusty_old_key",
+      "name": "Rusty Old Key",
+      "description": "A tarnished iron key — it looks like it belongs to an old lock somewhere in the manor.",
+      "requiresClues": ["torn_appointment_note"],
+      "blockedHint": "Nothing here yet. The library note may point somewhere private."
+    },
+    {
+      "id": "barons_diary",
+      "name": "Baron's Diary",
+      "description": "The Baron's diary mentions that the original manor floor plans are stored in an old attic chest.",
+      "requiresClues": ["torn_appointment_note"],
+      "blockedHint": "Nothing else stands out in the bedroom yet."
+    },
+    {
+      "id": "manor_floor_plans",
+      "name": "Manor Floor Plans",
+      "description": "Original floor plans of Blackwood Manor — secret passages marked in faded ink.",
+      "requiresClues": ["barons_diary"],
+      "blockedHint": "The chest is locked shut. The Baron's diary may say what is inside."
+    },
+    {
+      "id": "estate_documents",
+      "name": "Estate Documents",
+      "description": "Old estate papers note that the Hidden Room can be reached from both the Study and the Cellar.",
+      "requiresClues": ["manor_floor_plans"],
+      "blockedHint": "The chest looks empty until you have opened it with the key."
     },
     {
       "id": "burned_ledger_page",
       "name": "Burned Ledger Page",
       "description": "A ledger page, partly burned. It lists payments to Ytte — amounts that do not match any kitchen supply.",
-      "requiresClues": ["torn_appointment_note"],
-      "blockedHint": "The desk looks untouched. Perhaps the library holds a lead."
+      "requiresClues": ["estate_documents"],
+      "blockedHint": "The desk looks untouched. The Baron's bedroom and attic may hold more answers."
     },
     {
       "id": "blackwoods_journal",
@@ -172,7 +208,35 @@
       "roomId": "library",
       "furnitureId": "reading_table",
       "furnitureIndex": 0,
-      "hint": "A torn appointment note lies among the books — the Baron was expected in the Study."
+      "hint": "A torn appointment note lies among the books — the Baron was expected in the Study.\n\nIf the Baron was investigating something, perhaps I should check his bedroom."
+    },
+    {
+      "clueId": "rusty_old_key",
+      "roomId": "master_bedroom",
+      "furnitureId": "bedside_table",
+      "furnitureIndex": 0,
+      "hint": "A rusty old key lies in the bedside drawer — forgotten, but still heavy in the hand."
+    },
+    {
+      "clueId": "barons_diary",
+      "roomId": "master_bedroom",
+      "furnitureId": "bedside_table",
+      "furnitureIndex": 0,
+      "hint": "The Baron's diary lies open on the bedside table. A recent entry mentions the original manor floor plans, locked in an old attic chest."
+    },
+    {
+      "clueId": "manor_floor_plans",
+      "roomId": "attic",
+      "furnitureId": "attic_old_chest",
+      "furnitureIndex": 0,
+      "hint": "Inside the chest: brittle floor plans of Blackwood Manor, with secret passages marked in faded ink."
+    },
+    {
+      "clueId": "estate_documents",
+      "roomId": "attic",
+      "furnitureId": "attic_old_chest",
+      "furnitureIndex": 0,
+      "hint": "Beneath the floor plans lie old estate documents — the Hidden Room can be reached from both the Study and the Cellar."
     },
     {
       "clueId": "burned_ledger_page",
@@ -230,7 +294,23 @@
       "default": "The scene is secured, Detective. Examine everything before you question anyone.",
       "conditions": [
         {
-          "requiresClues": ["murder_weapon", "maid_statement", "examined_body", "examined_clock"],
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note",
+            "rusty_old_key",
+            "barons_diary",
+            "manor_floor_plans",
+            "estate_documents",
+            "burned_ledger_page",
+            "blackwoods_journal",
+            "silver_key",
+            "smuggling_documents",
+            "bloody_apron",
+            "cellar_evidence",
+            "murder_weapon"
+          ],
           "dialog": "You have the evidence. Confront the killer, then report to me."
         },
         {
@@ -273,6 +353,10 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
+            "rusty_old_key",
+            "barons_diary",
+            "manor_floor_plans",
+            "estate_documents",
             "burned_ledger_page",
             "blackwoods_journal",
             "silver_key",
@@ -289,6 +373,10 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
+            "rusty_old_key",
+            "barons_diary",
+            "manor_floor_plans",
+            "estate_documents",
             "burned_ledger_page",
             "blackwoods_journal",
             "silver_key",
@@ -304,6 +392,10 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
+            "rusty_old_key",
+            "barons_diary",
+            "manor_floor_plans",
+            "estate_documents",
             "burned_ledger_page",
             "blackwoods_journal",
             "silver_key",
@@ -318,6 +410,10 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
+            "rusty_old_key",
+            "barons_diary",
+            "manor_floor_plans",
+            "estate_documents",
             "burned_ledger_page",
             "blackwoods_journal",
             "silver_key",
@@ -331,6 +427,10 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
+            "rusty_old_key",
+            "barons_diary",
+            "manor_floor_plans",
+            "estate_documents",
             "burned_ledger_page",
             "blackwoods_journal",
             "silver_key"
@@ -343,6 +443,10 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
+            "rusty_old_key",
+            "barons_diary",
+            "manor_floor_plans",
+            "estate_documents",
             "burned_ledger_page",
             "blackwoods_journal"
           ],
@@ -354,6 +458,10 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
+            "rusty_old_key",
+            "barons_diary",
+            "manor_floor_plans",
+            "estate_documents",
             "burned_ledger_page"
           ],
           "dialog": "Payments to me? Absurd. Whoever wrote that ledger page doesn't know the first thing about running a kitchen."

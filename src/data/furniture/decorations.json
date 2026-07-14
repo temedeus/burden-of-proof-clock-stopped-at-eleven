@@ -457,7 +457,7 @@
     "confirmId": "study_secret",
     "confirmPrompt": "One volume sits loose on the shelf, almost asking to be pulled. Will you tug it free?",
     "confirmRequiresClues": ["burned_ledger_page"],
-    "blockedConfirmHint": "The shelves look ordinary. Perhaps the study desk holds more answers first."
+    "blockedConfirmHint": "The shelves look ordinary. Perhaps the attic floor plans will show the way."
   },
   "study_passage_switch": {
     "id": "study_passage_switch",
@@ -469,7 +469,9 @@
     "spriteName": "secret_passage_switch",
     "interactionType": "confirm",
     "confirmId": "study_secret",
-    "confirmPrompt": "A cord hangs down to a hidden lever. Pull it to open the passage to the study?"
+    "confirmPrompt": "A cord hangs down to a hidden lever. Pull it to open the passage to the study?",
+    "confirmRequiresClues": ["manor_floor_plans"],
+    "blockedConfirmHint": "You would not know which lever to pull without the manor floor plans."
   },
   "secret_cellar_barrels": {
     "id": "secret_cellar_barrels",
@@ -503,7 +505,9 @@
     "spriteName": "secret_passage_switch",
     "interactionType": "confirm",
     "confirmId": "cellar_secret",
-    "confirmPrompt": "A rusted lever is set into the rock. Pull it to open the way to the cellar?"
+    "confirmPrompt": "A rusted lever is set into the rock. Pull it to open the way to the cellar?",
+    "confirmRequiresClues": ["manor_floor_plans"],
+    "blockedConfirmHint": "You would not know which lever to pull without the manor floor plans."
   },
   "stable_booth": {
     "id": "stable_booth",
@@ -816,5 +820,60 @@
     "collisionWidth": 4,
     "spriteName": "grand_piano",
     "interactionSound": "piano"
+  },
+  "bedside_table": {
+    "id": "bedside_table",
+    "name": "Bedside table",
+    "description": "A small mahogany table beside the lord's bed.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 3,
+    "drawHeight": 3,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 1,
+    "collisionWidth": 2,
+    "spriteName": "bedside_table"
+  },
+  "rusty_old_key": {
+    "id": "rusty_old_key",
+    "name": "Rusty old key",
+    "description": "A tarnished iron key, heavy in the hand.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "bottom-left",
+    "spriteName": "rusty_old_key",
+    "walkableDecor": true
+  },
+  "barons_diary": {
+    "id": "barons_diary",
+    "name": "Baron's diary",
+    "description": "A leather-bound diary with the Baron's crest on the cover.",
+    "width": 2,
+    "height": 2,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "bottom-left",
+    "spriteName": "barons_diary",
+    "walkableDecor": true
+  },
+  "attic_old_chest": {
+    "id": "attic_old_chest",
+    "name": "Old chest",
+    "description": "A battered oak chest bound with iron straps.",
+    "width": 3,
+    "height": 2,
+    "drawWidth": 3,
+    "drawHeight": 2,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 1,
+    "collisionWidth": 3,
+    "spriteName": "attic_old_chest",
+    "interactionType": "confirm",
+    "confirmId": "attic_chest",
+    "confirmPrompt": "The chest is locked. Use the rusty old key?",
+    "confirmRequiresClues": ["rusty_old_key"],
+    "blockedConfirmHint": "The chest is locked. You need the rusty old key from the Baron's bedroom."
   }
 }

@@ -54,6 +54,12 @@
       "anchor": "top-left"
     },
     {
+      "furnitureId": "attic_old_chest",
+      "x": 11,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
       "furnitureId": "staircase",
       "x": "center",
       "y": 17,

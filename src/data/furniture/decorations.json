@@ -794,23 +794,10 @@
     "confirmRequiresClues": ["silver_key"],
     "blockedConfirmHint": "The cabinet is locked. The journal said the Baron had been walking in the garden afterward — he seems to have lost the key there."
   },
-  "cellar_cabinet": {
-    "id": "cellar_cabinet",
-    "name": "Storage cabinet",
-    "description": "A heavy iron cabinet bolted to the stone wall. A label reads 'Wine Cellar'.",
-    "width": 2,
-    "height": 2,
-    "drawWidth": 2,
-    "drawHeight": 2,
-    "renderAnchor": "bottom",
-    "collisionRowsFromBottom": 2,
-    "collisionWidth": 2,
-    "spriteName": "locked_cabinet"
-  },
   "blood_crate": {
     "id": "blood_crate",
     "name": "Stained crate",
-    "description": "A wooden crate dragged across the floor. Dark smears trail away toward the wine cellar.",
+    "description": "An ordinary wooden crate. Nothing more to examine.",
     "width": 2,
     "height": 2,
     "drawWidth": 2,

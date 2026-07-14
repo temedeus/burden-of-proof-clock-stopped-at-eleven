@@ -198,7 +198,7 @@ export class Game {
         const ids = new Set<string>();
         if (this.studySecret.revealed) ids.add("study_secret");
         if (this.cellarSecret.revealed) ids.add("cellar_secret");
-        if (this.clueSystem.hasClue("wine_cellar_key")) ids.add("wine_cellar_door");
+        if (this.clueSystem.hasClue("cellar_evidence")) ids.add("wine_cellar_door");
         return ids;
     }
 

@@ -178,22 +178,15 @@
     {
       "id": "cellar_evidence",
       "name": "Cellar Evidence",
-      "description": "A blood-stained crate, drag marks on the floor, and barrels recently shifted to hide something.",
+      "description": "A blood-stained crate and drag marks on the floor — and the wine cellar door hangs loose on its hinges.",
       "requiresClues": ["bloody_apron"],
-      "blockedHint": "Nothing suspicious in the cellar storage yet."
-    },
-    {
-      "id": "wine_cellar_key",
-      "name": "Wine Cellar Key",
-      "description": "A heavy iron key marked 'Wine Cellar' — it should unlock the door below the storage room.",
-      "requiresClues": ["cellar_evidence"],
-      "blockedHint": "The cabinet is locked. The drag marks by the crate lead toward the wine cellar — search the storage room first."
+      "blockedHint": "Nothing of interest here."
     },
     {
       "id": "murder_weapon",
       "name": "Murder Weapon",
       "description": "A carving knife wedged behind the barrels, wiped clean but flecked with blood.",
-      "requiresClues": ["wine_cellar_key"],
+      "requiresClues": ["cellar_evidence"],
       "blockedHint": "The barrels look undisturbed."
     }
   ],
@@ -292,14 +285,7 @@
       "roomId": "cellar_storage",
       "furnitureId": "blood_crate",
       "furnitureIndex": 0,
-      "hint": "A blood-stained crate sits crooked on the floor. Drag marks lead toward the locked wine cellar — the key may be in the cabinet nearby."
-    },
-    {
-      "clueId": "wine_cellar_key",
-      "roomId": "cellar_storage",
-      "furnitureId": "cellar_cabinet",
-      "furnitureIndex": 0,
-      "hint": "Inside the cabinet: a heavy iron key marked 'Wine Cellar'. The door to the wine cellar should open now."
+      "hint": "A blood-stained crate sits crooked on the floor, drag marks trailing toward the south wall. Ah — the wine cellar door seems to be dangling on its hinges."
     },
     {
       "clueId": "murder_weapon",
@@ -330,7 +316,6 @@
             "smuggling_documents",
             "bloody_apron",
             "cellar_evidence",
-            "wine_cellar_key",
             "murder_weapon"
           ],
           "dialog": "You have the evidence. Confront the killer, then report to me."
@@ -385,7 +370,6 @@
             "smuggling_documents",
             "bloody_apron",
             "cellar_evidence",
-            "wine_cellar_key",
             "murder_weapon"
           ],
           "dialog": "Stay back! I'm not going down for this — not while I still have a chance!"

@@ -78,12 +78,6 @@
       "anchor": "top-left"
     },
     {
-      "furnitureId": "cellar_cabinet",
-      "x": 20,
-      "y": 14,
-      "anchor": "top-left"
-    },
-    {
       "furnitureId": "wine_barrel",
       "x": 18,
       "y": 12,

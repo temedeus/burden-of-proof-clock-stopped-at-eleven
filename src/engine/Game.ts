@@ -4,6 +4,7 @@ import { renderRoomScene } from "../render/roomScene";
 import { spawnRoomNpcs } from "../world/npcSpawn";
 import { Input } from "./Input";
 import { Player, PlayerSpriteName } from "../entities/Player";
+import { DEFAULT_PLAYER_SPRITE } from "@cse/content-schema";
 import { NPC } from "../entities/NPC";
 import { TILE_SIZE, roomViewportOffset } from "../world/constants";
 import { InteractionSystem } from "../systems/InteractionSystem";
@@ -130,7 +131,7 @@ export class Game {
         this.onGameOver = options?.onGameOver;
         this.onVictoryComplete = options?.onVictoryComplete;
         this.input = options?.input ?? new Input();
-        this.player = new Player("player", 64, 64, options?.playerSprite ?? "female_detective");
+        this.player = new Player("player", 64, 64, options?.playerSprite ?? DEFAULT_PLAYER_SPRITE);
         this.debugMode = isDebugMode();
 
         this.rooms = Object.fromEntries(

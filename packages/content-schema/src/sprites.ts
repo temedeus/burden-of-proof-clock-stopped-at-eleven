@@ -120,3 +120,9 @@ export const VALID_SPRITE_NAMES = [
 ] as const;
 
 export type SpriteName = (typeof VALID_SPRITE_NAMES)[number];
+
+export const PLAYER_SPRITE_NAMES = ["female_detective", "male_detective"] as const;
+
+export type PlayerSpriteName = (typeof PLAYER_SPRITE_NAMES)[number];
+
+export const DEFAULT_PLAYER_SPRITE: PlayerSpriteName = "female_detective";

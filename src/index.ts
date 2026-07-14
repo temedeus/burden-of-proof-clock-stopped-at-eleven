@@ -9,6 +9,7 @@ import { clientToCanvas, isSimulateMobile, shouldShowTouchControls } from "./eng
 import { unlockAudio } from "./audio/audioContext";
 import { spriteLoader } from "./assets/SpriteLoader";
 import { validateContentAtStartup } from "./content/validateAtStartup";
+import type { PlayerSpriteName } from "@cse/content-schema";
 
 validateContentAtStartup();
 
@@ -24,7 +25,7 @@ const sharedInput = new Input();
 const menu = new Menu(canvas, "main", sharedInput);
 const touchControls = new TouchControls(sharedInput, document.getElementById("touch-controls")!);
 let introScreen: IntroScreen | null = null;
-let pendingStart: { character: "female_detective" | "male_detective" } | null = null;
+let pendingStart: { character: PlayerSpriteName } | null = null;
 
 const loop = new Loop();
 

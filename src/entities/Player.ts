@@ -9,10 +9,11 @@ import type { CharacterPose } from "../assets/procedural/characters";
 import { footstepSounds } from "../audio/FootstepSounds";
 import { resolveFootstepSound } from "../audio/footstepSurface";
 import type { Interactable } from "../world/Interactable";
+import type { PlayerSpriteName } from "@cse/content-schema";
+import { DEFAULT_PLAYER_SPRITE } from "@cse/content-schema";
 
+export type { PlayerSpriteName } from "@cse/content-schema";
 export type Facing = "up" | "down" | "left" | "right";
-
-export type PlayerSpriteName = "male_detective" | "female_detective";
 
 export const WALK_ANIM_FPS = 8;
 
@@ -25,7 +26,7 @@ export class Player extends Entity {
     private animTime = 0;
     private spriteName: PlayerSpriteName;
 
-    constructor(id: string, x: number, y: number, spriteName: PlayerSpriteName = "female_detective") {
+    constructor(id: string, x: number, y: number, spriteName: PlayerSpriteName = DEFAULT_PLAYER_SPRITE) {
         super(id, x, y);
         this.spriteName = spriteName;
     }

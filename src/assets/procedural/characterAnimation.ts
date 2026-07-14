@@ -1,4 +1,4 @@
-import type { PlayerSpriteName } from "../../entities/Player";
+import { PLAYER_SPRITE_NAMES, type PlayerSpriteName } from "@cse/content-schema";
 import {
     drawHumanoidFrame,
     PLAYER_CHARACTER_STYLES,
@@ -9,7 +9,6 @@ import {
 const NATIVE_W = 32;
 const NATIVE_H = 40;
 
-const PLAYER_SPRITES: PlayerSpriteName[] = ["female_detective", "male_detective"];
 const BAKE_FACINGS: CharacterFacing[] = ["down", "up", "right"];
 const POSES: CharacterPose[] = ["idle", "walk_a", "walk_b"];
 
@@ -38,7 +37,7 @@ function bakeFrame(
 export function generatePlayerAnimations(): Map<string, HTMLCanvasElement> {
     const cache = new Map<string, HTMLCanvasElement>();
 
-    for (const sprite of PLAYER_SPRITES) {
+    for (const sprite of PLAYER_SPRITE_NAMES) {
         const style = PLAYER_CHARACTER_STYLES[sprite];
         for (const facing of BAKE_FACINGS) {
             for (const pose of POSES) {

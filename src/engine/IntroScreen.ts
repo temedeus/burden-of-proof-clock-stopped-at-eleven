@@ -1,8 +1,7 @@
 import { Input } from "./Input";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { shouldShowTouchControls } from "./platform";
-
-export type PlayerSpriteName = "female_detective" | "male_detective";
+import type { PlayerSpriteName } from "@cse/content-schema";
 
 interface CharacterSlide {
     spriteName: string;

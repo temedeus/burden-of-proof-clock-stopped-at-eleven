@@ -2,11 +2,12 @@ import { Input } from "./Input";
 import { loadSettings, setMuteSounds } from "./Settings";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { shouldShowTouchControls } from "./platform";
+import type { PlayerSpriteName } from "@cse/content-schema";
 
 export type MenuScreen = "main" | "character_select" | "pause" | "settings" | "game_over";
 
 export type MenuAction =
-    | { type: "start"; character: "male_detective" | "female_detective" }
+    | { type: "start"; character: PlayerSpriteName }
     | { type: "open_settings" }
     | { type: "resume" }
     | { type: "quit_to_menu" }
@@ -17,7 +18,7 @@ const MENU_ACCENT = "#8b4513";
 const TEXT_COLOR = "#e8e0d5";
 const HOVER_COLOR = "#c4a574";
 
-type CharacterId = "female_detective" | "male_detective";
+type CharacterId = PlayerSpriteName;
 
 interface CharacterOption {
     id: CharacterId;

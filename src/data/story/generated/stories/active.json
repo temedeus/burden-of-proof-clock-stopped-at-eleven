@@ -150,7 +150,7 @@
     {
       "id": "blackwoods_journal",
       "name": "Blackwood's Journal",
-      "description": "The Baron's journal warns of a smuggling ring and a missing silver key to a locked cabinet.",
+      "description": "The Baron's journal warns of a smuggling ring. He had been walking in the garden afterward — and seems to have lost the silver key to this cabinet there.",
       "requiresClues": ["burned_ledger_page"],
       "blockedHint": "The writing desk looks untouched."
     },
@@ -159,14 +159,14 @@
       "name": "Silver Key",
       "description": "A small silver key, cold to the touch. It must belong to the cabinet in the hidden room.",
       "requiresClues": ["blackwoods_journal"],
-      "blockedHint": "The fountain yields nothing of interest yet."
+      "blockedHint": "The Baron had been walking in the garden — the fountain basin may be worth searching."
     },
     {
       "id": "smuggling_documents",
       "name": "Smuggling Documents",
       "description": "Forged shipping manifests and ledgers — Ytte's handwriting is on every page.",
       "requiresClues": ["silver_key"],
-      "blockedHint": "The cabinet is locked tight. You need the right key."
+      "blockedHint": "The cabinet is locked. The journal said the Baron had been walking in the garden afterward — he seems to have lost the key there."
     },
     {
       "id": "bloody_apron",
@@ -183,10 +183,17 @@
       "blockedHint": "Nothing suspicious in the cellar storage yet."
     },
     {
+      "id": "wine_cellar_key",
+      "name": "Wine Cellar Key",
+      "description": "A heavy iron key marked 'Wine Cellar' — it should unlock the door below the storage room.",
+      "requiresClues": ["cellar_evidence"],
+      "blockedHint": "The cabinet is locked. The drag marks by the crate lead toward the wine cellar — search the storage room first."
+    },
+    {
       "id": "murder_weapon",
       "name": "Murder Weapon",
       "description": "A carving knife wedged behind the barrels, wiped clean but flecked with blood.",
-      "requiresClues": ["cellar_evidence"],
+      "requiresClues": ["wine_cellar_key"],
       "blockedHint": "The barrels look undisturbed."
     }
   ],
@@ -257,14 +264,14 @@
       "roomId": "hidden_room",
       "furnitureId": "writing_table",
       "furnitureIndex": 0,
-      "hint": "Blackwood's journal lies open on the desk, warning of smuggling and a missing silver key."
+      "hint": "Blackwood's journal lies open on the desk, warning of smuggling. He had been walking in the garden afterward — and seems to have lost the silver cabinet key there."
     },
     {
       "clueId": "silver_key",
       "roomId": "garden",
       "furnitureId": "fountain",
       "furnitureIndex": 0,
-      "hint": "Something glints at the bottom of the fountain basin — a small silver key."
+      "hint": "Something glints at the bottom of the fountain basin — a small silver key, lost after the Baron's walk in the garden."
     },
     {
       "clueId": "smuggling_documents",
@@ -285,7 +292,14 @@
       "roomId": "cellar_storage",
       "furnitureId": "blood_crate",
       "furnitureIndex": 0,
-      "hint": "A blood-stained crate sits crooked on the floor. Drag marks lead toward the wine cellar."
+      "hint": "A blood-stained crate sits crooked on the floor. Drag marks lead toward the locked wine cellar — the key may be in the cabinet nearby."
+    },
+    {
+      "clueId": "wine_cellar_key",
+      "roomId": "cellar_storage",
+      "furnitureId": "cellar_cabinet",
+      "furnitureIndex": 0,
+      "hint": "Inside the cabinet: a heavy iron key marked 'Wine Cellar'. The door to the wine cellar should open now."
     },
     {
       "clueId": "murder_weapon",
@@ -316,6 +330,7 @@
             "smuggling_documents",
             "bloody_apron",
             "cellar_evidence",
+            "wine_cellar_key",
             "murder_weapon"
           ],
           "dialog": "You have the evidence. Confront the killer, then report to me."
@@ -370,6 +385,7 @@
             "smuggling_documents",
             "bloody_apron",
             "cellar_evidence",
+            "wine_cellar_key",
             "murder_weapon"
           ],
           "dialog": "Stay back! I'm not going down for this — not while I still have a chance!"

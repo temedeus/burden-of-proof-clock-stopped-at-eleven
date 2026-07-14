@@ -23,6 +23,7 @@ const CLUE_CHAIN = [
     "smuggling_documents",
     "bloody_apron",
     "cellar_evidence",
+    "wine_cellar_key",
     "murder_weapon"
 ] as const;
 

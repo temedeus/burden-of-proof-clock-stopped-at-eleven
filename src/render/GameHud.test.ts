@@ -1,10 +1,43 @@
 import { describe, expect, it } from "vitest";
 import {
     createRoomTitleBanner,
+    DIALOG_LINES_PER_PAGE,
+    paginateDialog,
     tickRoomTitleBanner,
     ROOM_TITLE_DURATION
 } from "./GameHud";
 import { roomViewportOffset } from "../world/constants";
+
+function mockDialogContext(charWidth = 8): CanvasRenderingContext2D {
+    return {
+        canvas: { width: 800, height: 600 },
+        font: "",
+        measureText(text: string) {
+            return { width: text.length * charWidth };
+        }
+    } as unknown as CanvasRenderingContext2D;
+}
+
+describe("GameHud dialog pagination", () => {
+    it("splits wrapped dialogue into sections of at most three lines", () => {
+        const ctx = mockDialogContext();
+        const text =
+            "Line one is here. Line two follows. Line three next. Line four should start a new page. Line five too.";
+        const pages = paginateDialog(ctx, text);
+
+        expect(pages.length).toBeGreaterThan(1);
+        for (const page of pages) {
+            expect(page.split("\n").length).toBeLessThanOrEqual(DIALOG_LINES_PER_PAGE);
+        }
+        expect(pages.join(" ")).toContain("four should");
+    });
+
+    it("preserves explicit paragraph breaks within a page when short enough", () => {
+        const ctx = mockDialogContext();
+        const pages = paginateDialog(ctx, "First paragraph.\nSecond paragraph.");
+        expect(pages).toEqual(["First paragraph.\nSecond paragraph."]);
+    });
+});
 
 describe("GameHud room title banner", () => {
     it("creates a banner with zero elapsed time", () => {

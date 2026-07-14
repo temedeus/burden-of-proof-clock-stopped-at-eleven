@@ -36,6 +36,7 @@ import {
     drawMessageBox,
     drawRoomTitleBanner,
     drawVictoryOverlay,
+    paginateDialog,
     tickRoomTitleBanner,
     type RoomTitleBanner
 } from "../render/GameHud";
@@ -101,6 +102,10 @@ export class Game {
 
     private state: GameState = "playing";
     private message: string | null = null;
+    private messagePages: string[] = [];
+    private messagePageIndex = 0;
+    private confirmPages: string[] = [];
+    private confirmPageIndex = 0;
     private pendingConfirmation: { id: string; prompt: string } | null = null;
     private clueNotification: { clueId: string } | null = null;
     private debugMode = false;
@@ -207,6 +212,42 @@ export class Game {
         });
     }
 
+    private openDialog(text: string): void {
+        this.messagePages = paginateDialog(this.ctx, text);
+        this.messagePageIndex = 0;
+        this.message = this.messagePages[0] ?? null;
+        this.state = "interacting";
+    }
+
+    private advanceOrCloseDialog(): void {
+        if (this.messagePageIndex < this.messagePages.length - 1) {
+            this.messagePageIndex += 1;
+            this.message = this.messagePages[this.messagePageIndex];
+            return;
+        }
+        talkSounds.stopDialogue();
+        this.message = null;
+        this.messagePages = [];
+        this.messagePageIndex = 0;
+        this.clueNotification = null;
+        this.state = "playing";
+    }
+
+    private openConfirmDialog(prompt: string, hint: string): void {
+        this.confirmPages = paginateDialog(this.ctx, `${prompt}\n\n${hint}`);
+        this.confirmPageIndex = 0;
+    }
+
+    private advanceConfirmDialog(): boolean {
+        if (this.confirmPageIndex < this.confirmPages.length - 1) {
+            this.confirmPageIndex += 1;
+            return false;
+        }
+        this.confirmPages = [];
+        this.confirmPageIndex = 0;
+        return true;
+    }
+
     private getClueAssignmentHint(clueId: string): string {
         const assignment = this.activeStory?.casePacket.clueAssignments.find(
             (entry) => entry.clueId === clueId
@@ -216,16 +257,14 @@ export class Game {
 
     private grantConfirmClue(clueId: string): void {
         if (this.clueSystem.hasClue(clueId)) {
-            this.message = this.getClueAssignmentHint(clueId);
-            this.state = "interacting";
+            this.openDialog(this.getClueAssignmentHint(clueId));
             return;
         }
         this.clueSystem.addClue(clueId);
         this.refreshStoryState();
         clueSounds.playFound();
         this.clueNotification = { clueId };
-        this.message = this.getClueAssignmentHint(clueId);
-        this.state = "interacting";
+        this.openDialog(this.getClueAssignmentHint(clueId));
     }
 
     private loadNPCs(): void {
@@ -286,31 +325,29 @@ export class Game {
         this.murdererConfrontation.start(murderer, this.currentRoom, (npc, room, x, y) =>
             this.moveNPCToRoom(npc, room, x, y)
         );
-        this.message = this.murdererConfrontation.getCurrentLine();
+        this.openDialog(this.murdererConfrontation.getCurrentLine());
         const npcCfg = this.content.npcs[this.getMurdererNpcId()];
         talkSounds.startDialogue(
             inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
-            extractSpokenLine(this.message, "Ytte")
+            extractSpokenLine(this.murdererConfrontation.getCurrentLine(), "Ytte")
         );
-        this.state = "interacting";
     }
 
     private advanceMurdererConfrontation(): void {
         const advance = this.murdererConfrontation.advance();
         if (advance === "continue") {
-            this.message = this.murdererConfrontation.getCurrentLine();
+            this.openDialog(this.murdererConfrontation.getCurrentLine());
             const npcCfg = this.content.npcs[this.getMurdererNpcId()];
             talkSounds.startDialogue(
                 inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
-                extractSpokenLine(this.message, "Ytte")
+                extractSpokenLine(this.murdererConfrontation.getCurrentLine(), "Ytte")
             );
             return;
         }
 
         talkSounds.stopDialogue();
         this.murdererChase.triggerAccusation();
-        this.message = "Ytte is after you! Find a police officer before he catches you!";
-        this.state = "interacting";
+        this.openDialog("Ytte is after you! Find a police officer before he catches you!");
     }
 
     private startVictorySequence(policeId: string): void {
@@ -327,6 +364,8 @@ export class Game {
         );
         this.state = "victory";
         this.message = null;
+        this.messagePages = [];
+        this.messagePageIndex = 0;
     }
 
     isWaitingForVictoryInput(): boolean {
@@ -360,6 +399,8 @@ export class Game {
         if (this.input.wasPressed("escape")) {
             if (this.state === "confirming") {
                 this.pendingConfirmation = null;
+                this.confirmPages = [];
+                this.confirmPageIndex = 0;
                 this.state = "playing";
                 return;
             }
@@ -418,11 +459,15 @@ export class Game {
                 if (result) {
                     if (result.confirmation) {
                         this.pendingConfirmation = result.confirmation;
+                        const confirmHint = shouldShowTouchControls()
+                            ? "Tap Interact to confirm    Tap Menu to cancel"
+                            : "E — Yes    Esc — No";
+                        this.openConfirmDialog(result.confirmation.prompt, confirmHint);
                         this.state = "confirming";
                         return;
                     }
 
-                    this.message = result.description;
+                    this.openDialog(result.description);
                     if (result.interactionSound === "piano") {
                         pianoSounds.playChord();
                     }
@@ -452,7 +497,6 @@ export class Game {
                             spokenLine
                         );
                     }
-                    this.state = "interacting";
                 }
             }
 
@@ -477,17 +521,25 @@ export class Game {
         const revealResult =
             studyReveal?.enterDialog ? studyReveal : cellarReveal?.enterDialog ? cellarReveal : null;
         if (revealResult?.enterDialog) {
-            this.message = revealResult.message;
-            this.state = "interacting";
+            this.openDialog(revealResult.message);
         }
 
         if (this.state === "confirming") {
-            if (
+            if (this.input.wasPressed("escape") || this.input.wasPressed("n")) {
+                this.pendingConfirmation = null;
+                this.confirmPages = [];
+                this.confirmPageIndex = 0;
+                this.state = "playing";
+            } else if (
                 this.input.wasPressed("y") ||
                 this.input.wasPressed("enter") ||
                 this.input.wasPressed("e") ||
                 this.input.wasPressed(" ")
             ) {
+                if (!this.advanceConfirmDialog()) {
+                    return;
+                }
+
                 const pending = this.pendingConfirmation;
                 this.pendingConfirmation = null;
                 if (pending && isTransitionConfirm(pending.id)) {
@@ -516,20 +568,18 @@ export class Game {
                         this.state = "playing";
                     }
                 }
-            } else if (this.input.wasPressed("n")) {
-                this.pendingConfirmation = null;
-                this.state = "playing";
             }
         } else if (this.state === "interacting") {
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
+                if (this.messagePageIndex < this.messagePages.length - 1) {
+                    this.advanceOrCloseDialog();
+                    return;
+                }
                 if (this.murdererConfrontation.active) {
                     this.advanceMurdererConfrontation();
                     return;
                 }
-                talkSounds.stopDialogue();
-                this.message = null;
-                this.clueNotification = null;
-                this.state = "playing";
+                this.advanceOrCloseDialog();
             }
         }
     }
@@ -652,14 +702,17 @@ export class Game {
         ctx.restore();
 
         if (this.message) {
-            drawMessageBox(ctx, this.message);
+            drawMessageBox(ctx, this.message, {
+                pageIndex: this.messagePageIndex,
+                pageCount: this.messagePages.length
+            });
         }
 
-        if (this.state === "confirming" && this.pendingConfirmation) {
-            const confirmHint = shouldShowTouchControls()
-                ? "Tap Interact to confirm    Tap Menu to cancel"
-                : "E — Yes    Esc — No";
-            drawMessageBox(ctx, `${this.pendingConfirmation.prompt}\n\n${confirmHint}`);
+        if (this.state === "confirming" && this.pendingConfirmation && this.confirmPages.length > 0) {
+            drawMessageBox(ctx, this.confirmPages[this.confirmPageIndex], {
+                pageIndex: this.confirmPageIndex,
+                pageCount: this.confirmPages.length
+            });
         }
 
         if (this.clueNotification) {

@@ -1,4 +1,5 @@
 const ROOM_TITLE_DURATION = 2;
+export const DIALOG_LINES_PER_PAGE = 3;
 
 export interface RoomTitleBanner {
     title: string;
@@ -15,29 +16,13 @@ export function tickRoomTitleBanner(banner: RoomTitleBanner | null, dt: number):
     return banner.elapsed >= ROOM_TITLE_DURATION ? null : banner;
 }
 
-export function drawMessageBox(ctx: CanvasRenderingContext2D, text: string): void {
-    ctx.font = "16px serif";
-    ctx.textAlign = "left";
-
-    const boxWidth = Math.floor(ctx.canvas.width / 3);
+export function getDialogMaxTextWidth(canvasWidth: number): number {
+    const boxWidth = Math.floor(canvasWidth / 3);
     const padding = 12;
-    const lineHeight = 20;
-    const maxTextWidth = boxWidth - padding * 2;
-    const lines = wrapDialogText(ctx, text, maxTextWidth);
-    const boxHeight = padding * 2 + lines.length * lineHeight;
-    const boxX = 20;
-    const boxY = ctx.canvas.height - 20 - boxHeight;
-
-    ctx.fillStyle = "rgba(0,0,0,0.78)";
-    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-
-    ctx.fillStyle = "white";
-    for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], boxX + padding, boxY + padding + 16 + i * lineHeight);
-    }
+    return boxWidth - padding * 2;
 }
 
-function wrapDialogText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+export function wrapDialogText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
     const lines: string[] = [];
     const paragraphs = text.split("\n");
 
@@ -59,6 +44,71 @@ function wrapDialogText(ctx: CanvasRenderingContext2D, text: string, maxWidth: n
     }
 
     return lines.length > 0 ? lines : [text];
+}
+
+export function paginateDialog(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    maxLinesPerPage = DIALOG_LINES_PER_PAGE
+): string[] {
+    ctx.font = "16px serif";
+    const maxWidth = getDialogMaxTextWidth(ctx.canvas.width);
+    const wrapped = wrapDialogText(ctx, text, maxWidth);
+    const pages: string[] = [];
+
+    for (let i = 0; i < wrapped.length; i += maxLinesPerPage) {
+        pages.push(wrapped.slice(i, i + maxLinesPerPage).join("\n"));
+    }
+
+    return pages.length > 0 ? pages : [text];
+}
+
+export interface MessageBoxOptions {
+    pageIndex?: number;
+    pageCount?: number;
+}
+
+export function drawMessageBox(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    options?: MessageBoxOptions
+): void {
+    ctx.font = "16px serif";
+    ctx.textAlign = "left";
+
+    const boxWidth = Math.floor(ctx.canvas.width / 3);
+    const padding = 12;
+    const lineHeight = 20;
+    const maxTextWidth = boxWidth - padding * 2;
+    const lines = wrapDialogText(ctx, text, maxTextWidth);
+    const pageIndex = options?.pageIndex;
+    const pageCount = options?.pageCount;
+    const showContinue =
+        pageCount !== undefined &&
+        pageCount > 1 &&
+        pageIndex !== undefined &&
+        pageIndex < pageCount - 1;
+    const boxHeight = padding * 2 + lines.length * lineHeight + (showContinue ? 16 : 0);
+    const boxX = 20;
+    const boxY = ctx.canvas.height - 20 - boxHeight;
+
+    ctx.fillStyle = "rgba(0,0,0,0.78)";
+    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    ctx.fillStyle = "white";
+    for (let i = 0; i < lines.length; i++) {
+        ctx.fillText(lines[i], boxX + padding, boxY + padding + 16 + i * lineHeight);
+    }
+
+    if (showContinue) {
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.font = "14px serif";
+        ctx.fillText(
+            `(${pageIndex + 1}/${pageCount})  E — continue`,
+            boxX + padding,
+            boxY + boxHeight - padding
+        );
+    }
 }
 
 export function drawRoomTitleBanner(ctx: CanvasRenderingContext2D, banner: RoomTitleBanner): void {

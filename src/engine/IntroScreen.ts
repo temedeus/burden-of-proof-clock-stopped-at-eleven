@@ -162,7 +162,7 @@ export class IntroScreen {
 
         spriteLoader.drawSprite(ctx, this.playerSprite, centerX - spriteSize / 2, y - spriteSize / 2, spriteSize, spriteSize);
 
-        const label = this.playerSprite === "female_detective" ? "Female Detective" : "Male Detective";
+        const label = this.playerSprite === "female_detective" ? "Clara Case" : "Max Trace";
         ctx.fillStyle = "#c4a574";
         ctx.font = "bold 26px serif";
         ctx.fillText(label, centerX, y + spriteSize / 2 + 40);

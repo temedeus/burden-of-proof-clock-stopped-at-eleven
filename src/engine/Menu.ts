@@ -27,11 +27,11 @@ interface CharacterOption {
 const CHARACTER_OPTIONS: CharacterOption[] = [
     {
         id: "female_detective",
-        label: "Female Detective"
+        label: "Clara Case"
     },
     {
         id: "male_detective",
-        label: "Male Detective"
+        label: "Max Trace"
     }
 ];
 

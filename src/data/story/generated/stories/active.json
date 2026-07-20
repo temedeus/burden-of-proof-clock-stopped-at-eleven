@@ -58,7 +58,7 @@
     },
     {
       "roomId": "study",
-      "summary": "The desk has been disturbed. Ashes in the grate still smell of burnt paper."
+      "summary": "The desk has been disturbed. A wastebasket by the chair smells faintly of scorched paper."
     },
     {
       "roomId": "hidden_room",
@@ -115,9 +115,9 @@
     {
       "id": "burned_ledger_page",
       "name": "Burned Ledger Page",
-      "description": "A ledger page, partly burned. It lists payments to Ytte — amounts that do not match any kitchen supply. The Baron kept his private papers in the master bedroom.",
+      "description": "A semi-burned ledger page pulled from the study trash. Columns of payments survive, but the payee's name is scorched away — and the final page of the ledger is missing. The Baron kept his private papers in the master bedroom.",
       "requiresClues": ["torn_appointment_note"],
-      "blockedHint": "The grate looks cold. The library note mentioned a meeting in the Study."
+      "blockedHint": "The wastebasket looks ordinary. The library note mentioned a meeting in the Study."
     },
     {
       "id": "barons_diary",
@@ -164,14 +164,14 @@
     {
       "id": "smuggling_documents",
       "name": "Smuggling Documents",
-      "description": "Forged shipping manifests and ledgers — Ytte's handwriting is on every page.",
+      "description": "Forged shipping manifests and ledger sheets — the same columns as the burned page from the study. Wherever a name should appear, it has been cut or inked out.",
       "requiresClues": ["silver_key"],
       "blockedHint": "The cabinet is locked. The journal said the Baron had been walking in the garden afterward — he seems to have lost the key there."
     },
     {
       "id": "bloody_apron",
       "name": "Bloody Apron",
-      "description": "A kitchen apron stiff with dried blood. It belongs to Ytte.",
+      "description": "A kitchen apron stiff with dried blood — whoever wore it was close to the killing.",
       "requiresClues": ["smuggling_documents"],
       "blockedHint": "The kitchen table looks ordinary for now."
     },
@@ -183,11 +183,18 @@
       "blockedHint": "Nothing of interest here."
     },
     {
+      "id": "missing_ledger_page",
+      "name": "Missing Ledger Page",
+      "description": "The last page of the Baron's ledger — unburned. The payee is written clear as day: Ytte. The amounts match no kitchen supply.",
+      "requiresClues": ["cellar_evidence"],
+      "blockedHint": "The barrels look undisturbed."
+    },
+    {
       "id": "murder_weapon",
       "name": "Murder Weapon",
       "description": "A carving knife wedged behind the barrels, wiped clean but flecked with blood.",
-      "requiresClues": ["cellar_evidence"],
-      "blockedHint": "The barrels look undisturbed."
+      "requiresClues": ["missing_ledger_page"],
+      "blockedHint": "Something else is tucked behind these barrels — the missing ledger page comes first."
     }
   ],
   "clueAssignments": [
@@ -222,7 +229,7 @@
       "roomId": "study",
       "furnitureId": "table",
       "furnitureIndex": 0,
-      "hint": "Ashes in the grate hold a charred ledger page — payments to Ytte that should not exist.\n\nThe Baron kept his private papers in the master bedroom. What was he hiding there?"
+      "hint": "In the wastebasket by the desk: a semi-burned ledger page. Payment columns survive, but the payee's name is scorched beyond reading — and the final page of the ledger is missing.\n\nThe Baron kept his private papers in the master bedroom. What was he hiding there?"
     },
     {
       "clueId": "barons_diary",
@@ -270,7 +277,7 @@
       "roomId": "hidden_room",
       "furnitureId": "locked_cabinet",
       "furnitureIndex": 0,
-      "hint": "Inside the cabinet: forged manifests and ledgers in Ytte's hand."
+      "hint": "Inside the cabinet: forged manifests and ledger sheets matching the burned study page. Every name has been carefully cut or inked out."
     },
     {
       "clueId": "bloody_apron",
@@ -287,11 +294,18 @@
       "hint": "A blood-stained crate sits crooked on the floor, drag marks trailing toward the south wall. Ah — the wine cellar door seems to be dangling on its hinges."
     },
     {
+      "clueId": "missing_ledger_page",
+      "roomId": "wine_cellar",
+      "furnitureId": "wine_barrel",
+      "furnitureIndex": 8,
+      "hint": "Tucked behind the rearmost barrel — the missing ledger page, never burned. The payee is written clear as day: Ytte."
+    },
+    {
       "clueId": "murder_weapon",
       "roomId": "wine_cellar",
       "furnitureId": "wine_barrel",
       "furnitureIndex": 8,
-      "hint": "Behind the rearmost barrel — a carving knife, flecked with blood."
+      "hint": "Wedged deeper behind the same barrel — a carving knife, flecked with blood."
     }
   ],
   "npcDialogOverrides": [
@@ -315,6 +329,7 @@
             "smuggling_documents",
             "bloody_apron",
             "cellar_evidence",
+            "missing_ledger_page",
             "murder_weapon"
           ],
           "dialog": "You have the evidence. Confront the killer, then report to me."
@@ -369,6 +384,7 @@
             "smuggling_documents",
             "bloody_apron",
             "cellar_evidence",
+            "missing_ledger_page",
             "murder_weapon"
           ],
           "dialog": "Stay back! I'm not going down for this — not while I still have a chance!"
@@ -388,9 +404,29 @@
             "silver_key",
             "smuggling_documents",
             "bloody_apron",
+            "cellar_evidence",
+            "missing_ledger_page"
+          ],
+          "dialog": "That page... you weren't meant to find that. I — I can explain. Please — don't."
+        },
+        {
+          "requiresClues": [
+            "examined_body",
+            "examined_clock",
+            "maid_statement",
+            "torn_appointment_note",
+            "barons_diary",
+            "rusty_old_key",
+            "manor_floor_plans",
+            "estate_documents",
+            "burned_ledger_page",
+            "blackwoods_journal",
+            "silver_key",
+            "smuggling_documents",
+            "bloody_apron",
             "cellar_evidence"
           ],
-          "dialog": "The cellars? I haven't been down there in weeks! You're chasing ghosts, Detective — leave me alone!"
+          "dialog": "The cellars? I haven't been down there in weeks! Stop following me around — you're making me nervous!"
         },
         {
           "requiresClues": [
@@ -408,7 +444,7 @@
             "smuggling_documents",
             "bloody_apron"
           ],
-          "dialog": "That apron isn't mine! Someone planted it — you have to believe me!"
+          "dialog": "That apron isn't mine! Someone planted it — you have to believe me! Why won't you leave me alone?"
         },
         {
           "requiresClues": [
@@ -425,7 +461,7 @@
             "silver_key",
             "smuggling_documents"
           ],
-          "dialog": "Those papers... Forged, every one! My handwriting? Anyone could copy that — I was framed!"
+          "dialog": "Those papers... they don't prove anything! Why are you looking at me like that? I need — I need air."
         },
         {
           "requiresClues": [
@@ -441,7 +477,7 @@
             "blackwoods_journal",
             "silver_key"
           ],
-          "dialog": "A key from the fountain? I don't know anything about that. Why are you still questioning me?"
+          "dialog": "A fountain key? I don't — look, Detective, I've got stock to manage. Must you keep turning up?"
         },
         {
           "requiresClues": [
@@ -456,7 +492,7 @@
             "burned_ledger_page",
             "blackwoods_journal"
           ],
-          "dialog": "Smuggling? In this house? I — I don't know what you're talking about. The Baron's journal lies."
+          "dialog": "Smuggling? In this house? I wouldn't know the first thing about that. You're... you're making me sweat, Detective."
         },
         {
           "requiresClues": [
@@ -470,7 +506,7 @@
             "estate_documents",
             "burned_ledger_page"
           ],
-          "dialog": "Payments to me? Absurd. Whoever wrote that ledger page doesn't know the first thing about running a kitchen."
+          "dialog": "A burned ledger? People burn rubbish all the time. I — I should get back to the pots. Excuse me."
         },
         {
           "requiresClues": [
@@ -479,7 +515,7 @@
             "maid_statement",
             "torn_appointment_note"
           ],
-          "dialog": "The Baron had papers with him? I saw nothing. I was at my station all evening — the roast wouldn't watch itself."
+          "dialog": "The Baron had papers with him? I saw nothing. I was at my station all evening — though I... I hope nothing's amiss in the Study."
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],

@@ -42,6 +42,7 @@ export const VALID_SPRITE_NAMES = [
     "maid",
     "worker_man",
     "worker_boy",
+    "hooded_figure",
     "police",
     "police2",
     "fountain",

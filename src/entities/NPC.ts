@@ -17,6 +17,8 @@ export class NPC extends Entity {
   private chaseSpeed = DEFAULT_CHASE_SPEED;
   private fleeing = false;
   private fleeSpeed = 90;
+  private swingingKnife = false;
+  private knifeSwingTime = 0;
 
   constructor(
     id: string,
@@ -42,6 +44,35 @@ export class NPC extends Entity {
       // Default to male sprite, can be overridden
       this.spriteName = 'npc_male';
     }
+  }
+
+  getSpriteName(): string {
+    return this.spriteName;
+  }
+
+  setSpriteName(name: string): void {
+    this.spriteName = name;
+  }
+
+  setName(name: string): void {
+    this.name = name;
+  }
+
+  getShowNameLabel(): boolean {
+    return this.showNameLabel;
+  }
+
+  setShowNameLabel(value: boolean): void {
+    this.showNameLabel = value;
+  }
+
+  setSwingingKnife(value: boolean): void {
+    this.swingingKnife = value;
+    if (!value) this.knifeSwingTime = 0;
+  }
+
+  isSwingingKnife(): boolean {
+    return this.swingingKnife;
   }
 
   setChasing(value: boolean): void {
@@ -71,6 +102,7 @@ export class NPC extends Entity {
   /** Move toward target; only collides with walls/furniture */
   updateChase(dt: number, targetX: number, targetY: number, map: TileMap): void {
     if (!this.chasing) return;
+    if (this.swingingKnife) this.knifeSwingTime += dt;
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
     let dx = targetX - centerX;
@@ -128,7 +160,11 @@ export class NPC extends Entity {
   render(ctx: CanvasRenderingContext2D) {
     // Render NPC sprite from spritesheet, scaled to occupy 4 tiles (2x2)
     spriteLoader.drawSprite(ctx, this.spriteName, this.x, this.y, this.width, this.height);
-    
+
+    if (this.swingingKnife) {
+      this.drawSwingingKnife(ctx);
+    }
+
     if (!this.showNameLabel) return;
 
     // Render name above NPC
@@ -137,5 +173,23 @@ export class NPC extends Entity {
     ctx.textAlign = "center";
     ctx.fillText(this.name, this.x + this.width / 2, this.y - 5);
     ctx.textAlign = "left"; // Reset alignment
+  }
+
+  private drawSwingingKnife(ctx: CanvasRenderingContext2D): void {
+    const swing = Math.sin(this.knifeSwingTime * 14) * 0.9;
+    const pivotX = this.x + this.width * 0.78;
+    const pivotY = this.y + this.height * 0.42;
+    const length = this.width * 0.55;
+
+    ctx.save();
+    ctx.translate(pivotX, pivotY);
+    ctx.rotate(-0.6 + swing);
+    ctx.fillStyle = "#c0c4c8";
+    ctx.fillRect(0, -2, length, 4);
+    ctx.fillStyle = "#8a9098";
+    ctx.fillRect(length - 4, -3, 6, 6);
+    ctx.fillStyle = "#5a4030";
+    ctx.fillRect(-6, -3, 8, 6);
+    ctx.restore();
   }
 }

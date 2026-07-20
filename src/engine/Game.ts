@@ -12,6 +12,7 @@ import { ClueSystem } from "../systems/ClueSystem";
 import { RoomTransitionService } from "../systems/RoomTransitionService";
 import { MurdererChaseController, type Difficulty } from "../systems/MurdererChaseController";
 import { MurdererConfrontation } from "../systems/MurdererConfrontation";
+import { AtticScareChase } from "../systems/AtticScareChase";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
 import { CellarSecretPuzzle } from "../puzzles/CellarSecretPuzzle";
@@ -90,6 +91,7 @@ export class Game {
     private roomTransitions = new RoomTransitionService();
     private murdererChase: MurdererChaseController;
     private murdererConfrontation: MurdererConfrontation;
+    private atticScare: AtticScareChase;
     private victory = new VictorySequence();
     private studySecret = new StudySecretPuzzle(
         () => this.rooms.study,
@@ -132,6 +134,7 @@ export class Game {
     ) {
         this.murdererChase = new MurdererChaseController(options?.difficulty ?? "medium");
         this.murdererConfrontation = new MurdererConfrontation();
+        this.atticScare = new AtticScareChase(options?.difficulty ?? "medium");
         this.onMenuRequest = options?.onMenuRequest;
         this.onGameOver = options?.onGameOver;
         this.onVictoryComplete = options?.onVictoryComplete;
@@ -232,6 +235,66 @@ export class Game {
         this.messagePageIndex = 0;
         this.clueNotification = null;
         this.state = "playing";
+        if (this.atticScare.armed) {
+            this.beginAtticScare();
+        }
+    }
+
+    private beginAtticScare(): void {
+        if (this.atticScare.complete || this.atticScare.active) {
+            this.atticScare.armed = false;
+            return;
+        }
+        if (this.currentRoom.id !== "attic") {
+            this.atticScare.armed = false;
+            return;
+        }
+
+        const murderer = this.getMurderer();
+        const attic = this.rooms.attic;
+        if (!murderer || !attic) {
+            this.atticScare.armed = false;
+            return;
+        }
+
+        const homeRoom = this.getRoomContainingNPC(this.getMurdererNpcId());
+        this.atticScare.start(murderer, attic, homeRoom, (npc, room, x, y) =>
+            this.moveNPCToRoom(npc, room, x, y)
+        );
+        this.openDialog(this.atticScare.getCurrentLine());
+        talkSounds.startDialogue("male", extractSpokenLine(this.atticScare.getCurrentLine(), "???"));
+    }
+
+    private advanceAtticScareMonologue(): void {
+        const result = this.atticScare.advanceMonologue();
+        if (result === "continue") {
+            this.openDialog(this.atticScare.getCurrentLine());
+            talkSounds.startDialogue("male", extractSpokenLine(this.atticScare.getCurrentLine(), "???"));
+            return;
+        }
+
+        talkSounds.stopDialogue();
+        this.message = null;
+        this.messagePages = [];
+        this.messagePageIndex = 0;
+        this.state = "playing";
+    }
+
+    /** Finale chase persists across rooms; attic scare ends when you leave. */
+    private handleMurdererAfterRoomChange(): void {
+        const murderer = this.getMurderer();
+        if (!murderer) return;
+
+        if (this.atticScare.active) {
+            this.atticScare.endScare(murderer, this.rooms, (npc, room, x, y) =>
+                this.moveNPCToRoom(npc, room, x, y)
+            );
+            return;
+        }
+
+        if (this.murdererChase.accusedMurderer && murderer.isChasing()) {
+            this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
+        }
     }
 
     private openConfirmDialog(prompt: string, hint: string): void {
@@ -449,6 +512,12 @@ export class Game {
                 }
             }
 
+            const scareTick = this.atticScare.tick(dt);
+            if (scareTick.startChase) {
+                const murderer = this.getMurderer();
+                if (murderer) this.atticScare.beginChase(murderer);
+            }
+
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
                 const result = this.interaction.interact(
                     this.player,
@@ -562,6 +631,9 @@ export class Game {
                               },
                               attic_chest: () => {
                                   this.grantConfirmClue("manor_floor_plans");
+                                  if (!this.atticScare.complete && !this.atticScare.active) {
+                                      this.atticScare.armAfterDialog();
+                                  }
                               }
                           })
                         : false;
@@ -578,6 +650,10 @@ export class Game {
                 }
                 if (this.murdererConfrontation.active) {
                     this.advanceMurdererConfrontation();
+                    return;
+                }
+                if (this.atticScare.monologueActive) {
+                    this.advanceAtticScareMonologue();
                     return;
                 }
                 this.advanceOrCloseDialog();
@@ -607,10 +683,7 @@ export class Game {
         );
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(targetRoomId));
 
-        const murderer = this.getMurderer();
-        if (murderer?.isChasing()) {
-            this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
-        }
+        this.handleMurdererAfterRoomChange();
     }
 
     private handleRoomTransition(): void {
@@ -642,10 +715,7 @@ export class Game {
         );
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(transition.targetRoomId));
 
-        const murderer = this.getMurderer();
-        if (murderer?.isChasing()) {
-            this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
-        }
+        this.handleMurdererAfterRoomChange();
     }
 
     private syncRoomAmbience(): void {
@@ -724,7 +794,10 @@ export class Game {
             drawRoomTitleBanner(ctx, this.roomTitleBanner);
         }
 
-        drawAccusationBlink(ctx, this.murdererChase.redBlinkRemaining);
+        drawAccusationBlink(
+            ctx,
+            Math.max(this.murdererChase.redBlinkRemaining, this.atticScare.redBlinkRemaining)
+        );
 
         if (this.victory.active) {
             drawVictoryOverlay(ctx, this.victory.timer);

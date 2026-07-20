@@ -14,8 +14,8 @@ const CLUE_CHAIN = [
     "maid_statement",
     "torn_appointment_note",
     "burned_ledger_page",
-    "rusty_old_key",
     "barons_diary",
+    "rusty_old_key",
     "manor_floor_plans",
     "estate_documents",
     "blackwoods_journal",
@@ -146,10 +146,12 @@ describe("active story investigation flow", () => {
             true
         );
         clueSystem.addClue("burned_ledger_page");
+        const diaryAssignment = story.clueAssignments.find((e) => e.clueId === "barons_diary");
+        expect(clueSystem.canCollectClue("barons_diary", story.generatedClues, diaryAssignment)).toBe(true);
+        clueSystem.addClue("barons_diary");
         const keyAssignment = story.clueAssignments.find((e) => e.clueId === "rusty_old_key");
         expect(clueSystem.canCollectClue("rusty_old_key", story.generatedClues, keyAssignment)).toBe(true);
         clueSystem.addClue("rusty_old_key");
-        clueSystem.addClue("barons_diary");
         clueSystem.addClue("manor_floor_plans");
         clueSystem.addClue("estate_documents");
         expect(clueSystem.canCollectClue("burned_ledger_page", story.generatedClues, ledgerAssignment)).toBe(

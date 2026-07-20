@@ -874,6 +874,6 @@
     "confirmId": "attic_chest",
     "confirmPrompt": "The chest is locked. Use the rusty old key?",
     "confirmRequiresClues": ["rusty_old_key"],
-    "blockedConfirmHint": "The chest is locked. You need the rusty old key from the Baron's bedroom."
+    "blockedConfirmHint": "The chest is locked. The Baron's diary said the groundskeeper keeps the attic key."
   }
 }

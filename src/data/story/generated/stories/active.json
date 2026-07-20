@@ -120,25 +120,25 @@
       "blockedHint": "The grate looks cold. The library note mentioned a meeting in the Study."
     },
     {
-      "id": "rusty_old_key",
-      "name": "Rusty Old Key",
-      "description": "A tarnished iron key — it looks like it belongs to an old lock somewhere in the manor.",
-      "requiresClues": ["burned_ledger_page"],
-      "blockedHint": "The chambers look undisturbed. The charred ledger in the Study may explain what the Baron was hiding here."
-    },
-    {
       "id": "barons_diary",
       "name": "Baron's Diary",
-      "description": "The Baron's diary mentions that the original manor floor plans are stored in an old attic chest.",
+      "description": "The Baron's diary says the original manor floor plans are locked in an old attic chest — and that the groundskeeper keeps the key.",
       "requiresClues": ["burned_ledger_page"],
       "blockedHint": "Nothing stands out yet. The charred ledger in the Study may point to what the Baron concealed in his chambers."
+    },
+    {
+      "id": "rusty_old_key",
+      "name": "Rusty Old Key",
+      "description": "A tarnished iron key from the groundskeeper — it opens the old chest in the attic.",
+      "requiresClues": ["barons_diary"],
+      "blockedHint": "The groundskeeper shrugs you off. The Baron's diary may explain why you need him."
     },
     {
       "id": "manor_floor_plans",
       "name": "Manor Floor Plans",
       "description": "Original floor plans of Blackwood Manor — secret passages marked in faded ink.",
-      "requiresClues": ["barons_diary"],
-      "blockedHint": "The chest is locked shut. The Baron's diary may say what is inside."
+      "requiresClues": ["rusty_old_key"],
+      "blockedHint": "The chest is locked shut. Ask the groundskeeper for the attic key."
     },
     {
       "id": "estate_documents",
@@ -225,18 +225,17 @@
       "hint": "Ashes in the grate hold a charred ledger page — payments to Ytte that should not exist.\n\nThe Baron kept his private papers in the master bedroom. What was he hiding there?"
     },
     {
-      "clueId": "rusty_old_key",
-      "roomId": "master_bedroom",
-      "furnitureId": "bedside_table",
-      "furnitureIndex": 0,
-      "hint": "A rusty old key lies in the bedside drawer — forgotten, but still heavy in the hand."
-    },
-    {
       "clueId": "barons_diary",
       "roomId": "master_bedroom",
       "furnitureId": "bedside_table",
       "furnitureIndex": 0,
-      "hint": "The Baron's diary lies open on the bedside table. A recent entry mentions the original manor floor plans, locked in an old attic chest."
+      "hint": "The Baron's diary lies open on the bedside table. A recent entry: the original manor floor plans are locked in an old attic chest — and the groundskeeper keeps the key."
+    },
+    {
+      "clueId": "rusty_old_key",
+      "roomId": "kitchen",
+      "npcId": "worker_man",
+      "hint": "The groundskeeper digs a rusty old key from his pocket and presses it into your hand.\n\n\"Baron left this with me for the attic chest. Reckon you'll be wanting it now.\""
     },
     {
       "clueId": "manor_floor_plans",
@@ -306,8 +305,8 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
-            "rusty_old_key",
             "barons_diary",
+            "rusty_old_key",
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
@@ -360,8 +359,8 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
-            "rusty_old_key",
             "barons_diary",
+            "rusty_old_key",
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
@@ -380,8 +379,8 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
-            "rusty_old_key",
             "barons_diary",
+            "rusty_old_key",
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
@@ -399,8 +398,8 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
-            "rusty_old_key",
             "barons_diary",
+            "rusty_old_key",
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
@@ -417,8 +416,8 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
-            "rusty_old_key",
             "barons_diary",
+            "rusty_old_key",
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
@@ -434,8 +433,8 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
-            "rusty_old_key",
             "barons_diary",
+            "rusty_old_key",
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
@@ -450,8 +449,8 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
-            "rusty_old_key",
             "barons_diary",
+            "rusty_old_key",
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
@@ -465,8 +464,8 @@
             "examined_clock",
             "maid_statement",
             "torn_appointment_note",
-            "rusty_old_key",
             "barons_diary",
+            "rusty_old_key",
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page"
@@ -509,10 +508,24 @@
     {
       "npcId": "worker_man",
       "default": "I keep to the grounds. Heard shouting from the house, but I saw nothing.",
+      "requiresClues": ["barons_diary"],
+      "blockedDialog": "I keep to the grounds. Heard shouting from the house, but I saw nothing.",
       "conditions": [
         {
-          "requiresClue": "bloody_apron",
+          "requiresClues": ["barons_diary", "rusty_old_key", "bloody_apron"],
+          "dialog": "You've got the attic key. And yes — I saw Ytte slip down toward the cellars late last night, apron bundled under his arm."
+        },
+        {
+          "requiresClues": ["barons_diary", "rusty_old_key"],
+          "dialog": "You've already got the attic key. The old chest upstairs should open for you now."
+        },
+        {
+          "requiresClues": ["bloody_apron"],
           "dialog": "Saw Ytte slip down toward the cellars late last night, apron bundled under his arm."
+        },
+        {
+          "requiresClues": ["barons_diary"],
+          "dialog": "Aye — the Baron left the attic key with me. Here. You'll need it for the old chest upstairs."
         }
       ]
     }

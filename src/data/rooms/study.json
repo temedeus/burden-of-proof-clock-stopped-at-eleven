@@ -69,11 +69,6 @@
       "npcId": "police2",
       "x": 8,
       "y": 3
-    },
-    {
-      "npcId": "worker_boy",
-      "x": 4,
-      "y": 8
     }
   ]
 }

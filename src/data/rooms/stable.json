@@ -45,5 +45,12 @@
       "spawnY": "center",
       "doorSprite": "door_wood"
     }
+  ],
+  "npcs": [
+    {
+      "npcId": "worker_boy",
+      "x": 12,
+      "y": 10
+    }
   ]
 }

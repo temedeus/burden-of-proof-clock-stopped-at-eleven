@@ -1,7 +1,7 @@
 {
-  "name": "Murder at Blackwood Manor",
-  "short_name": "Blackwood Manor",
-  "description": "A pixel-art murder mystery at Blackwood Manor.",
+  "name": "Murder at von Virtanen Manor",
+  "short_name": "von Virtanen Manor",
+  "description": "A pixel-art murder mystery at von Virtanen Manor.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#111111",

@@ -1,17 +1,17 @@
 {
   "title": "Clock Stopped at Eleven",
   "victim": {
-    "name": "Baron Blackwood",
+    "name": "von Virtanen",
     "roomId": "hall",
     "time": "eleven o'clock"
   },
   "culpritNpcId": "cook",
   "culpritConfrontationMonologue": [
-    "Ytte: You found the knife. Of course you did — you were always going to end up down here.",
-    "Ytte: The Baron uncovered the smuggling ledger. He meant to hand me to the police at dawn.",
-    "Ytte: Years of work — my family's future — gone because his conscience woke up at the wrong hour.",
-    "Ytte: That sweet girl almost took the blame for me — a lucky accident, that one. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
-    "Ytte: But no worries, Detective. I won't be letting you out of this wine cellar."
+    "Chef Ytte: You found the knife. Of course you did — you were always going to end up down here.",
+    "Chef Ytte: Von Virtanen uncovered the smuggling ledger. He meant to hand me to the police at dawn.",
+    "Chef Ytte: Years of work — my family's future — gone because his conscience woke up at the wrong hour.",
+    "Chef Ytte: That sweet girl almost took the blame for me — a lucky accident, that one. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
+    "Chef Ytte: But no worries, Detective. I won't be letting you out of this wine cellar."
   ],
   "suspects": [
     {
@@ -28,7 +28,7 @@
     },
     {
       "npcId": "cook",
-      "motive": "Smuggling operation exposed — the Baron was about to turn him in.",
+      "motive": "Smuggling operation exposed — von Virtanen was about to turn him in.",
       "opportunity": "The kitchen adjoins the dining room and cellar routes.",
       "alibi": "Insists the roast was in the oven all night."
     },
@@ -50,7 +50,7 @@
     },
     {
       "roomId": "master_bedroom",
-      "summary": "The Baron's private chambers — undisturbed at a glance, but something feels searched."
+      "summary": "Von Virtanen's private chambers — undisturbed at a glance, but something feels searched."
     },
     {
       "roomId": "attic",
@@ -62,7 +62,7 @@
     },
     {
       "roomId": "hidden_room",
-      "summary": "A secret chamber behind the study shelves — the Baron's private retreat."
+      "summary": "A secret chamber behind the study shelves — von Virtanen's private retreat."
     },
     {
       "roomId": "garden",
@@ -93,7 +93,7 @@
     {
       "id": "examined_body",
       "name": "Body Examined",
-      "description": "Baron Blackwood was stabbed in the chest. Blood has pooled beneath him, streaked with broom marks — suspicious at first glance.",
+      "description": "Von Virtanen was stabbed in the chest. Blood has pooled beneath him, streaked with broom marks — suspicious at first glance.",
       "hideFromInventory": true
     },
     {
@@ -105,7 +105,7 @@
     {
       "id": "maid_statement",
       "name": "Maid Interviewed",
-      "description": "Mrs. Clarke panicked at the body in the dark, swept her broom through the blood, and accidentally shattered the hall clock while fleeing. Earlier she saw the Baron heading to the library with papers.",
+      "description": "Mrs. Clarke panicked at the body in the dark, swept her broom through the blood, and accidentally shattered the hall clock while fleeing. Earlier she saw von Virtanen heading to the library with papers.",
       "requiresClues": ["examined_body", "examined_clock"],
       "hideFromInventory": true
     },
@@ -114,33 +114,33 @@
       "name": "Torn Appointment Note",
       "description": "A torn note mentions a meeting in the Study at half past ten.",
       "requiresClues": ["maid_statement"],
-      "blockedHint": "The library may hold answers, but Mrs. Clarke upstairs may know more about the Baron's movements."
+      "blockedHint": "The library may hold answers, but Mrs. Clarke upstairs may know more about von Virtanen's movements."
     },
     {
       "id": "burned_ledger_page",
       "name": "Burned Ledger Page",
-      "description": "A semi-burned ledger page pulled from the study trash. Columns of payments survive, but the payee's name is scorched away — and the final page of the ledger is missing. The Baron kept his private papers in the master bedroom.",
+      "description": "A semi-burned ledger page pulled from the study trash. Columns of payments survive, but the payee's name is scorched away — and the final page of the ledger is missing. Von Virtanen kept his private papers in the master bedroom.",
       "requiresClues": ["torn_appointment_note"],
       "blockedHint": "The wastebasket looks ordinary. The library note mentioned a meeting in the Study."
     },
     {
       "id": "barons_diary",
-      "name": "Baron's Diary",
-      "description": "The Baron's diary says the original manor floor plans are locked in an old attic chest — and that the groundskeeper keeps the key.",
+      "name": "von Virtanen's Diary",
+      "description": "Von Virtanen's diary says the original manor floor plans are locked in an old attic chest — and that the groundskeeper keeps the key.",
       "requiresClues": ["burned_ledger_page"],
-      "blockedHint": "Nothing stands out yet. The charred ledger in the Study may point to what the Baron concealed in his chambers."
+      "blockedHint": "Nothing stands out yet. The charred ledger in the Study may point to what von Virtanen concealed in his chambers."
     },
     {
       "id": "rusty_old_key",
       "name": "Rusty Old Key",
       "description": "A tarnished iron key from the groundskeeper — it opens the old chest in the attic.",
       "requiresClues": ["barons_diary"],
-      "blockedHint": "The groundskeeper shrugs you off. The Baron's diary may explain why you need him."
+      "blockedHint": "The groundskeeper shrugs you off. Von Virtanen's diary may explain why you need him."
     },
     {
       "id": "manor_floor_plans",
       "name": "Manor Floor Plans",
-      "description": "Original floor plans of Blackwood Manor — secret passages marked in faded ink.",
+      "description": "Original floor plans of von Virtanen Manor — secret passages marked in faded ink.",
       "requiresClues": ["rusty_old_key"],
       "blockedHint": "The chest is locked shut. Ask the groundskeeper for the attic key."
     },
@@ -152,9 +152,9 @@
       "blockedHint": "The chest looks empty until you have opened it with the key."
     },
     {
-      "id": "blackwoods_journal",
-      "name": "Blackwood's Journal",
-      "description": "The Baron's journal warns of a smuggling ring. He had been walking in the garden afterward — and seems to have lost the silver key to this cabinet there.",
+      "id": "von_virtanens_journal",
+      "name": "von Virtanen's Journal",
+      "description": "Von Virtanen's journal warns of a smuggling ring. He had been walking in the garden afterward — and seems to have lost the silver key to this cabinet there.",
       "requiresClues": ["burned_ledger_page"],
       "blockedHint": "The writing desk looks untouched."
     },
@@ -162,34 +162,34 @@
       "id": "silver_key",
       "name": "Silver Key",
       "description": "A small silver key, cold to the touch. It must belong to the cabinet in the hidden room.",
-      "requiresClues": ["blackwoods_journal"],
-      "blockedHint": "The Baron had been walking in the garden — the fountain basin may be worth searching."
+      "requiresClues": ["von_virtanens_journal"],
+      "blockedHint": "Von Virtanen had been walking in the garden — the fountain basin may be worth searching."
     },
     {
       "id": "smuggling_documents",
       "name": "Smuggling Documents",
       "description": "Forged shipping manifests and ledger sheets — the same columns as the burned page from the study. Wherever a name should appear, it has been cut or inked out.",
       "requiresClues": ["silver_key"],
-      "blockedHint": "The cabinet is locked. The journal said the Baron had been walking in the garden afterward — he seems to have lost the key there."
+      "blockedHint": "The cabinet is locked. The journal said von Virtanen had been walking in the garden afterward — he seems to have lost the key there."
     },
     {
       "id": "bloody_apron",
       "name": "Bloody Apron",
       "description": "A kitchen apron stiff with dried blood — whoever wore it was close to the killing.",
       "requiresClues": ["smuggling_documents"],
-      "blockedHint": "The stalls look ordinary for now. Someone who knows the grounds may have seen more."
+      "blockedHint": "The stalls look ordinary. Someone who knows the grounds may have seen more."
     },
     {
       "id": "cellar_evidence",
       "name": "Cellar Evidence",
-      "description": "A blood-stained crate and drag marks on the floor — and the wine cellar door hangs loose on its hinges.",
+      "description": "The wine cellar door hangs loose on crates's hinges.",
       "requiresClues": ["bloody_apron"],
       "blockedHint": "Nothing of interest here."
     },
     {
       "id": "missing_ledger_page",
       "name": "Missing Ledger Page",
-      "description": "The last page of the Baron's ledger — unburned. The payee is written clear as day: Ytte. The amounts match no kitchen supply.",
+      "description": "The last page of von Virtanen's ledger — unburned. The payee is written clear as day: Ytte. The amounts match no kitchen supply.",
       "requiresClues": ["cellar_evidence"],
       "blockedHint": "The barrels look undisturbed."
     },
@@ -206,7 +206,7 @@
       "clueId": "examined_body",
       "roomId": "hall",
       "npcId": "baron",
-      "hint": "Baron Blackwood lies dead on the marble floor. Blood has pooled beneath his body, dark and still. Faint broom marks streak through the blood — someone may have tried to clean the scene."
+      "hint": "Von Virtanen lies dead on the marble floor. Blood has pooled beneath his body, dark and still. Faint broom marks streak through the blood — someone may have tried to clean the scene."
     },
     {
       "clueId": "examined_clock",
@@ -226,34 +226,34 @@
       "roomId": "library",
       "furnitureId": "reading_table",
       "furnitureIndex": 0,
-      "hint": "A torn appointment note lies among the books — the Baron was expected in the Study at half past ten.\n\nI should search the Study before anywhere else."
+      "hint": "A torn appointment note lies among the books — von Virtanen was expected in the Study at half past ten.\n\nI should search the Study before anywhere else."
     },
     {
       "clueId": "burned_ledger_page",
       "roomId": "study",
       "furnitureId": "table",
       "furnitureIndex": 0,
-      "hint": "In the wastebasket by the desk: a semi-burned ledger page. Payment columns survive, but the payee's name is scorched beyond reading — and the final page of the ledger is missing.\n\nThe Baron kept his private papers in the master bedroom. What was he hiding there?"
+      "hint": "In the wastebasket by the desk: a semi-burned ledger page. Payment columns survive, but the payee's name is scorched beyond reading — and the final page of the ledger is missing.\n\nVon Virtanen kept his private papers in the master bedroom. What was he hiding there?"
     },
     {
       "clueId": "barons_diary",
       "roomId": "master_bedroom",
       "furnitureId": "bedside_table",
       "furnitureIndex": 0,
-      "hint": "The Baron's diary lies open on the bedside table. A recent entry: the original manor floor plans are locked in an old attic chest — and the groundskeeper keeps the key."
+      "hint": "Von Virtanen's diary lies open on the bedside table. A recent entry: the original manor floor plans are locked in an old attic chest — and the groundskeeper keeps the key."
     },
     {
       "clueId": "rusty_old_key",
       "roomId": "kitchen",
       "npcId": "worker_man",
-      "hint": "The groundskeeper digs a rusty old key from his pocket and presses it into your hand.\n\n\"Baron left this with me for the attic chest. Reckon you'll be wanting it now.\""
+      "hint": "The groundskeeper digs a rusty old key from his pocket and presses it into your hand.\n\n\"Von Virtanen left this with me for the attic chest. Reckon you'll be wanting it now.\""
     },
     {
       "clueId": "manor_floor_plans",
       "roomId": "attic",
       "furnitureId": "attic_old_chest",
       "furnitureIndex": 0,
-      "hint": "Inside the chest: brittle floor plans of Blackwood Manor, with secret passages marked in faded ink."
+      "hint": "Inside the chest: brittle floor plans of von Virtanen Manor, with secret passages marked in faded ink."
     },
     {
       "clueId": "estate_documents",
@@ -263,18 +263,18 @@
       "hint": "Beneath the floor plans lie old estate documents — the Hidden Room can be reached from both the Study and the Cellar."
     },
     {
-      "clueId": "blackwoods_journal",
+      "clueId": "von_virtanens_journal",
       "roomId": "hidden_room",
       "furnitureId": "writing_table",
       "furnitureIndex": 0,
-      "hint": "Blackwood's journal lies open on the desk, warning of smuggling. He had been walking in the garden afterward — and seems to have lost the silver cabinet key there."
+      "hint": "Von Virtanen's journal lies open on the desk, warning of smuggling. He had been walking in the garden afterward — and seems to have lost the silver cabinet key there."
     },
     {
       "clueId": "silver_key",
       "roomId": "garden",
       "furnitureId": "fountain",
       "furnitureIndex": 0,
-      "hint": "Something glints at the bottom of the fountain basin — a small silver key, lost after the Baron's walk in the garden."
+      "hint": "Something glints at the bottom of the fountain basin — a small silver key, lost after von Virtanen's walk in the garden."
     },
     {
       "clueId": "smuggling_documents",
@@ -328,7 +328,7 @@
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
-            "blackwoods_journal",
+            "von_virtanens_journal",
             "silver_key",
             "smuggling_documents",
             "bloody_apron",
@@ -383,7 +383,7 @@
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
-            "blackwoods_journal",
+            "von_virtanens_journal",
             "silver_key",
             "smuggling_documents",
             "bloody_apron",
@@ -404,7 +404,7 @@
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
-            "blackwoods_journal",
+            "von_virtanens_journal",
             "silver_key",
             "smuggling_documents",
             "bloody_apron",
@@ -424,7 +424,7 @@
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
-            "blackwoods_journal",
+            "von_virtanens_journal",
             "silver_key",
             "smuggling_documents",
             "bloody_apron",
@@ -443,7 +443,7 @@
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
-            "blackwoods_journal",
+            "von_virtanens_journal",
             "silver_key",
             "smuggling_documents",
             "bloody_apron"
@@ -461,7 +461,7 @@
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
-            "blackwoods_journal",
+            "von_virtanens_journal",
             "silver_key",
             "smuggling_documents"
           ],
@@ -478,7 +478,7 @@
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
-            "blackwoods_journal",
+            "von_virtanens_journal",
             "silver_key"
           ],
           "dialog": "A fountain key? I don't — look, Detective, I've got stock to manage. Must you keep turning up?"
@@ -494,7 +494,7 @@
             "manor_floor_plans",
             "estate_documents",
             "burned_ledger_page",
-            "blackwoods_journal"
+            "von_virtanens_journal"
           ],
           "dialog": "Smuggling? In this house? I wouldn't know the first thing about that. You're... you're making me sweat, Detective."
         },
@@ -519,7 +519,7 @@
             "maid_statement",
             "torn_appointment_note"
           ],
-          "dialog": "The Baron had papers with him? I saw nothing. I was at my station all evening — though I... I hope nothing's amiss in the Study."
+          "dialog": "Von Virtanen had papers with him? I saw nothing. I was at my station all evening — though I... I hope nothing's amiss in the Study."
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
@@ -537,7 +537,7 @@
       "conditions": [
         {
           "requiresClues": ["torn_appointment_note", "maid_statement", "examined_body", "examined_clock"],
-          "dialog": "The Baron did go to the Study after the Library. I showed him in myself."
+          "dialog": "Von Virtanen did go to the Study after the Library. I showed him in myself."
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
@@ -573,7 +573,7 @@
         },
         {
           "requiresClues": ["barons_diary"],
-          "dialog": "Aye — the Baron left the attic key with me. Here. You'll need it for the old chest upstairs."
+          "dialog": "Aye — von Virtanen left the attic key with me. Here. You'll need it for the old chest upstairs."
         }
       ]
     }

@@ -393,7 +393,7 @@ export class Game {
         const npcCfg = this.content.npcs[this.getMurdererNpcId()];
         talkSounds.startDialogue(
             inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
-            extractSpokenLine(this.murdererConfrontation.getCurrentLine(), "Ytte")
+            extractSpokenLine(this.murdererConfrontation.getCurrentLine(), "Chef Ytte")
         );
     }
 
@@ -404,14 +404,14 @@ export class Game {
             const npcCfg = this.content.npcs[this.getMurdererNpcId()];
             talkSounds.startDialogue(
                 inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
-                extractSpokenLine(this.murdererConfrontation.getCurrentLine(), "Ytte")
+                extractSpokenLine(this.murdererConfrontation.getCurrentLine(), "Chef Ytte")
             );
             return;
         }
 
         talkSounds.stopDialogue();
         this.murdererChase.triggerAccusation();
-        this.openDialog("Ytte is after you! Find a police officer before he catches you!");
+        this.openDialog("Chef Ytte is after you! Find a police officer before he catches you!");
     }
 
     private startVictorySequence(policeId: string): void {

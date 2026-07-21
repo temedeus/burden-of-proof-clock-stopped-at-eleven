@@ -13,9 +13,9 @@ interface CharacterSlide {
 const CHARACTER_SLIDES: CharacterSlide[] = [
     { spriteName: "npc_male", name: "Mr. Thompson", role: "Butler", line: "The manor's steadfast butler." },
     { spriteName: "maid", name: "Mrs. Clarke", role: "Maid", line: "Keeps the halls in order." },
-    { spriteName: "worker_man", name: "Ytte", role: "Cook", line: "Prepares every meal at the manor." },
-    { spriteName: "baron", name: "Baron Blackwood", role: "Baron", line: "Master of Blackwood Manor." },
-    { spriteName: "baroness", name: "Lady Blackwood", role: "Baroness", line: "The lady of the house." },
+    { spriteName: "worker_man", name: "Chef Ytte", role: "Cook", line: "Prepares every meal at the manor." },
+    { spriteName: "baron", name: "von Virtanen", role: "Baron", line: "Master of von Virtanen Manor." },
+    { spriteName: "baroness", name: "Lady von Virtanen", role: "Baroness", line: "The lady of the house." },
     { spriteName: "worker_man", name: "The Groundskeeper", role: "Worker", line: "Tends the grounds by day." },
     { spriteName: "worker_boy", name: "The Stable Boy", role: "Stable hand", line: "Cares for the horses." },
     { spriteName: "police", name: "Inspector Walsh", role: "Police", line: "First on the scene." },
@@ -64,7 +64,7 @@ export class IntroScreen {
                 ctx.fillStyle = "#8b4513";
                 ctx.font = "bold 26px serif";
                 ctx.textAlign = "center";
-                ctx.fillText("Blackwood Manor — the household", w / 2, h * 0.18);
+                ctx.fillText("von Virtanen Manor — the household", w / 2, h * 0.18);
             }
             this.renderCharacterSlide(ctx, w, h, CHARACTER_SLIDES[this.slideIndex - 1]);
         }
@@ -98,7 +98,7 @@ export class IntroScreen {
         ctx.fillStyle = "#8b4513";
         ctx.font = "bold 32px serif";
         ctx.textAlign = "center";
-        ctx.fillText("Murder at Blackwood Manor", centerX, h * 0.2);
+        ctx.fillText("Murder at von Virtanen Manor", centerX, h * 0.2);
 
         ctx.fillStyle = "rgba(255,255,255,0.9)";
         ctx.font = "20px serif";
@@ -106,7 +106,7 @@ export class IntroScreen {
 
         const lines = [
             "A terrible crime has shaken the household.",
-            "Someone has been killed under the baron's roof.",
+            "Someone has been killed under von Virtanen's roof.",
             "",
             "The police have secured the scene. Now a detective",
             "must gather clues, question the residents,",
@@ -120,7 +120,7 @@ export class IntroScreen {
 
         ctx.font = "18px serif";
         ctx.fillStyle = "rgba(200,180,140,0.95)";
-        ctx.fillText("— Blackwood Manor, the night of the murder —", centerX, y + lineHeight);
+        ctx.fillText("— von Virtanen Manor, the night of the murder —", centerX, y + lineHeight);
     }
 
     private renderCharacterSlide(ctx: CanvasRenderingContext2D, w: number, h: number, slide: CharacterSlide): void {
@@ -167,6 +167,6 @@ export class IntroScreen {
         ctx.fillText(label, centerX, y + spriteSize / 2 + 40);
         ctx.font = "20px serif";
         ctx.fillStyle = "rgba(255,255,255,0.9)";
-        ctx.fillText("comes to Blackwood Manor to solve the case.", centerX, y + spriteSize / 2 + 72);
+        ctx.fillText("comes to von Virtanen Manor to solve the case.", centerX, y + spriteSize / 2 + 72);
     }
 }

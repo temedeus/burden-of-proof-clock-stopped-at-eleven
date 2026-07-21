@@ -9,7 +9,7 @@ describe("resolveFootstepSound", () => {
         "baron",
         12 * TILE_SIZE,
         11 * TILE_SIZE,
-        "Baron Blackwood",
+        "von Virtanen",
         "Baron",
         "baron_body",
         false,

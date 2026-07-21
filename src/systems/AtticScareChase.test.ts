@@ -16,7 +16,7 @@ describe("AtticScareChase", () => {
         const scare = new AtticScareChase("medium");
         const attic = makeRoom("attic");
         const kitchen = makeRoom("kitchen");
-        const murderer = new NPC("cook", 32, 32, "Ytte", "Cook", "worker_man");
+        const murderer = new NPC("cook", 32, 32, "Chef Ytte", "Cook", "worker_man");
         kitchen.npcs.push(murderer);
 
         scare.armAfterDialog();
@@ -43,7 +43,7 @@ describe("AtticScareChase", () => {
         const scare = new AtticScareChase("hard");
         const attic = makeRoom("attic");
         const kitchen = makeRoom("kitchen");
-        const murderer = new NPC("cook", 3 * TILE_SIZE, 4 * TILE_SIZE, "Ytte", "Cook", "worker_man");
+        const murderer = new NPC("cook", 3 * TILE_SIZE, 4 * TILE_SIZE, "Chef Ytte", "Cook", "worker_man");
         kitchen.npcs.push(murderer);
 
         scare.start(murderer, attic, kitchen, (npc, room, x, y) => {
@@ -84,7 +84,7 @@ describe("AtticScareChase", () => {
         expect(murderer.isChasing()).toBe(false);
         expect(murderer.isSwingingKnife()).toBe(false);
         expect(murderer.getSpriteName()).toBe("worker_man");
-        expect(murderer.name).toBe("Ytte");
+        expect(murderer.name).toBe("Chef Ytte");
         expect(kitchen.npcs).toContain(murderer);
         expect(attic.npcs).not.toContain(murderer);
     });

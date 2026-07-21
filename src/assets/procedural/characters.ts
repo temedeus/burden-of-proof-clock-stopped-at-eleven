@@ -522,7 +522,7 @@ function drawHoodedFigure(ctx: CanvasRenderingContext2D): void {
     r(ctx, 17, 33, 5, 2, P.outline);
 }
 
-/** Baron Blackwood lying dead on the floor with a blood pool beneath. */
+/** von Virtanen (victim) lying dead on the floor with a blood pool beneath. */
 function drawDeadBaronBody(ctx: CanvasRenderingContext2D): void {
     const s = BARON_STYLE;
     const skin = P.skin;

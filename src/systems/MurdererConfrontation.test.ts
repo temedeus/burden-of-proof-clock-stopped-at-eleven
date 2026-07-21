@@ -19,9 +19,9 @@ describe("MurdererConfrontation", () => {
     });
 
     it("steps through monologue lines and finishes once", () => {
-        const confrontation = new MurdererConfrontation(["Ytte: One.", "Ytte: Two."]);
+        const confrontation = new MurdererConfrontation(["Chef Ytte: One.", "Chef Ytte: Two."]);
         const hall = new Room("hall", new TileMap(10, 10, new Array(100).fill(0)), [], [], []);
-        const murderer = new NPC("cook", 0, 0, "Ytte", "Cook", "worker_man");
+        const murderer = new NPC("cook", 0, 0, "Chef Ytte", "Cook", "worker_man");
 
         confrontation.start(murderer, hall, (npc, targetRoom, x, y) => {
             npc.x = x;
@@ -29,9 +29,9 @@ describe("MurdererConfrontation", () => {
             targetRoom.npcs.push(npc);
         });
 
-        expect(confrontation.getCurrentLine()).toBe("Ytte: One.");
+        expect(confrontation.getCurrentLine()).toBe("Chef Ytte: One.");
         expect(confrontation.advance()).toBe("continue");
-        expect(confrontation.getCurrentLine()).toBe("Ytte: Two.");
+        expect(confrontation.getCurrentLine()).toBe("Chef Ytte: Two.");
         expect(confrontation.advance()).toBe("done");
         expect(confrontation.active).toBe(false);
         expect(confrontation.complete).toBe(true);

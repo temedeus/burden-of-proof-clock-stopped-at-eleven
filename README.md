@@ -1,6 +1,6 @@
 # clock-stopped-at-eleven
 
-A pixel-art murder mystery set at Blackwood Manor. Explore rooms, talk to suspects, collect clues, and work out who stopped the clock at eleven.
+A pixel-art murder mystery set at von Virtanen Manor. Explore rooms, talk to suspects, collect clues, and work out who stopped the clock at eleven.
 
 **Play online:** [temedeus.codeberg.page/burden-of-proof-clock-stopped-at-eleven](https://temedeus.codeberg.page/burden-of-proof-clock-stopped-at-eleven/)
 

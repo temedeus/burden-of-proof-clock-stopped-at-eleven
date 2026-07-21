@@ -273,7 +273,7 @@ export class Menu {
             ctx.fillStyle = MENU_ACCENT;
             ctx.font = type.title;
             ctx.textAlign = "center";
-            ctx.fillText("Murder at Blackwood Manor", w / 2, h * 0.28);
+            ctx.fillText("Murder at von Virtanen Manor", w / 2, h * 0.28);
 
             this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.42);
             ctx.textAlign = "left";

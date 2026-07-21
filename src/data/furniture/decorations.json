@@ -284,7 +284,7 @@
   "manor_lord_bed": {
     "id": "manor_lord_bed",
     "name": "Lord's bed",
-    "description": "A vast carved four-poster bed with damask hangings — the baron's own.",
+    "description": "A vast carved four-poster bed with damask hangings — von Virtanen's own.",
     "width": 8,
     "height": 8,
     "drawWidth": 8,
@@ -792,7 +792,7 @@
     "confirmId": "hidden_cabinet",
     "confirmPrompt": "The silver key fits the lock. Open the cabinet?",
     "confirmRequiresClues": ["silver_key"],
-    "blockedConfirmHint": "The cabinet is locked. The journal said the Baron had been walking in the garden afterward — he seems to have lost the key there."
+    "blockedConfirmHint": "The cabinet is locked. The journal said von Virtanen had been walking in the garden afterward — he seems to have lost the key there."
   },
   "blood_crate": {
     "id": "blood_crate",
@@ -848,8 +848,8 @@
   },
   "barons_diary": {
     "id": "barons_diary",
-    "name": "Baron's diary",
-    "description": "A leather-bound diary with the Baron's crest on the cover.",
+    "name": "von Virtanen's diary",
+    "description": "A leather-bound diary with von Virtanen's crest on the cover.",
     "width": 2,
     "height": 2,
     "drawWidth": 2,
@@ -874,6 +874,6 @@
     "confirmId": "attic_chest",
     "confirmPrompt": "The chest is locked. Use the rusty old key?",
     "confirmRequiresClues": ["rusty_old_key"],
-    "blockedConfirmHint": "The chest is locked. The Baron's diary said the groundskeeper keeps the attic key."
+    "blockedConfirmHint": "The chest is locked. Von Virtanen's diary said the groundskeeper keeps the attic key."
   }
 }

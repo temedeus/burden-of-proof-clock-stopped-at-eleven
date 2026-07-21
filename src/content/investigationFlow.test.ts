@@ -18,7 +18,7 @@ const CLUE_CHAIN = [
     "rusty_old_key",
     "manor_floor_plans",
     "estate_documents",
-    "blackwoods_journal",
+    "von_virtanens_journal",
     "silver_key",
     "smuggling_documents",
     "bloody_apron",

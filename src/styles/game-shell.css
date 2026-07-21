@@ -65,7 +65,7 @@ body {
 
 .touch-dpad {
   --touch-pad-size: 128px;
-  --touch-arrow-radius: calc(var(--touch-pad-size) * 0.44);
+  --touch-arrow-radius: calc(var(--touch-pad-size) * 0.38);
   --touch-shaft-length: 22px;
   position: absolute;
   left: max(12px, env(safe-area-inset-left));

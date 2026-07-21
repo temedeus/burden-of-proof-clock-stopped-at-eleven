@@ -16,8 +16,11 @@ export function tickRoomTitleBanner(banner: RoomTitleBanner | null, dt: number):
     return banner.elapsed >= ROOM_TITLE_DURATION ? null : banner;
 }
 
+/** Dialog width as a fraction of canvas width (was 1/3; +20% → 0.4). */
+const DIALOG_WIDTH_RATIO = 0.4;
+
 export function getDialogMaxTextWidth(canvasWidth: number): number {
-    const boxWidth = Math.floor(canvasWidth / 3);
+    const boxWidth = Math.floor(canvasWidth * DIALOG_WIDTH_RATIO);
     const padding = 12;
     return boxWidth - padding * 2;
 }
@@ -76,7 +79,7 @@ export function drawMessageBox(
     ctx.font = "16px serif";
     ctx.textAlign = "left";
 
-    const boxWidth = Math.floor(ctx.canvas.width / 3);
+    const boxWidth = Math.floor(ctx.canvas.width * DIALOG_WIDTH_RATIO);
     const padding = 12;
     const lineHeight = 20;
     const maxTextWidth = boxWidth - padding * 2;

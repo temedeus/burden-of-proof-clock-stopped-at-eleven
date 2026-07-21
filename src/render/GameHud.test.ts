@@ -22,14 +22,14 @@ describe("GameHud dialog pagination", () => {
     it("splits wrapped dialogue into sections of at most three lines", () => {
         const ctx = mockDialogContext();
         const text =
-            "Line one is here. Line two follows. Line three next. Line four should start a new page. Line five too.";
+            "Line one is here with enough words to wrap. Line two follows along with more content. Line three next continues the thought. Line four should start a new page after wrapping. Line five too keeps going with extra words.";
         const pages = paginateDialog(ctx, text);
 
         expect(pages.length).toBeGreaterThan(1);
         for (const page of pages) {
             expect(page.split("\n").length).toBeLessThanOrEqual(DIALOG_LINES_PER_PAGE);
         }
-        expect(pages.join(" ")).toContain("four should");
+        expect(pages.join("\n").replace(/\n/g, " ")).toContain("four should");
     });
 
     it("preserves explicit paragraph breaks within a page when short enough", () => {

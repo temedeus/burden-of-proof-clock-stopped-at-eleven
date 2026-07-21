@@ -443,7 +443,10 @@ export class Game {
     handleInventoryPointer(x: number, y: number): void {
         if (this.state !== "inventory") return;
         const layout = this.inventoryPanel.getLayoutForHitTest(this.ctx, this.clueSystem, this.clueCatalog);
-        this.inventoryPanel.handlePointer(x, y, this.clueSystem, this.clueCatalog, layout);
+        const hit = this.inventoryPanel.handlePointer(x, y, this.clueSystem, this.clueCatalog, layout);
+        if (hit === "backdrop") {
+            this.state = "playing";
+        }
     }
 
     returnToMenuFromVictory(): void {

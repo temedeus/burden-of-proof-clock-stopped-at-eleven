@@ -1,7 +1,8 @@
-import type { ClueAssignment, FurnitureConfig, GeneratedClue, NPCConfig } from "@cse/content-schema";
+import type { GeneratedClue } from "@cse/content-schema";
+import type { SpriteName } from "@cse/content-schema";
 import baseClues from "../data/clues.json";
 
-const DEFAULT_CLUE_ICON = "reading_table";
+const DEFAULT_CLUE_ICON: SpriteName = "clue_generic";
 
 export interface ClueEntry {
     name: string;
@@ -10,6 +11,24 @@ export interface ClueEntry {
 }
 
 export type ClueCatalog = Record<string, ClueEntry>;
+
+/** Inventory icon per clue id — the item itself, not the furniture or NPC it came from. */
+const CLUE_ICON_BY_ID: Record<string, SpriteName> = {
+    torn_page: "clue_torn_note",
+    torn_appointment_note: "clue_torn_note",
+    burned_ledger_page: "clue_burned_ledger",
+    barons_diary: "barons_diary",
+    rusty_old_key: "rusty_old_key",
+    manor_floor_plans: "clue_floor_plans",
+    estate_documents: "clue_estate_documents",
+    von_virtanens_journal: "clue_journal",
+    silver_key: "clue_silver_key",
+    smuggling_documents: "clue_smuggling_docs",
+    bloody_apron: "clue_bloody_apron",
+    cellar_evidence: "clue_cellar_evidence",
+    missing_ledger_page: "clue_ledger_page",
+    murder_weapon: "clue_murder_weapon"
+};
 
 export function buildClueCatalog(generatedClues?: GeneratedClue[]): ClueCatalog {
     const catalog: ClueCatalog = { ...(baseClues as ClueCatalog) };
@@ -31,19 +50,7 @@ export function getInventoryClueIds(clueIds: string[], catalog: ClueCatalog): st
     return clueIds.filter((id) => !catalog[id]?.hideFromInventory);
 }
 
-/** Sprite drawn in the inventory grid for a clue (from its assignment source). */
-export function resolveClueIconSprite(
-    clueId: string,
-    assignments: ClueAssignment[] | undefined,
-    furnitureById: Record<string, FurnitureConfig>,
-    npcs: Record<string, NPCConfig>
-): string {
-    const assignment = assignments?.find((entry) => entry.clueId === clueId);
-    if (assignment?.furnitureId) {
-        return furnitureById[assignment.furnitureId]?.spriteName ?? DEFAULT_CLUE_ICON;
-    }
-    if (assignment?.npcId) {
-        return npcs[assignment.npcId]?.spriteName ?? DEFAULT_CLUE_ICON;
-    }
-    return DEFAULT_CLUE_ICON;
+/** Sprite drawn in the inventory grid for a clue. */
+export function resolveClueIconSprite(clueId: string): SpriteName {
+    return CLUE_ICON_BY_ID[clueId] ?? DEFAULT_CLUE_ICON;
 }

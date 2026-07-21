@@ -59,10 +59,6 @@ body {
   z-index: 10;
 }
 
-#touch-controls:not([hidden]) {
-  pointer-events: auto;
-}
-
 #touch-controls[hidden] {
   display: none;
 }

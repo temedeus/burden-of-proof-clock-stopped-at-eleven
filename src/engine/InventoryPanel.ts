@@ -155,29 +155,41 @@ export class InventoryPanel {
         clueSystem: ClueSystem,
         catalog: ClueCatalog,
         layout: InventoryLayout
-    ): void {
-        if (!shouldShowTouchControls()) return;
-
+    ): "slot" | "backdrop" | null {
         const clues = getInventoryClueIds(clueSystem.getAllClues(), catalog);
+
         for (let i = 0; i < layout.slots.length; i++) {
             const slot = layout.slots[i];
             const clueId = clues[i];
             if (!clueId) continue;
 
             if (x >= slot.x && x <= slot.x + slot.size && y >= slot.y && y <= slot.y + slot.size) {
+                this.selectedIndex = i;
                 this.detailClueId = this.detailClueId === clueId ? null : clueId;
-                return;
+                return "slot";
             }
         }
+
+        const insidePanel =
+            x >= layout.panelX &&
+            x <= layout.panelX + layout.panelWidth &&
+            y >= layout.panelY &&
+            y <= layout.panelY + layout.panelHeight;
+
+        if (!insidePanel) {
+            return "backdrop";
+        }
+
+        return null;
     }
 
     render(
         ctx: CanvasRenderingContext2D,
         clueSystem: ClueSystem,
         catalog: ClueCatalog,
-        assignments: ClueAssignment[] | undefined,
-        furnitureById: Record<string, FurnitureConfig>,
-        npcs: Record<string, NPCConfig>
+        _assignments: ClueAssignment[] | undefined,
+        _furnitureById: Record<string, FurnitureConfig>,
+        _npcs: Record<string, NPCConfig>
     ): void {
         const clues = getInventoryClueIds(clueSystem.getAllClues(), catalog);
         const layout = computeInventoryLayout(ctx.canvas.width, ctx.canvas.height, clues.length);
@@ -232,7 +244,7 @@ export class InventoryPanel {
                 ctx.strokeRect(slot.x, slot.y, slot.size, slot.size);
             }
 
-            const spriteName = resolveClueIconSprite(clueId, assignments, furnitureById, npcs);
+            const spriteName = resolveClueIconSprite(clueId);
             const pad = Math.round(slot.size * 0.1);
             spriteLoader.drawSprite(
                 ctx,
@@ -302,7 +314,7 @@ export class InventoryPanel {
         ctx.textAlign = "center";
         const touch = shouldShowTouchControls();
         const hint = touch
-            ? "Tap an item for details · Tap Inventory or press I to close"
+            ? "Tap an item for details · Tap outside or Inventory to close"
             : "Arrow keys to select · E for details · I to close";
         ctx.fillText(hint, ctx.canvas.width / 2, panelY + panelHeight - 24);
     }

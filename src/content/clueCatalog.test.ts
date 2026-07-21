@@ -18,35 +18,13 @@ describe("clueCatalog inventory visibility", () => {
 });
 
 describe("resolveClueIconSprite", () => {
-    const furniture = {
-        reading_table: { id: "reading_table", spriteName: "reading_table" },
-        hall_clock: { id: "hall_clock", spriteName: "hall_clock" }
-    };
-    const npcs = {
-        maid: { id: "maid", name: "Maid", spriteName: "maid" }
-    };
-
-    it("uses furniture sprite from clue assignment", () => {
-        const sprite = resolveClueIconSprite(
-            "torn_appointment_note",
-            [{ clueId: "torn_appointment_note", roomId: "library", furnitureId: "reading_table", hint: "" }],
-            furniture,
-            npcs
-        );
-        expect(sprite).toBe("reading_table");
+    it("uses clue-specific inventory icons", () => {
+        expect(resolveClueIconSprite("torn_appointment_note")).toBe("clue_torn_note");
+        expect(resolveClueIconSprite("murder_weapon")).toBe("clue_murder_weapon");
+        expect(resolveClueIconSprite("rusty_old_key")).toBe("rusty_old_key");
     });
 
-    it("uses npc sprite from clue assignment", () => {
-        const sprite = resolveClueIconSprite(
-            "maid_statement",
-            [{ clueId: "maid_statement", roomId: "maid_room", npcId: "maid", hint: "" }],
-            furniture,
-            npcs
-        );
-        expect(sprite).toBe("maid");
-    });
-
-    it("falls back when assignment is missing", () => {
-        expect(resolveClueIconSprite("unknown", [], furniture, npcs)).toBe("reading_table");
+    it("falls back to generic icon for unknown clues", () => {
+        expect(resolveClueIconSprite("unknown")).toBe("clue_generic");
     });
 });

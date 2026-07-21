@@ -50,20 +50,20 @@ function setupCanvasPointer(): void {
     canvas.addEventListener(
         "pointerdown",
         (e) => {
+            unlockAudio();
+            const { x, y } = clientToCanvas(canvas, e.clientX, e.clientY);
+
+            if (appScreen === "playing" && game?.isInventoryOpen()) {
+                game.handleInventoryPointer(x, y);
+                return;
+            }
+
             const touchUi = shouldShowTouchControls();
             if (!touchUi && e.pointerType !== "mouse") return;
             if (touchUi && e.pointerType !== "touch" && !isSimulateMobile()) return;
 
-            unlockAudio();
-            const { x, y } = clientToCanvas(canvas, e.clientX, e.clientY);
-
             if (appScreen === "intro") {
                 sharedInput.tapVirtual("enter");
-                return;
-            }
-
-            if (appScreen === "playing" && game?.isInventoryOpen()) {
-                game.handleInventoryPointer(x, y);
                 return;
             }
 

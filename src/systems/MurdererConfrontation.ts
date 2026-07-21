@@ -6,7 +6,7 @@ export const DEFAULT_MURDERER_MONOLOGUE = [
     "Chef Ytte: You found the knife. Of course you did — you were always going to end up down here.",
     "Chef Ytte: Von Virtanen uncovered the smuggling ledger. He meant to hand me to the police at dawn.",
     "Chef Ytte: Years of work — my family's future — gone because his conscience woke up at the wrong hour.",
-    "Chef Ytte: That sweet girl almost took the blame for me — a lucky accident, that one. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
+    "Chef Ytte: That sweet girl almost took the blame for me. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
     "Chef Ytte: But no worries, Detective. I won't be letting you out of this wine cellar."
 ] as const;
 

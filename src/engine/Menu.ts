@@ -140,7 +140,7 @@ export class Menu {
         const touch = shouldShowTouchControls();
         const spriteSize = Math.min(Math.round(w * 0.22), Math.round(h * 0.28));
         const gap = Math.max(32, w * 0.1);
-        const centerY = h * 0.4;
+        const centerY = h * 0.47;
         const labelGap = Math.round(h * 0.085);
         const femaleX = w / 2 - gap / 2 - spriteSize;
         const maleX = w / 2 + gap / 2;

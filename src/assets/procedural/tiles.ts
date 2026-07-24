@@ -471,6 +471,100 @@ export function atticWallSpriteName(x: number, y: number): (typeof ATTIC_WALL_SP
     return ATTIC_WALL_SPRITES[(x * 13 + y * 29) % ATTIC_WALL_SPRITES.length];
 }
 
+/** Continuous 2-tile-tall attic north wall (aged vertical boards). */
+export const ATTIC_NORTH_WALL_SPRITES = [
+    "wall_attic_north",
+    "wall_attic_north_b",
+    "wall_attic_north_c"
+] as const;
+
+export function atticNorthWallSpriteName(x: number): string {
+    if (x === 5) return "wall_attic_north_window";
+    if (x === 19) return "wall_attic_north_window_cracked";
+    return ATTIC_NORTH_WALL_SPRITES[((x % 3) + 3) % 3];
+}
+
+function drawAtticNorthWallFace(
+    ctx: CanvasRenderingContext2D,
+    variant: 0 | 1 | 2,
+    windowStyle: "none" | "intact" | "cracked" = "none"
+): void {
+    r(ctx, 0, 0, 32, 64, P.atticWallDark);
+
+    // Vertical weathered boards across the full 2-tile height
+    for (let col = 0; col < 4; col++) {
+        const x = col * 8;
+        const tone =
+            (col + variant) % 2 === 0
+                ? P.atticWall
+                : (col + variant) % 3 === 0
+                  ? P.atticWallLight
+                  : P.atticWallAlt;
+        r(ctx, x, 0, 7, 64, tone);
+        r(ctx, x + 7, 0, 1, 64, P.atticWallSeam);
+        r(ctx, x, 0, 1, 64, P.atticWallHi);
+        // Knots / wormholes
+        const knotY = 10 + ((col * 11 + variant * 7) % 40);
+        r(ctx, x + 2, knotY, 2, 2, P.atticWallKnot);
+        if (variant > 0) {
+            r(ctx, x + 3, 20 + col * 8, 1, 10 + variant * 2, P.atticWoodCrack);
+        }
+    }
+
+    // Top plate / rafter shadow
+    r(ctx, 0, 0, 32, 3, P.atticWallDark);
+    r(ctx, 0, 1, 32, 1, P.atticWallSeam);
+    // Bottom sill plate
+    r(ctx, 0, 60, 32, 4, P.atticWallDark);
+    r(ctx, 0, 61, 32, 1, P.atticWallHi);
+    // Edge shadow
+    r(ctx, 0, 0, 1, 64, P.atticWallDark);
+    r(ctx, 31, 0, 1, 64, P.atticWallSeam);
+
+    if (windowStyle !== "none") {
+        drawAtticWallWindow(ctx, windowStyle === "cracked");
+    }
+}
+
+function drawAtticWallWindow(ctx: CanvasRenderingContext2D, cracked: boolean): void {
+    const wx = 6;
+    const wy = 10;
+    const ww = 20;
+    const wh = 28;
+
+    // Rough timber frame
+    r(ctx, wx - 2, wy - 2, ww + 4, wh + 4, P.atticWallDark);
+    r(ctx, wx - 1, wy - 1, ww + 2, wh + 2, P.atticWall);
+    r(ctx, wx, wy, ww, wh, P.black);
+
+    // Dirty daylight glass
+    r(ctx, wx + 1, wy + 1, ww - 2, wh - 2, P.waterDark);
+    r(ctx, wx + 2, wy + 2, ww - 4, wh - 4, P.water);
+    r(ctx, wx + 3, wy + 3, 4, 8, P.waterLight);
+    r(ctx, wx + ww - 7, wy + wh - 12, 3, 6, P.glassShine);
+
+    // Cross mullion
+    r(ctx, wx + Math.floor(ww / 2) - 1, wy, 2, wh, P.atticWallDark);
+    r(ctx, wx, wy + Math.floor(wh / 2) - 1, ww, 2, P.atticWallDark);
+    r(ctx, wx + Math.floor(ww / 2) - 1, wy, 1, wh, P.atticWall);
+    r(ctx, wx, wy + Math.floor(wh / 2) - 1, ww, 1, P.atticWall);
+
+    // Outer frame highlight
+    r(ctx, wx - 1, wy - 1, ww + 2, 1, P.atticWallLight);
+    r(ctx, wx - 1, wy - 1, 1, wh + 2, P.atticWallLight);
+
+    if (cracked) {
+        // Spider-crack across the lower-right pane
+        r(ctx, wx + 12, wy + 16, 1, 10, P.glassShine);
+        r(ctx, wx + 13, wy + 18, 5, 1, P.glassShine);
+        r(ctx, wx + 11, wy + 20, 1, 6, P.cream);
+        r(ctx, wx + 10, wy + 22, 4, 1, P.cream);
+        r(ctx, wx + 14, wy + 15, 3, 1, P.glassShine);
+        // Small missing shard
+        r(ctx, wx + 15, wy + 24, 2, 2, P.black);
+    }
+}
+
 const ROCK_WALL = {
     v: P.rockVoid,
     s: P.rockShadow,
@@ -931,6 +1025,32 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     wall_attic: tile32((ctx) => drawAtticWoodWallVariant(ctx, 0)),
     wall_attic_b: tile32((ctx) => drawAtticWoodWallVariant(ctx, 1)),
     wall_attic_c: tile32((ctx) => drawAtticWoodWallVariant(ctx, 2)),
+
+    wall_attic_north: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawAtticNorthWallFace(ctx, 0)
+    },
+    wall_attic_north_b: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawAtticNorthWallFace(ctx, 1)
+    },
+    wall_attic_north_c: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawAtticNorthWallFace(ctx, 2)
+    },
+    wall_attic_north_window: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawAtticNorthWallFace(ctx, 0, "intact")
+    },
+    wall_attic_north_window_cracked: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawAtticNorthWallFace(ctx, 1, "cracked")
+    },
 
     grass: tile32((ctx) => {
         // Uniform fill — no outline ring so repeated tiles blend

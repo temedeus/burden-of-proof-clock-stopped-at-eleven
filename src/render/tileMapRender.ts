@@ -4,6 +4,7 @@ import {
     rockWallSpriteName,
     atticFloorSpriteName,
     atticWallSpriteName,
+    atticNorthWallSpriteName,
     manorInteriorWallDraw,
     northWallSpriteName
 } from "../assets/procedural/tiles";
@@ -188,6 +189,29 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
         const { sprite, flipX, flipY } = manorInteriorWallDraw(x, y, map.width, map.height);
         spriteLoader.drawSprite(ctx, sprite, tileX, tileY, TILE_SIZE, TILE_SIZE, flipX, flipY);
         return;
+    }
+
+    if (tile === TILE_ATTIC_WALL) {
+        const onSide = x === 0 || x === map.width - 1;
+        const below =
+            y + 1 < map.height ? map.tiles[(y + 1) * map.width + x] : -1;
+        const above = y > 0 ? map.tiles[(y - 1) * map.width + x] : -1;
+        const aboveAbove = y > 1 ? map.tiles[(y - 2) * map.width + x] : -1;
+
+        if (!onSide && below === TILE_ATTIC_WALL) {
+            spriteLoader.drawSprite(
+                ctx,
+                atticNorthWallSpriteName(x),
+                tileX,
+                tileY,
+                TILE_SIZE,
+                TILE_SIZE * 2
+            );
+            return;
+        }
+        if (!onSide && above === TILE_ATTIC_WALL && aboveAbove !== TILE_ATTIC_WALL) {
+            return;
+        }
     }
 
     if (spriteName) {

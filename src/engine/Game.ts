@@ -1,7 +1,7 @@
 import { Room } from "../world/Room";
 import { createRoomFromConfig } from "../world/Rooms";
 import { renderRoomScene } from "../render/roomScene";
-import { spawnRoomNpcs } from "../world/npcSpawn";
+import { spawnRoomNpcs, resolveNpcPlacementTile } from "../world/npcSpawn";
 import { Input } from "./Input";
 import { Player, PlayerSpriteName } from "../entities/Player";
 import { DEFAULT_PLAYER_SPRITE } from "@cse/content-schema";
@@ -97,6 +97,8 @@ export class Game {
     private atticScare: AtticScareChase;
     private ledgerScare: AtticScareChase;
     private murdererStruggle: MurdererStruggle;
+    /** Chef Ytte is removed from the map after the dining scare until the hidden-room safe is opened. */
+    private cookHiddenAfterDiningScare: NPC | null = null;
     private victory = new VictorySequence();
     private studySecret = new StudySecretPuzzle(
         () => this.rooms.study,
@@ -299,6 +301,7 @@ export class Game {
             this.ledgerScare.endScare(murderer, this.rooms, (npc, room, x, y) =>
                 this.moveNPCToRoom(npc, room, x, y)
             );
+            this.hideCookAfterDiningScare(murderer);
             return;
         }
 
@@ -346,6 +349,9 @@ export class Game {
         }
         this.clueSystem.addClue(clueId);
         this.refreshStoryState();
+        if (clueId === "smuggling_documents") {
+            this.restoreCookAfterSafeOpened();
+        }
         clueSounds.playFound();
         this.clueNotification = { clueId };
         this.openDialog(this.getClueAssignmentHint(clueId));
@@ -397,6 +403,34 @@ export class Game {
         npc.x = atX;
         npc.y = atY;
         targetRoom.npcs.push(npc);
+    }
+
+    /** After the dining ledger scare, Ytte vanishes until the hidden-room safe is opened. */
+    private hideCookAfterDiningScare(murderer: NPC): void {
+        for (const room of Object.values(this.rooms)) {
+            const idx = room.npcs.indexOf(murderer);
+            if (idx >= 0) {
+                room.npcs.splice(idx, 1);
+                break;
+            }
+        }
+        murderer.clearStun();
+        murderer.setChasing(false);
+        murderer.setFleeing(false);
+        murderer.setSwingingKnife(false);
+        this.cookHiddenAfterDiningScare = murderer;
+    }
+
+    private restoreCookAfterSafeOpened(): void {
+        const cook = this.cookHiddenAfterDiningScare;
+        if (!cook) return;
+        this.cookHiddenAfterDiningScare = null;
+        const kitchen = this.rooms.kitchen;
+        if (!kitchen) return;
+        const placement = this.content.rooms.kitchen?.npcs?.find((n) => n.npcId === cook.id);
+        const x = (placement ? resolveNpcPlacementTile(placement.x, kitchen.map.width) : 8) * TILE_SIZE;
+        const y = (placement ? resolveNpcPlacementTile(placement.y, kitchen.map.height) : 7) * TILE_SIZE;
+        this.moveNPCToRoom(cook, kitchen, x, y);
     }
 
     private startMurdererConfrontation(): void {

@@ -181,7 +181,7 @@
       "name": "Bloody Apron",
       "description": "A kitchen apron stiff with dried blood — whoever wore it was close to the killing.",
       "requiresClues": ["smuggling_documents"],
-      "blockedHint": "The stalls look ordinary. Someone who knows the grounds may have seen more."
+      "blockedHint": "The stalls look ordinary. The stable boy may have seen something."
     },
     {
       "id": "cellar_evidence",
@@ -248,7 +248,7 @@
     },
     {
       "clueId": "rusty_old_key",
-      "roomId": "kitchen",
+      "roomId": "garden",
       "npcId": "worker_man",
       "hint": "The groundskeeper digs a rusty old key from his pocket and presses it into your hand.\n\n\"Von Virtanen left this with me for the attic chest. Reckon you'll be wanting it now.\""
     },
@@ -556,28 +556,26 @@
       "blockedDialog": "I keep to the grounds. Heard shouting from the house, but I saw nothing.",
       "conditions": [
         {
-          "requiresClues": ["barons_diary", "rusty_old_key", "smuggling_documents", "bloody_apron"],
-          "dialog": "You've got the apron from the stall — after Ytte hid it, I saw him slip down toward the cellars."
-        },
-        {
-          "requiresClues": ["barons_diary", "rusty_old_key", "smuggling_documents"],
-          "dialog": "Listen — I saw Ytte stuff something into one of the horse stalls late last night. Check the stables in the courtyard."
-        },
-        {
-          "requiresClues": ["smuggling_documents", "bloody_apron"],
-          "dialog": "That apron from the stall... after Ytte hid it, I saw him slip toward the cellars."
-        },
-        {
-          "requiresClues": ["smuggling_documents"],
-          "dialog": "I saw Ytte stuff something into one of the horse stalls late last night. Check the stables — east side of the courtyard."
-        },
-        {
           "requiresClues": ["barons_diary", "rusty_old_key"],
           "dialog": "You've already got the attic key. The old chest upstairs should open for you now."
         },
         {
           "requiresClues": ["barons_diary"],
           "dialog": "Aye — I have the attic key. Here. You'll need it for the old chest upstairs."
+        }
+      ]
+    },
+    {
+      "npcId": "worker_boy",
+      "default": "The horses are spooked. Something's not right tonight.",
+      "conditions": [
+        {
+          "requiresClues": ["smuggling_documents", "bloody_apron"],
+          "dialog": "That's the apron I saw — Ytte came up from the wine cellar with it last night. I thought the stains were wine, but I'm not so sure anymore. The wine cellar door was dangling on its hinges when he left."
+        },
+        {
+          "requiresClues": ["smuggling_documents"],
+          "dialog": "Late last night I saw Ytte come from the wine cellar with his apron. Thought he'd spilled wine on it — but he looked nervy, and the cellar door was dangling loose. He stuffed something in the grey horse's stall afterward."
         }
       ]
     }

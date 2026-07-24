@@ -18,13 +18,13 @@
     {
       "furnitureId": "carpet",
       "x": "center",
-      "y": 8,
+      "y": 10,
       "anchor": "center"
     },
     {
       "furnitureId": "dining_table",
       "x": "center",
-      "y": 8,
+      "y": 10,
       "anchor": "center"
     }
   ],

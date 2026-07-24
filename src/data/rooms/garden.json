@@ -93,5 +93,12 @@
       "spawnY": "bottom-2",
       "doorSprite": "door_castle"
     }
+  ],
+  "npcs": [
+    {
+      "npcId": "worker_man",
+      "x": 4,
+      "y": 12
+    }
   ]
 }

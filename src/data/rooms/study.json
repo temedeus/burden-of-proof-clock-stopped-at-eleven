@@ -13,31 +13,31 @@
     {
       "furnitureId": "bookshelves",
       "x": 1,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 2,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 12,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 13,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "secret_bookshelf",
       "x": 8,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {

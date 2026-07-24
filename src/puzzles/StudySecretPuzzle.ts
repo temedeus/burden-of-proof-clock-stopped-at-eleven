@@ -73,7 +73,7 @@ export class StudySecretPuzzle {
 
         const study = this.getStudyRoom();
         for (const x of [6, 7, 11, 12]) {
-            addFurnitureToRoom(study, { furnitureId: "bookshelves", x, y: 1, anchor: "top-left" });
+            addFurnitureToRoom(study, { furnitureId: "bookshelves", x, y: 0, anchor: "top-left" });
         }
         setHiddenExitDoorOpen(study, true, "hidden_room");
         setHiddenExitDoorOpen(this.getHiddenRoom(), true, "study");
@@ -89,7 +89,7 @@ export class StudySecretPuzzle {
         if (!anim || currentRoomId !== "study") return;
 
         const rawT = Math.min(1, anim.elapsed / anim.duration);
-        const y = TILE_SIZE;
+        const y = 0;
 
         if (rawT < 0.12) {
             const nudge = easeInOutCubic(rawT / 0.12) * 3;

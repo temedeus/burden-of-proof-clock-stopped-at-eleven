@@ -6,212 +6,170 @@
   "furniture": [
     {
       "furnitureId": "reading_table",
+      "x": 6,
+      "y": 13,
+      "anchor": "center"
+    },
+    {
+      "furnitureId": "reading_table",
       "x": "center",
-      "y": "center",
+      "y": 13,
+      "anchor": "center"
+    },
+    {
+      "furnitureId": "reading_table",
+      "x": 18,
+      "y": 13,
       "anchor": "center"
     },
     {
       "furnitureId": "bookshelves",
       "x": 1,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 2,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 3,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 4,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 5,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 6,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 18,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 19,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 20,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 21,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 22,
-      "y": 1,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 23,
-      "y": 1,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 17,
-      "y": 5,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 18,
-      "y": 5,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 19,
-      "y": 5,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 20,
-      "y": 5,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 21,
-      "y": 5,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 22,
-      "y": 5,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 23,
-      "y": 5,
+      "y": 0,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 1,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 2,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 3,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 4,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 5,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 6,
-      "y": 11,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 7,
-      "y": 11,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 8,
-      "y": 11,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "bookshelves",
-      "x": 16,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 17,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 18,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 19,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 20,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 21,
-      "y": 11,
+      "y": 5,
       "anchor": "top-left"
     },
     {
       "furnitureId": "bookshelves",
       "x": 22,
-      "y": 11,
+      "y": 5,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "bookshelves",
+      "x": 23,
+      "y": 5,
       "anchor": "top-left"
     }
   ],

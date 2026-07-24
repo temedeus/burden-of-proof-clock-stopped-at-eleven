@@ -8,14 +8,12 @@ export const DEFAULT_ATTIC_SCARE_MONOLOGUE = [
     "???: Too nosy. Far too nosy."
 ] as const;
 
-export const DEFAULT_LEDGER_SCARE_MONOLOGUE = [
-    "???: You weren't meant to find that page.",
-    "???: Burned evidence still talks — and so will you, if I don't stop you."
-] as const;
+export { LEDGER_DINING_SCARE_MONOLOGUE as DEFAULT_LEDGER_SCARE_MONOLOGUE } from "./DiningFireCutscene";
 
 /**
  * One-shot room-local scare: hooded murderer appears, monologues, then chases
- * only inside the scare room. Leaving ends the chase and restores the NPC.
+ * only inside the scare room. Attic scare ends when you leave; dining ledger
+ * scare locks exits and resolves via the fireplace cutscene instead.
  * Does not set accusedMurderer — the finale chase is separate.
  */
 export class AtticScareChase {

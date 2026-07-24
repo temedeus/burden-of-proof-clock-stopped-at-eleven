@@ -146,7 +146,8 @@ export function drawAccusationBlink(ctx: CanvasRenderingContext2D, redBlinkRemai
 export function drawStruggleMeter(
     ctx: CanvasRenderingContext2D,
     progress: number,
-    touchControls: boolean
+    touchControls: boolean,
+    title = "Push him off!"
 ): void {
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
@@ -161,7 +162,7 @@ export function drawStruggleMeter(
     ctx.fillStyle = "#e8e0d5";
     ctx.font = "bold 20px serif";
     ctx.textAlign = "center";
-    ctx.fillText("Push him off!", w / 2, barY - 16);
+    ctx.fillText(title, w / 2, barY - 16);
 
     ctx.fillStyle = "#1a1510";
     ctx.fillRect(barX, barY, barW, barH);
@@ -212,6 +213,76 @@ export function drawVictoryOverlay(ctx: CanvasRenderingContext2D, victoryTimer: 
         );
     }
     ctx.restore();
+}
+
+/** Bottom-of-screen contextual hint (hearth shove, locked doors, etc.). */
+export function drawActionHint(ctx: CanvasRenderingContext2D, text: string): void {
+    ctx.save();
+    ctx.font = "18px serif";
+    ctx.textAlign = "center";
+    const metrics = ctx.measureText(text);
+    const padX = 16;
+    const padY = 10;
+    const boxW = metrics.width + padX * 2;
+    const boxH = 18 + padY * 2;
+    const boxX = (ctx.canvas.width - boxW) / 2;
+    const boxY = ctx.canvas.height - 56 - boxH;
+    ctx.fillStyle = "rgba(0,0,0,0.72)";
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+    ctx.fillStyle = "#f0e6d8";
+    ctx.fillText(text, ctx.canvas.width / 2, boxY + padY + 16);
+    ctx.restore();
+}
+
+/** Dining fire cutscene overlays: rising smoke + optional full blackout. */
+export function drawDiningFireOverlay(
+    ctx: CanvasRenderingContext2D,
+    smokeAlpha: number,
+    blackAlpha: number,
+    flameIntensity: number,
+    animTime: number
+): void {
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+
+    if (flameIntensity > 0.05) {
+        const flicker = 0.85 + Math.sin(animTime * 11) * 0.15;
+        ctx.fillStyle = `rgba(180, 40, 10, ${0.12 * flameIntensity * flicker})`;
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 6; i++) {
+            const x = ((Math.sin(animTime * 2.1 + i * 1.7) * 0.5 + 0.5) * w * 0.7) + w * 0.15;
+            const y = h * (0.35 + (i % 3) * 0.12);
+            const r = 30 + i * 8 + Math.sin(animTime * 8 + i) * 10;
+            const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+            g.addColorStop(0, `rgba(255, 160, 40, ${0.22 * flameIntensity})`);
+            g.addColorStop(1, "rgba(255, 80, 0, 0)");
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    if (smokeAlpha > 0.01) {
+        ctx.fillStyle = `rgba(28, 26, 24, ${smokeAlpha * 0.85})`;
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 5; i++) {
+            const x = ((animTime * (20 + i * 7) + i * 90) % (w + 120)) - 60;
+            const y = h * 0.2 + i * 40 + Math.sin(animTime + i) * 12;
+            const g = ctx.createRadialGradient(x, y, 10, x, y, 90);
+            g.addColorStop(0, `rgba(60, 58, 55, ${smokeAlpha * 0.45})`);
+            g.addColorStop(1, "rgba(40, 38, 36, 0)");
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(x, y, 90, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    if (blackAlpha > 0.01) {
+        ctx.fillStyle = `rgba(0, 0, 0, ${blackAlpha})`;
+        ctx.fillRect(0, 0, w, h);
+    }
 }
 
 export { ROOM_TITLE_DURATION };

@@ -69,4 +69,49 @@ describe("applyStoryToRooms", () => {
         });
         expect(table?.description).toBe("Nothing of interest anymore.");
     });
+
+    it("keeps furniture examine text instead of room narrative summaries", () => {
+        const gardenConfig: RoomConfig = {
+            id: "garden",
+            width: 12,
+            height: 12,
+            furniture: [
+                { furnitureId: "bush", x: 2, y: 2, anchor: "top-left" },
+                { furnitureId: "pond", x: 5, y: 2, anchor: "top-left" }
+            ],
+            exits: []
+        };
+        const studyConfig: RoomConfig = {
+            id: "study",
+            width: 12,
+            height: 12,
+            furniture: [
+                { furnitureId: "table", x: 4, y: 4, anchor: "top-left" },
+                { furnitureId: "bookshelves", x: 1, y: 1, anchor: "top-left" }
+            ],
+            exits: []
+        };
+        const rooms = {
+            garden: createRoomFromConfig(gardenConfig),
+            study: createRoomFromConfig(studyConfig)
+        };
+        const story = storyPacket();
+        story.roomNarratives = [
+            { roomId: "garden", summary: "Rain has darkened the gravel paths." },
+            { roomId: "study", summary: "The desk has been disturbed." }
+        ];
+
+        applyStoryToRooms(rooms, story, { hasClue: () => false });
+
+        const bush = rooms.garden.interactables.find((obj) => obj.id === "bush");
+        const pond = rooms.garden.interactables.find((obj) => obj.id === "pond");
+        const table = rooms.study.interactables.find((obj) => obj.id === "table");
+        const shelves = rooms.study.interactables.find((obj) => obj.id === "bookshelves");
+
+        expect(bush?.description).toBe("Neatly trimmed hedges.");
+        expect(pond?.description).toBe("Still water; best not to wade in.");
+        expect(table?.description).not.toBe("The desk has been disturbed.");
+        expect(shelves?.description).toBe("Rows of leather-bound volumes.");
+        expect(table?.description).not.toBe(shelves?.description);
+    });
 });

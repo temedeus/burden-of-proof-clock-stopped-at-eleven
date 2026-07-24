@@ -42,7 +42,7 @@ Edit `src/data/story/generated/stories/active.json`:
 | `clueAssignments` | room, furniture index **or** `npcId`, examine hint |
 | `culpritNpcId` | Murderer NPC id |
 | `npcDialogOverrides` | Per-NPC dialog replacing base JSON when story is active |
-| `roomNarratives` | Atmosphere text applied to interactables per room |
+| `roomNarratives` | Atmosphere notes for authors / handoffs (not applied to furniture examine text) |
 
 Or use the editor (`pnpm dev:editor:full`) — see [src/editor/AGENTS.md](../editor/AGENTS.md).
 

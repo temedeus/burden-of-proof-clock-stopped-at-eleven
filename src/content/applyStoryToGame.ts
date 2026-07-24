@@ -34,7 +34,8 @@ function buildCollectibleClue(
     };
 }
 
-/** Attaches story clues to furniture and applies room narrative text to examine descriptions. */
+/** Attaches story clues to furniture. Room narratives are story metadata only — they must not
+ *  overwrite per-furniture examine descriptions. */
 export function applyStoryToRooms(
     rooms: Record<string, Room>,
     story: StoryCasePacket,
@@ -47,32 +48,6 @@ export function applyStoryToRooms(
         for (const obj of room.interactables) {
             obj.clues = [];
             obj.collectibleClues = [];
-        }
-    }
-
-    const narratives = new Map((story.roomNarratives ?? []).map((entry) => [entry.roomId, entry.summary]));
-    const skipNarrativeKeys = new Set(
-        (story.clueAssignments ?? [])
-            .filter((assignment) => assignment.furnitureId && !assignment.npcId)
-            .map(
-                (assignment) =>
-                    `${assignment.roomId}:${assignment.furnitureId}:${assignment.furnitureIndex ?? 0}`
-            )
-    );
-
-    for (const room of Object.values(rooms)) {
-        const narrative = narratives.get(room.id);
-        if (narrative) {
-            const idCounts = new Map<string, number>();
-            for (const obj of room.interactables) {
-                if (obj.interactionType === "confirm") continue;
-                const index = idCounts.get(obj.id) ?? 0;
-                idCounts.set(obj.id, index + 1);
-                if (skipNarrativeKeys.has(`${room.id}:${obj.id}:${index}`)) continue;
-                if (!obj.description?.includes(narrative)) {
-                    obj.description = narrative;
-                }
-            }
         }
     }
 

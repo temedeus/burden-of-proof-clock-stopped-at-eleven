@@ -92,6 +92,8 @@ export interface RoomConfig {
     northClerestoryRows?: number;
     /** How many tile rows the north wall occupies (default 1). */
     northWallThickness?: number;
+    /** Optional tint for the upper half of a thick north wall face. */
+    northWallAccent?: "rose";
     gravelPath?: GravelPathConfig;
     /** Multiple gravel paths (merged with `gravelPath` when present). */
     gravelPaths?: GravelPathConfig[];

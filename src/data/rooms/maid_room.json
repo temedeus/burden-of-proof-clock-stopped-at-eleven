@@ -3,6 +3,7 @@
   "width": 14,
   "height": 11,
   "northWallThickness": 2,
+  "northWallAccent": "rose",
   "furniture": [
     {
       "furnitureId": "crummy_bed",

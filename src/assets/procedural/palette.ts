@@ -144,6 +144,13 @@ export const P = {
     paleWallTrim: "#a89888",
     paleWallGold: "#9a8860",
 
+    /** Clear red plaster for bedroom & landing north walls (upper half) */
+    roseWall: "#b84848",
+    roseWallAlt: "#a03838",
+    roseWallHi: "#d06060",
+    roseWallShade: "#882828",
+    roseWallWash: "#c05050",
+
     rockVoid: "#121016",
     rockShadow: "#1a181e",
     rockDark: "#242228",

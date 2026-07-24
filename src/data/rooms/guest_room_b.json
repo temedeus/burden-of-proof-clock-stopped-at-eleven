@@ -3,6 +3,7 @@
   "width": 18,
   "height": 13,
   "northWallThickness": 2,
+  "northWallAccent": "rose",
   "furniture": [
     {
       "furnitureId": "guest_bed",

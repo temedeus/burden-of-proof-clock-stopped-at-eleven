@@ -174,7 +174,7 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
         if (!onSide && below === TILE_WALL) {
             spriteLoader.drawSprite(
                 ctx,
-                northWallSpriteName(x),
+                northWallSpriteName(x, map.northWallAccent),
                 tileX,
                 tileY,
                 TILE_SIZE,

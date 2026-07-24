@@ -1023,7 +1023,14 @@ export function createRoomFromConfig(
 
     return new Room(
         config.id,
-        new TileMap(roomWidth, roomHeight, tiles, furnitureUnderlay, terrainBeforeFurniture),
+        new TileMap(
+            roomWidth,
+            roomHeight,
+            tiles,
+            furnitureUnderlay,
+            terrainBeforeFurniture,
+            config.northWallAccent === "rose" ? "rose" : "none"
+        ),
         exits,
         interactables,
         npcs,

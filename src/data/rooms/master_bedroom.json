@@ -3,6 +3,7 @@
   "width": 25,
   "height": 18,
   "northWallThickness": 2,
+  "northWallAccent": "rose",
   "furniture": [
     {
       "furnitureId": "manor_carpet",

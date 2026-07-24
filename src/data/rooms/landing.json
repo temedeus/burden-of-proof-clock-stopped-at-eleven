@@ -3,6 +3,7 @@
   "width": 25,
   "height": 7,
   "northWallThickness": 2,
+  "northWallAccent": "rose",
   "southFenceBorder": true,
   "southFenceStyle": "wood",
   "southFenceOpening": "floor",

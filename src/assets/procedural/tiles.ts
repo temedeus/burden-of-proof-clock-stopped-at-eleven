@@ -891,18 +891,40 @@ export function manorInteriorWallDraw(
 
 /** Continuous 2-tile-tall north wall face (plaster over wood wainscoting). */
 export const NORTH_WALL_SPRITES = ["wall_north", "wall_north_b", "wall_north_c"] as const;
+export const NORTH_WALL_ROSE_SPRITES = [
+    "wall_north_rose",
+    "wall_north_rose_b",
+    "wall_north_rose_c"
+] as const;
 
-export function northWallSpriteName(x: number): (typeof NORTH_WALL_SPRITES)[number] {
-    return NORTH_WALL_SPRITES[((x % 3) + 3) % 3];
+export function northWallSpriteName(
+    x: number,
+    accent: "none" | "rose" = "none"
+): string {
+    const sprites = accent === "rose" ? NORTH_WALL_ROSE_SPRITES : NORTH_WALL_SPRITES;
+    return sprites[((x % 3) + 3) % 3];
 }
 
-function drawManorNorthWallFace(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2): void {
-    const plaster = [P.paleWall, P.paleWallAlt, P.cream][variant];
-    const plasterShade = [P.paleWallAlt, P.paleWallTrim, P.marble][variant];
-    const plasterHi = [P.cream, P.paleWall, P.white][variant];
+function drawManorNorthWallFace(
+    ctx: CanvasRenderingContext2D,
+    variant: 0 | 1 | 2,
+    accent: "none" | "rose" = "none"
+): void {
+    const plasterBase =
+        accent === "rose"
+            ? [P.roseWall, P.roseWallAlt, P.roseWallHi][variant]
+            : [P.paleWall, P.paleWallAlt, P.cream][variant];
+    const plasterShade =
+        accent === "rose"
+            ? [P.roseWallAlt, P.roseWallShade, P.roseWall][variant]
+            : [P.paleWallAlt, P.paleWallTrim, P.marble][variant];
+    const plasterHi =
+        accent === "rose"
+            ? [P.roseWallHi, P.roseWall, P.cream][variant]
+            : [P.cream, P.paleWall, P.white][variant];
 
     // Full face fill
-    r(ctx, 0, 0, 32, 64, plaster);
+    r(ctx, 0, 0, 32, 64, plasterBase);
 
     // Crown molding
     r(ctx, 0, 0, 32, 3, P.woodDark);
@@ -923,6 +945,19 @@ function drawManorNorthWallFace(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 
     }
     r(ctx, 8 + variant * 2, 12, 2, 1, plasterHi);
     r(ctx, 20, 20 - variant, 3, 1, plasterHi);
+
+    // Faint rose wash confined to the upper tile of the thick wall
+    if (accent === "rose") {
+        for (const [rx, ry, rw, rh] of [
+            [2, 5, 8, 3],
+            [12, 9, 10, 2],
+            [4, 15, 6, 2],
+            [18, 18, 7, 3],
+            [8, 24, 12, 2]
+        ] as [number, number, number, number][]) {
+            r(ctx, rx, ry, rw, rh, P.roseWallWash);
+        }
+    }
 
     // Chair rail
     r(ctx, 0, 28, 32, 4, P.woodDark);
@@ -976,6 +1011,21 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 32,
         nativeHeight: 64,
         draw: (ctx) => drawManorNorthWallFace(ctx, 2)
+    },
+    wall_north_rose: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawManorNorthWallFace(ctx, 0, "rose")
+    },
+    wall_north_rose_b: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawManorNorthWallFace(ctx, 1, "rose")
+    },
+    wall_north_rose_c: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawManorNorthWallFace(ctx, 2, "rose")
     },
 
     wall_wood: tile32((ctx) => {

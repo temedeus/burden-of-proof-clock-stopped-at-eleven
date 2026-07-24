@@ -36,7 +36,9 @@ export class TileMap {
         /** Fallback when `terrainBeforeFurniture` is absent (interior rooms use parquet `floor`) */
         public furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" | "marble" = "floor",
         /** Snapshot of terrain before furniture was placed; transparent props show grass/gravel/floor per cell */
-        public terrainBeforeFurniture: number[] | null = null
+        public terrainBeforeFurniture: number[] | null = null,
+        /** Accent for continuous thick north-wall faces (e.g. rose upper plaster). */
+        public northWallAccent: "none" | "rose" = "none"
     ) {}
 
     isBlocked(tx: number, ty: number, npcs: NPC[] = []): boolean {

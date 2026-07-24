@@ -2,6 +2,7 @@
   "id": "guest_room_b",
   "width": 18,
   "height": 13,
+  "northWallThickness": 2,
   "furniture": [
     {
       "furnitureId": "guest_bed",

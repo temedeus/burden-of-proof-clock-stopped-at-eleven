@@ -2,6 +2,7 @@
   "id": "study",
   "width": 20,
   "height": 14,
+  "northWallThickness": 2,
   "furniture": [
     {
       "furnitureId": "table",

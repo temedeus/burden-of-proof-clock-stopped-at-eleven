@@ -3,11 +3,12 @@
   "width": 12,
   "height": 10,
   "floorTile": "ceramic",
+  "northWallThickness": 2,
   "furniture": [
     {
       "furnitureId": "bathtub",
       "x": 8,
-      "y": 1,
+      "y": 2,
       "anchor": "top-left"
     },
     {

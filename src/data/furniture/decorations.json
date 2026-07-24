@@ -266,6 +266,7 @@
     "description": "A battered wooden shelf, half empty and thick with dust.",
     "width": 1,
     "height": 2,
+    "collisionRowsFromBottom": 1,
     "spriteName": "old_shelf"
   },
   "writing_table": {

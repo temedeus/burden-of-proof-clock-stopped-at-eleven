@@ -2,6 +2,7 @@
   "id": "maid_room",
   "width": 14,
   "height": 11,
+  "northWallThickness": 2,
   "furniture": [
     {
       "furnitureId": "crummy_bed",
@@ -26,7 +27,7 @@
       "x": 1,
       "y": 9,
       "anchor": "top-left",
-      "description": "A dented tin pail shoved into the corner. The guests have their own bathrooms — this is all she gets for the toilet."
+      "description": "A dented tin pail shoved into the corner. The guests have their own bathrooms \u2014 this is all she gets for the toilet."
     }
   ],
   "exits": [

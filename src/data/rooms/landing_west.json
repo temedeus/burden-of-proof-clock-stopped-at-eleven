@@ -2,6 +2,7 @@
   "id": "landing_west",
   "width": 14,
   "height": 7,
+  "northWallThickness": 2,
   "southFenceBorder": true,
   "southFenceStyle": "wood",
   "southFenceOpening": "floor",

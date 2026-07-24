@@ -2,6 +2,7 @@
   "id": "master_bedroom",
   "width": 25,
   "height": 18,
+  "northWallThickness": 2,
   "furniture": [
     {
       "furnitureId": "manor_carpet",

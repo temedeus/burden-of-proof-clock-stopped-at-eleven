@@ -314,8 +314,85 @@ export const EXTERIOR_SPRITES: Record<string, ProceduralSpriteDef> = {
         draw(ctx, w = 200, h = 120) {
             drawManorBuilding(ctx, w, h);
         }
+    },
+
+    stable_building: {
+        nativeWidth: 180,
+        nativeHeight: 120,
+        draw(ctx, w = 180, h = 120) {
+            drawStableBuilding(ctx, w, h);
+        }
     }
 };
+
+/**
+ * West end of a timber stable — body runs east to the courtyard wall;
+ * the east edge is cut so the rest is implied beyond.
+ */
+export function drawStableBuilding(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const sx = w / 180;
+    const sy = h / 120;
+    ctx.save();
+    ctx.scale(sx, sy);
+
+    // Foundation shadow — flush to east crop
+    r(ctx, 2, 16, 178, 98, P.shadow);
+
+    // Roof: west gable peak, ridge running east and cut off at the wall
+    r(ctx, 6, 10, 174, 48, P.woodDark);
+    r(ctx, 10, 14, 170, 40, P.wood);
+    r(ctx, 8, 6, 28, 12, P.outline);
+    r(ctx, 12, 2, 20, 10, P.woodDark);
+    r(ctx, 16, 0, 12, 6, P.outline);
+    r(ctx, 18, 2, 8, 2, P.woodHi);
+    for (let x = 28; x < 180; x += 10) {
+        r(ctx, x, 12, 2, 38, P.woodDark);
+    }
+    r(ctx, 30, 8, 150, 6, P.outline);
+    r(ctx, 40, 4, 140, 6, P.woodDark);
+
+    // Long south wall
+    r(ctx, 6, 54, 174, 54, P.wood);
+    r(ctx, 6, 54, 174, 4, P.woodHi);
+    r(ctx, 6, 104, 174, 4, P.woodDark);
+    for (let x = 14; x < 180; x += 10) {
+        r(ctx, x, 58, 2, 46, P.woodDark);
+    }
+
+    // West gable loft window
+    r(ctx, 14, 22, 14, 12, P.outline);
+    r(ctx, 16, 24, 10, 8, P.black);
+    r(ctx, 17, 25, 3, 6, P.candle);
+    r(ctx, 20, 25, 2, 6, P.outline);
+
+    // West wall window
+    r(ctx, 12, 66, 14, 12, P.outline);
+    r(ctx, 14, 68, 10, 8, P.black);
+    r(ctx, 15, 69, 3, 6, P.candle);
+    r(ctx, 18, 69, 2, 6, P.outline);
+
+    // South door on the west end bay
+    const doorX = 36;
+    const doorY = 70;
+    r(ctx, doorX - 4, doorY - 4, 40, 40, P.woodDark);
+    r(ctx, doorX, doorY, 32, 34, P.black);
+    r(ctx, doorX + 2, doorY + 2, 12, 30, P.woodDark);
+    r(ctx, doorX + 18, doorY + 2, 12, 30, P.woodDark);
+    r(ctx, doorX + 6, doorY + 16, 3, 3, P.gold);
+    r(ctx, doorX + 22, doorY + 16, 3, 3, P.gold);
+    r(ctx, doorX - 2, doorY + 34, 36, 4, P.sandDark);
+    r(ctx, doorX, doorY + 36, 32, 2, P.sand);
+
+    // Extra south windows along the run toward the east wall
+    for (const wx of [90, 130]) {
+        r(ctx, wx, 68, 16, 14, P.outline);
+        r(ctx, wx + 2, 70, 12, 10, P.black);
+        r(ctx, wx + 3, 71, 4, 8, P.candle);
+        r(ctx, wx + 7, 71, 2, 8, P.outline);
+    }
+
+    ctx.restore();
+}
 
 /** Stone ashlar course for courtyard north manor wall (top-down tile). */
 function drawManorWallTile(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2): void {

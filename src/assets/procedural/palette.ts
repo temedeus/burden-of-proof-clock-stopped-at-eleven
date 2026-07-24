@@ -71,6 +71,11 @@ export const P = {
     gravel: "#6a6560",
     gravelLight: "#8a8580",
 
+    sandDark: "#9a7a48",
+    sand: "#c4a86a",
+    sandLight: "#dfc88a",
+    sandHi: "#efe0b0",
+
     waterDark: "#1a3a5a",
     water: "#2a5a8a",
     waterLight: "#4a8ab8",

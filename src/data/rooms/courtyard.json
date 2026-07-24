@@ -15,12 +15,43 @@
       "centerY": 7,
       "start": 4,
       "end": 11
+    },
+    {
+      "orientation": "horizontal",
+      "widthTiles": 1,
+      "centerY": 12,
+      "start": 13,
+      "end": 14
+    }
+  ],
+  "terrainPatches": [
+    {
+      "tile": "sand",
+      "x": 15,
+      "y": 5,
+      "width": 10,
+      "height": 11
+    }
+  ],
+  "fenceRects": [
+    {
+      "x": 14,
+      "y": 5,
+      "width": 11,
+      "height": 12,
+      "style": "wood",
+      "openSides": ["east"],
+      "gate": {
+        "side": "west",
+        "center": 12,
+        "widthTiles": 2
+      }
     }
   ],
   "perimeterWalls": {
     "north": "manor",
     "west": "gate_side",
-    "east": "gate_side"
+    "east": "invisible"
   },
   "southFenceBorder": true,
   "furniture": [
@@ -55,21 +86,9 @@
       "anchor": "top-left"
     },
     {
-      "furnitureId": "tree",
+      "furnitureId": "stable_building",
       "x": 15,
-      "y": 3,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "tree",
-      "x": 18,
-      "y": 3,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "tree",
-      "x": 21,
-      "y": 3,
+      "y": 5,
       "anchor": "top-left"
     }
   ],
@@ -82,12 +101,13 @@
       "spawnY": "bottom-2"
     },
     {
-      "x": "bottom",
-      "y": "center",
+      "x": 16,
+      "y": 8,
       "targetRoom": "stable",
-      "spawnX": 1,
-      "spawnY": "center",
-      "doorSprite": "door_wood"
+      "spawnX": "center",
+      "spawnY": "bottom-2",
+      "doorSprite": "door_wood",
+      "skipDoorSprite": true
     },
     {
       "x": 5,

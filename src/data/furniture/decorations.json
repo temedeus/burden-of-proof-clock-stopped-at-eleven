@@ -165,6 +165,19 @@
     "collisionWidth": 6,
     "spriteName": "manor_building"
   },
+  "stable_building": {
+    "id": "stable_building",
+    "name": "Stable",
+    "description": "The west end of the timber stables. The rest continues beyond the courtyard wall.",
+    "width": 10,
+    "height": 4,
+    "drawWidth": 10,
+    "drawHeight": 6,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 4,
+    "collisionWidth": 10,
+    "spriteName": "stable_building"
+  },
   "fireplace": {
     "id": "fireplace",
     "name": "Fireplace",

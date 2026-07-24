@@ -561,7 +561,7 @@
         },
         {
           "requiresClues": ["barons_diary", "rusty_old_key", "smuggling_documents"],
-          "dialog": "Listen — I saw Ytte stuff something into one of the horse stalls late last night. Check the stables, south of the courtyard."
+          "dialog": "Listen — I saw Ytte stuff something into one of the horse stalls late last night. Check the stables in the courtyard."
         },
         {
           "requiresClues": ["smuggling_documents", "bloody_apron"],
@@ -569,7 +569,7 @@
         },
         {
           "requiresClues": ["smuggling_documents"],
-          "dialog": "I saw Ytte stuff something into one of the horse stalls late last night. Check the stables — south of the courtyard."
+          "dialog": "I saw Ytte stuff something into one of the horse stalls late last night. Check the stables — east side of the courtyard."
         },
         {
           "requiresClues": ["barons_diary", "rusty_old_key"],

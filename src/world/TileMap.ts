@@ -19,7 +19,8 @@ import {
     TILE_ROCK,
     TILE_ATTIC_FLOOR,
     TILE_MARBLE,
-    TILE_PALE_WALL
+    TILE_PALE_WALL,
+    TILE_INVISIBLE_WALL
 } from "./TileTypes";
 import { NPC } from "../entities/NPC";
 import { renderTileMap } from "../render/tileMapRender";
@@ -49,6 +50,7 @@ export class TileMap {
             tile === TILE_GATE_WALL ||
             tile === TILE_ATTIC_WALL ||
             tile === TILE_PALE_WALL ||
+            tile === TILE_INVISIBLE_WALL ||
             tile === TILE_FURNITURE ||
             tile === TILE_FENCE ||
             tile === TILE_FENCE_POST ||

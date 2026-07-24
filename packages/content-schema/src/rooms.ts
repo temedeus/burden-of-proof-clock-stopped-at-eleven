@@ -45,7 +45,34 @@ export interface GravelPathConfig {
     end?: number;
 }
 
-export type PerimeterWallStyle = "brick" | "wood" | "rock" | "manor" | "gate_side";
+/** Rectangular floor patch (sand paddock, gravel apron, etc.). */
+export interface TerrainPatchConfig {
+    tile: "sand" | "gravel";
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** Perimeter fence around a yard; optional gate opening. */
+export interface FenceRectConfig {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    /** Fence material (default iron). */
+    style?: "iron" | "wood";
+    /** Sides with no fence (e.g. open against a room wall). */
+    openSides?: Array<"north" | "south" | "east" | "west">;
+    gate?: {
+        side: "north" | "south" | "east" | "west";
+        /** Center tile along the gated side. */
+        center: number;
+        widthTiles?: number;
+    };
+}
+
+export type PerimeterWallStyle = "brick" | "wood" | "rock" | "manor" | "gate_side" | "invisible";
 
 export interface PerimeterWallsConfig {
     north?: PerimeterWallStyle;
@@ -68,6 +95,10 @@ export interface RoomConfig {
     gravelPath?: GravelPathConfig;
     /** Multiple gravel paths (merged with `gravelPath` when present). */
     gravelPaths?: GravelPathConfig[];
+    /** Rectangular terrain patches (e.g. sandy horse yard). */
+    terrainPatches?: TerrainPatchConfig[];
+    /** Interior fence enclosures (e.g. paddock around the stable). */
+    fenceRects?: FenceRectConfig[];
     /** Override individual perimeter rows/columns (applied before southFenceBorder). */
     perimeterWalls?: PerimeterWallsConfig;
     /** Replace the south wall row with iron fence tiles (gate gap from gravel path). */

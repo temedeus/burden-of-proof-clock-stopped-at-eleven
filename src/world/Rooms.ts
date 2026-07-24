@@ -8,6 +8,8 @@ import {
     TILE_FURNITURE,
     TILE_GRASS,
     TILE_GRAVEL,
+    TILE_SAND,
+    TILE_INVISIBLE_WALL,
     TILE_WALL,
     TILE_WOOD_WALL,
     TILE_ROCK_WALL,
@@ -25,7 +27,17 @@ import {
 import { Interactable } from "./Interactable";
 import { NPC } from "../entities/NPC";
 import { loadFurnitureCatalog } from "../content/loadCatalog";
-import type { FurnitureConfig, FurniturePlacement, GravelPathConfig, InteractionFaceConfig, PerimeterWallStyle, PerimeterWallsConfig, RoomConfig } from "@cse/content-schema";
+import type {
+    FenceRectConfig,
+    FurnitureConfig,
+    FurniturePlacement,
+    GravelPathConfig,
+    InteractionFaceConfig,
+    PerimeterWallStyle,
+    PerimeterWallsConfig,
+    RoomConfig,
+    TerrainPatchConfig
+} from "@cse/content-schema";
 import { detectOilLampWallSide } from "../assets/procedural/oil_lamp";
 import { inferWallAlign } from "../assets/procedural/wall_align";
 import { exitSkipsDoorTiles } from "./exitDoor";
@@ -536,7 +548,12 @@ function getSouthGatePath(config: RoomConfig): GravelPathConfig | undefined {
 }
 
 function isPathBlockingTile(tile: number): boolean {
-    return tile === TILE_WALL || tile === TILE_MANOR_WALL || tile === TILE_GATE_WALL;
+    return (
+        tile === TILE_WALL ||
+        tile === TILE_MANOR_WALL ||
+        tile === TILE_GATE_WALL ||
+        tile === TILE_INVISIBLE_WALL
+    );
 }
 
 function paintGravelTile(
@@ -584,6 +601,135 @@ function applyGravelPath(
     }
 }
 
+function paintTerrainTile(
+    tiles: number[],
+    roomWidth: number,
+    roomHeight: number,
+    x: number,
+    y: number,
+    tile: number
+): void {
+    if (x < 0 || x >= roomWidth || y < 1 || y >= roomHeight - 1) return;
+    const idx = y * roomWidth + x;
+    const current = tiles[idx];
+    if (current === TILE_INVISIBLE_WALL) {
+        tiles[idx] = tile;
+        return;
+    }
+    if (isPathBlockingTile(current)) return;
+    tiles[idx] = tile;
+}
+
+function applyTerrainPatch(
+    tiles: number[],
+    roomWidth: number,
+    roomHeight: number,
+    patch: TerrainPatchConfig
+): void {
+    const tile = patch.tile === "sand" ? TILE_SAND : TILE_GRAVEL;
+    for (let y = patch.y; y < patch.y + patch.height; y++) {
+        for (let x = patch.x; x < patch.x + patch.width; x++) {
+            paintTerrainTile(tiles, roomWidth, roomHeight, x, y, tile);
+        }
+    }
+}
+
+function isFenceGateCell(rect: FenceRectConfig, x: number, y: number): boolean {
+    const gate = rect.gate;
+    if (!gate) return false;
+    const gateW = Math.max(1, gate.widthTiles ?? 2);
+    const start = gate.center - Math.floor((gateW - 1) / 2);
+    const end = start + gateW - 1;
+    const x0 = rect.x;
+    const y0 = rect.y;
+    const x1 = rect.x + rect.width - 1;
+    const y1 = rect.y + rect.height - 1;
+    switch (gate.side) {
+        case "west":
+            return x === x0 && y >= start && y <= end;
+        case "east":
+            return x === x1 && y >= start && y <= end;
+        case "north":
+            return y === y0 && x >= start && x <= end;
+        case "south":
+            return y === y1 && x >= start && x <= end;
+    }
+}
+
+function applyFenceRect(
+    tiles: number[],
+    roomWidth: number,
+    roomHeight: number,
+    rect: FenceRectConfig
+): void {
+    const x0 = rect.x;
+    const y0 = rect.y;
+    const x1 = rect.x + rect.width - 1;
+    const y1 = rect.y + rect.height - 1;
+    const wood = rect.style === "wood";
+    const segment = wood ? TILE_BANISTER : TILE_FENCE;
+    const post = wood ? TILE_BANISTER_POST : TILE_FENCE_POST;
+    const open = new Set(rect.openSides ?? []);
+
+    const paint = (x: number, y: number, isPost: boolean) => {
+        if (x < 0 || x >= roomWidth || y < 1 || y >= roomHeight - 1) return;
+        if (isFenceGateCell(rect, x, y)) return;
+        const current = tiles[y * roomWidth + x];
+        if (isPathBlockingTile(current) && current !== TILE_INVISIBLE_WALL) return;
+        tiles[y * roomWidth + x] = isPost ? post : segment;
+    };
+
+    if (!open.has("north")) {
+        for (let x = x0; x <= x1; x++) {
+            paint(x, y0, (!open.has("west") && x === x0) || (!open.has("east") && x === x1));
+        }
+    }
+    if (!open.has("south")) {
+        for (let x = x0; x <= x1; x++) {
+            paint(x, y1, (!open.has("west") && x === x0) || (!open.has("east") && x === x1));
+        }
+    }
+    if (!open.has("west")) {
+        for (let y = y0 + (open.has("north") ? 0 : 1); y <= y1 - (open.has("south") ? 0 : 1); y++) {
+            if (y === y0 || y === y1) continue;
+            paint(x0, y, false);
+        }
+    }
+    if (!open.has("east")) {
+        for (let y = y0 + 1; y < y1; y++) {
+            paint(x1, y, false);
+        }
+    }
+}
+
+/** Fence tiles store themselves in the terrain snapshot — restore sand/gravel/grass underlay. */
+function restoreFenceUnderlaysFromProbe(
+    tiles: number[],
+    terrainBeforeFurniture: number[],
+    underlayProbe: number[]
+): void {
+    for (let i = 0; i < tiles.length; i++) {
+        const tile = tiles[i];
+        if (
+            tile !== TILE_FENCE &&
+            tile !== TILE_FENCE_POST &&
+            tile !== TILE_BANISTER &&
+            tile !== TILE_BANISTER_POST
+        ) {
+            continue;
+        }
+        const under = underlayProbe[i];
+        if (
+            under === TILE_SAND ||
+            under === TILE_GRAVEL ||
+            under === TILE_GRASS ||
+            under === TILE_FLOOR
+        ) {
+            terrainBeforeFurniture[i] = under;
+        }
+    }
+}
+
 function wallTileForStyle(style: PerimeterWallStyle, perimeterWall: number): number {
     switch (style) {
         case "wood":
@@ -594,9 +740,40 @@ function wallTileForStyle(style: PerimeterWallStyle, perimeterWall: number): num
             return TILE_MANOR_WALL;
         case "gate_side":
             return TILE_GATE_WALL;
+        case "invisible":
+            return TILE_INVISIBLE_WALL;
         default:
             return perimeterWall;
     }
+}
+
+/** Re-apply collision-only perimeter after terrain/furniture so walkable floors stay blocked. */
+function sealInvisiblePerimeter(
+    tiles: number[],
+    roomWidth: number,
+    roomHeight: number,
+    walls: PerimeterWallsConfig
+): void {
+    const sealColumn = (x: number) => {
+        for (let y = 0; y < roomHeight; y++) {
+            const idx = y * roomWidth + x;
+            const t = tiles[idx];
+            if (
+                t === TILE_FURNITURE ||
+                t === TILE_DOOR ||
+                t === TILE_MANOR_WALL ||
+                t === TILE_FENCE ||
+                t === TILE_FENCE_POST ||
+                t === TILE_BANISTER ||
+                t === TILE_BANISTER_POST
+            ) {
+                continue;
+            }
+            tiles[idx] = TILE_INVISIBLE_WALL;
+        }
+    };
+    if (walls.east === "invisible") sealColumn(roomWidth - 1);
+    if (walls.west === "invisible") sealColumn(0);
 }
 
 function applyPerimeterWalls(
@@ -687,6 +864,11 @@ export function createRoomFromConfig(
         applyGravelPath(tiles, roomWidth, roomHeight, path);
     }
 
+    const terrainPatches = config.terrainPatches ?? [];
+    for (const patch of terrainPatches) {
+        applyTerrainPatch(tiles, roomWidth, roomHeight, patch);
+    }
+
     if (config.southFenceBorder) {
         const gatePath = getSouthGatePath(config);
         const gateCx = gatePath
@@ -700,7 +882,23 @@ export function createRoomFromConfig(
         applySouthFenceBorder(tiles, roomWidth, roomHeight, gateCx, gateW, gapTile, segmentTile, postTile);
     }
 
+    for (const rect of config.fenceRects ?? []) {
+        applyFenceRect(tiles, roomWidth, roomHeight, rect);
+    }
+
     const terrainBeforeFurniture = tiles.slice();
+    // Fence tiles replaced floor cells — restore the pre-fence underlay for rendering.
+    if ((config.fenceRects?.length ?? 0) > 0) {
+        // Re-derive underlay from gravel + patches (fence paint wiped those cells).
+        const underlayProbe = new Array(roomWidth * roomHeight).fill(baseFloor);
+        for (const path of gravelPaths) {
+            applyGravelPath(underlayProbe, roomWidth, roomHeight, path);
+        }
+        for (const patch of terrainPatches) {
+            applyTerrainPatch(underlayProbe, roomWidth, roomHeight, patch);
+        }
+        restoreFenceUnderlaysFromProbe(tiles, terrainBeforeFurniture, underlayProbe);
+    }
 
     if (config.southFenceBorder || gravelPaths.length > 0) {
         const gatePath = getSouthGatePath(config);
@@ -750,11 +948,11 @@ export function createRoomFromConfig(
     });
 
     exits.forEach((exit) => {
+        if (exit.interactionOnly) return;
         if (exitSkipsDoorTiles(interactables, exit, roomWidth, roomHeight)) return;
 
         const isTopOrBottom = exit.y === 0 || exit.y === roomHeight - 1;
         const isLeftOrRight = exit.x === 0 || exit.x === roomWidth - 1;
-        if (!isTopOrBottom && !isLeftOrRight) return;
 
         if (isTopOrBottom) {
             const doorX1 = exit.x - 1;
@@ -772,7 +970,7 @@ export function createRoomFromConfig(
                     }
                 }
             }
-        } else {
+        } else if (isLeftOrRight) {
             const doorY1 = exit.y - 1;
             const doorY2 = exit.y;
             const doorY3 = exit.y + 1;
@@ -782,8 +980,19 @@ export function createRoomFromConfig(
                     tiles[doorY * roomWidth + exit.x] = TILE_DOOR;
                 }
             }
+        } else {
+            // Interior door (e.g. stable building south face)
+            for (const doorX of [exit.x - 1, exit.x, exit.x + 1]) {
+                if (doorX >= 0 && doorX < roomWidth) {
+                    tiles[exit.y * roomWidth + doorX] = TILE_DOOR;
+                }
+            }
         }
     });
+
+    if (config.perimeterWalls) {
+        sealInvisiblePerimeter(tiles, roomWidth, roomHeight, config.perimeterWalls);
+    }
 
     const npcs: NPC[] = [];
 

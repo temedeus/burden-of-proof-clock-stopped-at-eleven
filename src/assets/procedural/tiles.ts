@@ -907,6 +907,31 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     }),
 
+    sand: tile32((ctx) => {
+        r(ctx, 0, 0, 32, 32, P.sand);
+        const grains: [number, number, number, number, string][] = [
+            [3, 5, 2, 2, P.sandLight],
+            [10, 3, 3, 2, P.sandDark],
+            [17, 7, 2, 2, P.sandHi],
+            [24, 4, 2, 3, P.sandLight],
+            [6, 13, 2, 2, P.sandDark],
+            [14, 12, 3, 2, P.sandLight],
+            [21, 15, 2, 2, P.sandDark],
+            [27, 11, 2, 2, P.sandHi],
+            [2, 20, 3, 2, P.sandLight],
+            [9, 23, 2, 2, P.sandDark],
+            [16, 21, 2, 3, P.sandLight],
+            [23, 25, 3, 2, P.sandDark],
+            [28, 22, 2, 2, P.sandHi],
+            [5, 28, 2, 2, P.sandLight],
+            [12, 27, 2, 2, P.sandDark],
+            [19, 29, 3, 2, P.sandLight]
+        ];
+        for (const [x, y, w, h, color] of grains) {
+            r(ctx, x, y, w, h, color);
+        }
+    }),
+
     ceramic: tile32((ctx) => {
         const tile = 8;
         for (let row = 0; row < 4; row++) {

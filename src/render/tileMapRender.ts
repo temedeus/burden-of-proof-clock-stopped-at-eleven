@@ -14,6 +14,7 @@ import {
     TILE_FURNITURE,
     TILE_GRASS,
     TILE_GRAVEL,
+    TILE_SAND,
     TILE_ROCK,
     TILE_WALL,
     TILE_ROCK_WALL,
@@ -23,7 +24,8 @@ import {
     TILE_ATTIC_WALL,
     TILE_MARBLE,
     TILE_PALE_WALL,
-    TILE_WOOD_WALL
+    TILE_WOOD_WALL,
+    TILE_INVISIBLE_WALL
 } from "../world/TileTypes";
 import type { TileMap } from "../world/TileMap";
 
@@ -44,6 +46,7 @@ function underlaySpriteName(map: TileMap, x: number, y: number): string {
         const t = snap[idx];
         if (t === TILE_GRASS) return "grass";
         if (t === TILE_GRAVEL) return "gravel";
+        if (t === TILE_SAND) return "sand";
         if (t === TILE_CERAMIC) return "ceramic";
         if (t === TILE_ROCK) return rockFloorSpriteName(x, y);
         if (t === TILE_ATTIC_FLOOR) return atticFloorSpriteName(x, y);
@@ -85,6 +88,11 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
         return;
     }
 
+    if (tile === TILE_INVISIBLE_WALL) {
+        spriteLoader.drawSprite(ctx, underlaySpriteName(map, x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
+        return;
+    }
+
     if (tile === TILE_FENCE || tile === TILE_FENCE_POST || tile === TILE_BANISTER || tile === TILE_BANISTER_POST) {
         spriteLoader.drawSprite(ctx, underlaySpriteName(map, x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
         const railSprite =
@@ -104,8 +112,10 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
             ? underlaySpriteName(map, x, y)
             : tile === TILE_GRASS
               ? "grass"
-              : tile === TILE_GRAVEL
+            : tile === TILE_GRAVEL
                 ? "gravel"
+                : tile === TILE_SAND
+                  ? "sand"
                 : tile === TILE_CERAMIC
                   ? "ceramic"
                   : tile === TILE_ROCK

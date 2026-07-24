@@ -29,6 +29,7 @@ import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from 
 import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { gardenAmbience } from "../audio/GardenAmbience";
 import { atticMice } from "../systems/AtticMiceController";
+import { courtyardSeagull } from "../systems/CourtyardSeagullController";
 import { clueSounds } from "../audio/ClueSounds";
 import { pianoSounds } from "../audio/PianoSounds";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
@@ -531,6 +532,7 @@ export class Game {
     update(dt: number) {
         this.decorAnimTime += dt;
         atticMice.update(dt, this.currentRoom.id);
+        courtyardSeagull.update(dt, this.currentRoom.id);
         this.roomTitleBanner = tickRoomTitleBanner(this.roomTitleBanner, dt);
 
         if (this.state === "victory") {
@@ -828,6 +830,7 @@ export class Game {
         fireplaceAmbience.syncForRoom(this.currentRoom);
         gardenAmbience.syncForRoom(this.currentRoom);
         atticMice.syncForRoom(this.currentRoom.id);
+        courtyardSeagull.syncForRoom(this.currentRoom.id);
     }
 
     render(ctx: CanvasRenderingContext2D) {
@@ -865,7 +868,10 @@ export class Game {
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
             extraActors: [this.player],
-            extraOverheadActors: atticMice.getActors(() => this.decorAnimTime),
+            extraOverheadActors: [
+                ...atticMice.getActors(() => this.decorAnimTime),
+                ...courtyardSeagull.getActors()
+            ],
             skipClear: needsCentering
         });
 

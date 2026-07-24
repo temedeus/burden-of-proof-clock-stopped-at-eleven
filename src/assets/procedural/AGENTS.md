@@ -34,6 +34,7 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | `oil_lamp.ts` | Wall-mounted lamps with flicker |
 | `wall_align.ts` | Wall-side bounds for mounted decor |
 | `attic_mouse.ts` | Attic mice (via `AtticMiceController`) |
+| `seagull.ts` | Courtyard seagull (via `CourtyardSeagullController`) |
 | `animals.ts` | Horses (animated stable booths) |
 
 `oil_lamp` is in `sprites.ts` but drawn at runtime, not baked in `registry.ts`.

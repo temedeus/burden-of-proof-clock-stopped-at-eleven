@@ -450,15 +450,16 @@ export class Game {
         if (result === "success") {
             const murderer = this.getMurderer();
             if (murderer) {
-                this.shoveMurdererAway(murderer);
-                murderer.stun(this.murdererStruggle.stunSeconds);
+                const fallSign = this.shoveMurdererAway(murderer);
+                murderer.stun(this.murdererStruggle.stunSeconds, fallSign);
                 this.murdererStruggle.beginCatchCooldown();
             }
             this.state = "playing";
         }
     }
 
-    private shoveMurdererAway(murderer: NPC): void {
+    /** Shoves the murderer away; returns tip direction for the fall animation. */
+    private shoveMurdererAway(murderer: NPC): number {
         const px = this.player.x + this.player.width / 2;
         const py = this.player.y + this.player.height / 2;
         const mx = murderer.x + murderer.width / 2;
@@ -471,6 +472,7 @@ export class Game {
         const shove = TILE_SIZE * 1.5;
         murderer.x += dx * shove;
         murderer.y += dy * shove;
+        return dx >= 0 ? 1 : -1;
     }
 
     private resumeChaseAfterStun(npc: NPC): void {

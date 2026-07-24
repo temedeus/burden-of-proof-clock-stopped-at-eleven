@@ -20,6 +20,9 @@ export class NPC extends Entity {
   private swingingKnife = false;
   private knifeSwingTime = 0;
   private stunnedRemaining = 0;
+  private stunDuration = 0;
+  /** +1 or -1 — which way they tip when shoved. */
+  private fallSign = 1;
 
   constructor(
     id: string,
@@ -80,9 +83,14 @@ export class NPC extends Entity {
     this.chasing = value;
   }
 
-  /** Knock the NPC down — they stop chasing until the stun expires. */
-  stun(seconds: number): void {
-    this.stunnedRemaining = Math.max(0, seconds);
+  /**
+   * Knock the NPC down — they stop chasing until the stun expires.
+   * @param fallSign tip direction (+1 / -1); defaults to tipping right.
+   */
+  stun(seconds: number, fallSign = 1): void {
+    this.stunDuration = Math.max(0, seconds);
+    this.stunnedRemaining = this.stunDuration;
+    this.fallSign = fallSign >= 0 ? 1 : -1;
     this.chasing = false;
     this.fleeing = false;
     this.setSwingingKnife(false);
@@ -95,10 +103,30 @@ export class NPC extends Entity {
   /** Returns true when stun just ended and chase should resume. */
   tickStun(dt: number): boolean {
     if (this.stunnedRemaining <= 0) return false;
-    this.stunnedRemaining -= dt;
-    if (this.stunnedRemaining > 0) return false;
-    this.stunnedRemaining = 0;
-    return true;
+    this.stunnedRemaining = Math.max(0, this.stunnedRemaining - dt);
+    return this.stunnedRemaining <= 0;
+  }
+
+  /** 0 = upright, 1 = fully down — eased fall / get-up over the stun. */
+  private getFallProgress(): number {
+    if (this.stunDuration <= 0 || this.stunnedRemaining <= 0) return 0;
+    const FALL_IN = 0.38;
+    const GET_UP = 0.32;
+    const elapsed = this.stunDuration - this.stunnedRemaining;
+
+    if (elapsed < FALL_IN) {
+      const t = elapsed / FALL_IN;
+      // ease-out cubic — quick tip that settles
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    if (this.stunnedRemaining < GET_UP) {
+      const t = 1 - this.stunnedRemaining / GET_UP;
+      // ease-in cubic — slow push off the floor then up
+      return 1 - t * t * t;
+    }
+
+    return 1;
   }
 
   setChaseSpeed(speed: number): void {
@@ -180,16 +208,22 @@ export class NPC extends Entity {
   }
 
   render(ctx: CanvasRenderingContext2D) {
-    // Render NPC sprite from spritesheet, scaled to occupy 4 tiles (2x2)
-    if (this.isStunned()) {
+    const fall = this.getFallProgress();
+    if (fall > 0.001) {
+      const angle = this.fallSign * fall * (Math.PI / 2);
+      // Pivot near the feet so the tip reads as falling over
+      const pivotX = this.x + this.width / 2;
+      const pivotY = this.y + this.height * 0.85;
+      const sink = fall * this.height * 0.12;
+
       ctx.save();
-      ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-      ctx.rotate(Math.PI / 2);
+      ctx.translate(pivotX, pivotY + sink);
+      ctx.rotate(angle);
       spriteLoader.drawSprite(
         ctx,
         this.spriteName,
         -this.width / 2,
-        -this.height / 2,
+        -this.height * 0.85,
         this.width,
         this.height
       );
@@ -198,11 +232,11 @@ export class NPC extends Entity {
       spriteLoader.drawSprite(ctx, this.spriteName, this.x, this.y, this.width, this.height);
     }
 
-    if (this.swingingKnife && !this.isStunned()) {
+    if (this.swingingKnife && fall < 0.05) {
       this.drawSwingingKnife(ctx);
     }
 
-    if (!this.showNameLabel) return;
+    if (!this.showNameLabel || fall > 0.2) return;
 
     // Render name above NPC
     ctx.fillStyle = "#fff";

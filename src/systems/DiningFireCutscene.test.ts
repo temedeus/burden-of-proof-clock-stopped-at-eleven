@@ -28,16 +28,11 @@ function makeDiningWithFireplace(): Room {
             { x: 13, y: 2 },
             { x: 14, y: 2 }
         ],
-        footprintTiles: [
-            { x: 10, y: 1 },
-            { x: 14, y: 7 }
-        ]
+        footprintTiles: []
     };
-    // Expand footprint to a rectangle for the hazard helper
-    fireplace.footprintTiles = [];
     for (let x = 10; x <= 14; x++) {
         for (let y = 1; y <= 7; y++) {
-            fireplace.footprintTiles.push({ x, y });
+            fireplace.footprintTiles!.push({ x, y });
         }
     }
     return new Room(
@@ -63,42 +58,38 @@ describe("DiningFireCutscene hazard", () => {
     it("shows proximity hint near the hearth", () => {
         const room = makeDiningWithFireplace();
         const player = new NPC("player", 12 * TILE_SIZE, 9 * TILE_SIZE, "Detective");
-        expect(
-            playerNearFireplaceHazard(player, player.width, player.height, room)
-        ).toBe(true);
+        expect(playerNearFireplaceHazard(player, player.width, player.height, room)).toBe(true);
         player.y = 15 * TILE_SIZE;
-        expect(
-            playerNearFireplaceHazard(player, player.width, player.height, room)
-        ).toBe(false);
+        expect(playerNearFireplaceHazard(player, player.width, player.height, room)).toBe(false);
     });
 });
 
 describe("DiningFireCutscene phases", () => {
-    it("runs ignite through blackout then requests aftermath placement", () => {
+    it("throws into the fire then reaches drag placement after collapse/blackout", () => {
         const cut = new DiningFireCutscene();
-        cut.start();
-        expect(cut.phase).toBe("ignite");
+        cut.startThrow(100, 200, 150, 80);
+        expect(cut.phase).toBe("throw_into_fire");
 
-        let placed = false;
-        for (let i = 0; i < 200 && !placed; i++) {
+        let placedDrag = false;
+        for (let i = 0; i < 400 && !placedDrag; i++) {
             const tick = cut.tick(0.1);
-            if (tick.placeAftermath) placed = true;
+            if (tick.placeDrag) placedDrag = true;
         }
-        expect(placed).toBe(true);
-        expect(cut.phase).toBe("aftermath_setup");
+        expect(placedDrag).toBe(true);
+        expect(cut.phase).toBe("drag_setup");
     });
 
-    it("advances aftermath dialog into drag_out", () => {
+    it("advances wake dialog into baroness exit", () => {
         const cut = new DiningFireCutscene();
-        cut.start();
-        // Fast-forward to aftermath dialog
-        for (let i = 0; i < 300; i++) {
+        cut.startThrow(0, 0, 10, 10);
+        for (let i = 0; i < 500; i++) {
             const tick = cut.tick(0.1);
-            if (tick.openAftermathDialog) break;
+            if (tick.openWakeDialog) break;
         }
-        expect(cut.phase).toBe("aftermath_dialog");
+        expect(cut.phase).toBe("wake_dialog");
+        expect(cut.advanceDialog()).toBe("continue");
         expect(cut.advanceDialog()).toBe("continue");
         expect(cut.advanceDialog()).toBe("next_phase");
-        expect(cut.phase).toBe("drag_out");
+        expect(cut.phase).toBe("baroness_exit");
     });
 });

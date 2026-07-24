@@ -17,6 +17,7 @@ import {
     DiningFireCutscene,
     HEARTH_SHOVE_HINT,
     YTTE_HELPED_DIALOG,
+    eastOfDiningTablePosition,
     getFireplaceHazardBounds,
     playerNearFireplaceHazard
 } from "../systems/DiningFireCutscene";
@@ -502,7 +503,6 @@ export class Game {
         if (result === "success") {
             const murderer = this.getMurderer();
             if (murderer) {
-                const fallSign = this.shoveMurdererAway(murderer);
                 if (
                     this.ledgerScare.active &&
                     this.currentRoom.id === "dining" &&
@@ -516,6 +516,7 @@ export class Game {
                     this.beginDiningFireCutscene(murderer);
                     return;
                 }
+                const fallSign = this.shoveMurdererAway(murderer);
                 murderer.stun(this.murdererStruggle.stunSeconds, fallSign);
                 this.murdererStruggle.beginCatchCooldown();
             }
@@ -531,48 +532,51 @@ export class Game {
         murderer.setSwingingKnife(false);
 
         const hazard = getFireplaceHazardBounds(this.currentRoom);
-        if (hazard) {
-            murderer.x = hazard.x + hazard.w / 2 - murderer.width / 2;
-            murderer.y = hazard.y + TILE_SIZE * 2;
-        }
+        const toX = hazard
+            ? hazard.x + hazard.w / 2 - murderer.width / 2
+            : murderer.x;
+        const toY = hazard ? hazard.y + TILE_SIZE * 1.5 : murderer.y - TILE_SIZE * 2;
+        const fallSign = toX + murderer.width / 2 >= murderer.x + murderer.width / 2 ? 1 : -1;
+        murderer.stun(0.7, fallSign);
 
-        this.diningFire.start();
+        this.diningFire.startThrow(murderer.x, murderer.y, toX, toY);
         this.state = "cutscene";
         this.message = null;
         this.messagePages = [];
         this.messagePageIndex = 0;
     }
 
-    private placeDiningFireAftermath(): void {
+    private placeDiningFireDrag(): void {
         const dining = this.rooms.dining;
         const murderer = this.getMurderer();
         if (!dining || !murderer) return;
 
-        const cx = (dining.map.width / 2) * TILE_SIZE;
-        const cy = (dining.map.height / 2) * TILE_SIZE;
-        this.player.x = cx - this.player.width / 2;
-        this.player.y = cy;
+        const startX = (dining.map.width / 2 - 2) * TILE_SIZE;
+        const startY = (dining.map.height / 2 + 1) * TILE_SIZE;
+        this.player.x = startX;
+        this.player.y = startY;
         this.player.facing = "down";
         this.player.isMoving = false;
+        this.player.cutsceneFall = 1;
 
         murderer.setSpriteName("worker_man");
         murderer.setName("Chef Ytte");
         murderer.setShowNameLabel(true);
         murderer.clearStun();
-        murderer.x = this.player.x + this.player.width + TILE_SIZE * 0.25;
-        murderer.y = this.player.y;
+        murderer.x = this.player.x + this.player.width * 0.55;
+        murderer.y = this.player.y - TILE_SIZE * 0.15;
         this.moveNPCToRoom(murderer, dining, murderer.x, murderer.y);
 
-        const baroness = this.getNPCById("baroness");
-        if (baroness) {
-            const home = this.getRoomContainingNPC("baroness");
-            if (home) {
-                this.baronessCutsceneHome = { roomId: home.id, x: baroness.x, y: baroness.y };
-            }
-            const enterX = Math.floor(dining.map.width / 2) * TILE_SIZE;
-            const enterY = (dining.map.height - 4) * TILE_SIZE;
-            this.moveNPCToRoom(baroness, dining, enterX, enterY);
-        }
+        const doorX = (dining.map.width / 2) * TILE_SIZE - this.player.width / 2;
+        const doorY = (dining.map.height - 3) * TILE_SIZE;
+        this.diningFire.beginDrag(
+            this.player.x,
+            this.player.y,
+            murderer.x,
+            murderer.y,
+            doorX,
+            doorY
+        );
 
         this.currentRoom = dining;
         this.syncRoomAmbience();
@@ -581,6 +585,9 @@ export class Game {
     private placeDiningFireWake(): void {
         const guest = this.rooms.guest_room_a;
         if (!guest) return;
+
+        this.player.cutsceneFall = 0;
+        this.player.isMoving = false;
 
         const bed = guest.interactables.find((obj) => obj.id === "guest_bed");
         if (bed?.tiles?.length) {
@@ -593,10 +600,13 @@ export class Game {
             this.player.y = 5 * TILE_SIZE;
         }
         this.player.facing = "down";
-        this.player.isMoving = false;
 
         const baroness = this.getNPCById("baroness");
         if (baroness) {
+            const home = this.getRoomContainingNPC("baroness");
+            if (home && !this.baronessCutsceneHome) {
+                this.baronessCutsceneHome = { roomId: home.id, x: baroness.x, y: baroness.y };
+            }
             this.moveNPCToRoom(
                 baroness,
                 guest,
@@ -608,6 +618,21 @@ export class Game {
         this.currentRoom = guest;
         this.syncRoomAmbience();
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle("guest_room_a"));
+    }
+
+    private startBaronessExitWalk(): void {
+        const baroness = this.getNPCById("baroness");
+        const guest = this.rooms.guest_room_a;
+        if (!baroness || !guest) return;
+
+        const exit = guest.exits.find((e) => e.targetRoom === "landing") ?? guest.exits[0];
+        const toX = exit
+            ? (typeof exit.x === "number" ? exit.x : guest.map.width / 2) * TILE_SIZE
+            : (guest.map.width / 2) * TILE_SIZE;
+        const toY = exit
+            ? (typeof exit.y === "number" ? exit.y : guest.map.height - 1) * TILE_SIZE
+            : (guest.map.height - 2) * TILE_SIZE;
+        this.diningFire.beginBaronessExit(baroness.x, baroness.y, toX, toY);
     }
 
     private restoreBaronessAfterCutscene(): void {
@@ -633,6 +658,8 @@ export class Game {
     }
 
     private completeDiningFireCutscene(): void {
+        this.player.cutsceneFall = 0;
+        this.player.isMoving = false;
         this.diningFire.reset();
         this.message = null;
         this.messagePages = [];
@@ -654,7 +681,7 @@ export class Game {
 
     private updateDiningFireCutscene(dt: number): void {
         if (
-            (this.diningFire.phase === "aftermath_dialog" || this.diningFire.phase === "wake_dialog") &&
+            this.diningFire.phase === "wake_dialog" &&
             (this.input.wasPressed("e") || this.input.wasPressed(" "))
         ) {
             if (this.messagePageIndex < this.messagePages.length - 1) {
@@ -664,25 +691,29 @@ export class Game {
             }
             const result = this.diningFire.advanceDialog();
             if (result === "continue") {
-                const line =
-                    this.diningFire.phase === "aftermath_dialog"
-                        ? this.diningFire.getAftermathLine()
-                        : this.diningFire.getWakeLine();
-                this.openCutsceneDialog(line, "baroness");
+                this.openCutsceneDialog(this.diningFire.getWakeLine(), "baroness");
                 return;
             }
             talkSounds.stopDialogue();
             this.message = null;
             this.messagePages = [];
             this.messagePageIndex = 0;
-            if (!this.diningFire.active) {
-                this.completeDiningFireCutscene();
-            }
+            this.startBaronessExitWalk();
             return;
         }
 
         const murderer = this.getMurderer();
-        if (murderer && this.diningFire.phase === "panic_run" && this.currentRoom.id === "dining") {
+        const phase = this.diningFire.phase;
+
+        if (murderer && phase === "throw_into_fire") {
+            const pos = this.diningFire.throwPosition();
+            murderer.x = pos.x;
+            murderer.y = pos.y;
+            murderer.tickStun(dt);
+        }
+
+        if (murderer && phase === "panic_run" && this.currentRoom.id === "dining") {
+            murderer.clearStun();
             const pos = this.diningFire.panicPosition(
                 this.currentRoom.map.width,
                 this.currentRoom.map.height
@@ -691,21 +722,59 @@ export class Game {
             murderer.y = pos.y;
         }
 
-        if (murderer && this.diningFire.phase === "drag_out") {
-            const targetX = (this.currentRoom.map.width / 2) * TILE_SIZE;
-            const targetY = (this.currentRoom.map.height - 2) * TILE_SIZE;
-            const drag = Math.min(1, dt * 0.85);
-            murderer.x += (targetX - murderer.x) * drag;
-            murderer.y += (targetY - murderer.y) * drag;
-            this.player.x += (targetX - this.player.x) * drag;
-            this.player.y += (targetY - this.player.y) * drag;
+        if (phase === "player_retreat") {
+            const pos = this.diningFire.retreatPosition();
+            this.player.x = pos.x;
+            this.player.y = pos.y;
+            this.player.facing = "right";
+            this.player.cutsceneFall = 0;
+            if (this.diningFire.retreatT < 1) {
+                this.player.advanceCutsceneWalk(dt);
+            } else {
+                this.player.isMoving = false;
+            }
         }
 
-        const tick = this.diningFire.tick(dt);
-        if (tick.placeAftermath) this.placeDiningFireAftermath();
-        if (tick.openAftermathDialog) {
-            this.openCutsceneDialog(this.diningFire.getAftermathLine(), "baroness");
+        if (phase === "player_collapse") {
+            this.player.isMoving = false;
+            this.player.cutsceneFall = this.diningFire.collapseT;
         }
+
+        if (murderer && (phase === "drag_setup" || phase === "drag_out")) {
+            this.player.cutsceneFall = 1;
+            this.player.isMoving = false;
+            if (phase === "drag_out") {
+                const p = this.diningFire.dragPlayerPosition();
+                const y = this.diningFire.dragYttePosition(this.player.width);
+                this.player.x = p.x;
+                this.player.y = p.y;
+                murderer.x = y.x;
+                murderer.y = y.y;
+            }
+        }
+
+        if (phase === "baroness_exit") {
+            const baroness = this.getNPCById("baroness");
+            if (baroness) {
+                const pos = this.diningFire.baronessExitPosition();
+                baroness.x = pos.x;
+                baroness.y = pos.y;
+            }
+        }
+
+        const prevPhase = this.diningFire.phase;
+        const tick = this.diningFire.tick(dt);
+
+        if (prevPhase === "panic_run" && this.diningFire.phase === "player_retreat") {
+            const dest =
+                eastOfDiningTablePosition(this.currentRoom, this.player.width) ?? {
+                    x: this.player.x + TILE_SIZE * 4,
+                    y: this.player.y
+                };
+            this.diningFire.beginRetreat(this.player.x, this.player.y, dest.x, dest.y);
+        }
+
+        if (tick.placeDrag) this.placeDiningFireDrag();
         if (tick.hideCookAndFinishDrag) this.finishDiningFireDrag();
         if (tick.placeWake) this.placeDiningFireWake();
         if (tick.openWakeDialog) {

@@ -23,6 +23,8 @@ export class Player extends Entity {
     height = TILE_SIZE * 2;
     facing: Facing = "down";
     isMoving = false;
+    /** 0 upright … 1 fully collapsed (cutscene only). */
+    cutsceneFall = 0;
     private animTime = 0;
     private spriteName: PlayerSpriteName;
 
@@ -151,12 +153,42 @@ export class Player extends Entity {
         return false;
     }
 
+    /** Advance walk animation during scripted cutscene movement. */
+    advanceCutsceneWalk(dt: number): void {
+        this.isMoving = true;
+        this.animTime += dt;
+    }
+
     private getPose(): CharacterPose {
         if (!this.isMoving) return "idle";
         return Math.floor(this.animTime * WALK_ANIM_FPS) % 2 === 0 ? "walk_a" : "walk_b";
     }
 
     render(ctx: CanvasRenderingContext2D) {
+        const fall = Math.max(0, Math.min(1, this.cutsceneFall));
+        if (fall > 0.001) {
+            const angle = fall * (Math.PI / 2);
+            const pivotX = this.x + this.width / 2;
+            const pivotY = this.y + this.height - 4;
+            const sink = fall * this.height * 0.12;
+            ctx.save();
+            ctx.translate(pivotX, pivotY + sink);
+            ctx.rotate(angle);
+            ctx.translate(-pivotX, -pivotY);
+            spriteLoader.drawCharacterFrame(
+                ctx,
+                this.spriteName,
+                this.facing,
+                this.getPose(),
+                this.x,
+                this.y,
+                this.width,
+                this.height
+            );
+            ctx.restore();
+            return;
+        }
+
         spriteLoader.drawCharacterFrame(
             ctx,
             this.spriteName,

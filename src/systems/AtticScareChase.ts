@@ -127,6 +127,7 @@ export class AtticScareChase {
     ): void {
         if (!this.active) return;
 
+        murderer.clearStun();
         murderer.setChasing(false);
         murderer.setSwingingKnife(false);
         murderer.setSpriteName(this.originalSprite);

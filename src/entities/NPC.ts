@@ -100,6 +100,12 @@ export class NPC extends Entity {
     return this.stunnedRemaining > 0;
   }
 
+  /** Clear knock-down state immediately (e.g. after a room change). */
+  clearStun(): void {
+    this.stunnedRemaining = 0;
+    this.stunDuration = 0;
+  }
+
   /** Returns true when stun just ended and chase should resume. */
   tickStun(dt: number): boolean {
     if (this.stunnedRemaining <= 0) return false;

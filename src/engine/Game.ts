@@ -308,7 +308,10 @@ export class Game {
             return;
         }
 
-        if (this.murdererChase.accusedMurderer && murderer.isChasing()) {
+        if (this.murdererChase.accusedMurderer) {
+            // Stunned or mid-chase — reset and respawn into the new room as usual
+            murderer.clearStun();
+            this.murdererChase.startMurdererChase(murderer);
             this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
         }
     }
@@ -589,7 +592,9 @@ export class Game {
             if (chaseTick.spawnInRoom) {
                 const murderer = this.getMurderer();
                 if (murderer) {
+                    murderer.clearStun();
                     this.murdererChase.spawnMurdererInRoom(murderer, this.currentRoom, this.rooms);
+                    this.murdererChase.startMurdererChase(murderer);
                 }
             }
 

@@ -17,7 +17,8 @@ import {
     DiningFireCutscene,
     HEARTH_SHOVE_HINT,
     YTTE_HELPED_DIALOG,
-    eastOfDiningTablePosition,
+    diningHallDoorPosition,
+    diningTableRetreatWaypoints,
     getFireplaceHazardBounds,
     playerNearFireplaceHazard
 } from "../systems/DiningFireCutscene";
@@ -551,13 +552,10 @@ export class Game {
         const murderer = this.getMurderer();
         if (!dining || !murderer) return;
 
-        const startX = (dining.map.width / 2 - 2) * TILE_SIZE;
-        const startY = (dining.map.height / 2 + 1) * TILE_SIZE;
-        this.player.x = startX;
-        this.player.y = startY;
-        this.player.facing = "down";
+        // Stay collapsed where the retreat ended; Ytte appears unmasked beside the player.
         this.player.isMoving = false;
         this.player.cutsceneFall = 1;
+        this.player.facing = "down";
 
         murderer.setSpriteName("worker_man");
         murderer.setName("Chef Ytte");
@@ -567,15 +565,15 @@ export class Game {
         murderer.y = this.player.y - TILE_SIZE * 0.15;
         this.moveNPCToRoom(murderer, dining, murderer.x, murderer.y);
 
-        const doorX = (dining.map.width / 2) * TILE_SIZE - this.player.width / 2;
-        const doorY = (dining.map.height - 3) * TILE_SIZE;
+        // Drag into the hall door (west along the south wall from the collapse spot).
+        const door = diningHallDoorPosition(dining, this.player.width);
         this.diningFire.beginDrag(
             this.player.x,
             this.player.y,
             murderer.x,
             murderer.y,
-            doorX,
-            doorY
+            door.x,
+            door.y
         );
 
         this.currentRoom = dining;
@@ -726,7 +724,7 @@ export class Game {
             const pos = this.diningFire.retreatPosition();
             this.player.x = pos.x;
             this.player.y = pos.y;
-            this.player.facing = "right";
+            this.player.facing = this.diningFire.retreatFacing();
             this.player.cutsceneFall = 0;
             if (this.diningFire.retreatT < 1) {
                 this.player.advanceCutsceneWalk(dt);
@@ -766,12 +764,20 @@ export class Game {
         const tick = this.diningFire.tick(dt);
 
         if (prevPhase === "panic_run" && this.diningFire.phase === "player_retreat") {
-            const dest =
-                eastOfDiningTablePosition(this.currentRoom, this.player.width) ?? {
-                    x: this.player.x + TILE_SIZE * 4,
-                    y: this.player.y
-                };
-            this.diningFire.beginRetreat(this.player.x, this.player.y, dest.x, dest.y);
+            const [via, to] = diningTableRetreatWaypoints(
+                this.currentRoom,
+                this.player.x,
+                this.player.y,
+                this.player.width
+            );
+            this.diningFire.beginRetreat(
+                this.player.x,
+                this.player.y,
+                via.x,
+                via.y,
+                to.x,
+                to.y
+            );
         }
 
         if (tick.placeDrag) this.placeDiningFireDrag();

@@ -97,27 +97,48 @@ export function playerNearFireplaceHazard(
     return entityCenterOverlapsRect(player, expanded, playerW, playerH);
 }
 
-/** Stand on the eastern side of the dining table. */
-export function eastOfDiningTablePosition(room: Room, playerW: number): { x: number; y: number } | null {
+/** Hall door on the south wall of the dining room (collapse / drag target). */
+export function diningHallDoorPosition(room: Room, playerW: number): { x: number; y: number } {
+    const hallExit = room.exits.find((e) => e.targetRoom === "hall") ?? room.exits[0];
+    if (hallExit) {
+        return {
+            x: hallExit.x * TILE_SIZE + TILE_SIZE - playerW / 2,
+            y: Math.max(0, hallExit.y - 1) * TILE_SIZE
+        };
+    }
+    return {
+        x: (room.map.width / 2) * TILE_SIZE - playerW / 2,
+        y: (room.map.height - 3) * TILE_SIZE
+    };
+}
+
+/** L-path around the table toward the hall door: east clear of the table, then south to door level. */
+export function diningTableRetreatWaypoints(
+    room: Room,
+    fromX: number,
+    fromY: number,
+    playerW: number
+): [{ x: number; y: number }, { x: number; y: number }] {
+    const door = diningHallDoorPosition(room, playerW);
     const table = room.interactables.find((obj) => obj.id === "dining_table");
     if (!table) {
-        return {
-            x: (room.map.width * 0.72) * TILE_SIZE - playerW / 2,
-            y: 10 * TILE_SIZE
-        };
+        const eastX = Math.max(fromX + TILE_SIZE * 4, (room.map.width * 0.72) * TILE_SIZE - playerW / 2);
+        return [
+            { x: eastX, y: fromY },
+            { x: eastX, y: door.y }
+        ];
     }
     const tiles = table.footprintTiles?.length ? table.footprintTiles : table.tiles;
     let maxX = -Infinity;
-    let sumY = 0;
     for (const t of tiles) {
         maxX = Math.max(maxX, t.x);
-        sumY += t.y;
     }
-    const avgY = sumY / tiles.length;
-    return {
-        x: (maxX + 1.25) * TILE_SIZE,
-        y: avgY * TILE_SIZE
-    };
+    // Collapse just east of the door line — looks like a dash for the exit.
+    const eastX = (maxX + 1.5) * TILE_SIZE;
+    return [
+        { x: eastX, y: fromY },
+        { x: eastX, y: door.y }
+    ];
 }
 
 /**
@@ -134,7 +155,7 @@ export class DiningFireCutscene {
     panicT = 0;
     /** 0..1 — throw arc into the hearth. */
     throwT = 0;
-    /** 0..1 — player walk to east of table. */
+    /** 0..1 — player walk around the table (east, then south). */
     retreatT = 0;
     /** 0..1 — player collapse. */
     collapseT = 0;
@@ -146,6 +167,8 @@ export class DiningFireCutscene {
     throwFrom = { x: 0, y: 0 };
     throwTo = { x: 0, y: 0 };
     retreatFrom = { x: 0, y: 0 };
+    /** Corner east of the table, then final spot south of it. */
+    retreatVia = { x: 0, y: 0 };
     retreatTo = { x: 0, y: 0 };
     dragFromPlayer = { x: 0, y: 0 };
     dragFromYtte = { x: 0, y: 0 };
@@ -199,8 +222,16 @@ export class DiningFireCutscene {
         return "next_phase";
     }
 
-    beginRetreat(fromX: number, fromY: number, toX: number, toY: number): void {
+    beginRetreat(
+        fromX: number,
+        fromY: number,
+        viaX: number,
+        viaY: number,
+        toX: number,
+        toY: number
+    ): void {
         this.retreatFrom = { x: fromX, y: fromY };
+        this.retreatVia = { x: viaX, y: viaY };
         this.retreatTo = { x: toX, y: toY };
         this.retreatT = 0;
     }
@@ -268,8 +299,9 @@ export class DiningFireCutscene {
                 break;
             }
             case "player_retreat": {
-                this.retreatT = Math.min(1, this.timer / 1.6);
-                this.smokeAlpha = Math.min(0.55, 0.35 + this.timer * 0.12);
+                // East leg ~45%, south leg ~55% of the walk.
+                this.retreatT = Math.min(1, this.timer / 2.2);
+                this.smokeAlpha = Math.min(0.55, 0.35 + this.timer * 0.1);
                 this.flameIntensity = 1;
                 if (this.retreatT >= 1) {
                     this.phase = "player_collapse";
@@ -381,10 +413,24 @@ export class DiningFireCutscene {
 
     retreatPosition(): { x: number; y: number } {
         const t = this.retreatT;
+        const eastShare = 0.45;
+        if (t <= eastShare) {
+            const u = eastShare > 0 ? t / eastShare : 1;
+            return {
+                x: this.retreatFrom.x + (this.retreatVia.x - this.retreatFrom.x) * u,
+                y: this.retreatFrom.y + (this.retreatVia.y - this.retreatFrom.y) * u
+            };
+        }
+        const u = (t - eastShare) / (1 - eastShare);
         return {
-            x: this.retreatFrom.x + (this.retreatTo.x - this.retreatFrom.x) * t,
-            y: this.retreatFrom.y + (this.retreatTo.y - this.retreatFrom.y) * t
+            x: this.retreatVia.x + (this.retreatTo.x - this.retreatVia.x) * u,
+            y: this.retreatVia.y + (this.retreatTo.y - this.retreatVia.y) * u
         };
+    }
+
+    /** Facing while walking the L-path around the table. */
+    retreatFacing(): "right" | "down" {
+        return this.retreatT <= 0.45 ? "right" : "down";
     }
 
     dragPlayerPosition(): { x: number; y: number } {
@@ -451,5 +497,6 @@ export class DiningFireCutscene {
         this.dragT = 0;
         this.baronessExitT = 0;
         this.waitingForDialogAdvance = false;
+        this.retreatVia = { x: 0, y: 0 };
     }
 }

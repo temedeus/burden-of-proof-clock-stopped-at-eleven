@@ -6,6 +6,7 @@ import { Room } from "../world/Room";
 import { TileMap } from "../world/TileMap";
 import {
     DiningFireCutscene,
+    diningTableRetreatWaypoints,
     entityCenterOverlapsRect,
     getFireplaceHazardBounds,
     playerNearFireplaceHazard
@@ -61,6 +62,32 @@ describe("DiningFireCutscene hazard", () => {
         expect(playerNearFireplaceHazard(player, player.width, player.height, room)).toBe(true);
         player.y = 15 * TILE_SIZE;
         expect(playerNearFireplaceHazard(player, player.width, player.height, room)).toBe(false);
+    });
+});
+
+describe("DiningFireCutscene retreat path", () => {
+    it("routes east of the table then south past it", () => {
+        const room = makeDiningWithFireplace();
+        const table: Interactable = {
+            id: "dining_table",
+            name: "Dining table",
+            description: "table",
+            tiles: [],
+            footprintTiles: []
+        };
+        for (let x = 8; x <= 15; x++) {
+            for (let y = 9; y <= 11; y++) {
+                table.footprintTiles!.push({ x, y });
+            }
+        }
+        room.interactables.push(table);
+
+        const [via, to] = diningTableRetreatWaypoints(room, 10 * TILE_SIZE, 8 * TILE_SIZE, 32);
+        expect(via.x).toBeGreaterThan(15 * TILE_SIZE);
+        expect(via.y).toBe(8 * TILE_SIZE);
+        expect(to.x).toBe(via.x);
+        // Door is on the south wall — collapse at door level, east of center.
+        expect(to.y).toBeGreaterThanOrEqual((room.map.height - 4) * TILE_SIZE);
     });
 });
 

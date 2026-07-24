@@ -527,11 +527,11 @@ function drawDeadBaronBody(ctx: CanvasRenderingContext2D): void {
     const s = BARON_STYLE;
     const skin = P.skin;
 
-    // Blood pool spreading on the floor
-    r(ctx, 2, 33, 28, 5, P.brickDark);
-    r(ctx, 4, 34, 24, 3, P.red);
-    r(ctx, 6, 35, 20, 2, P.redLight);
-    r(ctx, 10, 36, 12, 1, P.brick);
+    // Blood pool under the body — drawn first so the torso sits on top of it
+    r(ctx, 5, 24, 24, 8, P.brickDark);
+    r(ctx, 7, 25, 20, 6, P.red);
+    r(ctx, 9, 26, 16, 5, P.redLight);
+    r(ctx, 11, 29, 12, 2, P.brick);
 
     // Legs (sprawled to the right)
     r(ctx, 22, 24, 6, 4, s.pants!);

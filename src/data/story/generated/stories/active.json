@@ -553,11 +553,11 @@
       "conditions": [
         {
           "requiresClues": ["barons_diary", "rusty_old_key", "smuggling_documents", "bloody_apron"],
-          "dialog": "You've got the attic key. And that apron from the stall — after Ytte hid it, I saw him slip down toward the cellars."
+          "dialog": "You've got the apron from the stall — after Ytte hid it, I saw him slip down toward the cellars."
         },
         {
           "requiresClues": ["barons_diary", "rusty_old_key", "smuggling_documents"],
-          "dialog": "You've got the attic key. And listen — I saw Ytte stuff something into one of the horse stalls late last night. Check the stables, south of the courtyard."
+          "dialog": "Listen — I saw Ytte stuff something into one of the horse stalls late last night. Check the stables, south of the courtyard."
         },
         {
           "requiresClues": ["smuggling_documents", "bloody_apron"],
@@ -573,7 +573,7 @@
         },
         {
           "requiresClues": ["barons_diary"],
-          "dialog": "Aye — von Virtanen left the attic key with me. Here. You'll need it for the old chest upstairs."
+          "dialog": "Aye — I have the attic key. Here. You'll need it for the old chest upstairs."
         }
       ]
     }

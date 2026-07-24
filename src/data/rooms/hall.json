@@ -2,6 +2,7 @@
   "id": "hall",
   "width": 25,
   "height": 18,
+  "northWallThickness": 2,
   "furniture": [
     {
       "furnitureId": "staircase",

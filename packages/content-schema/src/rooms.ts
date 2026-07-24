@@ -63,6 +63,8 @@ export interface RoomConfig {
     wallTile?: "brick" | "wood" | "rock" | "attic_wood" | "pale";
     /** Rows above the north wall reserved for overhead clerestory windows (wall + collision shift down). */
     northClerestoryRows?: number;
+    /** How many tile rows the north wall occupies (default 1). */
+    northWallThickness?: number;
     gravelPath?: GravelPathConfig;
     /** Multiple gravel paths (merged with `gravelPath` when present). */
     gravelPaths?: GravelPathConfig[];

@@ -22,6 +22,8 @@ export class Room {
         public interactables: Interactable[],
         public npcs: NPC[] = [],
         /** Rows above the north wall used for overhead clerestory art (collision wall sits below). */
-        public northClerestoryRows = 0
+        public northClerestoryRows = 0,
+        /** How many tile rows the north wall occupies (default 1). */
+        public northWallThickness = 1
     ) {}
 }

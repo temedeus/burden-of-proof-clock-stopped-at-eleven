@@ -160,13 +160,17 @@ export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void
         const doorSprite = exit.doorSprite ?? "door";
         const isTopOrBottom = exit.y === 0 || exit.y === room.map.height - 1;
         if (isTopOrBottom) {
+            const depthTiles =
+                exit.y === room.map.height - 1
+                    ? 1
+                    : Math.max(1, room.northWallThickness);
             spriteLoader.drawSprite(
                 ctx,
                 doorSprite,
                 (exit.x - 1) * TILE_SIZE,
                 exit.y * TILE_SIZE,
                 TILE_SIZE * 3,
-                TILE_SIZE
+                TILE_SIZE * depthTiles
             );
         } else {
             spriteLoader.drawSprite(

@@ -660,10 +660,16 @@ export function createRoomFromConfig(
                   ? TILE_PALE_WALL
                   : TILE_WALL;
     const northWallRow = config.northClerestoryRows ?? 0;
+    const northWallThickness = Math.max(1, config.northWallThickness ?? 1);
     const tiles = new Array(roomWidth * roomHeight).fill(baseFloor);
 
     for (let x = 0; x < roomWidth; x++) {
-        tiles[northWallRow * roomWidth + x] = perimeterWall;
+        for (let i = 0; i < northWallThickness; i++) {
+            const row = northWallRow + i;
+            if (row < roomHeight - 1) {
+                tiles[row * roomWidth + x] = perimeterWall;
+            }
+        }
         tiles[(roomHeight - 1) * roomWidth + x] = perimeterWall;
     }
 
@@ -754,10 +760,16 @@ export function createRoomFromConfig(
             const doorX1 = exit.x - 1;
             const doorX2 = exit.x;
             const doorX3 = exit.x + 1;
+            const depth =
+                exit.y === northWallRow || exit.y === 0 ? northWallThickness : 1;
 
-            for (const doorX of [doorX1, doorX2, doorX3]) {
-                if (doorX >= 0 && doorX < roomWidth) {
-                    tiles[exit.y * roomWidth + doorX] = TILE_DOOR;
+            for (let i = 0; i < depth; i++) {
+                const doorY = exit.y + i;
+                if (doorY < 0 || doorY >= roomHeight) continue;
+                for (const doorX of [doorX1, doorX2, doorX3]) {
+                    if (doorX >= 0 && doorX < roomWidth) {
+                        tiles[doorY * roomWidth + doorX] = TILE_DOOR;
+                    }
                 }
             }
         } else {
@@ -796,6 +808,7 @@ export function createRoomFromConfig(
         exits,
         interactables,
         npcs,
-        northWallRow
+        northWallRow,
+        northWallThickness
     );
 }

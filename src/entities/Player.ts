@@ -2,7 +2,7 @@ import { Entity } from "./Entity";
 import { Input } from "../engine/Input";
 import { TILE_SIZE } from "../world/constants";
 import { TileMap } from "../world/TileMap";
-import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_ATTIC_WALL, TILE_PALE_WALL, TILE_FURNITURE } from "../world/TileTypes";
+import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_ATTIC_WALL, TILE_PALE_WALL, TILE_INVISIBLE_WALL, TILE_FURNITURE, TILE_FENCE, TILE_FENCE_POST, TILE_BANISTER, TILE_BANISTER_POST, TILE_WOOD_FENCE, TILE_WOOD_FENCE_POST, TILE_WOOD_FENCE_V } from "../world/TileTypes";
 import { NPC } from "./NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
 import type { CharacterPose } from "../assets/procedural/characters";
@@ -102,20 +102,30 @@ export class Player extends Entity {
                     tile === TILE_MANOR_WALL ||
                     tile === TILE_GATE_WALL ||
                     tile === TILE_ATTIC_WALL ||
-                    tile === TILE_PALE_WALL
+                    tile === TILE_PALE_WALL ||
+                    tile === TILE_INVISIBLE_WALL
                 ) {
                     return true;
                 }
             }
         }
 
-        // Check furniture - only check bottom row of player's tiles
+        // Check furniture / fences — only bottom row of player's tiles
         for (let tx = leftTile; tx < rightTile; tx++) {
             if (tx < 0 || tx >= map.width || bottomRow < 0 || bottomRow >= map.height) {
                 continue;
             }
             const tile = map.getTile(tx, bottomRow);
-            if (tile === TILE_FURNITURE) { // only bottom row checks
+            if (
+                tile === TILE_FURNITURE ||
+                tile === TILE_FENCE ||
+                tile === TILE_FENCE_POST ||
+                tile === TILE_BANISTER ||
+                tile === TILE_BANISTER_POST ||
+                tile === TILE_WOOD_FENCE ||
+                tile === TILE_WOOD_FENCE_POST ||
+                tile === TILE_WOOD_FENCE_V
+            ) {
                 return true;
             }
         }

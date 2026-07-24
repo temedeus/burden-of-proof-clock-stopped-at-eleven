@@ -24,5 +24,8 @@ export const TILE_TO_SPRITE: Record<number, string> = {
     17: "banister_post",
     18: "floor_marble",
     19: "wall_pale",
-    20: "sand"
+    20: "sand",
+    22: "fence_wood",
+    23: "fence_wood_post",
+    24: "fence_wood_v"
 };

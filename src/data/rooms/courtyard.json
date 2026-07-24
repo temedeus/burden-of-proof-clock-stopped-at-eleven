@@ -27,10 +27,10 @@
   "terrainPatches": [
     {
       "tile": "sand",
-      "x": 15,
+      "x": 14,
       "y": 5,
-      "width": 10,
-      "height": 11
+      "width": 11,
+      "height": 12
     }
   ],
   "fenceRects": [

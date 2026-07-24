@@ -22,7 +22,10 @@ import {
     TILE_MARBLE,
     TILE_PALE_WALL,
     TILE_BANISTER,
-    TILE_BANISTER_POST
+    TILE_BANISTER_POST,
+    TILE_WOOD_FENCE,
+    TILE_WOOD_FENCE_POST,
+    TILE_WOOD_FENCE_V
 } from "./TileTypes";
 import { Interactable } from "./Interactable";
 import { NPC } from "../entities/NPC";
@@ -667,37 +670,42 @@ function applyFenceRect(
     const x1 = rect.x + rect.width - 1;
     const y1 = rect.y + rect.height - 1;
     const wood = rect.style === "wood";
-    const segment = wood ? TILE_BANISTER : TILE_FENCE;
+    // Horizontal runs keep the landing-style wood rail; vertical runs use a thin top-down line.
+    const hSeg = wood ? TILE_BANISTER : TILE_FENCE;
+    const vSeg = wood ? TILE_WOOD_FENCE_V : TILE_FENCE;
     const post = wood ? TILE_BANISTER_POST : TILE_FENCE_POST;
     const open = new Set(rect.openSides ?? []);
 
-    const paint = (x: number, y: number, isPost: boolean) => {
+    const paint = (x: number, y: number, tile: number) => {
         if (x < 0 || x >= roomWidth || y < 1 || y >= roomHeight - 1) return;
         if (isFenceGateCell(rect, x, y)) return;
         const current = tiles[y * roomWidth + x];
         if (isPathBlockingTile(current) && current !== TILE_INVISIBLE_WALL) return;
-        tiles[y * roomWidth + x] = isPost ? post : segment;
+        tiles[y * roomWidth + x] = tile;
     };
 
     if (!open.has("north")) {
         for (let x = x0; x <= x1; x++) {
-            paint(x, y0, (!open.has("west") && x === x0) || (!open.has("east") && x === x1));
+            const isCorner =
+                (!open.has("west") && x === x0) || (!open.has("east") && x === x1);
+            paint(x, y0, isCorner ? post : hSeg);
         }
     }
     if (!open.has("south")) {
         for (let x = x0; x <= x1; x++) {
-            paint(x, y1, (!open.has("west") && x === x0) || (!open.has("east") && x === x1));
+            const isCorner =
+                (!open.has("west") && x === x0) || (!open.has("east") && x === x1);
+            paint(x, y1, isCorner ? post : hSeg);
         }
     }
     if (!open.has("west")) {
-        for (let y = y0 + (open.has("north") ? 0 : 1); y <= y1 - (open.has("south") ? 0 : 1); y++) {
-            if (y === y0 || y === y1) continue;
-            paint(x0, y, false);
+        for (let y = y0 + 1; y < y1; y++) {
+            paint(x0, y, vSeg);
         }
     }
     if (!open.has("east")) {
         for (let y = y0 + 1; y < y1; y++) {
-            paint(x1, y, false);
+            paint(x1, y, vSeg);
         }
     }
 }
@@ -710,14 +718,7 @@ function restoreFenceUnderlaysFromProbe(
 ): void {
     for (let i = 0; i < tiles.length; i++) {
         const tile = tiles[i];
-        if (
-            tile !== TILE_FENCE &&
-            tile !== TILE_FENCE_POST &&
-            tile !== TILE_BANISTER &&
-            tile !== TILE_BANISTER_POST
-        ) {
-            continue;
-        }
+        if (!isFenceLikeTile(tile)) continue;
         const under = underlayProbe[i];
         if (
             under === TILE_SAND ||
@@ -728,6 +729,18 @@ function restoreFenceUnderlaysFromProbe(
             terrainBeforeFurniture[i] = under;
         }
     }
+}
+
+function isFenceLikeTile(tile: number): boolean {
+    return (
+        tile === TILE_FENCE ||
+        tile === TILE_FENCE_POST ||
+        tile === TILE_BANISTER ||
+        tile === TILE_BANISTER_POST ||
+        tile === TILE_WOOD_FENCE ||
+        tile === TILE_WOOD_FENCE_POST ||
+        tile === TILE_WOOD_FENCE_V
+    );
 }
 
 function wallTileForStyle(style: PerimeterWallStyle, perimeterWall: number): number {
@@ -762,10 +775,7 @@ function sealInvisiblePerimeter(
                 t === TILE_FURNITURE ||
                 t === TILE_DOOR ||
                 t === TILE_MANOR_WALL ||
-                t === TILE_FENCE ||
-                t === TILE_FENCE_POST ||
-                t === TILE_BANISTER ||
-                t === TILE_BANISTER_POST
+                isFenceLikeTile(t)
             ) {
                 continue;
             }

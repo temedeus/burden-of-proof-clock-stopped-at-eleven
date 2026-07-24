@@ -289,6 +289,42 @@ export const EXTERIOR_SPRITES: Record<string, ProceduralSpriteDef> = {
         drawIronFenceRails(ctx, 14, 32);
     }),
 
+    /** Top-down outdoor wood rail — horizontal run reads as a thin line. */
+    fence_wood: tile32((ctx) => {
+        r(ctx, 0, 14, 32, 3, P.woodDark);
+        r(ctx, 0, 15, 32, 1, P.woodHi);
+        for (let x = 3; x < 30; x += 8) {
+            r(ctx, x, 13, 2, 5, P.wood);
+            r(ctx, x + 1, 14, 1, 3, P.woodLight);
+        }
+    }),
+
+    /** Top-down outdoor wood rail — vertical run reads as a thin line. */
+    fence_wood_v: tile32((ctx) => {
+        r(ctx, 14, 0, 3, 32, P.woodDark);
+        r(ctx, 15, 0, 1, 32, P.woodHi);
+        for (let y = 3; y < 30; y += 8) {
+            r(ctx, 13, y, 5, 2, P.wood);
+            r(ctx, 14, y + 1, 3, 1, P.woodLight);
+        }
+    }),
+
+    fence_wood_post: tile32((ctx) => {
+        r(ctx, 12, 12, 8, 8, P.woodDark);
+        r(ctx, 13, 13, 6, 6, P.wood);
+        r(ctx, 14, 14, 2, 4, P.woodLight);
+        r(ctx, 12, 12, 8, 2, P.woodHi);
+        // Short stubs so the post joins adjacent rails
+        r(ctx, 0, 14, 12, 3, P.woodDark);
+        r(ctx, 0, 15, 12, 1, P.woodHi);
+        r(ctx, 20, 14, 12, 3, P.woodDark);
+        r(ctx, 20, 15, 12, 1, P.woodHi);
+        r(ctx, 14, 0, 3, 12, P.woodDark);
+        r(ctx, 15, 0, 1, 12, P.woodHi);
+        r(ctx, 14, 20, 3, 12, P.woodDark);
+        r(ctx, 15, 20, 1, 12, P.woodHi);
+    }),
+
     banister: tile32((ctx) => {
         r(ctx, 0, 26, 32, 6, P.atticWoodDark);
         r(ctx, 0, 27, 32, 2, P.atticWood);

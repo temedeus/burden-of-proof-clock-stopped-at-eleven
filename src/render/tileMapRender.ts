@@ -25,7 +25,10 @@ import {
     TILE_MARBLE,
     TILE_PALE_WALL,
     TILE_WOOD_WALL,
-    TILE_INVISIBLE_WALL
+    TILE_INVISIBLE_WALL,
+    TILE_WOOD_FENCE,
+    TILE_WOOD_FENCE_POST,
+    TILE_WOOD_FENCE_V
 } from "../world/TileTypes";
 import type { TileMap } from "../world/TileMap";
 
@@ -93,7 +96,15 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
         return;
     }
 
-    if (tile === TILE_FENCE || tile === TILE_FENCE_POST || tile === TILE_BANISTER || tile === TILE_BANISTER_POST) {
+    if (
+        tile === TILE_FENCE ||
+        tile === TILE_FENCE_POST ||
+        tile === TILE_BANISTER ||
+        tile === TILE_BANISTER_POST ||
+        tile === TILE_WOOD_FENCE ||
+        tile === TILE_WOOD_FENCE_POST ||
+        tile === TILE_WOOD_FENCE_V
+    ) {
         spriteLoader.drawSprite(ctx, underlaySpriteName(map, x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
         const railSprite =
             tile === TILE_FENCE
@@ -102,7 +113,13 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                   ? "fence_post"
                   : tile === TILE_BANISTER
                     ? "banister"
-                    : "banister_post";
+                    : tile === TILE_BANISTER_POST
+                      ? "banister_post"
+                      : tile === TILE_WOOD_FENCE
+                        ? "fence_wood"
+                        : tile === TILE_WOOD_FENCE_V
+                          ? "fence_wood_v"
+                          : "fence_wood_post";
         spriteLoader.drawSprite(ctx, railSprite, tileX, tileY, TILE_SIZE, TILE_SIZE);
         return;
     }

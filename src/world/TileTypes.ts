@@ -38,3 +38,9 @@ export const TILE_PALE_WALL = 19;
 export const TILE_SAND = 20;
 /** Collision-only perimeter (no wall art; underlay shows through). */
 export const TILE_INVISIBLE_WALL = 21;
+/** Outdoor wood fence — horizontal run (top-down thin rail). */
+export const TILE_WOOD_FENCE = 22;
+/** Outdoor wood fence corner / post. */
+export const TILE_WOOD_FENCE_POST = 23;
+/** Outdoor wood fence — vertical run (top-down thin rail). */
+export const TILE_WOOD_FENCE_V = 24;

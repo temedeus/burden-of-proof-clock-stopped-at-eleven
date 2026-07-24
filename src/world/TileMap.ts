@@ -20,7 +20,10 @@ import {
     TILE_ATTIC_FLOOR,
     TILE_MARBLE,
     TILE_PALE_WALL,
-    TILE_INVISIBLE_WALL
+    TILE_INVISIBLE_WALL,
+    TILE_WOOD_FENCE,
+    TILE_WOOD_FENCE_POST,
+    TILE_WOOD_FENCE_V
 } from "./TileTypes";
 import { NPC } from "../entities/NPC";
 import { renderTileMap } from "../render/tileMapRender";
@@ -55,7 +58,10 @@ export class TileMap {
             tile === TILE_FENCE ||
             tile === TILE_FENCE_POST ||
             tile === TILE_BANISTER ||
-            tile === TILE_BANISTER_POST
+            tile === TILE_BANISTER_POST ||
+            tile === TILE_WOOD_FENCE ||
+            tile === TILE_WOOD_FENCE_POST ||
+            tile === TILE_WOOD_FENCE_V
         ) {
             return true;
         }

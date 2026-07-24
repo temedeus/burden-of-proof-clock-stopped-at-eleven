@@ -14,7 +14,7 @@ const CHARACTER_SLIDES: CharacterSlide[] = [
     { spriteName: "npc_male", name: "Mr. Thompson", role: "Butler", line: "The manor's steadfast butler." },
     { spriteName: "maid", name: "Mrs. Clarke", role: "Maid", line: "Keeps the halls in order." },
     { spriteName: "worker_man", name: "Chef Ytte", role: "Cook", line: "Prepares every meal at the manor." },
-    { spriteName: "baron", name: "von Virtanen", role: "Baron", line: "Master of von Virtanen Manor." },
+    { spriteName: "baron", name: "von Virtanen", role: "Baron — the victim", line: "Found dead in the hall when the clock stopped." },
     { spriteName: "baroness", name: "Lady von Virtanen", role: "Baroness", line: "The lady of the house." },
     { spriteName: "worker_man", name: "The Groundskeeper", role: "Worker", line: "Tends the grounds by day." },
     { spriteName: "worker_boy", name: "The Stable Boy", role: "Stable hand", line: "Cares for the horses." },
@@ -105,11 +105,11 @@ export class IntroScreen {
         ctx.textAlign = "center";
 
         const lines = [
-            "A terrible crime has shaken the household.",
-            "Someone has been killed under von Virtanen's roof.",
+            "Baron von Virtanen has been murdered in his own hall.",
+            "His body was found beneath the stopped clock at eleven.",
             "",
             "The police have secured the scene. Now a detective",
-            "must gather clues, question the residents,",
+            "must gather clues, question the household,",
             "and find the murderer before it's too late."
         ];
         let y = h * 0.38;

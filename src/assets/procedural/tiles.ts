@@ -1063,43 +1063,46 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
-    /** Ballroom French doors — pale frame with glass panes. */
+    /** Ballroom French doors — muted frame with darker glass panes. */
     door_glass: {
         nativeWidth: 96,
         nativeHeight: 32,
         draw(ctx) {
             const W = 96;
             const H = 32;
+            const pane = "#5a6a78";
+            const paneHi = "#7a8a98";
+            const paneShine = "#9aaab0";
             r(ctx, 0, H - 3, W, 3, P.marbleVein);
-            r(ctx, 0, H - 3, W, 1, P.marbleLight);
-            // Pale painted frame
+            r(ctx, 0, H - 3, W, 1, P.marbleShadow);
+            // Darker painted frame
             r(ctx, 0, 0, W, H - 3, P.paleWallTrim);
-            r(ctx, 2, 2, W - 4, H - 7, P.paleWall);
+            r(ctx, 2, 2, W - 4, H - 7, P.paleWallAlt);
             r(ctx, 2, 2, W - 4, 4, P.paleWallGold);
             // Center stile
             r(ctx, 45, 4, 6, H - 8, P.paleWallTrim);
-            r(ctx, 46, 5, 4, H - 10, P.paleWallGold);
+            r(ctx, 46, 5, 4, H - 10, P.woodDark);
             // Left glass leaf — 2×2 panes
             r(ctx, 5, 7, 38, H - 12, P.paleWallTrim);
             for (const gx of [7, 24]) {
                 for (const gy of [9, 18]) {
-                    r(ctx, gx, gy, 15, 7, P.glass);
-                    r(ctx, gx + 1, gy + 1, 6, 2, P.glassHi);
-                    r(ctx, gx + 10, gy + 4, 4, 2, P.glassShine);
+                    r(ctx, gx, gy, 15, 7, pane);
+                    r(ctx, gx + 1, gy + 1, 6, 2, paneHi);
+                    r(ctx, gx + 10, gy + 4, 4, 2, paneShine);
                 }
             }
             // Right glass leaf
             r(ctx, 53, 7, 38, H - 12, P.paleWallTrim);
             for (const gx of [55, 72]) {
                 for (const gy of [9, 18]) {
-                    r(ctx, gx, gy, 15, 7, P.glass);
-                    r(ctx, gx + 1, gy + 1, 6, 2, P.glassHi);
-                    r(ctx, gx + 10, gy + 4, 4, 2, P.glassShine);
+                    r(ctx, gx, gy, 15, 7, pane);
+                    r(ctx, gx + 1, gy + 1, 6, 2, paneHi);
+                    r(ctx, gx + 10, gy + 4, 4, 2, paneShine);
                 }
             }
             // Handles
-            r(ctx, 40, Math.floor(H / 2) - 1, 3, 3, P.silver);
-            r(ctx, 53, Math.floor(H / 2) - 1, 3, 3, P.silver);
+            r(ctx, 40, Math.floor(H / 2) - 1, 3, 3, P.silverDark);
+            r(ctx, 53, Math.floor(H / 2) - 1, 3, 3, P.silverDark);
             r(ctx, 0, 0, W, 1, P.outline);
             r(ctx, 0, H - 4, W, 1, P.outline);
             r(ctx, 0, 0, 1, H - 3, P.outline);
@@ -1115,18 +1118,18 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
             const W = 96;
             const H = 32;
             // Stone threshold / step
-            r(ctx, 0, H - 4, W, 4, P.stone);
-            r(ctx, 2, H - 3, W - 4, 2, P.stoneLight);
+            r(ctx, 0, H - 4, W, 4, P.rockDark);
+            r(ctx, 2, H - 3, W - 4, 2, P.stone);
             // Stone arch surround
-            r(ctx, 0, 0, W, H - 4, P.stone);
-            r(ctx, 3, 2, W - 6, H - 8, P.stoneLight);
-            r(ctx, 6, 0, W - 12, 5, P.stoneHi);
-            r(ctx, 40, 0, 16, 3, P.stone);
+            r(ctx, 0, 0, W, H - 4, P.rockDark);
+            r(ctx, 3, 2, W - 6, H - 8, P.stone);
+            r(ctx, 6, 0, W - 12, 5, P.stoneLight);
+            r(ctx, 40, 0, 16, 3, P.rockDark);
             // Heavy oak leaves
             r(ctx, 8, 6, 36, H - 12, P.woodDark);
-            r(ctx, 10, 8, 32, H - 16, P.wood);
+            r(ctx, 10, 8, 32, H - 16, P.woodDark);
             r(ctx, 52, 6, 36, H - 12, P.woodDark);
-            r(ctx, 54, 8, 32, H - 16, P.woodLight);
+            r(ctx, 54, 8, 32, H - 16, P.wood);
             // Vertical plank lines
             for (let i = 0; i < 4; i++) {
                 r(ctx, 12 + i * 8, 8, 1, H - 16, P.woodDark);

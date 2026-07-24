@@ -49,13 +49,13 @@ function drawArchedWindow(
     const glassY = y + Math.floor(archH * 0.35);
     const glassH = bodyTop + bodyH - FRAME - glassY;
 
-    r(ctx, glassX, glassY, glassW, glassH, P.glass);
-    r(ctx, glassX + 2, glassY + 2, glassW - 4, Math.max(2, Math.floor(glassH * 0.25)), P.glassHi);
-    r(ctx, glassX + Math.floor(glassW * 0.15), glassY + 4, 2, glassH - 8, P.glassShine);
-    r(ctx, glassX + Math.floor(glassW * 0.55), glassY + 6, 1, glassH - 12, P.glassShine);
+    r(ctx, glassX, glassY, glassW, glassH, "#5a6a78");
+    r(ctx, glassX + 2, glassY + 2, glassW - 4, Math.max(2, Math.floor(glassH * 0.25)), "#7a8a98");
+    r(ctx, glassX + Math.floor(glassW * 0.15), glassY + 4, 2, glassH - 8, "#9aaab0");
+    r(ctx, glassX + Math.floor(glassW * 0.55), glassY + 6, 1, glassH - 12, "#9aaab0");
 
-    drawBarrelArchTop(ctx, glassX, glassY - Math.floor(archH * 0.35), glassW, archH, P.glass);
-    drawBarrelArchTop(ctx, glassX + 2, glassY - Math.floor(archH * 0.35) + 2, glassW - 4, Math.max(2, archH - 4), P.glassHi);
+    drawBarrelArchTop(ctx, glassX, glassY - Math.floor(archH * 0.35), glassW, archH, "#5a6a78");
+    drawBarrelArchTop(ctx, glassX + 2, glassY - Math.floor(archH * 0.35) + 2, glassW - 4, Math.max(2, archH - 4), "#7a8a98");
 
     r(ctx, x + Math.floor(w / 2) - 1, glassY, 2, glassH, P.paleWallTrim);
     r(ctx, x, bodyTop + bodyH - FRAME, w, FRAME, P.paleWallGold);

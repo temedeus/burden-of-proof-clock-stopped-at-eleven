@@ -795,6 +795,68 @@ export function manorInteriorWallDraw(
     return { sprite: "wall", flipX: false, flipY: false };
 }
 
+/** Continuous 2-tile-tall north wall face (plaster over wood wainscoting). */
+export const NORTH_WALL_SPRITES = ["wall_north", "wall_north_b", "wall_north_c"] as const;
+
+export function northWallSpriteName(x: number): (typeof NORTH_WALL_SPRITES)[number] {
+    return NORTH_WALL_SPRITES[((x % 3) + 3) % 3];
+}
+
+function drawManorNorthWallFace(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2): void {
+    const plaster = [P.paleWall, P.paleWallAlt, P.cream][variant];
+    const plasterShade = [P.paleWallAlt, P.paleWallTrim, P.marble][variant];
+    const plasterHi = [P.cream, P.paleWall, P.white][variant];
+
+    // Full face fill
+    r(ctx, 0, 0, 32, 64, plaster);
+
+    // Crown molding
+    r(ctx, 0, 0, 32, 3, P.woodDark);
+    r(ctx, 0, 1, 32, 2, P.wood);
+    r(ctx, 0, 2, 32, 1, P.woodHi);
+
+    // Upper plaster field with soft mottling
+    const mottles: [number, number, number, number][] = [
+        [3 + variant, 8, 4, 2],
+        [14, 11 + variant, 5, 2],
+        [22 - variant, 7, 3, 3],
+        [6, 18, 3, 2],
+        [18 + variant, 16, 4, 2],
+        [10, 22, 2, 2]
+    ];
+    for (const [mx, my, mw, mh] of mottles) {
+        r(ctx, mx, my, mw, mh, plasterShade);
+    }
+    r(ctx, 8 + variant * 2, 12, 2, 1, plasterHi);
+    r(ctx, 20, 20 - variant, 3, 1, plasterHi);
+
+    // Chair rail
+    r(ctx, 0, 28, 32, 4, P.woodDark);
+    r(ctx, 0, 29, 32, 2, P.wood);
+    r(ctx, 0, 30, 32, 1, P.woodHi);
+
+    // Lower wainscot panels (two raised panels)
+    r(ctx, 0, 32, 32, 28, P.woodDark);
+    const panelInset = variant === 1 ? 1 : 0;
+    for (const px of [2, 17]) {
+        r(ctx, px + panelInset, 34, 13 - panelInset, 22, P.wood);
+        r(ctx, px + 1 + panelInset, 35, 11 - panelInset, 20, P.woodLight);
+        r(ctx, px + 2 + panelInset, 36, 9 - panelInset, 1, P.woodHi);
+        r(ctx, px + 2 + panelInset, 36, 1, 18, P.woodHi);
+        r(ctx, px + 10, 37, 1, 16, P.woodDark);
+        r(ctx, px + 3, 52, 7, 1, P.woodDark);
+    }
+
+    // Baseboard
+    r(ctx, 0, 60, 32, 4, P.woodDark);
+    r(ctx, 0, 61, 32, 2, P.wood);
+    r(ctx, 0, 61, 32, 1, P.woodHi);
+
+    // Soft vertical edge shadow so adjacent columns read as one surface
+    r(ctx, 0, 3, 1, 25, plasterShade);
+    r(ctx, 31, 3, 1, 25, plasterShade);
+}
+
 export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     wall: tile32((ctx) => drawWoodPlanksHorizontal(ctx)),
 
@@ -805,6 +867,22 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         drawWoodPlanksVertical(ctx, 0, 0, 8, 32);
         drawWoodCornerPost(ctx, 10);
     }),
+
+    wall_north: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawManorNorthWallFace(ctx, 0)
+    },
+    wall_north_b: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawManorNorthWallFace(ctx, 1)
+    },
+    wall_north_c: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawManorNorthWallFace(ctx, 2)
+    },
 
     wall_wood: tile32((ctx) => {
         r(ctx, 0, 0, 32, 32, P.woodDark);

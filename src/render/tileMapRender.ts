@@ -1,5 +1,12 @@
 import { spriteLoader } from "../assets/SpriteLoader";
-import { rockFloorSpriteName, rockWallSpriteName, atticFloorSpriteName, atticWallSpriteName, manorInteriorWallDraw } from "../assets/procedural/tiles";
+import {
+    rockFloorSpriteName,
+    rockWallSpriteName,
+    atticFloorSpriteName,
+    atticWallSpriteName,
+    manorInteriorWallDraw,
+    northWallSpriteName
+} from "../assets/procedural/tiles";
 import { manorWallSpriteName, gateWestSpriteName, gateEastSpriteName } from "../assets/procedural/exterior";
 import { TILE_TO_SPRITE } from "../assets/SpriteMap";
 import { TILE_SIZE } from "../world/constants";
@@ -156,6 +163,28 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                                     : TILE_TO_SPRITE[tile];
 
     if (tile === TILE_WALL) {
+        const onSide = x === 0 || x === map.width - 1;
+        const below =
+            y + 1 < map.height ? map.tiles[(y + 1) * map.width + x] : -1;
+        const above = y > 0 ? map.tiles[(y - 1) * map.width + x] : -1;
+        const aboveAbove = y > 1 ? map.tiles[(y - 2) * map.width + x] : -1;
+
+        // Two-tile-thick north wall face: one continuous texture per column.
+        if (!onSide && below === TILE_WALL) {
+            spriteLoader.drawSprite(
+                ctx,
+                northWallSpriteName(x),
+                tileX,
+                tileY,
+                TILE_SIZE,
+                TILE_SIZE * 2
+            );
+            return;
+        }
+        if (!onSide && above === TILE_WALL && aboveAbove !== TILE_WALL) {
+            return;
+        }
+
         const { sprite, flipX, flipY } = manorInteriorWallDraw(x, y, map.width, map.height);
         spriteLoader.drawSprite(ctx, sprite, tileX, tileY, TILE_SIZE, TILE_SIZE, flipX, flipY);
         return;

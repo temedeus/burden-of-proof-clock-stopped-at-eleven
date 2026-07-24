@@ -182,6 +182,19 @@
     "interactionOffsetY": 0,
     "spriteName": "fireplace"
   },
+  "ash_canister": {
+    "id": "ash_canister",
+    "name": "Ash canister",
+    "description": "A blackened tin canister for hearth ash. Charred scraps of paper cling to the rim.",
+    "width": 1,
+    "height": 1,
+    "drawWidth": 2,
+    "drawHeight": 2,
+    "renderAnchor": "bottom-left",
+    "collisionRowsFromBottom": 1,
+    "collisionWidth": 1,
+    "spriteName": "ash_canister"
+  },
   "crummy_bed": {
     "id": "crummy_bed",
     "name": "Crummy bed",

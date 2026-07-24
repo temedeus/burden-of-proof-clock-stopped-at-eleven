@@ -1367,6 +1367,32 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    ash_canister: {
+        nativeWidth: 32,
+        nativeHeight: 32,
+        draw(ctx) {
+            r(ctx, 6, 24, 20, 6, P.shadow);
+            // Cylindrical ash tin
+            r(ctx, 9, 8, 14, 18, P.ironDark);
+            r(ctx, 10, 9, 12, 16, P.iron);
+            r(ctx, 11, 10, 10, 14, P.silverDark);
+            // Rim
+            r(ctx, 8, 8, 16, 3, P.iron);
+            r(ctx, 9, 8, 14, 1, P.silver);
+            // Ash mound
+            r(ctx, 11, 14, 10, 8, P.mid);
+            r(ctx, 12, 13, 8, 4, P.light);
+            r(ctx, 13, 15, 6, 5, P.shadow);
+            // Charred paper scrap
+            r(ctx, 14, 12, 5, 3, P.cream);
+            r(ctx, 15, 12, 3, 2, P.brickDark);
+            r(ctx, 18, 16, 3, 2, P.woodDark);
+            // Lid askew
+            r(ctx, 16, 6, 10, 3, P.ironDark);
+            r(ctx, 17, 6, 8, 2, P.iron);
+        }
+    },
+
     armor_stand: {
         nativeWidth: 64,
         nativeHeight: 96,

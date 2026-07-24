@@ -58,7 +58,11 @@
     },
     {
       "roomId": "study",
-      "summary": "The desk has been disturbed. A wastebasket by the chair smells faintly of scorched paper."
+      "summary": "The desk has been disturbed. Papers lie scattered across the blotter."
+    },
+    {
+      "roomId": "dining",
+      "summary": "The long table is set, but the hearth smells of recent burning."
     },
     {
       "roomId": "hidden_room",
@@ -112,23 +116,23 @@
     {
       "id": "torn_appointment_note",
       "name": "Torn Appointment Note",
-      "description": "A torn note mentions a meeting in the Study at half past ten.",
+      "description": "A torn note mentions a meeting in the Dining Room at half past ten.",
       "requiresClues": ["maid_statement"],
       "blockedHint": "The library may hold answers, but Mrs. Clarke upstairs may know more about von Virtanen's movements."
     },
     {
       "id": "burned_ledger_page",
       "name": "Burned Ledger Page",
-      "description": "A semi-burned ledger page pulled from the study trash. Columns of payments survive, but the payee's name is scorched away — and the final page of the ledger is missing. Von Virtanen kept his private papers in the master bedroom.",
+      "description": "A semi-burned ledger page pulled from the ash canister by the dining fireplace. Columns of payments survive, but the payee's name is scorched away — and the final page of the ledger is missing. Von Virtanen kept his private papers in the master bedroom.",
       "requiresClues": ["torn_appointment_note"],
-      "blockedHint": "The wastebasket looks ordinary. The library note mentioned a meeting in the Study."
+      "blockedHint": "The ash canister looks ordinary. The library note said von Virtanen was expected in the Dining Room."
     },
     {
       "id": "barons_diary",
       "name": "von Virtanen's Diary",
       "description": "Von Virtanen's diary says the original manor floor plans are locked in an old attic chest — and that the groundskeeper keeps the key.",
       "requiresClues": ["burned_ledger_page"],
-      "blockedHint": "Nothing stands out yet. The charred ledger in the Study may point to what von Virtanen concealed in his chambers."
+      "blockedHint": "Nothing stands out yet. The charred ledger by the dining fireplace may point to what von Virtanen concealed in his chambers."
     },
     {
       "id": "rusty_old_key",
@@ -226,14 +230,14 @@
       "roomId": "library",
       "furnitureId": "reading_table",
       "furnitureIndex": 0,
-      "hint": "A torn appointment note lies among the books — von Virtanen was expected in the Study at half past ten.\n\nI should search the Study before anywhere else."
+      "hint": "A torn appointment note lies among the books — von Virtanen was expected in the Dining Room at half past ten.\n\nI should search the Dining Room before anywhere else."
     },
     {
       "clueId": "burned_ledger_page",
-      "roomId": "study",
-      "furnitureId": "table",
+      "roomId": "dining",
+      "furnitureId": "ash_canister",
       "furnitureIndex": 0,
-      "hint": "In the wastebasket by the desk: a semi-burned ledger page. Payment columns survive, but the payee's name is scorched beyond reading — and the final page of the ledger is missing.\n\nVon Virtanen kept his private papers in the master bedroom. What was he hiding there?"
+      "hint": "In the ash canister by the fireplace: a semi-burned ledger page. Payment columns survive, but the payee's name is scorched beyond reading — and the final page of the ledger is missing.\n\nVon Virtanen kept his private papers in the master bedroom. What was he hiding there?"
     },
     {
       "clueId": "barons_diary",
@@ -519,7 +523,7 @@
             "maid_statement",
             "torn_appointment_note"
           ],
-          "dialog": "Von Virtanen had papers with him? I saw nothing. I was at my station all evening — though I... I hope nothing's amiss in the Study."
+          "dialog": "Von Virtanen had papers with him? I saw nothing. I was at my station all evening — though I... I hope nothing's amiss in the Dining Room."
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
@@ -537,7 +541,7 @@
       "conditions": [
         {
           "requiresClues": ["torn_appointment_note", "maid_statement", "examined_body", "examined_clock"],
-          "dialog": "Von Virtanen did go to the Study after the Library. I showed him in myself."
+          "dialog": "Von Virtanen did go to the Dining Room after the Library. I showed him in myself."
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],

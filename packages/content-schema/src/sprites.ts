@@ -118,6 +118,7 @@ export const VALID_SPRITE_NAMES = [
     "rusty_old_key",
     "barons_diary",
     "attic_old_chest",
+    "ash_canister",
     "clue_generic",
     "clue_torn_note",
     "clue_burned_ledger",

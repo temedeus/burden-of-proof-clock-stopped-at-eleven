@@ -10,6 +10,12 @@
       "anchor": "center"
     },
     {
+      "furnitureId": "ash_canister",
+      "x": 8,
+      "y": 4,
+      "anchor": "center"
+    },
+    {
       "furnitureId": "carpet",
       "x": "center",
       "y": 8,

@@ -8,13 +8,18 @@ export const DEFAULT_ATTIC_SCARE_MONOLOGUE = [
     "???: Too nosy. Far too nosy."
 ] as const;
 
+export const DEFAULT_LEDGER_SCARE_MONOLOGUE = [
+    "???: You weren't meant to find that page.",
+    "???: Burned evidence still talks — and so will you, if I don't stop you."
+] as const;
+
 /**
- * One-shot attic scare: hooded murderer appears, monologues, then chases
- * only inside the attic. Leaving the room ends the chase and restores the NPC.
+ * One-shot room-local scare: hooded murderer appears, monologues, then chases
+ * only inside the scare room. Leaving ends the chase and restores the NPC.
  * Does not set accusedMurderer — the finale chase is separate.
  */
 export class AtticScareChase {
-    /** Waiting for the chest-clue dialog to close before starting. */
+    /** Waiting for the clue dialog to close before starting. */
     armed = false;
     active = false;
     complete = false;
@@ -33,6 +38,7 @@ export class AtticScareChase {
 
     constructor(
         private difficulty: Difficulty,
+        private scareRoomId: string = "attic",
         lines: readonly string[] = DEFAULT_ATTIC_SCARE_MONOLOGUE
     ) {
         this.lines = lines.length > 0 ? lines : DEFAULT_ATTIC_SCARE_MONOLOGUE;
@@ -45,7 +51,7 @@ export class AtticScareChase {
 
     start(
         murderer: NPC,
-        attic: Room,
+        scareRoom: Room,
         homeRoom: Room | null,
         moveNPCToRoom: (npc: NPC, targetRoom: Room, atX: number, atY: number) => void
     ): void {
@@ -59,8 +65,8 @@ export class AtticScareChase {
         this.originalName = murderer.name;
         this.originalShowNameLabel = murderer.getShowNameLabel();
 
-        const { x, y } = doorwayNpcPosition(attic);
-        moveNPCToRoom(murderer, attic, x, y);
+        const { x, y } = doorwayNpcPosition(scareRoom);
+        moveNPCToRoom(murderer, scareRoom, x, y);
         murderer.setChasing(false);
         murderer.setFleeing(false);
         murderer.setSpriteName("hooded_figure");
@@ -113,7 +119,7 @@ export class AtticScareChase {
         murderer.setSwingingKnife(true);
     }
 
-    /** Call when the player leaves the attic during an active scare. */
+    /** Call when the player leaves the scare room during an active scare. */
     endScare(
         murderer: NPC,
         allRooms: Record<string, Room>,
@@ -129,7 +135,7 @@ export class AtticScareChase {
 
         const home =
             (this.homeRoomId ? allRooms[this.homeRoomId] : null) ??
-            Object.values(allRooms).find((room) => room.id !== "attic") ??
+            Object.values(allRooms).find((room) => room.id !== this.scareRoomId) ??
             null;
         if (home) {
             moveNPCToRoom(murderer, home, this.homeX, this.homeY);

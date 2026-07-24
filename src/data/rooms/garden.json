@@ -90,7 +90,8 @@
       "y": "top",
       "targetRoom": "hall",
       "spawnX": "center",
-      "spawnY": "bottom-2"
+      "spawnY": "bottom-2",
+      "doorSprite": "door_castle"
     }
   ]
 }

@@ -37,14 +37,16 @@
       "y": "bottom",
       "targetRoom": "hall",
       "spawnX": 8,
-      "spawnY": 2
+      "spawnY": 2,
+      "doorSprite": "door_glass"
     },
     {
       "x": 16,
       "y": "bottom",
       "targetRoom": "hall",
       "spawnX": 16,
-      "spawnY": 2
+      "spawnY": 2,
+      "doorSprite": "door_glass"
     }
   ]
 }

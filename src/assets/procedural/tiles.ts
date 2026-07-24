@@ -1063,6 +1063,103 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
+    /** Ballroom French doors — pale frame with glass panes. */
+    door_glass: {
+        nativeWidth: 96,
+        nativeHeight: 32,
+        draw(ctx) {
+            const W = 96;
+            const H = 32;
+            r(ctx, 0, H - 3, W, 3, P.marbleVein);
+            r(ctx, 0, H - 3, W, 1, P.marbleLight);
+            // Pale painted frame
+            r(ctx, 0, 0, W, H - 3, P.paleWallTrim);
+            r(ctx, 2, 2, W - 4, H - 7, P.paleWall);
+            r(ctx, 2, 2, W - 4, 4, P.paleWallGold);
+            // Center stile
+            r(ctx, 45, 4, 6, H - 8, P.paleWallTrim);
+            r(ctx, 46, 5, 4, H - 10, P.paleWallGold);
+            // Left glass leaf — 2×2 panes
+            r(ctx, 5, 7, 38, H - 12, P.paleWallTrim);
+            for (const gx of [7, 24]) {
+                for (const gy of [9, 18]) {
+                    r(ctx, gx, gy, 15, 7, P.glass);
+                    r(ctx, gx + 1, gy + 1, 6, 2, P.glassHi);
+                    r(ctx, gx + 10, gy + 4, 4, 2, P.glassShine);
+                }
+            }
+            // Right glass leaf
+            r(ctx, 53, 7, 38, H - 12, P.paleWallTrim);
+            for (const gx of [55, 72]) {
+                for (const gy of [9, 18]) {
+                    r(ctx, gx, gy, 15, 7, P.glass);
+                    r(ctx, gx + 1, gy + 1, 6, 2, P.glassHi);
+                    r(ctx, gx + 10, gy + 4, 4, 2, P.glassShine);
+                }
+            }
+            // Handles
+            r(ctx, 40, Math.floor(H / 2) - 1, 3, 3, P.silver);
+            r(ctx, 53, Math.floor(H / 2) - 1, 3, 3, P.silver);
+            r(ctx, 0, 0, W, 1, P.outline);
+            r(ctx, 0, H - 4, W, 1, P.outline);
+            r(ctx, 0, 0, 1, H - 3, P.outline);
+            r(ctx, W - 1, 0, 1, H - 3, P.outline);
+        }
+    },
+
+    /** Heavy castle doors for the garden entrance — iron-banded oak under a stone arch. */
+    door_castle: {
+        nativeWidth: 96,
+        nativeHeight: 32,
+        draw(ctx) {
+            const W = 96;
+            const H = 32;
+            // Stone threshold / step
+            r(ctx, 0, H - 4, W, 4, P.stone);
+            r(ctx, 2, H - 3, W - 4, 2, P.stoneLight);
+            // Stone arch surround
+            r(ctx, 0, 0, W, H - 4, P.stone);
+            r(ctx, 3, 2, W - 6, H - 8, P.stoneLight);
+            r(ctx, 6, 0, W - 12, 5, P.stoneHi);
+            r(ctx, 40, 0, 16, 3, P.stone);
+            // Heavy oak leaves
+            r(ctx, 8, 6, 36, H - 12, P.woodDark);
+            r(ctx, 10, 8, 32, H - 16, P.wood);
+            r(ctx, 52, 6, 36, H - 12, P.woodDark);
+            r(ctx, 54, 8, 32, H - 16, P.woodLight);
+            // Vertical plank lines
+            for (let i = 0; i < 4; i++) {
+                r(ctx, 12 + i * 8, 8, 1, H - 16, P.woodDark);
+                r(ctx, 56 + i * 8, 8, 1, H - 16, P.woodDark);
+            }
+            // Iron bands
+            r(ctx, 8, 10, 36, 3, P.ironDark);
+            r(ctx, 8, 20, 36, 3, P.ironDark);
+            r(ctx, 52, 10, 36, 3, P.ironDark);
+            r(ctx, 52, 20, 36, 3, P.ironDark);
+            r(ctx, 8, 11, 36, 1, P.iron);
+            r(ctx, 52, 11, 36, 1, P.iron);
+            // Rivets
+            for (const bx of [12, 28, 40, 56, 72, 84]) {
+                r(ctx, bx, 10, 2, 2, P.silverDark);
+                r(ctx, bx, 20, 2, 2, P.silverDark);
+            }
+            // Center seam + iron ring handles
+            r(ctx, 45, 6, 6, H - 12, P.woodDark);
+            r(ctx, 36, 14, 6, 6, P.iron);
+            r(ctx, 54, 14, 6, 6, P.iron);
+            r(ctx, 37, 15, 4, 4, P.ironDark);
+            r(ctx, 55, 15, 4, 4, P.ironDark);
+            r(ctx, 38, 16, 2, 2, P.silver);
+            r(ctx, 56, 16, 2, 2, P.silver);
+            // Outline
+            r(ctx, 0, 0, W, 1, P.outline);
+            r(ctx, 0, H - 5, W, 1, P.outline);
+            r(ctx, 0, 0, 1, H - 4, P.outline);
+            r(ctx, W - 1, 0, 1, H - 4, P.outline);
+        }
+    },
+
     table: {
         nativeWidth: 32,
         nativeHeight: 32,

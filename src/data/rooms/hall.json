@@ -48,7 +48,8 @@
       "y": "bottom",
       "targetRoom": "garden",
       "spawnX": "center",
-      "spawnY": 1
+      "spawnY": 1,
+      "doorSprite": "door_castle"
     },
     {
       "x": "center",
@@ -62,14 +63,16 @@
       "y": "top",
       "targetRoom": "dancing_room",
       "spawnX": 8,
-      "spawnY": "bottom-2"
+      "spawnY": "bottom-2",
+      "doorSprite": "door_glass"
     },
     {
       "x": 16,
       "y": "top",
       "targetRoom": "dancing_room",
       "spawnX": 16,
-      "spawnY": "bottom-2"
+      "spawnY": "bottom-2",
+      "doorSprite": "door_glass"
     }
   ],
   "npcs": [

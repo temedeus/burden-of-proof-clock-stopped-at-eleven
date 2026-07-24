@@ -29,6 +29,8 @@ export const VALID_SPRITE_NAMES = [
     "door",
     "door_wood",
     "door_manor",
+    "door_glass",
+    "door_castle",
     "table",
     "bookshelf",
     "npc_male",

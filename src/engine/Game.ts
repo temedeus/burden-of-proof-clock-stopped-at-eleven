@@ -17,7 +17,6 @@ import {
     DiningFireCutscene,
     HEARTH_SHOVE_HINT,
     YTTE_HELPED_DIALOG,
-    entityCenterOverlapsRect,
     getFireplaceHazardBounds,
     playerNearFireplaceHazard
 } from "../systems/DiningFireCutscene";
@@ -504,15 +503,18 @@ export class Game {
             const murderer = this.getMurderer();
             if (murderer) {
                 const fallSign = this.shoveMurdererAway(murderer);
-                if (this.ledgerScare.active && this.currentRoom.id === "dining") {
-                    const hazard = getFireplaceHazardBounds(this.currentRoom);
-                    if (
-                        hazard &&
-                        entityCenterOverlapsRect(murderer, hazard, murderer.width, murderer.height)
-                    ) {
-                        this.beginDiningFireCutscene(murderer);
-                        return;
-                    }
+                if (
+                    this.ledgerScare.active &&
+                    this.currentRoom.id === "dining" &&
+                    playerNearFireplaceHazard(
+                        this.player,
+                        this.player.width,
+                        this.player.height,
+                        this.currentRoom
+                    )
+                ) {
+                    this.beginDiningFireCutscene(murderer);
+                    return;
                 }
                 murderer.stun(this.murdererStruggle.stunSeconds, fallSign);
                 this.murdererStruggle.beginCatchCooldown();

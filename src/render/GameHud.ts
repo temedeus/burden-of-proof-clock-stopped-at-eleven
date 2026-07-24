@@ -143,6 +143,45 @@ export function drawAccusationBlink(ctx: CanvasRenderingContext2D, redBlinkRemai
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 }
 
+export function drawStruggleMeter(
+    ctx: CanvasRenderingContext2D,
+    progress: number,
+    touchControls: boolean
+): void {
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+    const barW = Math.min(320, Math.round(w * 0.45));
+    const barH = 22;
+    const barX = (w - barW) / 2;
+    const barY = h * 0.28;
+
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillRect(barX - 12, barY - 42, barW + 24, barH + 70);
+
+    ctx.fillStyle = "#e8e0d5";
+    ctx.font = "bold 20px serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Push him off!", w / 2, barY - 16);
+
+    ctx.fillStyle = "#1a1510";
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.strokeStyle = "#c4a574";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(barX, barY, barW, barH);
+
+    const fill = Math.max(0, Math.min(1, progress));
+    const fillColor =
+        fill < 0.3 ? "#8a2828" : fill < 0.65 ? "#c85020" : "#48a058";
+    ctx.fillStyle = fillColor;
+    ctx.fillRect(barX + 2, barY + 2, (barW - 4) * fill, barH - 4);
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "16px serif";
+    const hint = touchControls ? "Tap Interact repeatedly!" : "Mash E / Space!";
+    ctx.fillText(hint, w / 2, barY + barH + 22);
+    ctx.textAlign = "left";
+}
+
 export function drawVictoryOverlay(ctx: CanvasRenderingContext2D, victoryTimer: number): void {
     const elapsed = 2 - victoryTimer;
     const fadeAlpha = victoryTimer <= 0 ? 1 : Math.min(1, elapsed / 0.8);

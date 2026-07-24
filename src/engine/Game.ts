@@ -13,6 +13,7 @@ import { RoomTransitionService } from "../systems/RoomTransitionService";
 import { MurdererChaseController, type Difficulty } from "../systems/MurdererChaseController";
 import { MurdererConfrontation } from "../systems/MurdererConfrontation";
 import { AtticScareChase, DEFAULT_LEDGER_SCARE_MONOLOGUE } from "../systems/AtticScareChase";
+import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
 import { CellarSecretPuzzle } from "../puzzles/CellarSecretPuzzle";
@@ -36,6 +37,7 @@ import {
     drawAccusationBlink,
     drawMessageBox,
     drawRoomTitleBanner,
+    drawStruggleMeter,
     drawVictoryOverlay,
     paginateDialog,
     tickRoomTitleBanner,
@@ -44,7 +46,7 @@ import {
 import type { NPCConfig, NPCDialogConfig } from "@cse/content-schema";
 import { shouldShowTouchControls } from "./platform";
 
-type GameState = "playing" | "interacting" | "confirming" | "inventory" | "victory";
+type GameState = "playing" | "interacting" | "confirming" | "inventory" | "victory" | "struggling";
 
 const POLICE_NPC_IDS = ["police", "police2"];
 
@@ -93,6 +95,7 @@ export class Game {
     private murdererConfrontation: MurdererConfrontation;
     private atticScare: AtticScareChase;
     private ledgerScare: AtticScareChase;
+    private murdererStruggle: MurdererStruggle;
     private victory = new VictorySequence();
     private studySecret = new StudySecretPuzzle(
         () => this.rooms.study,
@@ -138,6 +141,7 @@ export class Game {
         this.murdererConfrontation = new MurdererConfrontation();
         this.atticScare = new AtticScareChase(difficulty, "attic");
         this.ledgerScare = new AtticScareChase(difficulty, "dining", DEFAULT_LEDGER_SCARE_MONOLOGUE);
+        this.murdererStruggle = new MurdererStruggle(difficulty);
         this.onMenuRequest = options?.onMenuRequest;
         this.onGameOver = options?.onGameOver;
         this.onVictoryComplete = options?.onVictoryComplete;
@@ -426,6 +430,60 @@ export class Game {
         this.openDialog("Chef Ytte is after you! Find a police officer before he catches you!");
     }
 
+    private beginStruggle(murderer: NPC): void {
+        talkSounds.stopDialogue();
+        murderer.setChasing(false);
+        this.murdererStruggle.start();
+        this.state = "struggling";
+    }
+
+    private updateStruggle(dt: number): void {
+        if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
+            this.murdererStruggle.press();
+        }
+
+        const result = this.murdererStruggle.tick(dt);
+        if (result === "fail") {
+            this.onGameOver?.();
+            return;
+        }
+        if (result === "success") {
+            const murderer = this.getMurderer();
+            if (murderer) {
+                this.shoveMurdererAway(murderer);
+                murderer.stun(this.murdererStruggle.stunSeconds);
+                this.murdererStruggle.beginCatchCooldown();
+            }
+            this.state = "playing";
+        }
+    }
+
+    private shoveMurdererAway(murderer: NPC): void {
+        const px = this.player.x + this.player.width / 2;
+        const py = this.player.y + this.player.height / 2;
+        const mx = murderer.x + murderer.width / 2;
+        const my = murderer.y + murderer.height / 2;
+        let dx = mx - px;
+        let dy = my - py;
+        const len = Math.hypot(dx, dy) || 1;
+        dx /= len;
+        dy /= len;
+        const shove = TILE_SIZE * 1.5;
+        murderer.x += dx * shove;
+        murderer.y += dy * shove;
+    }
+
+    private resumeChaseAfterStun(npc: NPC): void {
+        if (this.murdererChase.accusedMurderer) {
+            this.murdererChase.startMurdererChase(npc);
+            return;
+        }
+        if (this.atticScare.active || this.ledgerScare.active) {
+            npc.setChasing(true);
+            npc.setSwingingKnife(true);
+        }
+    }
+
     private startVictorySequence(policeId: string): void {
         const police = this.getNPCById(policeId);
         const murderer = this.getMurderer();
@@ -511,7 +569,13 @@ export class Game {
             return;
         }
 
+        if (this.state === "struggling") {
+            this.updateStruggle(dt);
+            return;
+        }
+
         if (this.state === "playing") {
+            this.murdererStruggle.tick(dt);
             this.player.update(dt, this.input, this.currentRoom.map, this.currentRoom.npcs, this.currentRoom.interactables);
             this.roomTransitions.tickCooldown(dt);
 
@@ -599,11 +663,16 @@ export class Game {
             const playerCenterX = this.player.x + this.player.width / 2;
             const playerCenterY = this.player.y + this.player.height / 2;
             for (const npc of this.currentRoom.npcs) {
+                if (npc.tickStun(dt)) {
+                    this.resumeChaseAfterStun(npc);
+                }
                 if (npc.isChasing()) {
                     npc.updateChase(dt, playerCenterX, playerCenterY, this.currentRoom.map);
-                    if (this.murdererChase.npcOverlapsPlayer(this.player, npc)) {
-                        talkSounds.stopDialogue();
-                        this.onGameOver?.();
+                    if (
+                        this.murdererStruggle.canCatch() &&
+                        this.murdererChase.npcOverlapsPlayer(this.player, npc)
+                    ) {
+                        this.beginStruggle(npc);
                         return;
                     }
                 }
@@ -832,6 +901,10 @@ export class Game {
                 this.ledgerScare.redBlinkRemaining
             )
         );
+
+        if (this.state === "struggling") {
+            drawStruggleMeter(ctx, this.murdererStruggle.progress, shouldShowTouchControls());
+        }
 
         if (this.victory.active) {
             drawVictoryOverlay(ctx, this.victory.timer);

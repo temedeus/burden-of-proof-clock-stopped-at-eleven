@@ -19,6 +19,7 @@ export class NPC extends Entity {
   private fleeSpeed = 90;
   private swingingKnife = false;
   private knifeSwingTime = 0;
+  private stunnedRemaining = 0;
 
   constructor(
     id: string,
@@ -77,6 +78,27 @@ export class NPC extends Entity {
 
   setChasing(value: boolean): void {
     this.chasing = value;
+  }
+
+  /** Knock the NPC down — they stop chasing until the stun expires. */
+  stun(seconds: number): void {
+    this.stunnedRemaining = Math.max(0, seconds);
+    this.chasing = false;
+    this.fleeing = false;
+    this.setSwingingKnife(false);
+  }
+
+  isStunned(): boolean {
+    return this.stunnedRemaining > 0;
+  }
+
+  /** Returns true when stun just ended and chase should resume. */
+  tickStun(dt: number): boolean {
+    if (this.stunnedRemaining <= 0) return false;
+    this.stunnedRemaining -= dt;
+    if (this.stunnedRemaining > 0) return false;
+    this.stunnedRemaining = 0;
+    return true;
   }
 
   setChaseSpeed(speed: number): void {
@@ -159,9 +181,24 @@ export class NPC extends Entity {
 
   render(ctx: CanvasRenderingContext2D) {
     // Render NPC sprite from spritesheet, scaled to occupy 4 tiles (2x2)
-    spriteLoader.drawSprite(ctx, this.spriteName, this.x, this.y, this.width, this.height);
+    if (this.isStunned()) {
+      ctx.save();
+      ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+      ctx.rotate(Math.PI / 2);
+      spriteLoader.drawSprite(
+        ctx,
+        this.spriteName,
+        -this.width / 2,
+        -this.height / 2,
+        this.width,
+        this.height
+      );
+      ctx.restore();
+    } else {
+      spriteLoader.drawSprite(ctx, this.spriteName, this.x, this.y, this.width, this.height);
+    }
 
-    if (this.swingingKnife) {
+    if (this.swingingKnife && !this.isStunned()) {
       this.drawSwingingKnife(ctx);
     }
 

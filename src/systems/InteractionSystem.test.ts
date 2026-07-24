@@ -106,4 +106,31 @@ describe("InteractionSystem clue gating", () => {
         expect(clueSystem.hasClue("key")).toBe(true);
         expect(clueSystem.hasClue("diary")).toBe(true);
     });
+
+    it("shows exhausted hint after all clues on the object are collected", () => {
+        const clueSystem = new ClueSystem();
+        clueSystem.addClue("first");
+        const interaction = new InteractionSystem(clueSystem);
+        const table: Interactable = {
+            id: "reading_table",
+            name: "Table",
+            description: "Found it.",
+            tiles: [{ x: 3, y: 3 }, { x: 4, y: 3 }],
+            interactionTiles: [{ x: 3, y: 4 }, { x: 4, y: 4 }],
+            collectibleClues: [
+                {
+                    clueId: "second",
+                    requiresClues: ["first"],
+                    blockedHint: "Too early.",
+                    hint: "Found it."
+                }
+            ]
+        };
+        const room = roomWithTable(table);
+        const player = new Player("player", 3 * TILE_SIZE, 4 * TILE_SIZE);
+        player.facing = "up";
+
+        expect(interaction.interact(player, room)?.description).toBe("Found it.");
+        expect(interaction.interact(player, room)?.description).toBe("Nothing of interest anymore.");
+    });
 });

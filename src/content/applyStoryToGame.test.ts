@@ -63,5 +63,10 @@ describe("applyStoryToRooms", () => {
 
         applyStoryToRooms(rooms, story, { hasClue: (id) => id === "first" });
         expect(table?.description).toBe("Second hint.");
+
+        applyStoryToRooms(rooms, story, {
+            hasClue: (id) => id === "first" || id === "second"
+        });
+        expect(table?.description).toBe("Nothing of interest anymore.");
     });
 });

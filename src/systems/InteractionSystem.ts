@@ -3,7 +3,11 @@ import { Player } from "../entities/Player";
 import { Room } from "../world/Room";
 import { TILE_SIZE } from "../world/constants";
 import { getInteractionTilesForFacing, tileBounds } from "../world/interactableTiles";
-import { DEFAULT_BLOCKED_CLUE_HINT, mergeRequiredClueIds } from "@cse/content-schema";
+import {
+    DEFAULT_BLOCKED_CLUE_HINT,
+    DEFAULT_EXHAUSTED_CLUE_HINT,
+    mergeRequiredClueIds
+} from "@cse/content-schema";
 import { ClueSystem } from "./ClueSystem";
 import { DialogSystem } from "./DialogSystem";
 import { NPC } from "../entities/NPC";
@@ -143,7 +147,7 @@ export class InteractionSystem {
                                 };
                             }
                             return {
-                                description: obj.description,
+                                description: this.exhaustedOrFallbackDescription(obj),
                                 clues: [],
                                 ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
                             };
@@ -178,7 +182,7 @@ export class InteractionSystem {
                     }
 
                     return {
-                        description: obj.description,
+                        description: this.exhaustedOrFallbackDescription(obj),
                         clues: [],
                         ...(obj.interactionSound ? { interactionSound: obj.interactionSound } : {})
                     };
@@ -231,6 +235,27 @@ export class InteractionSystem {
             blockedHint: DEFAULT_BLOCKED_CLUE_HINT,
             hint: obj.description
         }));
+    }
+
+    /** After all clues on an object are collected, stop repeating the discovery hint. */
+    private exhaustedOrFallbackDescription(obj: {
+        collectibleClues?: CollectibleClue[];
+        clues?: string[];
+        description: string;
+        confirmGrantsClueId?: string;
+    }): string {
+        const entries = this.getCollectibleEntries(obj);
+        if (entries.length > 0) {
+            const allFound = entries.every((entry) => this.clueSystem.hasClue(entry.clueId));
+            if (allFound) return DEFAULT_EXHAUSTED_CLUE_HINT;
+        }
+        if (
+            obj.confirmGrantsClueId &&
+            this.clueSystem.hasClue(obj.confirmGrantsClueId)
+        ) {
+            return DEFAULT_EXHAUSTED_CLUE_HINT;
+        }
+        return obj.description;
     }
 
     private getTargetTile(player: Player) {

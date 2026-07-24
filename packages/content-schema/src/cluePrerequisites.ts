@@ -2,6 +2,9 @@ import type { ClueAssignment, GeneratedClue } from "./story";
 
 export const DEFAULT_BLOCKED_CLUE_HINT = "Nothing useful catches your eye yet.";
 
+/** Examine text after every clue on the object has been collected. */
+export const DEFAULT_EXHAUSTED_CLUE_HINT = "Nothing of interest anymore.";
+
 /** Merge requiresClue (legacy) and requiresClues into a deduplicated list. */
 export function mergeRequiredClueIds(
     requiresClue?: string,

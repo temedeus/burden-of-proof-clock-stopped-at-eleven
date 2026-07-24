@@ -53,7 +53,7 @@ export function computeInventoryLayout(
     const gridWidth = cols * iconSize + (cols - 1) * gap;
     const gridHeight = rows * iconSize + (rows - 1) * gap;
     const gridX = panelX + (panelWidth - gridWidth) / 2;
-    const gridY = panelY + 72 + Math.max(0, (panelHeight - 160 - gridHeight) / 2);
+    const gridY = panelY + 72 + Math.max(0, (panelHeight - 196 - gridHeight) / 2);
 
     const slots: InventorySlot[] = [];
     for (let i = 0; i < clueCount; i++) {
@@ -285,9 +285,9 @@ export class InventoryPanel {
         const clue = getClueDisplay(catalog, clueId);
         const padding = 16;
         const boxX = panelX + padding;
-        const boxY = panelY + panelHeight - 130;
+        const boxY = panelY + panelHeight - 166;
         const boxWidth = panelWidth - padding * 2;
-        const boxHeight = 100;
+        const boxHeight = 136;
 
         ctx.fillStyle = DETAIL_BG;
         ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
@@ -302,7 +302,7 @@ export class InventoryPanel {
 
         ctx.fillStyle = "#ccc";
         ctx.font = "14px serif";
-        const lines = wrapText(ctx, clue.description, boxWidth - 24).slice(0, 3);
+        const lines = wrapText(ctx, clue.description, boxWidth - 24).slice(0, 5);
         for (let i = 0; i < lines.length; i++) {
             ctx.fillText(lines[i], boxX + 12, boxY + 48 + i * 18);
         }

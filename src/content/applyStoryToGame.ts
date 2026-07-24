@@ -1,5 +1,6 @@
 import type { ClueAssignment, GeneratedClue, StoryCasePacket } from "@cse/content-schema";
 import {
+    DEFAULT_EXHAUSTED_CLUE_HINT,
     hasAllPrerequisites,
     resolveBlockedHint,
     resolveClueRequirements
@@ -106,16 +107,29 @@ export function applyStoryToRooms(
 
     for (const room of Object.values(rooms)) {
         for (const target of room.interactables) {
-            if (!target.collectibleClues?.length) continue;
-            const pending = target.collectibleClues.filter((entry) => !hasClue(entry.clueId));
-            if (pending.length === 0) continue;
-            const eligible = pending.filter((entry) =>
-                hasAllPrerequisites(entry.requiresClues, hasClue)
-            );
-            if (eligible.length > 0) {
-                target.description = eligible.map((entry) => entry.hint).join("\n\n");
-            } else {
-                target.description = pending[0].blockedHint;
+            const collectibles = target.collectibleClues ?? [];
+            const pending = collectibles.filter((entry) => !hasClue(entry.clueId));
+            const confirmGranted =
+                target.confirmGrantsClueId != null && hasClue(target.confirmGrantsClueId);
+
+            if (collectibles.length > 0) {
+                if (pending.length === 0) {
+                    target.description = DEFAULT_EXHAUSTED_CLUE_HINT;
+                    continue;
+                }
+                const eligible = pending.filter((entry) =>
+                    hasAllPrerequisites(entry.requiresClues, hasClue)
+                );
+                if (eligible.length > 0) {
+                    target.description = eligible.map((entry) => entry.hint).join("\n\n");
+                } else {
+                    target.description = pending[0].blockedHint;
+                }
+                continue;
+            }
+
+            if (confirmGranted) {
+                target.description = DEFAULT_EXHAUSTED_CLUE_HINT;
             }
         }
     }

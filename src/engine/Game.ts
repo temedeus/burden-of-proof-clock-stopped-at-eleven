@@ -582,9 +582,11 @@ export class Game {
     private beginAtticWindowCutscene(murderer: NPC): void {
         talkSounds.stopDialogue();
         murderer.clearStun();
+        murderer.clearCutscenePose();
         murderer.setChasing(false);
         murderer.setFleeing(false);
         murderer.setSwingingKnife(false);
+        murderer.setShowNameLabel(false);
 
         const landing = nearestAtticWindowLanding(
             murderer.x,
@@ -593,9 +595,15 @@ export class Game {
             murderer.height
         );
         const fallSign = landing.x + murderer.width / 2 >= murderer.x + murderer.width / 2 ? 1 : -1;
-        murderer.stun(0.7, fallSign);
 
-        this.atticWindow.start(murderer.x, murderer.y, landing.x, landing.y, landing.tileX);
+        this.atticWindow.start(
+            murderer.x,
+            murderer.y,
+            landing.x,
+            landing.y,
+            landing.tileX,
+            fallSign
+        );
         this.state = "cutscene";
         this.message = null;
         this.messagePages = [];
@@ -611,6 +619,7 @@ export class Game {
             }
         }
         murderer.clearStun();
+        murderer.clearCutscenePose();
         murderer.setChasing(false);
         murderer.setFleeing(false);
         murderer.setSwingingKnife(false);

@@ -24,6 +24,11 @@ export class NPC extends Entity {
   /** +1 or -1 — which way they tip when shoved. */
   private fallSign = 1;
 
+  /** Cutscene draw overrides (attic window throw, etc.). */
+  cutsceneScale = 1;
+  cutsceneAlpha = 1;
+  cutsceneTilt = 0;
+
   constructor(
     id: string,
     x: number,
@@ -223,7 +228,38 @@ export class NPC extends Entity {
     return false;
   }
 
+  clearCutscenePose(): void {
+    this.cutsceneScale = 1;
+    this.cutsceneAlpha = 1;
+    this.cutsceneTilt = 0;
+  }
+
   render(ctx: CanvasRenderingContext2D) {
+    const poseActive =
+      Math.abs(this.cutsceneScale - 1) > 0.001 ||
+      this.cutsceneAlpha < 0.999 ||
+      Math.abs(this.cutsceneTilt) > 0.001;
+
+    if (poseActive) {
+      const cx = this.x + this.width / 2;
+      const cy = this.y + this.height / 2;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, this.cutsceneAlpha));
+      ctx.translate(cx, cy);
+      ctx.rotate(this.cutsceneTilt);
+      ctx.scale(this.cutsceneScale, this.cutsceneScale);
+      spriteLoader.drawSprite(
+        ctx,
+        this.spriteName,
+        -this.width / 2,
+        -this.height / 2,
+        this.width,
+        this.height
+      );
+      ctx.restore();
+      return;
+    }
+
     const fall = this.getFallProgress();
     if (fall > 0.001) {
       const angle = this.fallSign * fall * (Math.PI / 2);

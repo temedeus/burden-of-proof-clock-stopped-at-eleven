@@ -1,6 +1,10 @@
 import { TILE_SIZE } from "../world/constants";
 import type { Entity } from "../entities/Entity";
-import { markAtticWindowBroken, ATTIC_WINDOW_TILE_XS } from "../world/atticWindows";
+import {
+    markAtticWindowBroken,
+    ATTIC_WINDOWS,
+    ATTIC_WINDOW_TILE_XS
+} from "../world/atticWindows";
 
 export const ATTIC_WINDOW_SHOVE_HINT = "The window — shove him out!";
 
@@ -13,18 +17,24 @@ export interface Rect {
     h: number;
 }
 
-/** Pixel hazard in front of an attic north-wall window column. */
-export function atticWindowHazardAt(tileX: number): Rect {
+function smoothstep(t: number): number {
+    const x = Math.max(0, Math.min(1, t));
+    return x * x * (3 - 2 * x);
+}
+
+/** Pixel hazard in front of a two-tile attic window. */
+export function atticWindowHazardAt(windowId: number): Rect {
+    const pair = ATTIC_WINDOWS.find((w) => w.id === windowId) ?? ATTIC_WINDOWS[0];
     return {
-        x: tileX * TILE_SIZE - TILE_SIZE * 0.5,
+        x: pair.left * TILE_SIZE - TILE_SIZE * 0.25,
         y: 2 * TILE_SIZE,
-        w: TILE_SIZE * 2,
+        w: TILE_SIZE * 2.5,
         h: TILE_SIZE * 3
     };
 }
 
 export function getAtticWindowHazards(): Rect[] {
-    return ATTIC_WINDOW_TILE_XS.map((x) => atticWindowHazardAt(x));
+    return ATTIC_WINDOW_TILE_XS.map((id) => atticWindowHazardAt(id));
 }
 
 export function entityCenterOverlapsRect(
@@ -56,29 +66,39 @@ export function playerNearAtticWindow(
     return false;
 }
 
-/** Nearest window landing (just inside the wall) for the throw target. */
+/** Center of the two-tile window opening for the throw target. */
 export function nearestAtticWindowLanding(
     fromX: number,
     fromY: number,
     entityW: number,
     entityH: number
 ): { x: number; y: number; tileX: number } {
-    let best: number = ATTIC_WINDOW_TILE_XS[0];
+    let best = ATTIC_WINDOWS[0];
     let bestDist = Infinity;
     const cx = fromX + entityW / 2;
-    for (const tileX of ATTIC_WINDOW_TILE_XS) {
-        const wx = tileX * TILE_SIZE + TILE_SIZE / 2;
+    for (const pair of ATTIC_WINDOWS) {
+        const wx = ((pair.left + pair.right + 1) / 2) * TILE_SIZE;
         const d = Math.abs(wx - cx);
         if (d < bestDist) {
             bestDist = d;
-            best = tileX;
+            best = pair;
         }
     }
+    const centerX = ((best.left + best.right + 1) / 2) * TILE_SIZE;
     return {
-        tileX: best,
-        x: best * TILE_SIZE + TILE_SIZE / 2 - entityW / 2,
-        y: 2 * TILE_SIZE - entityH * 0.35
+        tileX: best.id,
+        x: centerX - entityW / 2,
+        // Aim mid-opening on the tall north wall face
+        y: TILE_SIZE * 0.55 - entityH * 0.15
     };
+}
+
+export interface AtticThrowPose {
+    x: number;
+    y: number;
+    scale: number;
+    alpha: number;
+    tilt: number;
 }
 
 /**
@@ -89,6 +109,7 @@ export class AtticWindowCutscene {
     phase: AtticWindowPhase = "idle";
     throwT = 0;
     brokenTileX: number | null = null;
+    fallSign = 1;
 
     throwFrom = { x: 0, y: 0 };
     throwTo = { x: 0, y: 0 };
@@ -96,8 +117,19 @@ export class AtticWindowCutscene {
     private timer = 0;
     private cryOpened = false;
     private cryCleared = false;
+    private crashPlayed = false;
 
-    start(fromX: number, fromY: number, toX: number, toY: number, tileX: number): void {
+    /** Throw arc duration in seconds. */
+    static readonly THROW_DURATION = 1.05;
+
+    start(
+        fromX: number,
+        fromY: number,
+        toX: number,
+        toY: number,
+        tileX: number,
+        fallSign = 1
+    ): void {
         this.active = true;
         this.phase = "throw";
         this.timer = 0;
@@ -105,8 +137,10 @@ export class AtticWindowCutscene {
         this.throwFrom = { x: fromX, y: fromY };
         this.throwTo = { x: toX, y: toY };
         this.brokenTileX = tileX;
+        this.fallSign = fallSign >= 0 ? 1 : -1;
         this.cryOpened = false;
         this.cryCleared = false;
+        this.crashPlayed = false;
     }
 
     tick(dt: number): {
@@ -122,26 +156,32 @@ export class AtticWindowCutscene {
 
         switch (this.phase) {
             case "throw": {
-                this.throwT = Math.min(1, this.timer / 0.55);
-                if (this.throwT >= 1) {
-                    this.phase = "crash";
-                    this.timer = 0;
+                this.throwT = Math.min(1, this.timer / AtticWindowCutscene.THROW_DURATION);
+
+                // Glass breaks as the body hits the pane (~68% through the arc)
+                if (!this.crashPlayed && this.throwT >= 0.68) {
+                    this.crashPlayed = true;
                     if (this.brokenTileX != null) {
                         markAtticWindowBroken(this.brokenTileX);
                     }
                     out.playCrash = true;
-                    out.hideMurderer = true;
                     out.openCry = true;
                     this.cryOpened = true;
+                }
+
+                if (this.throwT >= 1) {
+                    this.phase = "crash";
+                    this.timer = 0;
+                    out.hideMurderer = true;
                 }
                 break;
             }
             case "crash": {
-                if (!this.cryCleared && this.timer >= 0.55) {
+                if (!this.cryCleared && this.timer >= 0.5) {
                     this.cryCleared = true;
                     out.clearCry = true;
                 }
-                if (this.timer >= 0.95) {
+                if (this.timer >= 0.85) {
                     this.phase = "done";
                     this.active = false;
                     out.finished = true;
@@ -154,13 +194,38 @@ export class AtticWindowCutscene {
         return out;
     }
 
+    throwPose(): AtticThrowPose {
+        const u = this.throwT;
+        const t = smoothstep(u);
+        // Soft ease-in on the first beat, then accelerate into the opening
+        const easeIn = u * u;
+        const through = Math.max(0, (u - 0.55) / 0.45);
+        const throughEased = through * through;
+
+        const x = this.throwFrom.x + (this.throwTo.x - this.throwFrom.x) * t;
+        // Lift early, then settle into the sill and continue “out” through the pane
+        const lift = Math.sin(Math.min(1, u * 1.15) * Math.PI) * TILE_SIZE * 1.15;
+        const outY = throughEased * TILE_SIZE * 1.35;
+        const y =
+            this.throwFrom.y +
+            (this.throwTo.y - this.throwFrom.y) * t -
+            lift * (1 - throughEased * 0.35) -
+            outY;
+
+        // Shrink and fade once past the glass
+        const scale =
+            u < 0.55 ? 1 : 1 - smoothstep((u - 0.55) / 0.45) * 0.72;
+        const alpha = u < 0.7 ? 1 : 1 - smoothstep((u - 0.7) / 0.3);
+        // Tumbling roll toward the throw direction
+        const tilt = this.fallSign * easeIn * (Math.PI * 0.65);
+
+        return { x, y, scale, alpha, tilt };
+    }
+
+    /** @deprecated use throwPose */
     throwPosition(): { x: number; y: number } {
-        const t = this.throwT;
-        const lift = Math.sin(t * Math.PI) * TILE_SIZE * 1.4;
-        return {
-            x: this.throwFrom.x + (this.throwTo.x - this.throwFrom.x) * t,
-            y: this.throwFrom.y + (this.throwTo.y - this.throwFrom.y) * t - lift
-        };
+        const p = this.throwPose();
+        return { x: p.x, y: p.y };
     }
 
     reset(): void {
@@ -169,7 +234,9 @@ export class AtticWindowCutscene {
         this.timer = 0;
         this.throwT = 0;
         this.brokenTileX = null;
+        this.fallSign = 1;
         this.cryOpened = false;
         this.cryCleared = false;
+        this.crashPlayed = false;
     }
 }

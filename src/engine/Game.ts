@@ -18,10 +18,12 @@ import {
     HEARTH_SHOVE_HINT,
     YTTE_HELPED_DIALOG,
     diningHallDoorPosition,
+    diningHearthLandingPosition,
     diningTableRetreatWaypoints,
     getFireplaceHazardBounds,
     playerNearFireplaceHazard
 } from "../systems/DiningFireCutscene";
+import { drawCharacterFire } from "../assets/procedural/fireplace";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
@@ -532,11 +534,13 @@ export class Game {
         murderer.setFleeing(false);
         murderer.setSwingingKnife(false);
 
-        const hazard = getFireplaceHazardBounds(this.currentRoom);
-        const toX = hazard
-            ? hazard.x + hazard.w / 2 - murderer.width / 2
-            : murderer.x;
-        const toY = hazard ? hazard.y + TILE_SIZE * 1.5 : murderer.y - TILE_SIZE * 2;
+        const landing = diningHearthLandingPosition(
+            this.currentRoom,
+            murderer.width,
+            murderer.height
+        );
+        const toX = landing?.x ?? murderer.x;
+        const toY = landing?.y ?? murderer.y - TILE_SIZE * 2;
         const fallSign = toX + murderer.width / 2 >= murderer.x + murderer.width / 2 ? 1 : -1;
         murderer.stun(0.7, fallSign);
 
@@ -564,6 +568,22 @@ export class Game {
         murderer.x = this.player.x + this.player.width * 0.55;
         murderer.y = this.player.y - TILE_SIZE * 0.15;
         this.moveNPCToRoom(murderer, dining, murderer.x, murderer.y);
+
+        const baroness = this.getNPCById("baroness");
+        if (baroness) {
+            const home = this.getRoomContainingNPC("baroness");
+            if (home && !this.baronessCutsceneHome) {
+                this.baronessCutsceneHome = { roomId: home.id, x: baroness.x, y: baroness.y };
+            }
+            const door = diningHallDoorPosition(dining, baroness.width);
+            // Enter from the hall door, a step into the room.
+            this.moveNPCToRoom(
+                baroness,
+                dining,
+                door.x - TILE_SIZE * 1.5,
+                door.y - TILE_SIZE * 0.5
+            );
+        }
 
         // Drag into the hall door (west along the south wall from the collapse spot).
         const door = diningHallDoorPosition(dining, this.player.width);
@@ -678,10 +698,10 @@ export class Game {
     }
 
     private updateDiningFireCutscene(dt: number): void {
-        if (
-            this.diningFire.phase === "wake_dialog" &&
-            (this.input.wasPressed("e") || this.input.wasPressed(" "))
-        ) {
+        const dialogPhase =
+            this.diningFire.phase === "aftermath_dialog" ||
+            this.diningFire.phase === "wake_dialog";
+        if (dialogPhase && (this.input.wasPressed("e") || this.input.wasPressed(" "))) {
             if (this.messagePageIndex < this.messagePages.length - 1) {
                 this.messagePageIndex += 1;
                 this.message = this.messagePages[this.messagePageIndex];
@@ -689,14 +709,20 @@ export class Game {
             }
             const result = this.diningFire.advanceDialog();
             if (result === "continue") {
-                this.openCutsceneDialog(this.diningFire.getWakeLine(), "baroness");
+                const line =
+                    this.diningFire.phase === "aftermath_dialog"
+                        ? this.diningFire.getAftermathLine()
+                        : this.diningFire.getWakeLine();
+                this.openCutsceneDialog(line, "baroness");
                 return;
             }
             talkSounds.stopDialogue();
             this.message = null;
             this.messagePages = [];
             this.messagePageIndex = 0;
-            this.startBaronessExitWalk();
+            if (this.diningFire.phase === "baroness_exit") {
+                this.startBaronessExitWalk();
+            }
             return;
         }
 
@@ -710,14 +736,14 @@ export class Game {
             murderer.tickStun(dt);
         }
 
-        if (murderer && phase === "panic_run" && this.currentRoom.id === "dining") {
+        if (murderer && (phase === "ignite" || phase === "panic_run")) {
             murderer.clearStun();
-            const pos = this.diningFire.panicPosition(
-                this.currentRoom.map.width,
-                this.currentRoom.map.height
-            );
-            murderer.x = pos.x;
-            murderer.y = pos.y;
+        }
+
+        if (murderer && phase === "panic_run" && this.currentRoom.id === "dining") {
+            const pos = this.diningFire.panicPosition();
+            murderer.x = pos.x - murderer.width / 2;
+            murderer.y = pos.y - murderer.height / 2;
         }
 
         if (phase === "player_retreat") {
@@ -738,7 +764,10 @@ export class Game {
             this.player.cutsceneFall = this.diningFire.collapseT;
         }
 
-        if (murderer && (phase === "drag_setup" || phase === "drag_out")) {
+        if (
+            murderer &&
+            (phase === "drag_setup" || phase === "aftermath_dialog" || phase === "drag_out")
+        ) {
             this.player.cutsceneFall = 1;
             this.player.isMoving = false;
             if (phase === "drag_out") {
@@ -763,6 +792,10 @@ export class Game {
         const prevPhase = this.diningFire.phase;
         const tick = this.diningFire.tick(dt);
 
+        if (prevPhase === "ignite" && this.diningFire.phase === "panic_run") {
+            this.diningFire.beginPanic(this.currentRoom);
+        }
+
         if (prevPhase === "panic_run" && this.diningFire.phase === "player_retreat") {
             const [via, to] = diningTableRetreatWaypoints(
                 this.currentRoom,
@@ -783,6 +816,9 @@ export class Game {
         if (tick.placeDrag) this.placeDiningFireDrag();
         if (tick.hideCookAndFinishDrag) this.finishDiningFireDrag();
         if (tick.placeWake) this.placeDiningFireWake();
+        if (tick.openAftermathDialog) {
+            this.openCutsceneDialog(this.diningFire.getAftermathLine(), "baroness");
+        }
         if (tick.openWakeDialog) {
             this.openCutsceneDialog(this.diningFire.getWakeLine(), "baroness");
         }
@@ -1228,12 +1264,36 @@ export class Game {
         ctx.save();
         ctx.translate(offset.x, offset.y);
 
+        const ytteFireActors =
+            this.diningFire.ytteOnFire && this.getMurderer()
+                ? [
+                      (() => {
+                          const murderer = this.getMurderer()!;
+                          return {
+                              y: murderer.y,
+                              height: murderer.height,
+                              render: (c: CanvasRenderingContext2D) => {
+                                  drawCharacterFire(
+                                      c,
+                                      murderer.x,
+                                      murderer.y,
+                                      murderer.width,
+                                      murderer.height,
+                                      this.decorAnimTime
+                                  );
+                              }
+                          };
+                      })()
+                  ]
+                : [];
+
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
             extraActors: [this.player],
             extraOverheadActors: [
                 ...atticMice.getActors(() => this.decorAnimTime),
-                ...courtyardSeagull.getActors()
+                ...courtyardSeagull.getActors(),
+                ...ytteFireActors
             ],
             skipClear: needsCentering
         });

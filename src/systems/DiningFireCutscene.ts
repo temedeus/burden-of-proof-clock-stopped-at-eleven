@@ -10,6 +10,11 @@ export const LEDGER_DINING_SCARE_MONOLOGUE = [
     "???: I'm exploiting bad writing!"
 ] as const;
 
+export const DINING_FIRE_AFTERMATH_LINES = [
+    "Lady von Virtanen: Help! The dining room is on fire!",
+    "Lady von Virtanen: Chef Ytte — drag the detective out of there! Quickly!"
+] as const;
+
 export const DINING_FIRE_WAKE_LINES = [
     "Lady von Virtanen: Easy, Detective. You're in the guest wing.",
     "Lady von Virtanen: The dining room caught fire — smoke everywhere. Good luck Ytte was there to help!",
@@ -30,6 +35,7 @@ export type DiningFirePhase =
     | "player_collapse"
     | "blackout"
     | "drag_setup"
+    | "aftermath_dialog"
     | "drag_out"
     | "wake_fade"
     | "wake_setup"
@@ -112,6 +118,20 @@ export function diningHallDoorPosition(room: Room, playerW: number): { x: number
     };
 }
 
+/** Landing pose in front of the hearth so Ytte stays visible when he catches fire. */
+export function diningHearthLandingPosition(
+    room: Room,
+    entityW: number,
+    entityH: number
+): { x: number; y: number } | null {
+    const hazard = getFireplaceHazardBounds(room);
+    if (!hazard) return null;
+    return {
+        x: hazard.x + hazard.w / 2 - entityW / 2,
+        y: hazard.y + hazard.h - entityH * 0.85
+    };
+}
+
 /** L-path around the table toward the hall door: east clear of the table, then south to door level. */
 export function diningTableRetreatWaypoints(
     room: Room,
@@ -133,11 +153,52 @@ export function diningTableRetreatWaypoints(
     for (const t of tiles) {
         maxX = Math.max(maxX, t.x);
     }
-    // Collapse just east of the door line — looks like a dash for the exit.
     const eastX = (maxX + 1.5) * TILE_SIZE;
     return [
         { x: eastX, y: fromY },
         { x: eastX, y: door.y }
+    ];
+}
+
+function tableBounds(room: Room): { minX: number; maxX: number; minY: number; maxY: number } | null {
+    const table = room.interactables.find((obj) => obj.id === "dining_table");
+    if (!table) return null;
+    const tiles = table.footprintTiles?.length ? table.footprintTiles : table.tiles;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const t of tiles) {
+        minX = Math.min(minX, t.x);
+        maxX = Math.max(maxX, t.x);
+        minY = Math.min(minY, t.y);
+        maxY = Math.max(maxY, t.y);
+    }
+    return { minX, maxX, minY, maxY };
+}
+
+/** Panic run that skirts the dining table instead of cutting through it. */
+export function diningTablePanicWaypoints(room: Room): { x: number; y: number }[] {
+    const bounds = tableBounds(room);
+    const cx = (room.map.width / 2) * TILE_SIZE;
+    if (!bounds) {
+        return [
+            { x: cx + 3 * TILE_SIZE, y: 5 * TILE_SIZE },
+            { x: cx + 4 * TILE_SIZE, y: 9 * TILE_SIZE },
+            { x: cx - 3 * TILE_SIZE, y: 10 * TILE_SIZE },
+            { x: cx + 2 * TILE_SIZE, y: 7 * TILE_SIZE }
+        ];
+    }
+    const eastX = (bounds.maxX + 1.75) * TILE_SIZE;
+    const westX = Math.max(TILE_SIZE, (bounds.minX - 2.5) * TILE_SIZE);
+    const northY = Math.max(TILE_SIZE * 3, (bounds.minY - 1.5) * TILE_SIZE);
+    const southY = (bounds.maxY + 1.75) * TILE_SIZE;
+    return [
+        { x: eastX, y: northY },
+        { x: eastX, y: southY },
+        { x: westX, y: southY },
+        { x: westX, y: northY + TILE_SIZE },
+        { x: eastX, y: northY + TILE_SIZE * 0.5 }
     ];
 }
 
@@ -151,23 +212,17 @@ export class DiningFireCutscene {
     smokeAlpha = 0;
     blackAlpha = 0;
     flameIntensity = 0;
-    /** 0..1 — Ytte thrash waypoints during panic_run. */
     panicT = 0;
-    /** 0..1 — throw arc into the hearth. */
     throwT = 0;
-    /** 0..1 — player walk around the table (east, then south). */
     retreatT = 0;
-    /** 0..1 — player collapse. */
     collapseT = 0;
-    /** 0..1 — drag toward the hall door. */
     dragT = 0;
-    /** 0..1 — baroness walking to guest-room exit. */
     baronessExitT = 0;
+    panicWaypoints: { x: number; y: number }[] = [];
 
     throwFrom = { x: 0, y: 0 };
     throwTo = { x: 0, y: 0 };
     retreatFrom = { x: 0, y: 0 };
-    /** Corner east of the table, then final spot south of it. */
     retreatVia = { x: 0, y: 0 };
     retreatTo = { x: 0, y: 0 };
     dragFromPlayer = { x: 0, y: 0 };
@@ -179,6 +234,17 @@ export class DiningFireCutscene {
     private timer = 0;
     private lineIndex = 0;
     private waitingForDialogAdvance = false;
+
+    /** True while Ytte should show the attached fire effect. */
+    get ytteOnFire(): boolean {
+        return (
+            this.active &&
+            (this.phase === "ignite" ||
+                this.phase === "panic_run" ||
+                (this.phase === "throw_into_fire" && this.throwT >= 0.75) ||
+                (this.phase === "player_retreat" && this.retreatT < 0.35))
+        );
+    }
 
     startThrow(fromX: number, fromY: number, toX: number, toY: number): void {
         this.active = true;
@@ -194,9 +260,17 @@ export class DiningFireCutscene {
         this.collapseT = 0;
         this.dragT = 0;
         this.baronessExitT = 0;
+        this.panicWaypoints = [];
         this.throwFrom = { x: fromX, y: fromY };
         this.throwTo = { x: toX, y: toY };
         this.waitingForDialogAdvance = false;
+    }
+
+    getAftermathLine(): string {
+        return (
+            DINING_FIRE_AFTERMATH_LINES[this.lineIndex] ??
+            DINING_FIRE_AFTERMATH_LINES[DINING_FIRE_AFTERMATH_LINES.length - 1]
+        );
     }
 
     getWakeLine(): string {
@@ -206,9 +280,22 @@ export class DiningFireCutscene {
         );
     }
 
-    /** Call when the player advances dialog during the wake phase. */
     advanceDialog(): "continue" | "next_phase" {
-        if (!this.waitingForDialogAdvance || this.phase !== "wake_dialog") return "continue";
+        if (!this.waitingForDialogAdvance) return "continue";
+
+        if (this.phase === "aftermath_dialog") {
+            if (this.lineIndex < DINING_FIRE_AFTERMATH_LINES.length - 1) {
+                this.lineIndex += 1;
+                return "continue";
+            }
+            this.waitingForDialogAdvance = false;
+            this.phase = "drag_out";
+            this.timer = 0;
+            this.dragT = 0;
+            return "next_phase";
+        }
+
+        if (this.phase !== "wake_dialog") return "continue";
 
         if (this.lineIndex < DINING_FIRE_WAKE_LINES.length - 1) {
             this.lineIndex += 1;
@@ -256,12 +343,17 @@ export class DiningFireCutscene {
         this.baronessExitT = 0;
     }
 
+    beginPanic(room: Room): void {
+        this.panicWaypoints = diningTablePanicWaypoints(room);
+        this.panicT = 0;
+    }
+
     tick(dt: number): {
         openWakeDialog?: boolean;
+        openAftermathDialog?: boolean;
         placeDrag?: boolean;
         placeWake?: boolean;
         hideCookAndFinishDrag?: boolean;
-        startBaronessExit?: boolean;
         finished?: boolean;
     } {
         if (!this.active || this.waitingForDialogAdvance) return {};
@@ -271,27 +363,29 @@ export class DiningFireCutscene {
 
         switch (this.phase) {
             case "throw_into_fire": {
-                this.throwT = Math.min(1, this.timer / 0.55);
-                this.flameIntensity = 0.15 + this.throwT * 0.35;
+                this.throwT = Math.min(1, this.timer / 0.65);
+                this.flameIntensity = 0.2 + this.throwT * 0.45;
                 if (this.throwT >= 1) {
                     this.phase = "ignite";
                     this.timer = 0;
+                    this.flameIntensity = 0.85;
                 }
                 break;
             }
             case "ignite": {
-                this.flameIntensity = Math.min(1, 0.5 + this.timer * 0.5);
-                if (this.timer >= 0.9) {
+                this.flameIntensity = 1;
+                this.smokeAlpha = Math.min(0.2, this.timer * 0.15);
+                if (this.timer >= 1.1) {
                     this.phase = "panic_run";
                     this.timer = 0;
                 }
                 break;
             }
             case "panic_run": {
-                this.panicT = Math.min(1, this.timer / 2.8);
+                this.panicT = Math.min(1, this.timer / 3.2);
                 this.flameIntensity = 1;
-                this.smokeAlpha = Math.min(0.35, this.timer * 0.1);
-                if (this.timer >= 2.8) {
+                this.smokeAlpha = Math.min(0.4, 0.2 + this.timer * 0.08);
+                if (this.timer >= 3.2) {
                     this.phase = "player_retreat";
                     this.timer = 0;
                     this.retreatT = 0;
@@ -299,10 +393,9 @@ export class DiningFireCutscene {
                 break;
             }
             case "player_retreat": {
-                // East leg ~45%, south leg ~55% of the walk.
                 this.retreatT = Math.min(1, this.timer / 2.2);
-                this.smokeAlpha = Math.min(0.55, 0.35 + this.timer * 0.1);
-                this.flameIntensity = 1;
+                this.smokeAlpha = Math.min(0.55, 0.4 + this.timer * 0.08);
+                this.flameIntensity = Math.max(0.55, 1 - this.timer * 0.2);
                 if (this.retreatT >= 1) {
                     this.phase = "player_collapse";
                     this.timer = 0;
@@ -314,6 +407,7 @@ export class DiningFireCutscene {
                 this.collapseT = Math.min(1, this.timer / 0.85);
                 this.smokeAlpha = Math.min(0.85, 0.55 + this.timer * 0.35);
                 this.blackAlpha = Math.min(0.7, this.timer * 0.55);
+                this.flameIntensity = Math.max(0.3, 0.55 - this.timer * 0.2);
                 if (this.timer >= 1.1) {
                     this.phase = "blackout";
                     this.timer = 0;
@@ -337,10 +431,11 @@ export class DiningFireCutscene {
                 this.smokeAlpha = Math.max(0.2, 0.55 - this.timer * 0.25);
                 this.flameIntensity = Math.max(0.35, 0.8 - this.timer * 0.3);
                 this.collapseT = 1;
-                if (this.timer >= 0.75) {
-                    this.phase = "drag_out";
-                    this.timer = 0;
-                    this.dragT = 0;
+                if (this.timer >= 0.85) {
+                    this.phase = "aftermath_dialog";
+                    this.lineIndex = 0;
+                    this.waitingForDialogAdvance = true;
+                    out.openAftermathDialog = true;
                 }
                 break;
             }
@@ -403,7 +498,6 @@ export class DiningFireCutscene {
 
     throwPosition(): { x: number; y: number } {
         const t = this.throwT;
-        // Slight arc upward while flying into the hearth.
         const lift = Math.sin(t * Math.PI) * TILE_SIZE * 1.2;
         return {
             x: this.throwFrom.x + (this.throwTo.x - this.throwFrom.x) * t,
@@ -428,7 +522,6 @@ export class DiningFireCutscene {
         };
     }
 
-    /** Facing while walking the L-path around the table. */
     retreatFacing(): "right" | "down" {
         return this.retreatT <= 0.45 ? "right" : "down";
     }
@@ -457,25 +550,17 @@ export class DiningFireCutscene {
         };
     }
 
-    /** Waypoints for hooded Ytte thrashing around the dining room. */
-    panicPosition(roomWidth: number, roomHeight: number): { x: number; y: number } {
-        const cx = (roomWidth / 2) * TILE_SIZE;
-        const waypoints = [
-            { x: cx - 2 * TILE_SIZE, y: 5 * TILE_SIZE },
-            { x: cx + 4 * TILE_SIZE, y: 7 * TILE_SIZE },
-            { x: cx - 5 * TILE_SIZE, y: 9 * TILE_SIZE },
-            { x: cx + 2 * TILE_SIZE, y: 6 * TILE_SIZE },
-            { x: cx - 1 * TILE_SIZE, y: 8 * TILE_SIZE }
-        ];
-        const clamped = waypoints.map((p) => ({
-            x: Math.max(TILE_SIZE, Math.min((roomWidth - 3) * TILE_SIZE, p.x)),
-            y: Math.max(TILE_SIZE * 3, Math.min((roomHeight - 3) * TILE_SIZE, p.y))
-        }));
-        const seg = Math.min(clamped.length - 1.001, this.panicT * (clamped.length - 1));
+    panicPosition(): { x: number; y: number } {
+        const waypoints = this.panicWaypoints;
+        if (waypoints.length === 0) {
+            return { x: this.throwTo.x, y: this.throwTo.y };
+        }
+        if (waypoints.length === 1) return waypoints[0];
+        const seg = Math.min(waypoints.length - 1.001, this.panicT * (waypoints.length - 1));
         const i = Math.floor(seg);
         const f = seg - i;
-        const a = clamped[i];
-        const b = clamped[Math.min(i + 1, clamped.length - 1)];
+        const a = waypoints[i];
+        const b = waypoints[Math.min(i + 1, waypoints.length - 1)];
         return {
             x: a.x + (b.x - a.x) * f,
             y: a.y + (b.y - a.y) * f
@@ -498,5 +583,6 @@ export class DiningFireCutscene {
         this.baronessExitT = 0;
         this.waitingForDialogAdvance = false;
         this.retreatVia = { x: 0, y: 0 };
+        this.panicWaypoints = [];
     }
 }

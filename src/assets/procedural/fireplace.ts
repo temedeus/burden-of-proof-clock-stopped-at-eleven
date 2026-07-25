@@ -110,3 +110,24 @@ export function drawFireplaceAnimated(
     ctx.restore();
     ctx.imageSmoothingEnabled = prev;
 }
+
+/** Fireplace-style flames attached to a character (cutscene — Ytte on fire). */
+export function drawCharacterFire(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    animTime: number
+): void {
+    const prev = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;
+    const fw = width * 0.95;
+    const fh = height * 0.85;
+    ctx.save();
+    ctx.translate(x + (width - fw) / 2, y + height * 0.15);
+    ctx.scale(fw / NATIVE_W, fh / NATIVE_H);
+    drawAnimatedFire(ctx, animTime * 1.15);
+    ctx.restore();
+    ctx.imageSmoothingEnabled = prev;
+}

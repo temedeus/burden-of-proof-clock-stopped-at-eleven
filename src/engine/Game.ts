@@ -26,6 +26,13 @@ import {
     getFireplaceHazardBounds,
     playerNearFireplaceHazard
 } from "../systems/DiningFireCutscene";
+import {
+    AtticWindowCutscene,
+    ATTIC_WINDOW_SHOVE_HINT,
+    nearestAtticWindowLanding,
+    playerNearAtticWindow
+} from "../systems/AtticWindowCutscene";
+import { scareSounds } from "../audio/ScareSounds";
 import { resolveEventNpcDialog } from "../content/eventNpcDialog";
 import { drawCharacterFire } from "../assets/procedural/fireplace";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
@@ -121,6 +128,7 @@ export class Game {
     private atticScare: AtticScareChase;
     private ledgerScare: AtticScareChase;
     private diningFire = new DiningFireCutscene();
+    private atticWindow = new AtticWindowCutscene();
     private murdererStruggle: MurdererStruggle;
     /** Chef Ytte is removed from the map after the dining scare until the attic scare ends. */
     private cookHiddenAfterDiningScare: NPC | null = null;
@@ -472,7 +480,7 @@ export class Game {
         cook.setChasing(false);
         cook.setFleeing(false);
         cook.setSwingingKnife(false);
-        cook.setSpriteName("worker_man");
+        cook.setSpriteName(this.atticScare.complete ? "worker_man_bandaged" : "worker_man");
         cook.setName("Chef Ytte");
         cook.setShowNameLabel(true);
         this.moveNPCToRoom(cook, kitchen, x, y);
@@ -555,11 +563,108 @@ export class Game {
                     this.beginDiningFireCutscene(murderer);
                     return;
                 }
+                if (
+                    this.atticScare.active &&
+                    this.currentRoom.id === "attic" &&
+                    playerNearAtticWindow(this.player, this.player.width, this.player.height)
+                ) {
+                    this.beginAtticWindowCutscene(murderer);
+                    return;
+                }
                 const fallSign = this.shoveMurdererAway(murderer);
                 murderer.stun(this.murdererStruggle.stunSeconds, fallSign);
                 this.murdererStruggle.beginCatchCooldown();
             }
             this.state = "playing";
+        }
+    }
+
+    private beginAtticWindowCutscene(murderer: NPC): void {
+        talkSounds.stopDialogue();
+        murderer.clearStun();
+        murderer.setChasing(false);
+        murderer.setFleeing(false);
+        murderer.setSwingingKnife(false);
+
+        const landing = nearestAtticWindowLanding(
+            murderer.x,
+            murderer.y,
+            murderer.width,
+            murderer.height
+        );
+        const fallSign = landing.x + murderer.width / 2 >= murderer.x + murderer.width / 2 ? 1 : -1;
+        murderer.stun(0.7, fallSign);
+
+        this.atticWindow.start(murderer.x, murderer.y, landing.x, landing.y, landing.tileX);
+        this.state = "cutscene";
+        this.message = null;
+        this.messagePages = [];
+        this.messagePageIndex = 0;
+    }
+
+    private hideMurdererDuringAtticCrash(murderer: NPC): void {
+        for (const room of Object.values(this.rooms)) {
+            const idx = room.npcs.indexOf(murderer);
+            if (idx >= 0) {
+                room.npcs.splice(idx, 1);
+                break;
+            }
+        }
+        murderer.clearStun();
+        murderer.setChasing(false);
+        murderer.setFleeing(false);
+        murderer.setSwingingKnife(false);
+        this.cookHiddenAfterDiningScare = murderer;
+    }
+
+    private completeAtticWindowCutscene(): void {
+        const murderer = this.getMurderer();
+        if (murderer) {
+            this.atticScare.resolveScare(murderer);
+            this.placeCookInKitchen(murderer);
+        } else {
+            this.atticScare.complete = true;
+            this.atticScare.active = false;
+            this.atticScare.monologueActive = false;
+            this.atticScare.armed = false;
+        }
+        this.cookHiddenAfterDiningScare = null;
+        this.atticWindow.reset();
+        talkSounds.stopDialogue();
+        this.message = null;
+        this.messagePages = [];
+        this.messagePageIndex = 0;
+        this.state = "playing";
+    }
+
+    private updateAtticWindowCutscene(dt: number): void {
+        const murderer = this.getMurderer();
+        if (murderer && this.atticWindow.phase === "throw") {
+            const pos = this.atticWindow.throwPosition();
+            murderer.x = pos.x;
+            murderer.y = pos.y;
+            murderer.tickStun(dt);
+        }
+
+        const tick = this.atticWindow.tick(dt);
+        if (tick.playCrash) {
+            scareSounds.playWindowCrash();
+            scareSounds.playArgh();
+        }
+        if (tick.hideMurderer && murderer) {
+            this.hideMurdererDuringAtticCrash(murderer);
+        }
+        if (tick.openCry) {
+            this.openCutsceneDialog(DINING_FIRE_PANIC_LINE, "cook");
+        }
+        if (tick.clearCry) {
+            talkSounds.stopDialogue();
+            this.message = null;
+            this.messagePages = [];
+            this.messagePageIndex = 0;
+        }
+        if (tick.finished) {
+            this.completeAtticWindowCutscene();
         }
     }
 
@@ -856,6 +961,7 @@ export class Game {
         if (tick.hideCookAndFinishDrag) this.finishDiningFireDrag();
         if (tick.placeWake) this.placeDiningFireWake();
         if (tick.openPanicCry) {
+            scareSounds.playArgh();
             this.openCutsceneDialog(DINING_FIRE_PANIC_LINE, "cook");
         }
         if (tick.clearPanicCry) {
@@ -960,7 +1066,11 @@ export class Game {
 
         if (this.state === "cutscene") {
             this.lockedDoorHintUntil = Math.max(0, this.lockedDoorHintUntil - dt);
-            this.updateDiningFireCutscene(dt);
+            if (this.atticWindow.active) {
+                this.updateAtticWindowCutscene(dt);
+            } else {
+                this.updateDiningFireCutscene(dt);
+            }
             return;
         }
 
@@ -1158,6 +1268,16 @@ export class Game {
                     this.player.y + this.player.height > (map.height - 2.5) * TILE_SIZE;
                 if (nearEdge) this.lockedDoorHintUntil = 0.5;
             }
+
+            if (this.atticScare.active && this.currentRoom.id === "attic") {
+                const map = this.currentRoom.map;
+                const nearEdge =
+                    this.player.x < TILE_SIZE * 2.5 ||
+                    this.player.y < TILE_SIZE * 2.5 ||
+                    this.player.x + this.player.width > (map.width - 2.5) * TILE_SIZE ||
+                    this.player.y + this.player.height > (map.height - 2.5) * TILE_SIZE;
+                if (nearEdge) this.lockedDoorHintUntil = 0.5;
+            }
         }
 
         const studyReveal = this.studySecret.update(dt);
@@ -1274,6 +1394,9 @@ export class Game {
                 if (this.studySecret.isExitBlocked(this.currentRoom.id, exit.targetRoom)) return true;
                 if (this.cellarSecret.isExitBlocked(this.currentRoom.id, exit.targetRoom)) return true;
                 if (this.ledgerScare.active && this.currentRoom.id === "dining") {
+                    return true;
+                }
+                if (this.atticScare.active && this.currentRoom.id === "attic") {
                     return true;
                 }
                 if (exit.requiresUnlock && !isExitUnlocked(exit.requiresUnlock, unlocked)) {
@@ -1432,11 +1555,15 @@ export class Game {
                     this.player.height,
                     this.currentRoom
                 );
+            const nearWindow =
+                this.atticScare.active &&
+                this.currentRoom.id === "attic" &&
+                playerNearAtticWindow(this.player, this.player.width, this.player.height);
             drawStruggleMeter(
                 ctx,
                 this.murdererStruggle.progress,
                 shouldShowTouchControls(),
-                nearHearth ? "Into the fire!" : "Push him off!"
+                nearHearth ? "Into the fire!" : nearWindow ? "Out the window!" : "Push him off!"
             );
         }
 
@@ -1457,6 +1584,19 @@ export class Game {
                 drawActionHint(ctx, HEARTH_SHOVE_HINT);
             } else if (this.lockedDoorHintUntil > 0) {
                 drawActionHint(ctx, "The doors won't budge.");
+            }
+        }
+
+        if (
+            this.state === "playing" &&
+            this.atticScare.active &&
+            this.currentRoom.id === "attic" &&
+            !this.atticScare.monologueActive
+        ) {
+            if (playerNearAtticWindow(this.player, this.player.width, this.player.height)) {
+                drawActionHint(ctx, ATTIC_WINDOW_SHOVE_HINT);
+            } else if (this.lockedDoorHintUntil > 0) {
+                drawActionHint(ctx, "The door won't budge.");
             }
         }
 

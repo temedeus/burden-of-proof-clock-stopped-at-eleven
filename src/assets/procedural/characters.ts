@@ -487,6 +487,13 @@ function humanoid(style: HumanoidStyle): ProceduralSpriteDef {
     };
 }
 
+const WORKER_MAN_STYLE: HumanoidStyle = {
+    coat: P.coatGray,
+    coatLight: P.coatGrayLight,
+    hair: P.brick,
+    pants: P.coatBrown
+};
+
 const BARON_STYLE: HumanoidStyle = {
     coat: P.black,
     coatLight: P.shadow,
@@ -609,12 +616,22 @@ export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
             sleeve: P.maidBlack
         }
     }),
-    worker_man: humanoid({
-        coat: P.coatGray,
-        coatLight: P.coatGrayLight,
-        hair: P.brick,
-        pants: P.coatBrown
-    }),
+    worker_man: humanoid(WORKER_MAN_STYLE),
+    worker_man_bandaged: {
+        nativeWidth: 32,
+        nativeHeight: 40,
+        draw(ctx) {
+            drawHumanoidFrame(ctx, WORKER_MAN_STYLE, "down", "idle");
+            // Head wrap
+            r(ctx, 11, 2, 10, 5, P.maidWhite);
+            r(ctx, 12, 1, 8, 2, P.cream);
+            r(ctx, 13, 6, 6, 1, P.cream);
+            r(ctx, 14, 0, 4, 2, P.maidWhite);
+            // Bandaged right hand
+            r(ctx, 21, 19, 6, 5, P.maidWhite);
+            r(ctx, 22, 20, 4, 3, P.cream);
+        }
+    },
     hooded_figure: {
         nativeWidth: 32,
         nativeHeight: 40,

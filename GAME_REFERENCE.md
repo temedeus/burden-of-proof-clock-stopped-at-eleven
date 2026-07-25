@@ -273,7 +273,7 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 | Inspector Walsh | Early: scene → maid lead. After dining fire / attic scare / smuggling / apron: mid-game guidance (`eventNpcDialog.ts`). Finale: confront prompt after full clue set |
 | Constable Reed | Perimeter line; after fire and after weapon (`eventNpcDialog.ts`) |
 | Lady von Virtanen / Mrs. Clarke | Early grief / maid beats in story JSON; after fire, attic, apron, weapon via `eventNpcDialog.ts`. Wake cutscene in guest room A |
-| Ytte | Alibi → hidden after dining shove until attic scare ends → “I'm alright / glad you are too” → panic ladder after apron → accusation after murder weapon |
+| Ytte | Alibi → hidden after dining shove until attic scare ends → bandaged in kitchen (“tumbled down the stairs”) → panic ladder after apron → accusation after murder weapon |
 | Mr. Thompson | Dining escort tip after appointment note; fire / apron / weapon reactions via `eventNpcDialog.ts` |
 | Groundskeeper | Attic key after von Virtanen's diary |
 | Stable Boy | Fire/attic nod; smuggling sighting; bloody apron → wine cellar tip |
@@ -288,7 +288,7 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 4. **Dining Room** — Burned Ledger Page in ash canister → hooded scare, locked doors, fireplace shove cutscene → wake in **Guest Room A** (baroness; Ytte hidden until attic scare ends).
 5. **Master Bedroom** — von Virtanen's Diary (attic chest + groundskeeper key).
 6. **Garden** — Talk groundskeeper → Rusty Old Key.
-7. **Attic** — Unlock old chest → Manor Floor Plans (+ Estate Documents) → attic scare chase; Ytte returns to the kitchen afterward.
+7. **Attic** — Unlock old chest → Manor Floor Plans (+ Estate Documents) → attic scare (door locked); shove him out either north window → crash; Ytte returns to the kitchen bandaged afterward.
 8. **Study / Hidden Room** — Secret bookshelf; von Virtanen's Journal on writing desk.
 9. **Garden** — Silver Key in fountain.
 10. **Hidden Room** — Unlock cabinet → Smuggling Documents.

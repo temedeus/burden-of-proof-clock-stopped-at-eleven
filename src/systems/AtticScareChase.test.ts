@@ -57,6 +57,7 @@ describe("AtticScareChase", () => {
         });
 
         expect(scare.advanceMonologue()).toBe("continue");
+        expect(scare.advanceMonologue()).toBe("continue");
         expect(scare.advanceMonologue()).toBe("start_chase");
         expect(scare.monologueActive).toBe(false);
 

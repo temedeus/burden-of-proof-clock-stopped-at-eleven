@@ -31,9 +31,9 @@ export const DINING_FIRE_WAKE_THOUGHT =
 export const YTTE_HELPED_DIALOG =
     "You: Why did you help me back there?\n\nChef Ytte: The baroness walked in. If I'd left you in that smoke, she'd have seen what I am. I had no choice.";
 
-/** First kitchen talk after the attic scare (Ytte returns from hiding). */
+/** First kitchen talk after the attic scare (Ytte returns bandaged from the fall). */
 export const YTTE_AFTER_ATTIC_DIALOG =
-    "Chef Ytte: I'm alright now — chest still burns a little from the smoke. Glad you are too, Detective.";
+    "Chef Ytte: Took a tumble down the attic stairs — hence the bandages. I'm alright now. Glad you are too, Detective.";
 
 export const HEARTH_SHOVE_HINT = "The hearth — shove him into the fire!";
 

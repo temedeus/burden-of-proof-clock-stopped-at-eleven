@@ -4,7 +4,8 @@ import type { Room } from "../world/Room";
 import { DIFFICULTY_CONFIG, type Difficulty } from "./MurdererChaseController";
 
 export const DEFAULT_ATTIC_SCARE_MONOLOGUE = [
-    "???: You've been poking around where you shouldn't, Detective.",
+    "???: Door's locked. Nowhere left to run, Detective.",
+    "???: You've been poking around where you shouldn't.",
     "???: Too nosy. Far too nosy."
 ] as const;
 
@@ -125,12 +126,8 @@ export class AtticScareChase {
     ): void {
         if (!this.active) return;
 
-        murderer.clearStun();
-        murderer.setChasing(false);
-        murderer.setSwingingKnife(false);
-        murderer.setSpriteName(this.originalSprite);
-        murderer.setName(this.originalName);
-        murderer.setShowNameLabel(this.originalShowNameLabel);
+        this.clearScareCombat(murderer);
+        this.markComplete();
 
         const home =
             (this.homeRoomId ? allRooms[this.homeRoomId] : null) ??
@@ -139,7 +136,25 @@ export class AtticScareChase {
         if (home) {
             moveNPCToRoom(murderer, home, this.homeX, this.homeY);
         }
+    }
 
+    /** End the scare without relocating — caller places the NPC. */
+    resolveScare(murderer: NPC): void {
+        if (!this.active && this.complete) return;
+        this.clearScareCombat(murderer);
+        this.markComplete();
+    }
+
+    private clearScareCombat(murderer: NPC): void {
+        murderer.clearStun();
+        murderer.setChasing(false);
+        murderer.setSwingingKnife(false);
+        murderer.setSpriteName(this.originalSprite);
+        murderer.setName(this.originalName);
+        murderer.setShowNameLabel(this.originalShowNameLabel);
+    }
+
+    private markComplete(): void {
         this.active = false;
         this.monologueActive = false;
         this.armed = false;

@@ -1,6 +1,7 @@
 import { P } from "./palette";
 import { grid, r } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
+import { isAtticWindowBroken } from "../../world/atticWindows";
 
 const C = {
     o: P.outline,
@@ -479,15 +480,17 @@ export const ATTIC_NORTH_WALL_SPRITES = [
 ] as const;
 
 export function atticNorthWallSpriteName(x: number): string {
-    if (x === 5) return "wall_attic_north_window";
-    if (x === 19) return "wall_attic_north_window_cracked";
+    if (x === 5 || x === 19) {
+        if (isAtticWindowBroken(x)) return "wall_attic_north_window_broken";
+        return x === 5 ? "wall_attic_north_window" : "wall_attic_north_window_cracked";
+    }
     return ATTIC_NORTH_WALL_SPRITES[((x % 3) + 3) % 3];
 }
 
 function drawAtticNorthWallFace(
     ctx: CanvasRenderingContext2D,
     variant: 0 | 1 | 2,
-    windowStyle: "none" | "intact" | "cracked" = "none"
+    windowStyle: "none" | "intact" | "cracked" | "broken" = "none"
 ): void {
     r(ctx, 0, 0, 32, 64, P.atticWallDark);
 
@@ -522,11 +525,14 @@ function drawAtticNorthWallFace(
     r(ctx, 31, 0, 1, 64, P.atticWallSeam);
 
     if (windowStyle !== "none") {
-        drawAtticWallWindow(ctx, windowStyle === "cracked");
+        drawAtticWallWindow(ctx, windowStyle);
     }
 }
 
-function drawAtticWallWindow(ctx: CanvasRenderingContext2D, cracked: boolean): void {
+function drawAtticWallWindow(
+    ctx: CanvasRenderingContext2D,
+    style: "intact" | "cracked" | "broken"
+): void {
     const wx = 6;
     const wy = 10;
     const ww = 20;
@@ -537,32 +543,49 @@ function drawAtticWallWindow(ctx: CanvasRenderingContext2D, cracked: boolean): v
     r(ctx, wx - 1, wy - 1, ww + 2, wh + 2, P.atticWall);
     r(ctx, wx, wy, ww, wh, P.black);
 
-    // Dirty daylight glass
-    r(ctx, wx + 1, wy + 1, ww - 2, wh - 2, P.waterDark);
-    r(ctx, wx + 2, wy + 2, ww - 4, wh - 4, P.water);
-    r(ctx, wx + 3, wy + 3, 4, 8, P.waterLight);
-    r(ctx, wx + ww - 7, wy + wh - 12, 3, 6, P.glassShine);
+    if (style === "broken") {
+        // Night void through the smashed opening
+        r(ctx, wx + 1, wy + 1, ww - 2, wh - 2, "#0a1018");
+        r(ctx, wx + 3, wy + 4, 3, 2, "#1a2430");
+        // Jagged glass teeth along the frame
+        r(ctx, wx + 2, wy + 2, 4, 3, P.waterDark);
+        r(ctx, wx + 3, wy + 2, 2, 5, P.glassShine);
+        r(ctx, wx + ww - 6, wy + 3, 3, 4, P.water);
+        r(ctx, wx + 4, wy + wh - 6, 5, 3, P.waterDark);
+        r(ctx, wx + 12, wy + wh - 5, 4, 2, P.glassShine);
+        r(ctx, wx + ww - 5, wy + wh - 8, 2, 5, P.cream);
+        // Remaining mullion stubs
+        r(ctx, wx + Math.floor(ww / 2) - 1, wy, 2, 6, P.atticWallDark);
+        r(ctx, wx, wy + Math.floor(wh / 2) - 1, 5, 2, P.atticWallDark);
+        r(ctx, wx + ww - 5, wy + Math.floor(wh / 2) - 1, 5, 2, P.atticWallDark);
+    } else {
+        // Dirty daylight glass
+        r(ctx, wx + 1, wy + 1, ww - 2, wh - 2, P.waterDark);
+        r(ctx, wx + 2, wy + 2, ww - 4, wh - 4, P.water);
+        r(ctx, wx + 3, wy + 3, 4, 8, P.waterLight);
+        r(ctx, wx + ww - 7, wy + wh - 12, 3, 6, P.glassShine);
 
-    // Cross mullion
-    r(ctx, wx + Math.floor(ww / 2) - 1, wy, 2, wh, P.atticWallDark);
-    r(ctx, wx, wy + Math.floor(wh / 2) - 1, ww, 2, P.atticWallDark);
-    r(ctx, wx + Math.floor(ww / 2) - 1, wy, 1, wh, P.atticWall);
-    r(ctx, wx, wy + Math.floor(wh / 2) - 1, ww, 1, P.atticWall);
+        // Cross mullion
+        r(ctx, wx + Math.floor(ww / 2) - 1, wy, 2, wh, P.atticWallDark);
+        r(ctx, wx, wy + Math.floor(wh / 2) - 1, ww, 2, P.atticWallDark);
+        r(ctx, wx + Math.floor(ww / 2) - 1, wy, 1, wh, P.atticWall);
+        r(ctx, wx, wy + Math.floor(wh / 2) - 1, ww, 1, P.atticWall);
+
+        if (style === "cracked") {
+            // Spider-crack across the lower-right pane
+            r(ctx, wx + 12, wy + 16, 1, 10, P.glassShine);
+            r(ctx, wx + 13, wy + 18, 5, 1, P.glassShine);
+            r(ctx, wx + 11, wy + 20, 1, 6, P.cream);
+            r(ctx, wx + 10, wy + 22, 4, 1, P.cream);
+            r(ctx, wx + 14, wy + 15, 3, 1, P.glassShine);
+            // Small missing shard
+            r(ctx, wx + 15, wy + 24, 2, 2, P.black);
+        }
+    }
 
     // Outer frame highlight
     r(ctx, wx - 1, wy - 1, ww + 2, 1, P.atticWallLight);
     r(ctx, wx - 1, wy - 1, 1, wh + 2, P.atticWallLight);
-
-    if (cracked) {
-        // Spider-crack across the lower-right pane
-        r(ctx, wx + 12, wy + 16, 1, 10, P.glassShine);
-        r(ctx, wx + 13, wy + 18, 5, 1, P.glassShine);
-        r(ctx, wx + 11, wy + 20, 1, 6, P.cream);
-        r(ctx, wx + 10, wy + 22, 4, 1, P.cream);
-        r(ctx, wx + 14, wy + 15, 3, 1, P.glassShine);
-        // Small missing shard
-        r(ctx, wx + 15, wy + 24, 2, 2, P.black);
-    }
 }
 
 const ROCK_WALL = {
@@ -1100,6 +1123,11 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 32,
         nativeHeight: 64,
         draw: (ctx) => drawAtticNorthWallFace(ctx, 1, "cracked")
+    },
+    wall_attic_north_window_broken: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawAtticNorthWallFace(ctx, 0, "broken")
     },
 
     grass: tile32((ctx) => {

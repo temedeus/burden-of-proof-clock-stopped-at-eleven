@@ -15,9 +15,11 @@ import { MurdererConfrontation } from "../systems/MurdererConfrontation";
 import { AtticScareChase, DEFAULT_LEDGER_SCARE_MONOLOGUE } from "../systems/AtticScareChase";
 import {
     DiningFireCutscene,
+    BARONESS_AFTER_FIRE_DIALOG,
     DINING_FIRE_PANIC_LINE,
     DINING_FIRE_WAKE_THOUGHT,
     HEARTH_SHOVE_HINT,
+    MAID_AFTER_FIRE_DIALOG,
     YTTE_HELPED_DIALOG,
     diningHallDoorPosition,
     diningHearthLandingPosition,
@@ -1053,6 +1055,24 @@ export class Game {
                         talkSounds.startDialogue(
                             "male",
                             extractSpokenLine(YTTE_HELPED_DIALOG, "Chef Ytte")
+                        );
+                        return;
+                    }
+
+                    if (result.speakerId === "baroness" && this.diningFireResolved) {
+                        this.openDialog(BARONESS_AFTER_FIRE_DIALOG);
+                        talkSounds.startDialogue(
+                            "female",
+                            extractSpokenLine(BARONESS_AFTER_FIRE_DIALOG, "Lady von Virtanen")
+                        );
+                        return;
+                    }
+
+                    if (result.speakerId === "maid" && this.diningFireResolved) {
+                        this.openDialog(MAID_AFTER_FIRE_DIALOG);
+                        talkSounds.startDialogue(
+                            "female",
+                            extractSpokenLine(MAID_AFTER_FIRE_DIALOG, "Mrs. Clarke")
                         );
                         return;
                     }

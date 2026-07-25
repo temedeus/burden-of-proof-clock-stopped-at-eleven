@@ -297,7 +297,16 @@ export class Game {
             return;
         }
 
-        const homeRoom = this.getRoomContainingNPC(this.getMurdererNpcId());
+        // Pull Ytte out of post-dining hiding so the attic scare can spawn him.
+        const wasHidden = this.cookHiddenAfterDiningScare === murderer;
+        if (wasHidden) {
+            this.cookHiddenAfterDiningScare = null;
+        }
+
+        // If he was hidden after the dining fire, don't record kitchen as home — he vanishes again on exit.
+        const homeRoom = wasHidden
+            ? null
+            : this.getRoomContainingNPC(this.getMurdererNpcId());
         scare.start(murderer, scareRoom, homeRoom, (npc, room, x, y) =>
             this.moveNPCToRoom(npc, room, x, y)
         );
@@ -326,9 +335,17 @@ export class Game {
         if (!murderer) return;
 
         if (this.atticScare.active) {
-            this.atticScare.endScare(murderer, this.rooms, (npc, room, x, y) =>
-                this.moveNPCToRoom(npc, room, x, y)
-            );
+            // After the dining fire, Ytte stays vanished until the safe — do not park him in the kitchen.
+            const vanishAgain =
+                this.diningFireResolved && !this.clueSystem.hasClue("smuggling_documents");
+
+            this.atticScare.endScare(murderer, this.rooms, (npc, room, x, y) => {
+                if (vanishAgain) return;
+                this.moveNPCToRoom(npc, room, x, y);
+            });
+            if (vanishAgain) {
+                this.hideCookAfterDiningScare(murderer);
+            }
             return;
         }
 
@@ -396,6 +413,10 @@ export class Game {
         for (const room of Object.values(this.rooms)) {
             const found = room.npcs.find((n) => n.id === this.getMurdererNpcId());
             if (found) return found;
+        }
+        // Still available while stashed after the dining fire (needed for attic scare).
+        if (this.cookHiddenAfterDiningScare?.id === this.getMurdererNpcId()) {
+            return this.cookHiddenAfterDiningScare;
         }
         return null;
     }

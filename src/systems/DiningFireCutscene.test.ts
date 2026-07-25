@@ -132,13 +132,16 @@ describe("DiningFireCutscene phases", () => {
         expect(cut.ytteOnFire).toBe(false);
 
         let placedDrag = false;
+        let openedPanicCry = false;
         for (let i = 0; i < 400 && !placedDrag; i++) {
             const tick = cut.tick(0.1);
+            if (tick.openPanicCry) openedPanicCry = true;
             if (cut.phase === "ignite" || cut.phase === "panic_run") {
                 expect(cut.ytteOnFire).toBe(true);
             }
             if (tick.placeDrag) placedDrag = true;
         }
+        expect(openedPanicCry).toBe(true);
         expect(placedDrag).toBe(true);
         expect(cut.phase).toBe("drag_setup");
     });

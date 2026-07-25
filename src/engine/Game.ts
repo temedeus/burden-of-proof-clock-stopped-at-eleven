@@ -15,6 +15,7 @@ import { MurdererConfrontation } from "../systems/MurdererConfrontation";
 import { AtticScareChase, DEFAULT_LEDGER_SCARE_MONOLOGUE } from "../systems/AtticScareChase";
 import {
     DiningFireCutscene,
+    DINING_FIRE_PANIC_LINE,
     HEARTH_SHOVE_HINT,
     YTTE_HELPED_DIALOG,
     diningHallDoorPosition,
@@ -816,6 +817,15 @@ export class Game {
         if (tick.placeDrag) this.placeDiningFireDrag();
         if (tick.hideCookAndFinishDrag) this.finishDiningFireDrag();
         if (tick.placeWake) this.placeDiningFireWake();
+        if (tick.openPanicCry) {
+            this.openCutsceneDialog(DINING_FIRE_PANIC_LINE, "cook");
+        }
+        if (tick.clearPanicCry) {
+            talkSounds.stopDialogue();
+            this.message = null;
+            this.messagePages = [];
+            this.messagePageIndex = 0;
+        }
         if (tick.openAftermathDialog) {
             this.openCutsceneDialog(this.diningFire.getAftermathLine(), "baroness");
         }

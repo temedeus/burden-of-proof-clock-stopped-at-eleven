@@ -10,6 +10,8 @@ export const LEDGER_DINING_SCARE_MONOLOGUE = [
     "???: I'm exploiting bad writing!"
 ] as const;
 
+export const DINING_FIRE_PANIC_LINE = "???: Arghh!";
+
 export const DINING_FIRE_AFTERMATH_LINES = [
     "Lady von Virtanen: Help! The dining room is on fire!",
     "Lady von Virtanen: Chef Ytte — drag the detective out of there! Quickly!"
@@ -234,6 +236,8 @@ export class DiningFireCutscene {
     private timer = 0;
     private lineIndex = 0;
     private waitingForDialogAdvance = false;
+    private panicCryOpened = false;
+    private panicCryCleared = false;
 
     /** True while Ytte should show the attached fire effect. */
     get ytteOnFire(): boolean {
@@ -261,6 +265,8 @@ export class DiningFireCutscene {
         this.dragT = 0;
         this.baronessExitT = 0;
         this.panicWaypoints = [];
+        this.panicCryOpened = false;
+        this.panicCryCleared = false;
         this.throwFrom = { x: fromX, y: fromY };
         this.throwTo = { x: toX, y: toY };
         this.waitingForDialogAdvance = false;
@@ -351,6 +357,8 @@ export class DiningFireCutscene {
     tick(dt: number): {
         openWakeDialog?: boolean;
         openAftermathDialog?: boolean;
+        openPanicCry?: boolean;
+        clearPanicCry?: boolean;
         placeDrag?: boolean;
         placeWake?: boolean;
         hideCookAndFinishDrag?: boolean;
@@ -385,7 +393,18 @@ export class DiningFireCutscene {
                 this.panicT = Math.min(1, this.timer / 3.2);
                 this.flameIntensity = 1;
                 this.smokeAlpha = Math.min(0.4, 0.2 + this.timer * 0.08);
+                if (!this.panicCryOpened) {
+                    this.panicCryOpened = true;
+                    out.openPanicCry = true;
+                } else if (!this.panicCryCleared && this.timer >= 1.6) {
+                    this.panicCryCleared = true;
+                    out.clearPanicCry = true;
+                }
                 if (this.timer >= 3.2) {
+                    if (!this.panicCryCleared) {
+                        this.panicCryCleared = true;
+                        out.clearPanicCry = true;
+                    }
                     this.phase = "player_retreat";
                     this.timer = 0;
                     this.retreatT = 0;
@@ -584,5 +603,7 @@ export class DiningFireCutscene {
         this.waitingForDialogAdvance = false;
         this.retreatVia = { x: 0, y: 0 };
         this.panicWaypoints = [];
+        this.panicCryOpened = false;
+        this.panicCryCleared = false;
     }
 }

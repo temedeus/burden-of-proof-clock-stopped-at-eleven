@@ -73,7 +73,7 @@ export function nearestAtticWindowLanding(
     entityW: number,
     entityH: number
 ): { x: number; y: number; tileX: number } {
-    let best = ATTIC_WINDOWS[0];
+    let best: (typeof ATTIC_WINDOWS)[number] = ATTIC_WINDOWS[0];
     let bestDist = Infinity;
     const cx = fromX + entityW / 2;
     for (const pair of ATTIC_WINDOWS) {

@@ -649,10 +649,12 @@ export class Game {
     private updateAtticWindowCutscene(dt: number): void {
         const murderer = this.getMurderer();
         if (murderer && this.atticWindow.phase === "throw") {
-            const pos = this.atticWindow.throwPosition();
-            murderer.x = pos.x;
-            murderer.y = pos.y;
-            murderer.tickStun(dt);
+            const pose = this.atticWindow.throwPose();
+            murderer.x = pose.x;
+            murderer.y = pose.y;
+            murderer.cutsceneScale = pose.scale;
+            murderer.cutsceneAlpha = pose.alpha;
+            murderer.cutsceneTilt = pose.tilt;
         }
 
         const tick = this.atticWindow.tick(dt);

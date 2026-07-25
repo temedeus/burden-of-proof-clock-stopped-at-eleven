@@ -23,8 +23,7 @@ export class NPC extends Entity {
   private stunDuration = 0;
   /** +1 or -1 — which way they tip when shoved. */
   private fallSign = 1;
-
-  /** Cutscene draw overrides (attic window throw, etc.). */
+  /** Attic window throw (and similar) — override stun tip while set. */
   cutsceneScale = 1;
   cutsceneAlpha = 1;
   cutsceneTilt = 0;
@@ -241,10 +240,11 @@ export class NPC extends Entity {
       Math.abs(this.cutsceneTilt) > 0.001;
 
     if (poseActive) {
+      if (this.cutsceneAlpha <= 0.01) return;
       const cx = this.x + this.width / 2;
       const cy = this.y + this.height / 2;
       ctx.save();
-      ctx.globalAlpha = Math.max(0, Math.min(1, this.cutsceneAlpha));
+      ctx.globalAlpha *= Math.max(0, Math.min(1, this.cutsceneAlpha));
       ctx.translate(cx, cy);
       ctx.rotate(this.cutsceneTilt);
       ctx.scale(this.cutsceneScale, this.cutsceneScale);

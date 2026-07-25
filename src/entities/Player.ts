@@ -83,42 +83,26 @@ export class Player extends Entity {
         // Use Math.floor for left/top (inclusive) and Math.ceil for right/bottom (exclusive)
         const leftTile = Math.floor(x / TILE_SIZE);
         const rightTile = Math.ceil((x + this.width) / TILE_SIZE);
-        const topTile = Math.floor(y / TILE_SIZE);
         const bottomTile = Math.ceil((y + this.height) / TILE_SIZE);
 
-        // Only check bottom 2 tiles (bottom row) for collision with NPCs/furniture
-        // This allows player to get closer from top/left/right directions
+        // Feet-only collision for walls and furniture so the sprite can overlap tall
+        // north walls / wall-mounted shelves and still interact with them.
         const bottomRow = bottomTile - 1; // Bottom row of player's 2x2 grid
-        
-        // Check walls for all tiles (strict collision)
-        for (let ty = topTile; ty < bottomTile; ty++) {
-            for (let tx = leftTile; tx < rightTile; tx++) {
-                if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) {
-                    return true;
-                }
-                const tile = map.getTile(tx, ty);
-                if (
-                    tile === TILE_WALL ||
-                    tile === TILE_WOOD_WALL ||
-                    tile === TILE_ROCK_WALL ||
-                    tile === TILE_MANOR_WALL ||
-                    tile === TILE_GATE_WALL ||
-                    tile === TILE_ATTIC_WALL ||
-                    tile === TILE_PALE_WALL ||
-                    tile === TILE_INVISIBLE_WALL
-                ) {
-                    return true;
-                }
-            }
-        }
 
-        // Check furniture / fences — only bottom row of player's tiles
         for (let tx = leftTile; tx < rightTile; tx++) {
             if (tx < 0 || tx >= map.width || bottomRow < 0 || bottomRow >= map.height) {
-                continue;
+                return true;
             }
             const tile = map.getTile(tx, bottomRow);
             if (
+                tile === TILE_WALL ||
+                tile === TILE_WOOD_WALL ||
+                tile === TILE_ROCK_WALL ||
+                tile === TILE_MANOR_WALL ||
+                tile === TILE_GATE_WALL ||
+                tile === TILE_ATTIC_WALL ||
+                tile === TILE_PALE_WALL ||
+                tile === TILE_INVISIBLE_WALL ||
                 tile === TILE_FURNITURE ||
                 tile === TILE_FENCE ||
                 tile === TILE_FENCE_POST ||

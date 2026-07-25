@@ -45,7 +45,7 @@ export function renderDebugOverlay(
         }
     }
 
-    // Player feet tile (magenta) — centered foot used for NPC / furniture collision
+    // Player feet tile (magenta) — centered foot used for NPC collision; full feet row for walls/furniture
     const feetLeftTile = Math.floor(player.x / TILE_SIZE);
     const feetRightTile = Math.ceil((player.x + player.width) / TILE_SIZE);
     const feetBottomTile = Math.ceil((player.y + player.height) / TILE_SIZE);

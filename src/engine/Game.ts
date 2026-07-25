@@ -18,6 +18,7 @@ import {
     DINING_FIRE_PANIC_LINE,
     DINING_FIRE_WAKE_THOUGHT,
     HEARTH_SHOVE_HINT,
+    YTTE_AFTER_ATTIC_DIALOG,
     YTTE_HELPED_DIALOG,
     diningHallDoorPosition,
     diningHearthLandingPosition,
@@ -121,7 +122,7 @@ export class Game {
     private ledgerScare: AtticScareChase;
     private diningFire = new DiningFireCutscene();
     private murdererStruggle: MurdererStruggle;
-    /** Chef Ytte is removed from the map after the dining scare until the hidden-room safe is opened. */
+    /** Chef Ytte is removed from the map after the dining scare until the attic scare ends. */
     private cookHiddenAfterDiningScare: NPC | null = null;
     /** Set after the dining fireplace cutscene; changes mid-game cook dialog. */
     private diningFireResolved = false;
@@ -304,9 +305,9 @@ export class Game {
             this.cookHiddenAfterDiningScare = null;
         }
 
-        // If he was hidden after the dining fire, don't record kitchen as home — he vanishes again on exit.
+        // After dining fire he returns to the kitchen when the attic scare ends.
         const homeRoom = wasHidden
-            ? null
+            ? this.rooms.kitchen ?? null
             : this.getRoomContainingNPC(this.getMurdererNpcId());
         scare.start(murderer, scareRoom, homeRoom, (npc, room, x, y) =>
             this.moveNPCToRoom(npc, room, x, y)
@@ -336,17 +337,15 @@ export class Game {
         if (!murderer) return;
 
         if (this.atticScare.active) {
-            // After the dining fire, Ytte stays vanished until the safe — do not park him in the kitchen.
-            const vanishAgain =
-                this.diningFireResolved && !this.clueSystem.hasClue("smuggling_documents");
-
+            // After the dining fire he was hidden; leaving the attic returns him to the kitchen.
             this.atticScare.endScare(murderer, this.rooms, (npc, room, x, y) => {
-                if (vanishAgain) return;
+                if (this.diningFireResolved) {
+                    this.placeCookInKitchen(npc);
+                    return;
+                }
                 this.moveNPCToRoom(npc, room, x, y);
             });
-            if (vanishAgain) {
-                this.hideCookAfterDiningScare(murderer);
-            }
+            this.cookHiddenAfterDiningScare = null;
             return;
         }
 
@@ -447,7 +446,7 @@ export class Game {
         targetRoom.npcs.push(npc);
     }
 
-    /** After the dining ledger scare, Ytte vanishes until the hidden-room safe is opened. */
+    /** After the dining ledger scare, Ytte vanishes until the attic scare ends. */
     private hideCookAfterDiningScare(murderer: NPC): void {
         for (const room of Object.values(this.rooms)) {
             const idx = room.npcs.indexOf(murderer);
@@ -463,16 +462,29 @@ export class Game {
         this.cookHiddenAfterDiningScare = murderer;
     }
 
-    private restoreCookAfterSafeOpened(): void {
-        const cook = this.cookHiddenAfterDiningScare;
-        if (!cook) return;
-        this.cookHiddenAfterDiningScare = null;
+    private placeCookInKitchen(cook: NPC): void {
         const kitchen = this.rooms.kitchen;
         if (!kitchen) return;
         const placement = this.content.rooms.kitchen?.npcs?.find((n) => n.npcId === cook.id);
         const x = (placement ? resolveNpcPlacementTile(placement.x, kitchen.map.width) : 8) * TILE_SIZE;
         const y = (placement ? resolveNpcPlacementTile(placement.y, kitchen.map.height) : 7) * TILE_SIZE;
+        cook.clearStun();
+        cook.setChasing(false);
+        cook.setFleeing(false);
+        cook.setSwingingKnife(false);
+        cook.setSpriteName("worker_man");
+        cook.setName("Chef Ytte");
+        cook.setShowNameLabel(true);
         this.moveNPCToRoom(cook, kitchen, x, y);
+    }
+
+    private restoreCookAfterSafeOpened(): void {
+        const cook = this.cookHiddenAfterDiningScare ?? this.getMurderer();
+        this.cookHiddenAfterDiningScare = null;
+        if (!cook) return;
+        // Already back after attic — nothing to do.
+        if (this.getRoomContainingNPC(cook.id)?.id === "kitchen") return;
+        this.placeCookInKitchen(cook);
     }
 
     private startMurdererConfrontation(): void {
@@ -1050,10 +1062,13 @@ export class Game {
                         this.diningFireResolved &&
                         !this.clueSystem.hasClue("bloody_apron")
                     ) {
-                        this.openDialog(YTTE_HELPED_DIALOG);
+                        const cookLine = this.atticScare.complete
+                            ? YTTE_AFTER_ATTIC_DIALOG
+                            : YTTE_HELPED_DIALOG;
+                        this.openDialog(cookLine);
                         talkSounds.startDialogue(
                             "male",
-                            extractSpokenLine(YTTE_HELPED_DIALOG, "Chef Ytte")
+                            extractSpokenLine(cookLine, "Chef Ytte")
                         );
                         return;
                     }

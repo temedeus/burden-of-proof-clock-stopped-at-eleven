@@ -28,7 +28,7 @@ describe("resolveEventNpcDialog", () => {
         expect(line).toMatch(/apron/i);
     });
 
-    it("gives Walsh mid-game fire and attic beats", () => {
+    it("gives Walsh mid-game dining and attic beats", () => {
         expect(
             resolveEventNpcDialog({
                 speakerId: "police",
@@ -36,7 +36,7 @@ describe("resolveEventNpcDialog", () => {
                 atticScareComplete: false,
                 hasClue: has()
             })
-        ).toMatch(/dining-room fire/i);
+        ).toMatch(/dining room/i);
 
         expect(
             resolveEventNpcDialog({
@@ -85,6 +85,6 @@ describe("resolveEventNpcDialog", () => {
                 atticScareComplete: false,
                 hasClue: has()
             })
-        ).toMatch(/fire/i);
+        ).toMatch(/dining room/i);
     });
 });

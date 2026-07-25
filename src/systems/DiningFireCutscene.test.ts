@@ -176,6 +176,7 @@ describe("DiningFireCutscene phases", () => {
         expect(cut.phase).toBe("wake_dialog");
         expect(cut.advanceDialog()).toBe("continue");
         expect(cut.advanceDialog()).toBe("continue");
+        expect(cut.advanceDialog()).toBe("continue");
         expect(cut.advanceDialog()).toBe("next_phase");
         expect(cut.phase).toBe("baroness_exit");
 

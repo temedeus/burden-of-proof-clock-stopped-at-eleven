@@ -10,7 +10,7 @@
 
 **Content model:** Rooms, NPCs, furniture, and base dialog live in `src/data/*.json`. Each playable case is a **story packet** (`src/data/story/generated/stories/active.json`) that assigns clues to furniture or NPCs, sets the culprit, and overrides NPC dialog. The active case is *Clock Stopped at Eleven* — victim **von Virtanen** (body in the Hall), culprit **Ytte** (cook).
 
-**Investigation flow:** Clues form a **dependency chain** — each discovery unlocks the next. See [Investigation order](#investigation-order-active-story) and [Active story clues](#active-story-clues-10-required).
+**Investigation flow:** Clues form a **dependency chain** — each discovery unlocks the next. See [Investigation order](#investigation-order-active-story) and [Active story clues](#active-story-clues-16-required).
 
 **This document** maps rooms and connections, lists where dialog text is defined, and catalogs all clues for the active story.
 
@@ -28,7 +28,9 @@ When returning an edited copy to a coding agent, ask it to **map your edits to t
 | Confirm-gated clues (cabinet unlock) | Furniture JSON — `interactionType: "confirm"`; `Game.ts` — puzzle handler (e.g. `hidden_cabinet`) |
 | Who committed the murder, victim, suspects | `active.json` — `culpritNpcId`, `victim`, `suspects` |
 | NPC default or conditional dialog (active case) | `active.json` — `npcDialogOverrides` |
+| Event-driven talk (after dining fire / attic scare / apron / weapon) | `src/content/eventNpcDialog.ts` — `resolveEventNpcDialog` |
 | Base NPC dialog (no story / fallback) | `src/data/npcs/<npc_id>.json` — `dialog` |
+| Dining fire wake / aftermath cutscene lines | `src/systems/DiningFireCutscene.ts` |
 | Room connections, doors, locked exits | `src/data/rooms/<room_id>.json` — `exits` |
 | NPC placement in a room | `src/data/rooms/<room_id>.json` — `npcs` |
 | Furniture layout in a room | `src/data/rooms/<room_id>.json` — `furniture` |
@@ -212,7 +214,8 @@ Dialog and player-facing text come from several layers. At runtime, **story over
 | `src/data/npcs/police2.json` | Constable Reed — default only |
 | `src/data/npcs/worker_man.json` | Groundskeeper — default only |
 | `src/data/npcs/worker_boy.json` | Stable Boy — default only |
-| `src/data/story/generated/stories/active.json` | **Active story overrides** — `npcDialogOverrides` for police, baroness, maid, cook, butler, groundskeeper |
+| `src/data/story/generated/stories/active.json` | **Active story overrides** — `npcDialogOverrides` for police, baroness, maid, cook, butler, groundskeeper, stable boy |
+| `src/content/eventNpcDialog.ts` | Post-fire / attic / apron / weapon talk lines for household + police |
 
 ### Intro & menu (TypeScript, hardcoded)
 
@@ -263,30 +266,36 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 | Groundskeeper | “I was out by the shed when I heard the commotion. Didn't see nothing.” | — |
 | Stable Boy | “The horses are spooked. Something's not right tonight.” | — |
 
-### Active story NPC overrides (`active.json`)
+### Active story NPC overrides (`active.json` + event dialog)
 
 | NPC | Role in investigation |
 |-----|------------------------|
-| Inspector Walsh | Scene briefing → Library lead after body + clock → final report prompt after weapon found |
-| Lady von Virtanen / Mrs. Clarke | Grief → Library papers lead after body + clock |
-| Ytte | Alibi → nervous after smuggling docs → accusation line after murder weapon |
-| Mr. Thompson | Study lead after torn appointment note |
-| Groundskeeper | Cellar lead after bloody apron |
+| Inspector Walsh | Early: scene → maid lead. After dining fire / attic scare / smuggling / apron: mid-game guidance (`eventNpcDialog.ts`). Finale: confront prompt after full clue set |
+| Constable Reed | Perimeter line; after fire and after weapon (`eventNpcDialog.ts`) |
+| Lady von Virtanen / Mrs. Clarke | Early grief / maid beats in story JSON; after fire, attic, apron, weapon via `eventNpcDialog.ts`. Wake cutscene in guest room A |
+| Ytte | Alibi → helped-you line after fire until apron → panic ladder → accusation after murder weapon |
+| Mr. Thompson | Dining escort tip after appointment note; fire / apron / weapon reactions via `eventNpcDialog.ts` |
+| Groundskeeper | Attic key after von Virtanen's diary |
+| Stable Boy | Fire/attic nod; smuggling sighting; bloody apron → wine cellar tip |
 
 ---
 
 ## Investigation order (active story)
 
 1. **Hall** — Examine Baron body + grandfather clock; talk to Walsh, Baroness, maid, cook.
-2. **Library** — Torn Appointment Note; talk to butler → Study.
-3. **Study** — Burned Ledger Page; pull secret bookshelf → Hidden Room.
-4. **Hidden Room** — von Virtanen's Journal on writing desk.
-5. **Garden** — Silver Key in fountain.
-6. **Hidden Room** — Unlock locked cabinet → Smuggling Documents.
-7. **Kitchen** — Bloody Apron; groundskeeper mentions cellar.
-8. **Cellar Storage** — Cellar Evidence (blood crate); open barrel passage → Wine Cellar.
-9. **Wine Cellar** — Murder Weapon (rear barrel).
-10. **Hall** — Confront Ytte → report to Inspector Walsh.
+2. **East landing / Maid Room** — Interview Mrs. Clarke (`maid_statement`).
+3. **Library** — Torn Appointment Note (center reading table); butler confirms Dining Room visit.
+4. **Dining Room** — Burned Ledger Page in ash canister → hooded scare, locked doors, fireplace shove cutscene → wake in **Guest Room A** (baroness; Ytte hidden until the safe).
+5. **Master Bedroom** — von Virtanen's Diary (attic chest + groundskeeper key).
+6. **Garden** — Talk groundskeeper → Rusty Old Key.
+7. **Attic** — Unlock old chest → Manor Floor Plans (+ Estate Documents) → attic scare chase.
+8. **Study / Hidden Room** — Secret bookshelf; von Virtanen's Journal on writing desk.
+9. **Garden** — Silver Key in fountain.
+10. **Hidden Room** — Unlock cabinet → Smuggling Documents (Ytte returns to kitchen).
+11. **Stable** — Bloody Apron in grey horse stall; stable boy tips wine cellar.
+12. **Cellar Storage** — Cellar Evidence (blood crate); open barrel passage → Wine Cellar.
+13. **Wine Cellar** — Missing Ledger Page + Murder Weapon (rear barrel) → confrontation.
+14. **Escape chase** — Find Walsh or Reed to win.
 
 ---
 
@@ -305,22 +314,28 @@ Without an active story, only `torn_page` is required to accuse the murderer (`g
 
 Clues may declare **`requiresClues`** (all must be found first) and **`blockedHint`** (shown when prerequisites are missing). **`hideFromInventory`** omits a clue from the inventory panel but still counts toward the win condition.
 
-### Active story clues (10 required)
+### Active story clues (16 required)
 
-| ID | Name | Requires | Location | Source | Examine hint |
-|----|------|----------|----------|--------|--------------|
-| `examined_body` | Body Examined | — | hall | baron NPC (`examineClueId`) | *(baron examine text)* |
-| `examined_clock` | Clock Examined | — | hall | hall_clock | Frozen at eleven; shattered glass |
-| `torn_appointment_note` | Torn Appointment Note | body + clock | library | reading_table | Torn note — Baron expected in Study |
-| `burned_ledger_page` | Burned Ledger Page | torn note | study | table | Charred ledger page — payments to Ytte |
-| `von_virtanens_journal` | von Virtanen's Journal | burned ledger | hidden_room | writing_table | Journal warns of smuggling + missing key |
-| `silver_key` | Silver Key | journal | garden | fountain | Key glinting in fountain basin |
-| `smuggling_documents` | Smuggling Documents | silver key | hidden_room | locked_cabinet (confirm) | Forged manifests in Ytte's hand |
-| `bloody_apron` | Bloody Apron | smuggling docs | kitchen | kitchen_table | Bloody apron on chair |
-| `cellar_evidence` | Cellar Evidence | bloody apron | cellar_storage | blood_crate | Stained crate; drag marks to wine cellar |
-| `murder_weapon` | Murder Weapon | cellar evidence | wine_cellar | wine_barrel #8 | Carving knife behind rear barrel |
+| ID | Name | Requires | Location | Source |
+|----|------|----------|----------|--------|
+| `examined_body` | Body Examined | — | hall | baron NPC |
+| `examined_clock` | Clock Examined | — | hall | hall_clock |
+| `maid_statement` | Maid Interviewed | body + clock | maid_room | maid dialog |
+| `torn_appointment_note` | Torn Appointment Note | maid | library | reading_table (center) |
+| `burned_ledger_page` | Burned Ledger Page | note | dining | ash_canister |
+| `barons_diary` | von Virtanen's Diary | ledger | master_bedroom | bedside_table |
+| `rusty_old_key` | Rusty Old Key | diary | garden | groundskeeper dialog |
+| `manor_floor_plans` | Manor Floor Plans | key | attic | attic_old_chest |
+| `estate_documents` | Estate Documents | plans | attic | same chest |
+| `von_virtanens_journal` | von Virtanen's Journal | ledger | hidden_room | writing_table |
+| `silver_key` | Silver Key | journal | garden | fountain |
+| `smuggling_documents` | Smuggling Documents | silver key | hidden_room | locked_cabinet |
+| `bloody_apron` | Bloody Apron | smuggling | stable | grey horse stall |
+| `cellar_evidence` | Cellar Evidence | apron | cellar_storage | blood_crate |
+| `missing_ledger_page` | Missing Ledger Page | cellar | wine_cellar | wine_barrel |
+| `murder_weapon` | Murder Weapon | ledger page | wine_cellar | same barrel |
 
-*Hidden from inventory:* `examined_body`, `examined_clock`
+*Hidden from inventory:* `examined_body`, `examined_clock`, `maid_statement`
 
 ### Base catalog clue (`clues.json`)
 
@@ -339,7 +354,7 @@ Clues may declare **`requiresClues`** (all must be found first) and **`blockedHi
 
 ### Clue-driven dialog gates
 
-Clues unlock conditional NPC lines via `requiresClue` in NPC JSON or `npcDialogOverrides` in the active story (see tables above).
+Clues unlock conditional NPC lines via `npcDialogOverrides` in the active story. Dining fire and attic scare also gate lines through `diningFireResolved` / `atticScare.complete` in `src/content/eventNpcDialog.ts` (wired from `Game.ts`).
 
 ### Win condition
 

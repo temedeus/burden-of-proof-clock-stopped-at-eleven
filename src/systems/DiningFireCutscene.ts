@@ -18,7 +18,8 @@ export const DINING_FIRE_AFTERMATH_LINES = [
 ] as const;
 
 export const DINING_FIRE_WAKE_LINES = [
-    "Lady von Virtanen: Easy, Detective. You're in the guest wing — I'm so glad you're all right.",
+    "Lady von Virtanen: Thank the Lord — you're awake.",
+    "Lady von Virtanen: Easy, Detective. You're in the guest wing. I'm so glad you're all right.",
     "Lady von Virtanen: Ytte is resting as well. He inhaled a great deal of smoke dragging you out.",
     "Lady von Virtanen: When you're steady, keep looking. This house is no longer safe for any of us."
 ] as const;
@@ -29,12 +30,6 @@ export const DINING_FIRE_WAKE_THOUGHT =
 
 export const YTTE_HELPED_DIALOG =
     "You: Why did you help me back there?\n\nChef Ytte: The baroness walked in. If I'd left you in that smoke, she'd have seen what I am. I had no choice.";
-
-export const BARONESS_AFTER_FIRE_DIALOG =
-    "Lady von Virtanen: Detective — thank heaven you're on your feet. After that smoke in the dining room… I'm so glad you're okay.";
-
-export const MAID_AFTER_FIRE_DIALOG =
-    "Mrs. Clarke: Oh, Detective! When we heard about the dining room I feared the worst. I'm so glad you're okay.";
 
 export const HEARTH_SHOVE_HINT = "The hearth — shove him into the fire!";
 

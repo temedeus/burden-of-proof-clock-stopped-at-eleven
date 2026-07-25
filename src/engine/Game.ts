@@ -15,11 +15,9 @@ import { MurdererConfrontation } from "../systems/MurdererConfrontation";
 import { AtticScareChase, DEFAULT_LEDGER_SCARE_MONOLOGUE } from "../systems/AtticScareChase";
 import {
     DiningFireCutscene,
-    BARONESS_AFTER_FIRE_DIALOG,
     DINING_FIRE_PANIC_LINE,
     DINING_FIRE_WAKE_THOUGHT,
     HEARTH_SHOVE_HINT,
-    MAID_AFTER_FIRE_DIALOG,
     YTTE_HELPED_DIALOG,
     diningHallDoorPosition,
     diningHearthLandingPosition,
@@ -27,6 +25,7 @@ import {
     getFireplaceHazardBounds,
     playerNearFireplaceHazard
 } from "../systems/DiningFireCutscene";
+import { resolveEventNpcDialog } from "../content/eventNpcDialog";
 import { drawCharacterFire } from "../assets/procedural/fireplace";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { VictorySequence } from "../systems/VictorySequence";
@@ -1059,22 +1058,22 @@ export class Game {
                         return;
                     }
 
-                    if (result.speakerId === "baroness" && this.diningFireResolved) {
-                        this.openDialog(BARONESS_AFTER_FIRE_DIALOG);
-                        talkSounds.startDialogue(
-                            "female",
-                            extractSpokenLine(BARONESS_AFTER_FIRE_DIALOG, "Lady von Virtanen")
-                        );
-                        return;
-                    }
-
-                    if (result.speakerId === "maid" && this.diningFireResolved) {
-                        this.openDialog(MAID_AFTER_FIRE_DIALOG);
-                        talkSounds.startDialogue(
-                            "female",
-                            extractSpokenLine(MAID_AFTER_FIRE_DIALOG, "Mrs. Clarke")
-                        );
-                        return;
+                    if (result.speakerId) {
+                        const eventLine = resolveEventNpcDialog({
+                            speakerId: result.speakerId,
+                            diningFireResolved: this.diningFireResolved,
+                            atticScareComplete: this.atticScare.complete,
+                            hasClue: (id) => this.clueSystem.hasClue(id)
+                        });
+                        if (eventLine) {
+                            this.openDialog(eventLine);
+                            const npcCfg = this.content.npcs[result.speakerId];
+                            talkSounds.startDialogue(
+                                inferVoiceGender(result.speakerId, npcCfg?.spriteName),
+                                extractSpokenLine(eventLine, result.speaker ?? npcCfg?.name ?? "???")
+                            );
+                            return;
+                        }
                     }
 
                     this.openDialog(result.description);

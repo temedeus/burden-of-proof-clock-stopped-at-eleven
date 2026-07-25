@@ -16,6 +16,7 @@ import { AtticScareChase, DEFAULT_LEDGER_SCARE_MONOLOGUE } from "../systems/Atti
 import {
     DiningFireCutscene,
     DINING_FIRE_PANIC_LINE,
+    DINING_FIRE_WAKE_THOUGHT,
     HEARTH_SHOVE_HINT,
     YTTE_HELPED_DIALOG,
     diningHallDoorPosition,
@@ -701,7 +702,8 @@ export class Game {
     private updateDiningFireCutscene(dt: number): void {
         const dialogPhase =
             this.diningFire.phase === "aftermath_dialog" ||
-            this.diningFire.phase === "wake_dialog";
+            this.diningFire.phase === "wake_dialog" ||
+            this.diningFire.phase === "wake_thought";
         if (dialogPhase && (this.input.wasPressed("e") || this.input.wasPressed(" "))) {
             if (this.messagePageIndex < this.messagePages.length - 1) {
                 this.messagePageIndex += 1;
@@ -723,6 +725,8 @@ export class Game {
             this.messagePageIndex = 0;
             if (this.diningFire.phase === "baroness_exit") {
                 this.startBaronessExitWalk();
+            } else if (this.diningFire.phase === "done" || !this.diningFire.active) {
+                this.completeDiningFireCutscene();
             }
             return;
         }
@@ -831,6 +835,11 @@ export class Game {
         }
         if (tick.openWakeDialog) {
             this.openCutsceneDialog(this.diningFire.getWakeLine(), "baroness");
+        }
+        if (tick.openWakeThought) {
+            this.messagePages = paginateDialog(this.ctx, DINING_FIRE_WAKE_THOUGHT);
+            this.messagePageIndex = 0;
+            this.message = this.messagePages[0] ?? null;
         }
         if (tick.finished) {
             this.completeDiningFireCutscene();

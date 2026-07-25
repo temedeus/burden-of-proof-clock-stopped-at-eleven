@@ -23,6 +23,10 @@ export const DINING_FIRE_WAKE_LINES = [
     "Lady von Virtanen: Rest when you need to. Something about that fire still smells wrong."
 ] as const;
 
+/** Detective's thought after the baroness leaves. */
+export const DINING_FIRE_WAKE_THOUGHT =
+    "You: That wasn't an accident — they tried to kill me over the burned ledger. I need to look in the baron's rooms.";
+
 export const YTTE_HELPED_DIALOG =
     "You: Why did you help me back there?\n\nChef Ytte: The baroness walked in. If I'd left you in that smoke, she'd have seen what I am. I had no choice.";
 
@@ -43,6 +47,7 @@ export type DiningFirePhase =
     | "wake_setup"
     | "wake_dialog"
     | "baroness_exit"
+    | "wake_thought"
     | "done";
 
 export interface Rect {
@@ -301,18 +306,29 @@ export class DiningFireCutscene {
             return "next_phase";
         }
 
-        if (this.phase !== "wake_dialog") return "continue";
-
-        if (this.lineIndex < DINING_FIRE_WAKE_LINES.length - 1) {
-            this.lineIndex += 1;
-            return "continue";
+        if (this.phase === "wake_dialog") {
+            if (this.lineIndex < DINING_FIRE_WAKE_LINES.length - 1) {
+                this.lineIndex += 1;
+                return "continue";
+            }
+            this.waitingForDialogAdvance = false;
+            this.phase = "baroness_exit";
+            this.timer = 0;
+            this.baronessExitT = 0;
+            return "next_phase";
         }
 
-        this.waitingForDialogAdvance = false;
-        this.phase = "baroness_exit";
-        this.timer = 0;
-        this.baronessExitT = 0;
-        return "next_phase";
+        if (this.phase === "wake_thought") {
+            this.waitingForDialogAdvance = false;
+            this.phase = "done";
+            this.active = false;
+            this.smokeAlpha = 0;
+            this.blackAlpha = 0;
+            this.flameIntensity = 0;
+            return "next_phase";
+        }
+
+        return "continue";
     }
 
     beginRetreat(
@@ -359,6 +375,7 @@ export class DiningFireCutscene {
         openAftermathDialog?: boolean;
         openPanicCry?: boolean;
         clearPanicCry?: boolean;
+        openWakeThought?: boolean;
         placeDrag?: boolean;
         placeWake?: boolean;
         hideCookAndFinishDrag?: boolean;
@@ -495,12 +512,9 @@ export class DiningFireCutscene {
             case "baroness_exit": {
                 this.baronessExitT = Math.min(1, this.timer / 1.5);
                 if (this.baronessExitT >= 1) {
-                    this.phase = "done";
-                    this.active = false;
-                    this.smokeAlpha = 0;
-                    this.blackAlpha = 0;
-                    this.flameIntensity = 0;
-                    out.finished = true;
+                    this.phase = "wake_thought";
+                    this.waitingForDialogAdvance = true;
+                    out.openWakeThought = true;
                 }
                 break;
             }

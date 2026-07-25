@@ -178,5 +178,18 @@ describe("DiningFireCutscene phases", () => {
         expect(cut.advanceDialog()).toBe("continue");
         expect(cut.advanceDialog()).toBe("next_phase");
         expect(cut.phase).toBe("baroness_exit");
+
+        let openedThought = false;
+        for (let i = 0; i < 50; i++) {
+            const tick = cut.tick(0.1);
+            if (tick.openWakeThought) {
+                openedThought = true;
+                break;
+            }
+        }
+        expect(openedThought).toBe(true);
+        expect(cut.phase).toBe("wake_thought");
+        expect(cut.advanceDialog()).toBe("next_phase");
+        expect(cut.phase).toBe("done");
     });
 });

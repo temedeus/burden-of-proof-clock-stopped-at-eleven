@@ -1195,6 +1195,18 @@ export class Game {
                         return;
                     }
 
+                    // Either officer ends the chase — must run before event dialog overrides
+                    // (Reed's weapon line would otherwise return early and skip victory).
+                    if (
+                        result.speakerId &&
+                        POLICE_NPC_IDS.includes(result.speakerId) &&
+                        this.murdererChase.accusedMurderer
+                    ) {
+                        talkSounds.stopDialogue();
+                        this.startVictorySequence(result.speakerId);
+                        return;
+                    }
+
                     if (result.speakerId) {
                         const eventLine = resolveEventNpcDialog({
                             speakerId: result.speakerId,
@@ -1230,15 +1242,6 @@ export class Game {
                                 this.ledgerScare.armAfterDialog();
                             }
                         }
-                    }
-                    if (
-                        result.speakerId &&
-                        POLICE_NPC_IDS.includes(result.speakerId) &&
-                        this.murdererChase.accusedMurderer
-                    ) {
-                        talkSounds.stopDialogue();
-                        this.startVictorySequence(result.speakerId);
-                        return;
                     }
                     if (result.speakerId && result.speaker) {
                         const npcCfg = this.content.npcs[result.speakerId];

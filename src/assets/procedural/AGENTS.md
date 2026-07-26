@@ -30,6 +30,7 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | Module | Used for |
 |--------|----------|
 | `fireplace.ts` | Animated fireplace |
+| `kitchen_stove.ts` | Animated kitchen stoves (pans + steam) |
 | `fountain.ts` | Animated fountain |
 | `oil_lamp.ts` | Wall-mounted lamps with flicker |
 | `wall_align.ts` | Wall-side bounds for mounted decor |

@@ -88,6 +88,7 @@ export const VALID_SPRITE_NAMES = [
     "manor_building",
     "stable_building",
     "fireplace",
+    "kitchen_stove",
     "guest_bed",
     "manor_lord_bed",
     "dining_table",

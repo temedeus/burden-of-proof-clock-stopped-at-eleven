@@ -1,0 +1,10 @@
+{
+  "id": "kitchen_helper_b",
+  "name": "Kitchen Helper",
+  "role": "Cook's assistant",
+  "spriteName": "maid",
+  "interactionMode": "examine",
+  "dialog": {
+    "default": "The kitchen helpers are always busy — pans hissing, dough rising. They barely glance up."
+  }
+}

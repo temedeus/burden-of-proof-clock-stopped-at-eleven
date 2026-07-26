@@ -193,7 +193,7 @@ Switches in **hidden_room** and **secret_tunnel** can reopen passages from the f
 |------|------|
 | hall | von Virtanen (baron — **dead body**, examine), Mrs. Clarke (maid), Ytte (cook), Lady von Virtanen (baroness), Inspector Walsh (police) |
 | library | Mr. Thompson (butler) |
-| kitchen | Groundskeeper (worker_man) |
+| kitchen | Groundskeeper (worker_man); Chef Ytte; 2 examine-only kitchen helpers; animated stoves |
 | study | Constable Reed (police2), Stable Boy (worker_boy) |
 
 ---

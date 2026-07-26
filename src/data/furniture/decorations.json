@@ -334,6 +334,20 @@
     "collisionWidth": 8,
     "spriteName": "kitchen_table"
   },
+  "kitchen_stove": {
+    "id": "kitchen_stove",
+    "name": "Kitchen stove",
+    "description": "A cast-iron range, pans clattering as something sizzles. Steam curls up from the cooktop.",
+    "width": 3,
+    "height": 2,
+    "drawWidth": 4,
+    "drawHeight": 3,
+    "renderAnchor": "bottom",
+    "collisionRowsFromBottom": 1,
+    "collisionWidth": 3,
+    "wallAlign": "north",
+    "spriteName": "kitchen_stove"
+  },
   "booze_table": {
     "id": "booze_table",
     "name": "Side table",

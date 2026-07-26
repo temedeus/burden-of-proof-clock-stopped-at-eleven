@@ -30,6 +30,8 @@ export interface NPCPlacement {
     npcId: string;
     x: number | "center";
     y: PositionToken;
+    /** Idle facing direction (humanoid sprites only). */
+    facing?: "up" | "down" | "left" | "right";
 }
 
 export interface GravelPathConfig {

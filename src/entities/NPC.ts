@@ -3,8 +3,16 @@ import { TILE_SIZE } from "../world/constants";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TileMap } from "../world/TileMap";
 import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_ATTIC_WALL, TILE_PALE_WALL, TILE_INVISIBLE_WALL, TILE_FURNITURE, TILE_FENCE, TILE_FENCE_POST, TILE_BANISTER, TILE_BANISTER_POST, TILE_WOOD_FENCE, TILE_WOOD_FENCE_POST, TILE_WOOD_FENCE_V } from "../world/TileTypes";
+import {
+    drawHumanoidFrame,
+    getHumanoidStyle,
+    type CharacterFacing
+} from "../assets/procedural/characters";
+import type { Facing } from "./Player";
 
 const DEFAULT_CHASE_SPEED = 100;
+const HUMANOID_NATIVE_W = 32;
+const HUMANOID_NATIVE_H = 40;
 
 export class NPC extends Entity {
   width = TILE_SIZE * 2;
@@ -27,6 +35,7 @@ export class NPC extends Entity {
   cutsceneScale = 1;
   cutsceneAlpha = 1;
   cutsceneTilt = 0;
+  facing: Facing = "down";
 
   constructor(
     id: string,
@@ -72,6 +81,14 @@ export class NPC extends Entity {
 
   setShowNameLabel(value: boolean): void {
     this.showNameLabel = value;
+  }
+
+  setFacing(facing: Facing): void {
+    this.facing = facing;
+  }
+
+  getFacing(): Facing {
+    return this.facing;
   }
 
   setSwingingKnife(value: boolean): void {
@@ -227,6 +244,31 @@ export class NPC extends Entity {
     return false;
   }
 
+  private drawIdleSprite(ctx: CanvasRenderingContext2D, dx: number, dy: number): void {
+    const style = getHumanoidStyle(this.spriteName);
+    if (!style) {
+      spriteLoader.drawSprite(ctx, this.spriteName, dx, dy, this.width, this.height);
+      return;
+    }
+
+    const bakeFacing: CharacterFacing =
+      this.facing === "up" ? "up" : this.facing === "down" ? "down" : "right";
+    const mirror = this.facing === "left";
+    const sx = this.width / HUMANOID_NATIVE_W;
+    const sy = this.height / HUMANOID_NATIVE_H;
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.translate(dx, dy);
+    ctx.scale(sx, sy);
+    if (mirror) {
+      ctx.translate(HUMANOID_NATIVE_W, 0);
+      ctx.scale(-1, 1);
+    }
+    drawHumanoidFrame(ctx, style, bakeFacing, "idle");
+    ctx.restore();
+  }
+
   clearCutscenePose(): void {
     this.cutsceneScale = 1;
     this.cutsceneAlpha = 1;
@@ -248,14 +290,7 @@ export class NPC extends Entity {
       ctx.translate(cx, cy);
       ctx.rotate(this.cutsceneTilt);
       ctx.scale(this.cutsceneScale, this.cutsceneScale);
-      spriteLoader.drawSprite(
-        ctx,
-        this.spriteName,
-        -this.width / 2,
-        -this.height / 2,
-        this.width,
-        this.height
-      );
+      this.drawIdleSprite(ctx, -this.width / 2, -this.height / 2);
       ctx.restore();
       return;
     }
@@ -271,17 +306,10 @@ export class NPC extends Entity {
       ctx.save();
       ctx.translate(pivotX, pivotY + sink);
       ctx.rotate(angle);
-      spriteLoader.drawSprite(
-        ctx,
-        this.spriteName,
-        -this.width / 2,
-        -this.height * 0.85,
-        this.width,
-        this.height
-      );
+      this.drawIdleSprite(ctx, -this.width / 2, -this.height * 0.85);
       ctx.restore();
     } else {
-      spriteLoader.drawSprite(ctx, this.spriteName, this.x, this.y, this.width, this.height);
+      this.drawIdleSprite(ctx, this.x, this.y);
     }
 
     if (this.swingingKnife && fall < 0.05) {

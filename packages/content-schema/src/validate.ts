@@ -154,6 +154,18 @@ export function validateRooms(
                     message: `NPC '${placement.npcId}' references unknown sprite '${npc.spriteName}'.`
                 });
             }
+            if (
+                placement.facing != null &&
+                placement.facing !== "up" &&
+                placement.facing !== "down" &&
+                placement.facing !== "left" &&
+                placement.facing !== "right"
+            ) {
+                issues.push({
+                    roomId: room.id,
+                    message: `NPC '${placement.npcId}' has invalid facing '${String(placement.facing)}'.`
+                });
+            }
         }
     }
 

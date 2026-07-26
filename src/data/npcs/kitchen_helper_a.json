@@ -1,0 +1,10 @@
+{
+  "id": "kitchen_helper_a",
+  "name": "Kitchen Helper",
+  "role": "Cook's assistant",
+  "spriteName": "worker_boy",
+  "interactionMode": "examine",
+  "dialog": {
+    "default": "The kitchen helpers are always busy — chopping, stirring, fetching. No time for chatter."
+  }
+}

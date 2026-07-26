@@ -494,6 +494,33 @@ const WORKER_MAN_STYLE: HumanoidStyle = {
     pants: P.coatBrown
 };
 
+const WORKER_BOY_STYLE: HumanoidStyle = {
+    coat: P.green,
+    coatLight: P.greenLight,
+    hair: P.woodDark,
+    skin: P.skinHi,
+    pants: P.woodDark
+};
+
+const MAID_STYLE: HumanoidStyle = {
+    coat: P.maidBlack,
+    coatLight: P.maidWhite,
+    hair: P.black,
+    accent: P.maidWhite,
+    pants: P.maidBlack,
+    hairUp: true,
+    dress: {
+        bodice: P.maidBlack,
+        bodiceLight: P.shadow,
+        skirt: P.maidBlack,
+        skirtLight: P.outline,
+        skirtShadow: P.black,
+        collar: P.maidWhite,
+        apron: P.maidWhite,
+        sleeve: P.maidBlack
+    }
+};
+
 const BARON_STYLE: HumanoidStyle = {
     coat: P.black,
     coatLight: P.shadow,
@@ -598,24 +625,7 @@ export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
             collar: P.cream
         }
     }),
-    maid: humanoid({
-        coat: P.maidBlack,
-        coatLight: P.maidWhite,
-        hair: P.black,
-        accent: P.maidWhite,
-        pants: P.maidBlack,
-        hairUp: true,
-        dress: {
-            bodice: P.maidBlack,
-            bodiceLight: P.shadow,
-            skirt: P.maidBlack,
-            skirtLight: P.outline,
-            skirtShadow: P.black,
-            collar: P.maidWhite,
-            apron: P.maidWhite,
-            sleeve: P.maidBlack
-        }
-    }),
+    maid: humanoid(MAID_STYLE),
     worker_man: humanoid(WORKER_MAN_STYLE),
     worker_man_bandaged: {
         nativeWidth: 32,
@@ -639,13 +649,7 @@ export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
             drawHoodedFigure(ctx);
         }
     },
-    worker_boy: humanoid({
-        coat: P.green,
-        coatLight: P.greenLight,
-        hair: P.woodDark,
-        skin: P.skinHi,
-        pants: P.woodDark
-    }),
+    worker_boy: humanoid(WORKER_BOY_STYLE),
     police: humanoid({
         coat: P.policeBlue,
         coatLight: P.blueLight,
@@ -688,3 +692,16 @@ export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
         accent: P.gold
     })
 };
+
+/** Humanoid styles that support directional facing (idle NPC poses). */
+export const HUMANOID_STYLES: Record<string, HumanoidStyle> = {
+    ...PLAYER_CHARACTER_STYLES,
+    baron: BARON_STYLE,
+    maid: MAID_STYLE,
+    worker_man: WORKER_MAN_STYLE,
+    worker_boy: WORKER_BOY_STYLE
+};
+
+export function getHumanoidStyle(spriteName: string): HumanoidStyle | undefined {
+    return HUMANOID_STYLES[spriteName];
+}

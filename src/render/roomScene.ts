@@ -2,6 +2,7 @@ import { drawFireplaceAnimated } from "../assets/procedural/fireplace";
 import { drawFountainAnimated } from "../assets/procedural/fountain";
 import { drawBallroomClerestoryWindows } from "../assets/procedural/ballroom_windows";
 import { drawOilLampAnimated, oilLampAnimPhase, oilLampDrawBounds } from "../assets/procedural/oil_lamp";
+import { drawKitchenStoveAnimated, kitchenStoveAnimPhase } from "../assets/procedural/kitchen_stove";
 import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
 import { decorWallDrawBounds, wallMountDrawBounds } from "../assets/procedural/wall_align";
 import { resolveDecorDrawRectPx } from "@cse/content-schema";
@@ -41,6 +42,7 @@ export function furnitureActorFromInteractable(
     const isFireplace = spriteName === "fireplace";
     const isFountain = spriteName === "fountain";
     const isOilLamp = spriteName === "oil_lamp";
+    const isKitchenStove = spriteName === "kitchen_stove";
     const isWallMount = Boolean(obj.wallSide) && !isOilLamp && !obj.walkableDecor;
     const isStableBooth = spriteName.startsWith("stable_booth");
     const decorW = obj.drawWidthTiles;
@@ -108,8 +110,14 @@ export function furnitureActorFromInteractable(
         drawH = bounds.drawH;
     }
 
-    const sortY = hasDecorDraw || isFireplace || isFountain || isOilLamp || isWallMount || isStableBooth ? drawY : minY * TILE_SIZE;
-    const sortH = hasDecorDraw || isFireplace || isFountain || isOilLamp || isWallMount || isStableBooth ? drawH : heightTiles * TILE_SIZE;
+    const sortY =
+        hasDecorDraw || isFireplace || isFountain || isOilLamp || isKitchenStove || isWallMount || isStableBooth
+            ? drawY
+            : minY * TILE_SIZE;
+    const sortH =
+        hasDecorDraw || isFireplace || isFountain || isOilLamp || isKitchenStove || isWallMount || isStableBooth
+            ? drawH
+            : heightTiles * TILE_SIZE;
 
     return {
         y: sortY,
@@ -117,6 +125,16 @@ export function furnitureActorFromInteractable(
         render: (ctx: CanvasRenderingContext2D) => {
             if (spriteName === "fireplace") {
                 drawFireplaceAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
+            } else if (spriteName === "kitchen_stove") {
+                drawKitchenStoveAnimated(
+                    ctx,
+                    drawX,
+                    drawY,
+                    drawW,
+                    drawH,
+                    getAnimTime(),
+                    kitchenStoveAnimPhase(minX, minY)
+                );
             } else if (spriteName === "fountain") {
                 drawFountainAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());
             } else if (isOilLamp) {

@@ -31,6 +31,13 @@ function drawWineBarrelTopDown(ctx: CanvasRenderingContext2D, ox: number, oy: nu
     r(ctx, ox + 3 * cell, oy + 2 * cell, cell, 8 * cell, P.woodHi);
     r(ctx, ox + 7 * cell, oy + cell, cell, 9 * cell, P.woodDark);
     r(ctx, ox + 6 * cell, oy + 4 * cell, 2 * cell, 2 * cell, P.shadow);
+
+    // Short cradle feet under the cask
+    const footY = oy + 10 * cell;
+    r(ctx, ox + 1 * cell, footY, 4 * cell, 2 * cell, P.woodDark);
+    r(ctx, ox + 2 * cell, footY, 2 * cell, cell, P.wood);
+    r(ctx, ox + 11 * cell, footY, 4 * cell, 2 * cell, P.woodDark);
+    r(ctx, ox + 12 * cell, footY, 2 * cell, cell, P.wood);
 }
 
 const COBWEB_COLORS = { l: P.light, c: P.cream, h: P.highlight, m: P.mid };

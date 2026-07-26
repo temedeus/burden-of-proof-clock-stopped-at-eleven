@@ -132,7 +132,7 @@
       "name": "von Virtanen's Diary",
       "description": "Von Virtanen's diary says the original manor floor plans are locked in an old attic chest — and that the groundskeeper keeps the key.",
       "requiresClues": ["burned_ledger_page"],
-      "blockedHint": "Nothing stands out yet. The charred ledger by the dining fireplace may point to what von Virtanen concealed in his chambers."
+      "blockedHint": "Von Virtanen's diary. "
     },
     {
       "id": "rusty_old_key",

@@ -1318,30 +1318,187 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     stuffed_moose: {
-        nativeWidth: 64,
-        nativeHeight: 96,
+        nativeWidth: 96,
+        nativeHeight: 144,
         draw(ctx) {
-            r(ctx, 8, 72, 48, 20, P.woodDark);
-            r(ctx, 10, 74, 44, 16, P.wood);
-            r(ctx, 12, 76, 40, 2, P.woodHi);
+            // Mahogany shield plaque
+            r(ctx, 16, 124, 64, 18, P.woodDark);
+            r(ctx, 18, 126, 60, 14, P.wood);
+            r(ctx, 20, 128, 56, 3, P.woodHi);
+            r(ctx, 22, 136, 52, 2, P.woodDark);
+            r(ctx, 24, 125, 48, 1, P.woodLight);
+            // Brass plaque stud
+            r(ctx, 44, 130, 8, 6, P.goldDark);
+            r(ctx, 46, 131, 4, 4, P.gold);
+            r(ctx, 47, 132, 2, 1, P.white);
 
-            r(ctx, 14, 44, 36, 30, P.horseCoat);
-            r(ctx, 16, 46, 32, 26, P.horseCoatMid);
-            r(ctx, 18, 30, 28, 20, P.horseCoatLight);
-            r(ctx, 22, 34, 20, 14, P.horseCoat);
-            r(ctx, 24, 38, 16, 8, P.horseMuzzle);
+            // --- Palmate antlers (moose shovels, not deer forks) ---
+            const antlerPal = { a: P.woodHi, b: P.cream, c: P.white, d: P.light };
+            // Left palm
+            grid(
+                ctx,
+                0,
+                2,
+                1,
+                [
+                    "..aa..aa..aa................",
+                    ".abbabbabbab................",
+                    "abccbccbccba................",
+                    "abccccccccba................",
+                    ".abcccccccbaa...............",
+                    "..abbbbbbbbbbaaa............",
+                    "...abbbbddbbbbbba...........",
+                    "....abbbbbbbbbbbba..........",
+                    ".....abbbbbbbbbbbba.........",
+                    "......abbbbbbbbbbba.........",
+                    ".......abbbbbbbbbba.........",
+                    "........abbbbbbbbba.........",
+                    ".........abbbbbbbba.........",
+                    "..........abbbbbbba.........",
+                    "...........abbbbbba.........",
+                    "............abbbbba.........",
+                    ".............abbbba.........",
+                    "..............abbba.........",
+                    "...............abba.........",
+                    "................aba.........",
+                    ".................ba.........",
+                    ".................ba.........",
+                    ".................ba.........",
+                    ".................ba........."
+                ],
+                antlerPal
+            );
+            // Right palm
+            grid(
+                ctx,
+                68,
+                2,
+                1,
+                [
+                    "................aa..aa..aa..",
+                    "................babbabbabba.",
+                    "................abccbccbccba",
+                    "................abccccccccba",
+                    "...............aabcccccccba.",
+                    "............aaabbbbbbbbbba..",
+                    "...........abbbbbbddbbbba...",
+                    "..........abbbbbbbbbbbba....",
+                    ".........abbbbbbbbbbbba.....",
+                    ".........abbbbbbbbbbba......",
+                    ".........abbbbbbbbbba.......",
+                    ".........abbbbbbbbba........",
+                    ".........abbbbbbbba.........",
+                    ".........abbbbbbba..........",
+                    ".........abbbbbba...........",
+                    ".........abbbbba............",
+                    ".........abbbba.............",
+                    ".........abbba..............",
+                    ".........abba...............",
+                    ".........aba................",
+                    ".........ab.................",
+                    ".........ab.................",
+                    ".........ab.................",
+                    ".........ab................."
+                ],
+                antlerPal
+            );
+            // Brow tines
+            r(ctx, 28, 18, 6, 18, P.cream);
+            r(ctx, 29, 14, 4, 6, P.white);
+            r(ctx, 30, 12, 2, 4, P.cream);
+            r(ctx, 62, 18, 6, 18, P.cream);
+            r(ctx, 63, 14, 4, 6, P.white);
+            r(ctx, 64, 12, 2, 4, P.cream);
+            // Thick beams tying palms into the skull (no floating antlers)
+            r(ctx, 24, 22, 10, 16, P.cream);
+            r(ctx, 26, 24, 8, 12, P.white);
+            r(ctx, 62, 22, 10, 16, P.cream);
+            r(ctx, 62, 24, 8, 12, P.white);
+            // Pedicle bridge across crown
+            r(ctx, 30, 26, 36, 14, P.cream);
+            r(ctx, 32, 28, 32, 8, P.white);
+            r(ctx, 28, 34, 40, 8, P.horseBay);
+            r(ctx, 30, 36, 36, 4, P.horseCoatDark);
 
-            r(ctx, 8, 18, 8, 16, P.woodDark);
-            r(ctx, 10, 14, 6, 12, P.wood);
-            r(ctx, 46, 18, 8, 16, P.woodDark);
-            r(ctx, 48, 14, 6, 12, P.wood);
-            r(ctx, 12, 8, 10, 8, P.woodDark);
-            r(ctx, 42, 8, 10, 8, P.woodDark);
-            r(ctx, 28, 4, 8, 10, P.woodDark);
+            // --- Skull / face ---
+            // Outer fur silhouette (stepped, not a flat box)
+            r(ctx, 32, 34, 32, 4, P.horseCoatDark);
+            r(ctx, 28, 38, 40, 6, P.horseCoatDark);
+            r(ctx, 26, 44, 44, 18, P.horseCoatDark);
+            r(ctx, 30, 36, 36, 26, P.horseCoat);
+            r(ctx, 34, 38, 28, 20, P.horseCoatMid);
+            // Forehead highlight
+            r(ctx, 40, 38, 16, 8, P.horseCoatLight);
+            r(ctx, 42, 40, 12, 4, P.horseCoat);
+            // Fur flecks
+            r(ctx, 36, 42, 2, 2, P.horseCoatDark);
+            r(ctx, 58, 44, 2, 2, P.horseCoatDark);
+            r(ctx, 44, 48, 2, 1, P.horseCoatLight);
+            // Cheek hollows
+            r(ctx, 26, 48, 8, 14, P.horseCoatDark);
+            r(ctx, 62, 48, 8, 14, P.horseCoatDark);
 
-            r(ctx, 20, 20, 4, 4, P.black);
-            r(ctx, 40, 20, 4, 4, P.black);
-            r(ctx, 30, 24, 4, 3, P.horseNostril);
+            // Cupped ears
+            r(ctx, 18, 36, 12, 16, P.horseCoatDark);
+            r(ctx, 20, 38, 9, 12, P.horseCoat);
+            r(ctx, 22, 42, 5, 6, P.horseMuzzle);
+            r(ctx, 23, 44, 2, 3, P.horseBay);
+            r(ctx, 66, 36, 12, 16, P.horseCoatDark);
+            r(ctx, 67, 38, 9, 12, P.horseCoat);
+            r(ctx, 69, 42, 5, 6, P.horseMuzzle);
+            r(ctx, 71, 44, 2, 3, P.horseBay);
+
+            // Amber glass eyes
+            r(ctx, 34, 44, 10, 8, P.black);
+            r(ctx, 36, 45, 7, 6, P.goldDark);
+            r(ctx, 37, 46, 5, 4, P.gold);
+            r(ctx, 38, 47, 3, 3, P.black);
+            r(ctx, 39, 46, 2, 1, P.white);
+            r(ctx, 52, 44, 10, 8, P.black);
+            r(ctx, 53, 45, 7, 6, P.goldDark);
+            r(ctx, 54, 46, 5, 4, P.gold);
+            r(ctx, 55, 47, 3, 3, P.black);
+            r(ctx, 56, 46, 2, 1, P.white);
+
+            // --- Long hanging bull-moose muzzle (the tell) ---
+            // Upper muzzle taper under the eyes
+            r(ctx, 34, 54, 28, 8, P.horseCoatDark);
+            r(ctx, 36, 56, 24, 8, P.horseCoat);
+            r(ctx, 38, 58, 20, 6, P.horseCoatMid);
+            // Bulbous hanging nose — stepped oval, lighter gray-brown
+            r(ctx, 30, 64, 36, 4, P.horseCoatDark);
+            r(ctx, 28, 68, 40, 20, P.horseCoatDark);
+            r(ctx, 30, 88, 36, 6, P.horseCoatDark);
+            r(ctx, 32, 66, 32, 24, P.horseMuzzle);
+            r(ctx, 34, 68, 28, 20, P.light);
+            r(ctx, 36, 72, 24, 14, P.horseMuzzle);
+            // Nose tip rounding
+            r(ctx, 34, 88, 28, 6, P.horseMuzzle);
+            r(ctx, 36, 92, 24, 4, P.horseCoatDark);
+            r(ctx, 40, 94, 16, 4, P.horseBay);
+            // Nostrils — twin dark ovals on the front
+            r(ctx, 38, 78, 8, 10, P.horseNostril);
+            r(ctx, 50, 78, 8, 10, P.horseNostril);
+            r(ctx, 40, 80, 4, 6, P.black);
+            r(ctx, 52, 80, 4, 6, P.black);
+            // Wet nose highlight
+            r(ctx, 42, 70, 12, 2, P.cream);
+            r(ctx, 44, 86, 8, 1, P.highlight);
+
+            // Jaw / lower lip under muzzle
+            r(ctx, 36, 94, 24, 6, P.horseCoatDark);
+            r(ctx, 38, 96, 20, 4, P.horseCoat);
+
+            // Neck into plaque + dewlap (bell)
+            r(ctx, 34, 98, 28, 26, P.horseCoatDark);
+            r(ctx, 36, 100, 24, 22, P.horseCoat);
+            r(ctx, 38, 102, 20, 16, P.horseCoatMid);
+            r(ctx, 40, 104, 4, 10, P.horseCoatLight);
+            // Dewlap hanging forward
+            r(ctx, 42, 110, 12, 16, P.horseCoatDark);
+            r(ctx, 44, 114, 8, 14, P.horseCoat);
+            r(ctx, 46, 120, 4, 10, P.horseCoatDark);
+            r(ctx, 47, 126, 2, 6, P.horseBay);
         }
     },
 

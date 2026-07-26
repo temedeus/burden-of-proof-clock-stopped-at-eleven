@@ -915,6 +915,6 @@
     "confirmId": "attic_chest",
     "confirmPrompt": "The chest is locked. Use the rusty old key?",
     "confirmRequiresClues": ["rusty_old_key"],
-    "blockedConfirmHint": "The chest is locked. Von Virtanen's diary said the groundskeeper keeps the attic key."
+    "blockedConfirmHint": "The chest is locked."
   }
 }

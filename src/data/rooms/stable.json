@@ -4,35 +4,36 @@
   "height": 18,
   "floorTile": "gravel",
   "wallTile": "wood",
+  "northWallThickness": 2,
   "furniture": [
     {
       "furnitureId": "stable_booth",
       "x": 2,
-      "y": 1,
+      "y": 2,
       "anchor": "top-left"
     },
     {
       "furnitureId": "stable_booth_bay",
       "x": 6,
-      "y": 1,
+      "y": 2,
       "anchor": "top-left"
     },
     {
       "furnitureId": "stable_booth_gray",
       "x": 10,
-      "y": 1,
+      "y": 2,
       "anchor": "top-left"
     },
     {
       "furnitureId": "stable_booth",
       "x": 14,
-      "y": 1,
+      "y": 2,
       "anchor": "top-left"
     },
     {
       "furnitureId": "stable_booth_bay",
       "x": 18,
-      "y": 1,
+      "y": 2,
       "anchor": "top-left"
     }
   ],

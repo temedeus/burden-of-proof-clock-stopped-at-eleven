@@ -8,6 +8,7 @@ import {
     atticFloorSpriteName,
     atticWallSpriteName,
     atticNorthWallSpriteName,
+    woodNorthWallSpriteName,
     manorInteriorWallDraw,
     northWallSpriteName
 } from "../assets/procedural/tiles";
@@ -222,6 +223,29 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
             return;
         }
         if (!onSide && above === TILE_PALE_ROCK_WALL && aboveAbove !== TILE_PALE_ROCK_WALL) {
+            return;
+        }
+    }
+
+    if (tile === TILE_WOOD_WALL) {
+        const onSide = x === 0 || x === map.width - 1;
+        const below =
+            y + 1 < map.height ? map.tiles[(y + 1) * map.width + x] : -1;
+        const above = y > 0 ? map.tiles[(y - 1) * map.width + x] : -1;
+        const aboveAbove = y > 1 ? map.tiles[(y - 2) * map.width + x] : -1;
+
+        if (!onSide && below === TILE_WOOD_WALL) {
+            spriteLoader.drawSprite(
+                ctx,
+                woodNorthWallSpriteName(x),
+                tileX,
+                tileY,
+                TILE_SIZE,
+                TILE_SIZE * 2
+            );
+            return;
+        }
+        if (!onSide && above === TILE_WOOD_WALL && aboveAbove !== TILE_WOOD_WALL) {
             return;
         }
     }

@@ -2,6 +2,7 @@ import { P } from "./palette";
 import { grid, r } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
 import { isAtticWindowBroken, atticWindowPairForColumn } from "../../world/atticWindows";
+import { stableWindowPairForColumn } from "../../world/stableWindows";
 
 const C = {
     o: P.outline,
@@ -1107,6 +1108,162 @@ export function northWallSpriteName(
     return sprites[((x % 3) + 3) % 3];
 }
 
+/** Continuous 2-tile-tall barn wood north wall (vertical boards). */
+export const WOOD_NORTH_WALL_SPRITES = [
+    "wall_wood_north",
+    "wall_wood_north_b",
+    "wall_wood_north_c"
+] as const;
+
+export function woodNorthWallSpriteName(x: number): string {
+    const pair = stableWindowPairForColumn(x);
+    if (pair) {
+        return x === pair.left ? "wall_wood_north_window_l" : "wall_wood_north_window_r";
+    }
+    return WOOD_NORTH_WALL_SPRITES[((x % 3) + 3) % 3];
+}
+
+function drawWoodNorthWallFace(
+    ctx: CanvasRenderingContext2D,
+    variant: 0 | 1 | 2,
+    windowHalf: null | "left" | "right" = null
+): void {
+    r(ctx, 0, 0, 32, 64, P.woodDark);
+
+    // Full-height vertical barn boards (board-and-batten), not small plank tiles
+    const boardLayouts: [number, number][][] = [
+        [
+            [0, 12],
+            [12, 10],
+            [22, 10]
+        ],
+        [
+            [0, 10],
+            [10, 12],
+            [22, 10]
+        ],
+        [
+            [0, 11],
+            [11, 9],
+            [20, 12]
+        ]
+    ];
+    const boards = boardLayouts[variant];
+    const tones = [P.wood, P.woodLight, P.wood, P.woodDark];
+
+    for (let i = 0; i < boards.length; i++) {
+        const [bx, bw] = boards[i];
+        const tone = tones[(i + variant) % tones.length];
+        r(ctx, bx, 0, bw, 64, tone);
+        // Left edge highlight / right seam so boards read as separate planks
+        r(ctx, bx, 0, 1, 64, P.woodHi);
+        r(ctx, bx + bw - 1, 0, 1, 64, P.woodDark);
+        // Thin batten over the seam
+        if (i < boards.length - 1) {
+            r(ctx, bx + bw - 2, 0, 2, 64, P.woodDark);
+            r(ctx, bx + bw - 1, 0, 1, 64, P.outline);
+        }
+        // Vertical grain
+        for (let g = 0; g < 3; g++) {
+            const gx = bx + 2 + ((g * 3 + variant + i) % Math.max(2, bw - 4));
+            const gy = 8 + ((i * 11 + g * 17 + variant * 5) % 40);
+            r(ctx, gx, gy, 1, 10 + g * 2, P.woodDark);
+        }
+        // Knot
+        const kx = bx + Math.floor(bw / 2) - 1;
+        const ky = 14 + ((i * 19 + variant * 9) % 30);
+        r(ctx, kx, ky, 2, 2, P.atticWoodKnot);
+        r(ctx, kx + 1, ky, 1, 1, P.woodDark);
+    }
+
+    // Heavy top plate (rafter beam)
+    r(ctx, 0, 0, 32, 6, P.woodDark);
+    r(ctx, 0, 1, 32, 3, P.wood);
+    r(ctx, 0, 2, 32, 1, P.woodHi);
+    r(ctx, 0, 5, 32, 1, P.outline);
+
+    // Mid girder / loft rail — barns read with one strong horizontal member
+    r(ctx, 0, 28, 32, 5, P.woodDark);
+    r(ctx, 0, 29, 32, 2, P.wood);
+    r(ctx, 0, 29, 32, 1, P.woodHi);
+    r(ctx, 0, 32, 32, 1, P.outline);
+
+    // Bottom kickboard / sill
+    r(ctx, 0, 58, 32, 6, P.woodDark);
+    r(ctx, 0, 59, 32, 3, P.wood);
+    r(ctx, 0, 59, 32, 1, P.woodHi);
+    r(ctx, 0, 63, 32, 1, P.outline);
+
+    // Soft column edge so neighboring tiles blend as one wall
+    r(ctx, 0, 6, 1, 52, P.shadow);
+    r(ctx, 31, 6, 1, 52, P.shadow);
+
+    if (windowHalf) {
+        drawStableWallWindowHalf(ctx, windowHalf);
+    }
+}
+
+/**
+ * Half of a two-tile stable window looking out onto yard / trees.
+ * Combined opening spans ~52×46 px across left+right halves.
+ */
+function drawStableWallWindowHalf(ctx: CanvasRenderingContext2D, side: "left" | "right"): void {
+    const isLeft = side === "left";
+    const shift = isLeft ? 0 : -32;
+
+    const frame = (gx: number, gy: number, gw: number, gh: number, color: string) => {
+        const x0 = gx + shift;
+        const x1 = x0 + gw;
+        if (x1 <= 0 || x0 >= 32) return;
+        const lx = Math.max(0, x0);
+        const rw = Math.min(32, x1) - lx;
+        if (rw > 0) r(ctx, lx, gy, rw, gh, color);
+    };
+
+    // Timber frame
+    frame(2, 6, 60, 50, P.woodDark);
+    frame(3, 7, 58, 48, P.wood);
+    frame(5, 9, 54, 44, P.outline);
+
+    // Outdoor view — sky band
+    frame(6, 10, 52, 18, "#4a6a88");
+    frame(7, 11, 50, 10, "#6a8aa8");
+    frame(8, 12, 12, 6, "#8aaac0");
+    frame(40, 14, 10, 4, P.glassShine);
+
+    // Distant tree line / hills
+    frame(6, 26, 52, 10, P.grassDark);
+    frame(8, 24, 8, 8, P.grass);
+    frame(18, 22, 10, 10, P.grassDark);
+    frame(30, 25, 7, 7, P.grass);
+    frame(40, 23, 12, 9, P.grassDark);
+    frame(10, 28, 3, 6, P.atticWoodDark);
+    frame(22, 27, 2, 7, P.atticWoodDark);
+    frame(44, 26, 3, 8, P.atticWoodDark);
+
+    // Near grass / yard
+    frame(6, 36, 52, 16, P.grass);
+    frame(7, 38, 50, 6, P.grassLight);
+    frame(8, 44, 20, 4, P.grassDark);
+    frame(32, 42, 18, 5, P.grassHi);
+    frame(12, 46, 8, 2, P.gravel);
+    frame(40, 47, 10, 2, P.gravelLight);
+
+    // Cross mullion
+    frame(30, 9, 4, 44, P.woodDark);
+    frame(31, 9, 2, 44, P.wood);
+    frame(5, 30, 54, 3, P.woodDark);
+    frame(5, 31, 54, 1, P.wood);
+
+    // Frame edge highlight
+    if (isLeft) {
+        r(ctx, 3, 7, 1, 48, P.woodHi);
+        r(ctx, 3, 7, 29, 1, P.woodHi);
+    } else {
+        r(ctx, 0, 7, 28, 1, P.woodHi);
+    }
+}
+
 function drawManorNorthWallFace(
     ctx: CanvasRenderingContext2D,
     variant: 0 | 1 | 2,
@@ -1245,6 +1402,32 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         r(ctx, 0, 0, 32, 1, P.outline);
         r(ctx, 0, 31, 32, 1, P.outline);
     }),
+
+    wall_wood_north: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawWoodNorthWallFace(ctx, 0)
+    },
+    wall_wood_north_b: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawWoodNorthWallFace(ctx, 1)
+    },
+    wall_wood_north_c: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawWoodNorthWallFace(ctx, 2)
+    },
+    wall_wood_north_window_l: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawWoodNorthWallFace(ctx, 0, "left")
+    },
+    wall_wood_north_window_r: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawWoodNorthWallFace(ctx, 0, "right")
+    },
 
     wall_rock: tile32((ctx) => drawRockWallVariant(ctx, 0)),
     wall_rock_b: tile32((ctx) => drawRockWallVariant(ctx, 1)),

@@ -50,6 +50,7 @@ import { buildClueCatalog, getInventoryClueIds, type ClueCatalog } from "../cont
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
 import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { gardenAmbience } from "../audio/GardenAmbience";
+import { kitchenAmbience } from "../audio/KitchenAmbience";
 import { atticMice } from "../systems/AtticMiceController";
 import { courtyardSeagull } from "../systems/CourtyardSeagullController";
 import { clueSounds } from "../audio/ClueSounds";
@@ -1436,6 +1437,7 @@ export class Game {
     private syncRoomAmbience(): void {
         fireplaceAmbience.syncForRoom(this.currentRoom);
         gardenAmbience.syncForRoom(this.currentRoom);
+        kitchenAmbience.syncForRoom(this.currentRoom);
         atticMice.syncForRoom(this.currentRoom.id);
         courtyardSeagull.syncForRoom(this.currentRoom.id);
     }

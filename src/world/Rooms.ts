@@ -94,8 +94,10 @@ function hasLegacyInteraction(furniture: FurnitureConfig): boolean {
     );
 }
 
-/** How many tiles deep each auto-generated interaction face extends toward the player. */
-const INTERACTION_FACE_DEPTH = 2;
+/** How many tiles each auto face extends from the prop edge toward the player. */
+const INTERACTION_FACE_DEPTH = 3;
+/** Extra tiles kept into the prop so close-up aim still hits the object itself. */
+const INTERACTION_FACE_INWARD = 1;
 
 function buildAutoFaceStrip(
     ix: number,
@@ -113,26 +115,26 @@ function buildAutoFaceStrip(
         }
     };
 
-    // Two tiles deep inward from the draw edge on the approached side.
+    // From just inside the draw edge, out toward the approaching player.
     switch (face) {
         case "north":
-            for (let d = 0; d < INTERACTION_FACE_DEPTH; d++) {
-                for (let x = ix; x < ix + iw; x++) push(x, iy + d);
+            for (let d = -INTERACTION_FACE_INWARD; d < INTERACTION_FACE_DEPTH; d++) {
+                for (let x = ix; x < ix + iw; x++) push(x, iy - d);
             }
             break;
         case "south":
-            for (let d = 0; d < INTERACTION_FACE_DEPTH; d++) {
-                for (let x = ix; x < ix + iw; x++) push(x, iy + ih - 1 - d);
+            for (let d = -INTERACTION_FACE_INWARD; d < INTERACTION_FACE_DEPTH; d++) {
+                for (let x = ix; x < ix + iw; x++) push(x, iy + ih - 1 + d);
             }
             break;
         case "west":
-            for (let d = 0; d < INTERACTION_FACE_DEPTH; d++) {
-                for (let y = iy; y < iy + ih; y++) push(ix + d, y);
+            for (let d = -INTERACTION_FACE_INWARD; d < INTERACTION_FACE_DEPTH; d++) {
+                for (let y = iy; y < iy + ih; y++) push(ix - d, y);
             }
             break;
         case "east":
-            for (let d = 0; d < INTERACTION_FACE_DEPTH; d++) {
-                for (let y = iy; y < iy + ih; y++) push(ix + iw - 1 - d, y);
+            for (let d = -INTERACTION_FACE_INWARD; d < INTERACTION_FACE_DEPTH; d++) {
+                for (let y = iy; y < iy + ih; y++) push(ix + iw - 1 + d, y);
             }
             break;
     }
@@ -208,24 +210,29 @@ function buildWallMountInteractionTilesByFacing(
     switch (wallSide) {
         case "north": {
             const tiles: { x: number; y: number }[] = [];
+            // Include the mount tile plus tiles toward the room.
+            push(tiles, anchorX, anchorY);
             for (let d = 1; d <= depth; d++) push(tiles, anchorX, anchorY + d);
             result.up = tiles;
             break;
         }
         case "south": {
             const tiles: { x: number; y: number }[] = [];
+            push(tiles, anchorX, anchorY);
             for (let d = 1; d <= depth; d++) push(tiles, anchorX, anchorY - d);
             result.down = tiles;
             break;
         }
         case "west": {
             const tiles: { x: number; y: number }[] = [];
+            push(tiles, anchorX, anchorY);
             for (let d = 1; d <= depth; d++) push(tiles, anchorX + d, anchorY);
             result.left = tiles;
             break;
         }
         case "east": {
             const tiles: { x: number; y: number }[] = [];
+            push(tiles, anchorX, anchorY);
             for (let d = 1; d <= depth; d++) push(tiles, anchorX - d, anchorY);
             result.right = tiles;
             break;
@@ -482,12 +489,41 @@ export function setHiddenExitDoorOpen(
     const exit = room.exits.find((e) => e.targetRoom === targetRoomId);
     if (!exit) return;
     const w = room.map.width;
+    const h = room.map.height;
     const isRock = room.map.furnitureUnderlay === "rock";
     const closedTile = isRock ? TILE_ROCK_WALL : TILE_WALL;
     const openTile = isRock ? TILE_ROCK : TILE_DOOR;
+    const tile = open ? openTile : closedTile;
+
+    const isTop = exit.y === 0 || exit.y === room.northClerestoryRows;
+    const isBottom = exit.y === h - 1;
+    const isLeftOrRight = exit.x === 0 || exit.x === w - 1;
+
+    if (isTop) {
+        // Match createRoomFromConfig door carving: open through the full north wall depth.
+        const depth = Math.max(1, room.northWallThickness);
+        for (let i = 0; i < depth; i++) {
+            const doorY = exit.y + i;
+            if (doorY < 0 || doorY >= h) continue;
+            for (const dx of [exit.x - 1, exit.x, exit.x + 1]) {
+                if (dx < 0 || dx >= w) continue;
+                room.map.tiles[doorY * w + dx] = tile;
+            }
+        }
+        return;
+    }
+
+    if (isLeftOrRight && !isTop && !isBottom) {
+        for (const dy of [exit.y - 1, exit.y, exit.y + 1]) {
+            if (dy < 0 || dy >= h) continue;
+            room.map.tiles[dy * w + exit.x] = tile;
+        }
+        return;
+    }
+
     for (const dx of [exit.x - 1, exit.x, exit.x + 1]) {
         if (dx < 0 || dx >= w) continue;
-        room.map.tiles[exit.y * w + dx] = open ? openTile : closedTile;
+        room.map.tiles[exit.y * w + dx] = tile;
     }
 }
 

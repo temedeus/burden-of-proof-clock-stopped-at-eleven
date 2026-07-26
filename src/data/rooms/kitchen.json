@@ -2,6 +2,8 @@
   "id": "kitchen",
   "width": 25,
   "height": 18,
+  "floorTile": "pale_rock",
+  "wallTile": "pale_rock",
   "northWallThickness": 2,
   "furniture": [
     {

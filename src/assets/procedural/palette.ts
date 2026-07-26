@@ -170,6 +170,25 @@ export const P = {
     rockFloorHi: "#2a2830",
     rockFloorFleck: "#08060c",
 
+    /** Kitchen stone — warm brown to match wood furniture; tight value range. */
+    paleRockVoid: "#3a2c22",
+    paleRockShadow: "#463628",
+    paleRockDark: "#524032",
+    paleRock: "#5c4a38",
+    paleRockMid: "#685440",
+    paleRockLight: "#74604c",
+    paleRockHi: "#806c58",
+    paleRockFleck: "#403028",
+
+    paleRockFloorVoid: "#32281e",
+    paleRockFloorShadow: "#3c3024",
+    paleRockFloorDark: "#48382c",
+    paleRockFloor: "#544234",
+    paleRockFloorMid: "#5e4c3c",
+    paleRockFloorLight: "#685644",
+    paleRockFloorHi: "#72604c",
+    paleRockFloorFleck: "#362a20",
+
     straw: "#a89868",
     strawLight: "#c4b480",
     horseCoat: "#6b4a36",

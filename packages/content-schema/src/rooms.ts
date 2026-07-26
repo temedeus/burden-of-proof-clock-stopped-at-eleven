@@ -87,9 +87,9 @@ export interface RoomConfig {
     id: string;
     width: number;
     height: number;
-    floorTile?: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" | "marble";
+    floorTile?: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "pale_rock" | "attic_wood" | "marble";
     /** Perimeter wall style (default red brick). */
-    wallTile?: "brick" | "wood" | "rock" | "attic_wood" | "pale";
+    wallTile?: "brick" | "wood" | "rock" | "pale_rock" | "attic_wood" | "pale";
     /** Rows above the north wall reserved for overhead clerestory windows (wall + collision shift down). */
     northClerestoryRows?: number;
     /** How many tile rows the north wall occupies (default 1). */

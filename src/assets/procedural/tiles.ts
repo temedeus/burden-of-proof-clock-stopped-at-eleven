@@ -38,14 +38,106 @@ const ROCK_FLOOR = {
     g: P.rockFloorMid
 };
 
+const PALE_ROCK_FLOOR = {
+    v: P.paleRockFloorVoid,
+    s: P.paleRockFloorShadow,
+    d: P.paleRockFloorDark,
+    m: P.paleRockFloor,
+    l: P.paleRockFloorLight,
+    h: P.paleRockFloorHi,
+    f: P.paleRockFloorFleck,
+    g: P.paleRockFloorMid
+};
+
+type RockTone = {
+    v: string;
+    s: string;
+    d: string;
+    m: string;
+    l: string;
+    h: string;
+    f: string;
+    g: string;
+};
 type RockFloorGrit = [number, number, number, number, string];
 type RockFloorFleck = [number, number, string];
 
+function rockFloorGritSets(tones: RockTone): RockFloorGrit[][] {
+    return [
+        [
+            [10, 8, 3, 1, tones.s],
+            [20, 12, 2, 2, tones.d],
+            [6, 20, 2, 1, tones.f],
+            [24, 6, 2, 1, tones.s],
+            [14, 22, 3, 1, tones.d],
+            [27, 18, 1, 2, tones.v]
+        ],
+        [
+            [8, 10, 2, 2, tones.s],
+            [18, 7, 3, 1, tones.d],
+            [5, 17, 2, 1, tones.f],
+            [22, 20, 2, 2, tones.g],
+            [12, 5, 1, 3, tones.v],
+            [28, 11, 1, 2, tones.s]
+        ],
+        [
+            [11, 11, 2, 1, tones.s],
+            [7, 7, 2, 2, tones.d],
+            [21, 9, 2, 1, tones.f],
+            [16, 24, 3, 1, tones.s],
+            [3, 14, 1, 2, tones.v],
+            [26, 26, 2, 1, tones.d]
+        ],
+        [
+            [9, 6, 2, 1, tones.s],
+            [19, 15, 2, 2, tones.d],
+            [4, 22, 3, 1, tones.f],
+            [23, 4, 2, 1, tones.s],
+            [15, 19, 1, 2, tones.v],
+            [27, 22, 2, 1, tones.g]
+        ]
+    ];
+}
+
+function rockFloorFleckSets(tones: RockTone): RockFloorFleck[][] {
+    return [
+        [
+            [5, 5, tones.f],
+            [16, 3, tones.s],
+            [25, 17, tones.f],
+            [8, 23, tones.h],
+            [20, 21, tones.s]
+        ],
+        [
+            [7, 4, tones.f],
+            [14, 14, tones.s],
+            [24, 8, tones.f],
+            [10, 19, tones.h],
+            [18, 26, tones.s]
+        ],
+        [
+            [6, 8, tones.f],
+            [13, 2, tones.s],
+            [22, 19, tones.f],
+            [4, 16, tones.h],
+            [17, 24, tones.s]
+        ],
+        [
+            [8, 14, tones.f],
+            [15, 6, tones.s],
+            [26, 14, tones.f],
+            [11, 26, tones.h],
+            [21, 4, tones.s]
+        ]
+    ];
+}
+
 function drawRockFloorVariant(
     ctx: CanvasRenderingContext2D,
-    variant: 0 | 1 | 2 | 3
+    variant: 0 | 1 | 2 | 3,
+    tones: RockTone = ROCK_FLOOR
 ): void {
-    r(ctx, 0, 0, 32, 32, P.rockFloorVoid);
+    r(ctx, 0, 0, 32, 32, tones.v);
 
     const layouts: string[][][] = [
         [
@@ -259,76 +351,13 @@ function drawRockFloorVariant(
         ]
     ];
 
-    const gritSets: RockFloorGrit[][] = [
-        [
-            [10, 8, 3, 1, P.rockFloorShadow],
-            [20, 12, 2, 2, P.rockFloorDark],
-            [6, 20, 2, 1, P.rockFloorFleck],
-            [24, 6, 2, 1, P.rockFloorShadow],
-            [14, 22, 3, 1, P.rockFloorDark],
-            [27, 18, 1, 2, P.rockFloorVoid]
-        ],
-        [
-            [8, 10, 2, 2, P.rockFloorShadow],
-            [18, 7, 3, 1, P.rockFloorDark],
-            [5, 17, 2, 1, P.rockFloorFleck],
-            [22, 20, 2, 2, P.rockFloorMid],
-            [12, 5, 1, 3, P.rockFloorVoid],
-            [28, 11, 1, 2, P.rockFloorShadow]
-        ],
-        [
-            [11, 11, 2, 1, P.rockFloorShadow],
-            [7, 7, 2, 2, P.rockFloorDark],
-            [21, 9, 2, 1, P.rockFloorFleck],
-            [16, 24, 3, 1, P.rockFloorShadow],
-            [3, 14, 1, 2, P.rockFloorVoid],
-            [26, 26, 2, 1, P.rockFloorDark]
-        ],
-        [
-            [9, 6, 2, 1, P.rockFloorShadow],
-            [19, 15, 2, 2, P.rockFloorDark],
-            [4, 22, 3, 1, P.rockFloorFleck],
-            [23, 4, 2, 1, P.rockFloorShadow],
-            [15, 19, 1, 2, P.rockFloorVoid],
-            [27, 22, 2, 1, P.rockFloorMid]
-        ]
-    ];
-
-    const fleckSets: RockFloorFleck[][] = [
-        [
-            [5, 5, P.rockFloorFleck],
-            [16, 3, P.rockFloorShadow],
-            [25, 17, P.rockFloorFleck],
-            [8, 23, P.rockFloorHi],
-            [20, 21, P.rockFloorShadow]
-        ],
-        [
-            [7, 4, P.rockFloorFleck],
-            [14, 14, P.rockFloorShadow],
-            [24, 8, P.rockFloorFleck],
-            [10, 19, P.rockFloorHi],
-            [18, 26, P.rockFloorShadow]
-        ],
-        [
-            [6, 8, P.rockFloorFleck],
-            [13, 2, P.rockFloorShadow],
-            [22, 19, P.rockFloorFleck],
-            [4, 16, P.rockFloorHi],
-            [17, 24, P.rockFloorShadow]
-        ],
-        [
-            [8, 14, P.rockFloorFleck],
-            [15, 6, P.rockFloorShadow],
-            [26, 14, P.rockFloorFleck],
-            [11, 26, P.rockFloorHi],
-            [21, 4, P.rockFloorShadow]
-        ]
-    ];
+    const gritSets = rockFloorGritSets(tones);
+    const fleckSets = rockFloorFleckSets(tones);
 
     const layout = layouts[variant];
     const offs = offsets[variant];
     for (let i = 0; i < layout.length; i++) {
-        grid(ctx, offs[i][0], offs[i][1], 2, layout[i], ROCK_FLOOR);
+        grid(ctx, offs[i][0], offs[i][1], 2, layout[i], tones);
     }
 
     for (const [x, y, w, h, color] of gritSets[variant]) {
@@ -343,6 +372,17 @@ export const ROCK_FLOOR_SPRITES = ["rock", "rock_b", "rock_c", "rock_d"] as cons
 
 export function rockFloorSpriteName(x: number, y: number): (typeof ROCK_FLOOR_SPRITES)[number] {
     return ROCK_FLOOR_SPRITES[(x * 17 + y * 31) % 4];
+}
+
+export const PALE_ROCK_FLOOR_SPRITES = [
+    "pale_rock",
+    "pale_rock_b",
+    "pale_rock_c",
+    "pale_rock_d"
+] as const;
+
+export function paleRockFloorSpriteName(x: number, y: number): (typeof PALE_ROCK_FLOOR_SPRITES)[number] {
+    return PALE_ROCK_FLOOR_SPRITES[(x * 17 + y * 31) % 4];
 }
 
 type AtticCrack = [number, number, number, number];
@@ -620,14 +660,123 @@ const ROCK_WALL = {
     m: P.rock,
     l: P.rockLight,
     h: P.rockHi,
-    f: P.rockFleck
+    f: P.rockFleck,
+    g: P.rockMid
 };
 
+const PALE_ROCK_WALL = {
+    v: P.paleRockVoid,
+    s: P.paleRockShadow,
+    d: P.paleRockDark,
+    m: P.paleRock,
+    l: P.paleRockLight,
+    h: P.paleRockHi,
+    f: P.paleRockFleck,
+    g: P.paleRockMid
+};
+
+type RockWallTone = {
+    v: string;
+    s: string;
+    d: string;
+    m: string;
+    l: string;
+    h: string;
+    f: string;
+    g: string;
+};
 type RockWallCrack = [number, number, number, number, string];
 type RockWallStreak = [number, number, number, number, string];
 
-function drawRockWallVariant(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2 | 3): void {
-    r(ctx, 0, 0, 32, 32, P.rockVoid);
+function rockWallCrackSets(tones: RockWallTone): RockWallCrack[][] {
+    return [
+        [
+            [10, 0, 1, 32, tones.v],
+            [22, 0, 1, 32, tones.s],
+            [5, 8, 1, 14, tones.v],
+            [27, 12, 1, 12, tones.s]
+        ],
+        [
+            [8, 0, 1, 28, tones.v],
+            [19, 2, 1, 30, tones.s],
+            [3, 10, 1, 16, tones.v],
+            [25, 6, 1, 18, tones.f]
+        ],
+        [
+            [12, 0, 1, 32, tones.s],
+            [6, 0, 1, 24, tones.v],
+            [23, 4, 1, 20, tones.v],
+            [15, 14, 1, 18, tones.s]
+        ],
+        [
+            [9, 0, 1, 30, tones.v],
+            [21, 0, 1, 32, tones.s],
+            [4, 16, 1, 12, tones.v],
+            [28, 8, 1, 14, tones.f]
+        ]
+    ];
+}
+
+function rockWallStreakSets(tones: RockWallTone): RockWallStreak[][] {
+    return [
+        [
+            [14, 4, 2, 10, tones.g],
+            [18, 20, 1, 8, tones.f],
+            [3, 22, 3, 1, tones.h],
+            [24, 6, 2, 1, tones.h]
+        ],
+        [
+            [11, 6, 2, 12, tones.g],
+            [20, 18, 1, 9, tones.f],
+            [5, 14, 3, 1, tones.h],
+            [26, 10, 2, 1, tones.s]
+        ],
+        [
+            [16, 3, 1, 14, tones.g],
+            [7, 20, 2, 1, tones.h],
+            [22, 24, 1, 6, tones.f],
+            [2, 8, 2, 1, tones.s]
+        ],
+        [
+            [13, 8, 2, 8, tones.g],
+            [6, 4, 1, 10, tones.f],
+            [23, 16, 3, 1, tones.h],
+            [17, 26, 2, 1, tones.s]
+        ]
+    ];
+}
+
+function rockWallFleckSets(tones: RockWallTone): [number, number, string][][] {
+    return [
+        [
+            [7, 11, tones.f],
+            [29, 19, tones.s],
+            [16, 28, tones.h]
+        ],
+        [
+            [5, 7, tones.f],
+            [27, 15, tones.s],
+            [12, 24, tones.h]
+        ],
+        [
+            [9, 5, tones.f],
+            [25, 22, tones.s],
+            [18, 12, tones.h]
+        ],
+        [
+            [4, 18, tones.f],
+            [21, 9, tones.s],
+            [14, 30, tones.h]
+        ]
+    ];
+}
+
+function drawRockWallVariant(
+    ctx: CanvasRenderingContext2D,
+    variant: 0 | 1 | 2 | 3,
+    tones: RockWallTone = ROCK_WALL
+): void {
+    r(ctx, 0, 0, 32, 32, tones.v);
 
     const layouts: string[][][] = [
         [
@@ -748,86 +897,13 @@ function drawRockWallVariant(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2 |
         ]
     ];
 
-    const cracks: RockWallCrack[][] = [
-        [
-            [10, 0, 1, 32, P.rockVoid],
-            [22, 0, 1, 32, P.rockShadow],
-            [5, 8, 1, 14, P.rockVoid],
-            [27, 12, 1, 12, P.rockShadow]
-        ],
-        [
-            [8, 0, 1, 28, P.rockVoid],
-            [19, 2, 1, 30, P.rockShadow],
-            [3, 10, 1, 16, P.rockVoid],
-            [25, 6, 1, 18, P.rockFleck]
-        ],
-        [
-            [12, 0, 1, 32, P.rockShadow],
-            [6, 0, 1, 24, P.rockVoid],
-            [23, 4, 1, 20, P.rockVoid],
-            [15, 14, 1, 18, P.rockShadow]
-        ],
-        [
-            [9, 0, 1, 30, P.rockVoid],
-            [21, 0, 1, 32, P.rockShadow],
-            [4, 16, 1, 12, P.rockVoid],
-            [28, 8, 1, 14, P.rockFleck]
-        ]
-    ];
-
-    const streaks: RockWallStreak[][] = [
-        [
-            [14, 4, 2, 10, P.rockMid],
-            [18, 20, 1, 8, P.rockFleck],
-            [3, 22, 3, 1, P.rockHi],
-            [24, 6, 2, 1, P.rockHi]
-        ],
-        [
-            [11, 6, 2, 12, P.rockMid],
-            [20, 18, 1, 9, P.rockFleck],
-            [5, 14, 3, 1, P.rockHi],
-            [26, 10, 2, 1, P.rockShadow]
-        ],
-        [
-            [16, 3, 1, 14, P.rockMid],
-            [7, 20, 2, 1, P.rockHi],
-            [22, 24, 1, 6, P.rockFleck],
-            [2, 8, 2, 1, P.rockShadow]
-        ],
-        [
-            [13, 8, 2, 8, P.rockMid],
-            [6, 4, 1, 10, P.rockFleck],
-            [23, 16, 3, 1, P.rockHi],
-            [17, 26, 2, 1, P.rockShadow]
-        ]
-    ];
-
-    const flecks: [number, number, string][][] = [
-        [
-            [7, 11, P.rockFleck],
-            [29, 19, P.rockShadow],
-            [16, 28, P.rockHi]
-        ],
-        [
-            [5, 7, P.rockFleck],
-            [27, 15, P.rockShadow],
-            [12, 24, P.rockHi]
-        ],
-        [
-            [9, 5, P.rockFleck],
-            [25, 22, P.rockShadow],
-            [18, 12, P.rockHi]
-        ],
-        [
-            [4, 18, P.rockFleck],
-            [21, 9, P.rockShadow],
-            [14, 30, P.rockHi]
-        ]
-    ];
+    const cracks = rockWallCrackSets(tones);
+    const streaks = rockWallStreakSets(tones);
+    const flecks = rockWallFleckSets(tones);
 
     for (let i = 0; i < layouts[variant].length; i++) {
         const [ox, oy] = offsets[variant][i];
-        grid(ctx, ox, oy, 2, layouts[variant][i], ROCK_WALL);
+        grid(ctx, ox, oy, 2, layouts[variant][i], tones);
     }
     for (const [x, y, w, h, color] of cracks[variant]) {
         r(ctx, x, y, w, h, color);
@@ -844,6 +920,84 @@ export const ROCK_WALL_SPRITES = ["wall_rock", "wall_rock_b", "wall_rock_c", "wa
 
 export function rockWallSpriteName(x: number, y: number): (typeof ROCK_WALL_SPRITES)[number] {
     return ROCK_WALL_SPRITES[(x * 23 + y * 37) % 4];
+}
+
+export const PALE_ROCK_WALL_SPRITES = [
+    "wall_pale_rock",
+    "wall_pale_rock_b",
+    "wall_pale_rock_c",
+    "wall_pale_rock_d"
+] as const;
+
+export function paleRockWallSpriteName(x: number, y: number): (typeof PALE_ROCK_WALL_SPRITES)[number] {
+    return PALE_ROCK_WALL_SPRITES[(x * 23 + y * 37) % 4];
+}
+
+/** Continuous 2-tile-tall pale limestone north wall face. */
+export const PALE_ROCK_NORTH_WALL_SPRITES = [
+    "wall_pale_rock_north",
+    "wall_pale_rock_north_b",
+    "wall_pale_rock_north_c"
+] as const;
+
+export function paleRockNorthWallSpriteName(x: number): string {
+    return PALE_ROCK_NORTH_WALL_SPRITES[((x % 3) + 3) % 3];
+}
+
+function drawPaleRockNorthWallFace(ctx: CanvasRenderingContext2D, variant: 0 | 1 | 2): void {
+    const t = PALE_ROCK_WALL;
+    r(ctx, 0, 0, 32, 64, t.v);
+
+    // Stacked ashlar courses across the full 2-tile face
+    const courseH = 8;
+    for (let row = 0; row < 8; row++) {
+        const y = row * courseH;
+        const stagger = ((row + variant) % 2) * 6;
+        const blockW = [10, 12, 14, 11][(row + variant) % 4];
+        let x = -((stagger + variant * 2) % blockW);
+        let toneFlip = 0;
+        while (x < 32) {
+            const w = Math.min(blockW, 32 - x);
+            if (w > 0 && x + w > 0) {
+                const bx = Math.max(0, x);
+                const bw = Math.min(32, x + w) - bx;
+                const base = (row + toneFlip + variant) % 2 === 0 ? t.m : t.d;
+                r(ctx, bx, y, bw, courseH - 1, base);
+                r(ctx, bx, y, bw, 1, t.l);
+                r(ctx, bx, y + courseH - 2, bw, 1, t.s);
+                if (bw > 3) {
+                    r(ctx, bx + 1, y + 2, 1, courseH - 4, t.h);
+                }
+            }
+            x += blockW;
+            toneFlip++;
+        }
+        r(ctx, 0, y + courseH - 1, 32, 1, t.v);
+    }
+
+    // Soft vertical seams so columns read as one surface
+    r(ctx, 0, 0, 1, 64, t.s);
+    r(ctx, 31, 0, 1, 64, t.s);
+
+    // Crown + baseboard shadows
+    r(ctx, 0, 0, 32, 2, t.d);
+    r(ctx, 0, 1, 32, 1, t.s);
+    r(ctx, 0, 62, 32, 2, t.d);
+    r(ctx, 0, 62, 32, 1, t.v);
+
+    // Sparse flecks / mineral grit
+    const flecks: [number, number][] = [
+        [4 + variant, 10],
+        [18, 22 + variant],
+        [12, 36],
+        [26 - variant, 48],
+        [8, 54]
+    ];
+    for (const [fx, fy] of flecks) {
+        r(ctx, fx, fy, 1, 1, t.f);
+    }
+    r(ctx, 20 + variant, 14, 2, 1, t.h);
+    r(ctx, 6, 40 + variant, 2, 1, t.h);
 }
 
 const WOOD_WALL_GRAIN_H: [number, number][] = [
@@ -1097,6 +1251,27 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     wall_rock_c: tile32((ctx) => drawRockWallVariant(ctx, 2)),
     wall_rock_d: tile32((ctx) => drawRockWallVariant(ctx, 3)),
 
+    wall_pale_rock: tile32((ctx) => drawRockWallVariant(ctx, 0, PALE_ROCK_WALL)),
+    wall_pale_rock_b: tile32((ctx) => drawRockWallVariant(ctx, 1, PALE_ROCK_WALL)),
+    wall_pale_rock_c: tile32((ctx) => drawRockWallVariant(ctx, 2, PALE_ROCK_WALL)),
+    wall_pale_rock_d: tile32((ctx) => drawRockWallVariant(ctx, 3, PALE_ROCK_WALL)),
+
+    wall_pale_rock_north: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawPaleRockNorthWallFace(ctx, 0)
+    },
+    wall_pale_rock_north_b: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawPaleRockNorthWallFace(ctx, 1)
+    },
+    wall_pale_rock_north_c: {
+        nativeWidth: 32,
+        nativeHeight: 64,
+        draw: (ctx) => drawPaleRockNorthWallFace(ctx, 2)
+    },
+
     floor: tile32((ctx) => {
         // Horizontal planks — tiles seamlessly; no checkerboard
         for (let row = 0; row < 4; row++) {
@@ -1303,6 +1478,11 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     rock_b: tile32((ctx) => drawRockFloorVariant(ctx, 1)),
     rock_c: tile32((ctx) => drawRockFloorVariant(ctx, 2)),
     rock_d: tile32((ctx) => drawRockFloorVariant(ctx, 3)),
+
+    pale_rock: tile32((ctx) => drawRockFloorVariant(ctx, 0, PALE_ROCK_FLOOR)),
+    pale_rock_b: tile32((ctx) => drawRockFloorVariant(ctx, 1, PALE_ROCK_FLOOR)),
+    pale_rock_c: tile32((ctx) => drawRockFloorVariant(ctx, 2, PALE_ROCK_FLOOR)),
+    pale_rock_d: tile32((ctx) => drawRockFloorVariant(ctx, 3, PALE_ROCK_FLOOR)),
 
     door: {
         nativeWidth: 32,

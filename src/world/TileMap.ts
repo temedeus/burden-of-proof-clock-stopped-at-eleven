@@ -20,6 +20,8 @@ import {
     TILE_ATTIC_FLOOR,
     TILE_MARBLE,
     TILE_PALE_WALL,
+    TILE_PALE_ROCK,
+    TILE_PALE_ROCK_WALL,
     TILE_INVISIBLE_WALL,
     TILE_WOOD_FENCE,
     TILE_WOOD_FENCE_POST,
@@ -34,7 +36,15 @@ export class TileMap {
         public height: number,
         public tiles: number[],
         /** Fallback when `terrainBeforeFurniture` is absent (interior rooms use parquet `floor`) */
-        public furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" | "marble" = "floor",
+        public furnitureUnderlay:
+            | "floor"
+            | "grass"
+            | "gravel"
+            | "ceramic"
+            | "rock"
+            | "pale_rock"
+            | "attic_wood"
+            | "marble" = "floor",
         /** Snapshot of terrain before furniture was placed; transparent props show grass/gravel/floor per cell */
         public terrainBeforeFurniture: number[] | null = null,
         /** Accent for continuous thick north-wall faces (e.g. rose upper plaster). */
@@ -51,6 +61,7 @@ export class TileMap {
             tile === TILE_WALL ||
             tile === TILE_WOOD_WALL ||
             tile === TILE_ROCK_WALL ||
+            tile === TILE_PALE_ROCK_WALL ||
             tile === TILE_MANOR_WALL ||
             tile === TILE_GATE_WALL ||
             tile === TILE_ATTIC_WALL ||

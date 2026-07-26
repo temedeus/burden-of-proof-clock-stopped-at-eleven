@@ -44,3 +44,7 @@ export const TILE_WOOD_FENCE = 22;
 export const TILE_WOOD_FENCE_POST = 23;
 /** Outdoor wood fence — vertical run (top-down thin rail). */
 export const TILE_WOOD_FENCE_V = 24;
+/** Pale kitchen limestone floor */
+export const TILE_PALE_ROCK = 25;
+/** Pale kitchen limestone wall */
+export const TILE_PALE_ROCK_WALL = 26;

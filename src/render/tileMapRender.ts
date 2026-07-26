@@ -2,6 +2,9 @@ import { spriteLoader } from "../assets/SpriteLoader";
 import {
     rockFloorSpriteName,
     rockWallSpriteName,
+    paleRockFloorSpriteName,
+    paleRockWallSpriteName,
+    paleRockNorthWallSpriteName,
     atticFloorSpriteName,
     atticWallSpriteName,
     atticNorthWallSpriteName,
@@ -26,6 +29,8 @@ import {
     TILE_ROCK,
     TILE_WALL,
     TILE_ROCK_WALL,
+    TILE_PALE_ROCK,
+    TILE_PALE_ROCK_WALL,
     TILE_MANOR_WALL,
     TILE_GATE_WALL,
     TILE_ATTIC_FLOOR,
@@ -60,6 +65,7 @@ function underlaySpriteName(map: TileMap, x: number, y: number): string {
         if (t === TILE_SAND) return "sand";
         if (t === TILE_CERAMIC) return "ceramic";
         if (t === TILE_ROCK) return rockFloorSpriteName(x, y);
+        if (t === TILE_PALE_ROCK) return paleRockFloorSpriteName(x, y);
         if (t === TILE_ATTIC_FLOOR) return atticFloorSpriteName(x, y);
         if (t === TILE_MARBLE) return "floor_marble";
         if (t === TILE_FLOOR) return "floor";
@@ -72,6 +78,8 @@ function underlaySpriteName(map: TileMap, x: number, y: number): string {
             ? "ceramic"
             : map.furnitureUnderlay === "rock"
               ? rockFloorSpriteName(x, y)
+              : map.furnitureUnderlay === "pale_rock"
+                ? paleRockFloorSpriteName(x, y)
               : map.furnitureUnderlay === "attic_wood"
                 ? atticFloorSpriteName(x, y)
                 : map.furnitureUnderlay === "marble"
@@ -145,12 +153,16 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                   ? "ceramic"
                   : tile === TILE_ROCK
                     ? rockFloorSpriteName(x, y)
+                    : tile === TILE_PALE_ROCK
+                      ? paleRockFloorSpriteName(x, y)
                     : tile === TILE_ATTIC_FLOOR
                       ? atticFloorSpriteName(x, y)
                       : tile === TILE_MARBLE
                         ? "floor_marble"
                         : tile === TILE_ROCK_WALL
                           ? rockWallSpriteName(x, y)
+                          : tile === TILE_PALE_ROCK_WALL
+                            ? paleRockWallSpriteName(x, y)
                           : tile === TILE_ATTIC_WALL
                             ? atticWallSpriteName(x, y)
                             : tile === TILE_PALE_WALL
@@ -189,6 +201,29 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
         const { sprite, flipX, flipY } = manorInteriorWallDraw(x, y, map.width, map.height);
         spriteLoader.drawSprite(ctx, sprite, tileX, tileY, TILE_SIZE, TILE_SIZE, flipX, flipY);
         return;
+    }
+
+    if (tile === TILE_PALE_ROCK_WALL) {
+        const onSide = x === 0 || x === map.width - 1;
+        const below =
+            y + 1 < map.height ? map.tiles[(y + 1) * map.width + x] : -1;
+        const above = y > 0 ? map.tiles[(y - 1) * map.width + x] : -1;
+        const aboveAbove = y > 1 ? map.tiles[(y - 2) * map.width + x] : -1;
+
+        if (!onSide && below === TILE_PALE_ROCK_WALL) {
+            spriteLoader.drawSprite(
+                ctx,
+                paleRockNorthWallSpriteName(x),
+                tileX,
+                tileY,
+                TILE_SIZE,
+                TILE_SIZE * 2
+            );
+            return;
+        }
+        if (!onSide && above === TILE_PALE_ROCK_WALL && aboveAbove !== TILE_PALE_ROCK_WALL) {
+            return;
+        }
     }
 
     if (tile === TILE_ATTIC_WALL) {

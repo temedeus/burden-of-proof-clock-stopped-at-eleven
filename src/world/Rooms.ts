@@ -17,6 +17,8 @@ import {
     TILE_GATE_WALL,
     TILE_CERAMIC,
     TILE_ROCK,
+    TILE_PALE_ROCK,
+    TILE_PALE_ROCK_WALL,
     TILE_ATTIC_FLOOR,
     TILE_ATTIC_WALL,
     TILE_MARBLE,
@@ -472,6 +474,8 @@ function floorTileForUnderlay(underlay: TileMap["furnitureUnderlay"]): number {
             return TILE_CERAMIC;
         case "rock":
             return TILE_ROCK;
+        case "pale_rock":
+            return TILE_PALE_ROCK;
         case "attic_wood":
             return TILE_ATTIC_FLOOR;
         case "marble":
@@ -867,6 +871,8 @@ export function createRoomFromConfig(
                 ? TILE_CERAMIC
                 : config.floorTile === "rock"
                   ? TILE_ROCK
+                  : config.floorTile === "pale_rock"
+                    ? TILE_PALE_ROCK
                   : config.floorTile === "attic_wood"
                     ? TILE_ATTIC_FLOOR
                     : config.floorTile === "marble"
@@ -877,6 +883,8 @@ export function createRoomFromConfig(
             ? TILE_WOOD_WALL
             : config.wallTile === "rock"
               ? TILE_ROCK_WALL
+              : config.wallTile === "pale_rock"
+                ? TILE_PALE_ROCK_WALL
               : config.wallTile === "attic_wood"
                 ? TILE_ATTIC_WALL
                 : config.wallTile === "pale"
@@ -1042,7 +1050,7 @@ export function createRoomFromConfig(
 
     const npcs: NPC[] = [];
 
-    const furnitureUnderlay: "floor" | "grass" | "gravel" | "ceramic" | "rock" | "attic_wood" | "marble" =
+    const furnitureUnderlay: TileMap["furnitureUnderlay"] =
         config.floorTile === "grass"
             ? "grass"
             : config.floorTile === "gravel"
@@ -1051,6 +1059,8 @@ export function createRoomFromConfig(
                 ? "ceramic"
                 : config.floorTile === "rock"
                   ? "rock"
+                  : config.floorTile === "pale_rock"
+                    ? "pale_rock"
                   : config.floorTile === "attic_wood"
                     ? "attic_wood"
                     : config.floorTile === "marble"

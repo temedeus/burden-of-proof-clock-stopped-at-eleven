@@ -2,7 +2,7 @@ import { Entity } from "./Entity";
 import { TILE_SIZE } from "../world/constants";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TileMap } from "../world/TileMap";
-import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_ATTIC_WALL, TILE_PALE_WALL, TILE_INVISIBLE_WALL, TILE_FURNITURE, TILE_FENCE, TILE_FENCE_POST, TILE_BANISTER, TILE_BANISTER_POST, TILE_WOOD_FENCE, TILE_WOOD_FENCE_POST, TILE_WOOD_FENCE_V } from "../world/TileTypes";
+import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_PALE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_ATTIC_WALL, TILE_PALE_WALL, TILE_INVISIBLE_WALL, TILE_FURNITURE, TILE_FENCE, TILE_FENCE_POST, TILE_BANISTER, TILE_BANISTER_POST, TILE_WOOD_FENCE, TILE_WOOD_FENCE_POST, TILE_WOOD_FENCE_V } from "../world/TileTypes";
 import {
     drawHumanoidFrame,
     getHumanoidStyle,
@@ -224,6 +224,7 @@ export class NPC extends Entity {
             tile === TILE_WALL ||
             tile === TILE_WOOD_WALL ||
             tile === TILE_ROCK_WALL ||
+            tile === TILE_PALE_ROCK_WALL ||
             tile === TILE_MANOR_WALL ||
             tile === TILE_GATE_WALL ||
             tile === TILE_ATTIC_WALL ||

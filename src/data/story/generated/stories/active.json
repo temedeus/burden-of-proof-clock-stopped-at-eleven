@@ -167,7 +167,7 @@
       "name": "Silver Key",
       "description": "A small silver key, cold to the touch. It must belong to the cabinet in the hidden room.",
       "requiresClues": ["von_virtanens_journal"],
-      "blockedHint": "Von Virtanen had been walking in the garden — the fountain basin may be worth searching."
+      "blockedHint": "Beautiful fountain, water runs smoothyl."
     },
     {
       "id": "smuggling_documents",
@@ -237,7 +237,7 @@
       "roomId": "dining",
       "furnitureId": "ash_canister",
       "furnitureIndex": 0,
-      "hint": "In the ash canister by the fireplace: a semi-burned ledger page. Payment columns survive, but the payee's name is scorched beyond reading — and the final page of the ledger is missing."
+      "hint": "Ash canister by the fireplace."
     },
     {
       "clueId": "barons_diary",

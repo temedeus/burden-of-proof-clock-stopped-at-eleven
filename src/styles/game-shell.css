@@ -97,31 +97,32 @@ body {
     translateY(calc(-1 * var(--touch-arrow-radius)));
 }
 
-/* Shaft toward the pad center */
+/* Shaft toward the pad center (local +Y) */
 .touch-dpad .touch-btn::before {
   content: "";
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 10px;
   width: 2px;
   height: var(--touch-shaft-length);
-  margin: 2px 0 0 -1px;
+  margin-left: -1px;
   border-radius: 1px;
   background: currentColor;
   opacity: 0.9;
 }
 
-/* Arrow head — upright relative to the screen */
+/* Chevron tip pointing outward (local -Y) — same mark for every sector */
 .touch-dpad .touch-btn::after {
-  content: attr(data-arrow);
+  content: "";
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font: bold 15px serif;
-  line-height: 1;
-  transform: rotate(calc(-1 * var(--arrow-angle, 0deg)));
+  left: 50%;
+  top: 1px;
+  width: 0;
+  height: 0;
+  margin-left: -6px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 9px solid currentColor;
 }
 
 .touch-dpad .touch-btn[data-sector="0"] { --arrow-angle: 90deg; }   /* E */

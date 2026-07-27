@@ -17,7 +17,6 @@ const CLUE_CHAIN = [
     "barons_diary",
     "rusty_old_key",
     "manor_floor_plans",
-    "estate_documents",
     "von_virtanens_journal",
     "silver_key",
     "smuggling_documents",
@@ -154,7 +153,6 @@ describe("active story investigation flow", () => {
         expect(clueSystem.canCollectClue("rusty_old_key", story.generatedClues, keyAssignment)).toBe(true);
         clueSystem.addClue("rusty_old_key");
         clueSystem.addClue("manor_floor_plans");
-        clueSystem.addClue("estate_documents");
         expect(clueSystem.canCollectClue("burned_ledger_page", story.generatedClues, ledgerAssignment)).toBe(
             false
         );

@@ -144,22 +144,15 @@
     {
       "id": "manor_floor_plans",
       "name": "Manor Floor Plans",
-      "description": "Original floor plans of von Virtanen Manor — secret passages marked in faded ink.",
+      "description": "Original floor plans of von Virtanen Manor. Faded ink marks a hidden passage behind the study bookshelves, and another behind the stacked barrels in the cellar — both lead to the same secret chambers.",
       "requiresClues": ["rusty_old_key"],
       "blockedHint": "The chest is locked shut. Ask the groundskeeper for the attic key."
-    },
-    {
-      "id": "estate_documents",
-      "name": "Estate Documents",
-      "description": "Old estate papers note that the Hidden Room can be reached from both the Study and the Cellar.",
-      "requiresClues": ["manor_floor_plans"],
-      "blockedHint": "The chest looks empty until you have opened it with the key."
     },
     {
       "id": "von_virtanens_journal",
       "name": "von Virtanen's Journal",
       "description": "Von Virtanen's journal warns of a smuggling ring. He had been walking in the garden afterward — and seems to have lost the silver key to this cabinet there.",
-      "requiresClues": ["burned_ledger_page"],
+      "requiresClues": ["manor_floor_plans"],
       "blockedHint": "The writing desk looks untouched."
     },
     {
@@ -257,14 +250,7 @@
       "roomId": "attic",
       "furnitureId": "attic_old_chest",
       "furnitureIndex": 0,
-      "hint": "Inside the chest: brittle floor plans of von Virtanen Manor, with secret passages marked in faded ink."
-    },
-    {
-      "clueId": "estate_documents",
-      "roomId": "attic",
-      "furnitureId": "attic_old_chest",
-      "furnitureIndex": 0,
-      "hint": "Beneath the floor plans lie old estate documents — the Hidden Room can be reached from both the Study and the Cellar."
+      "hint": "Inside the chest: brittle floor plans of von Virtanen Manor. Faded ink marks a hidden passage behind the study bookshelves, and another behind the stacked barrels in the cellar — both lead to the same secret chambers."
     },
     {
       "clueId": "von_virtanens_journal",
@@ -330,7 +316,6 @@
             "barons_diary",
             "rusty_old_key",
             "manor_floor_plans",
-            "estate_documents",
             "burned_ledger_page",
             "von_virtanens_journal",
             "silver_key",
@@ -385,7 +370,6 @@
             "barons_diary",
             "rusty_old_key",
             "manor_floor_plans",
-            "estate_documents",
             "burned_ledger_page",
             "von_virtanens_journal",
             "silver_key",
@@ -406,7 +390,6 @@
             "barons_diary",
             "rusty_old_key",
             "manor_floor_plans",
-            "estate_documents",
             "burned_ledger_page",
             "von_virtanens_journal",
             "silver_key",
@@ -426,7 +409,6 @@
             "barons_diary",
             "rusty_old_key",
             "manor_floor_plans",
-            "estate_documents",
             "burned_ledger_page",
             "von_virtanens_journal",
             "silver_key",
@@ -445,7 +427,6 @@
             "barons_diary",
             "rusty_old_key",
             "manor_floor_plans",
-            "estate_documents",
             "burned_ledger_page",
             "von_virtanens_journal",
             "silver_key",
@@ -463,7 +444,6 @@
             "barons_diary",
             "rusty_old_key",
             "manor_floor_plans",
-            "estate_documents",
             "burned_ledger_page",
             "von_virtanens_journal",
             "silver_key",
@@ -480,7 +460,6 @@
             "barons_diary",
             "rusty_old_key",
             "manor_floor_plans",
-            "estate_documents",
             "burned_ledger_page",
             "von_virtanens_journal",
             "silver_key"
@@ -496,7 +475,6 @@
             "barons_diary",
             "rusty_old_key",
             "manor_floor_plans",
-            "estate_documents",
             "burned_ledger_page",
             "von_virtanens_journal"
           ],
@@ -511,7 +489,6 @@
             "barons_diary",
             "rusty_old_key",
             "manor_floor_plans",
-            "estate_documents",
             "burned_ledger_page"
           ],
           "dialog": "A burned ledger? People burn rubbish all the time. I — I should get back to the pots. Excuse me."

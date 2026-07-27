@@ -498,7 +498,7 @@
     "confirmId": "study_secret",
     "confirmPrompt": "One volume sits loose on the shelf, almost asking to be pulled. Will you tug it free?",
     "confirmRequiresClues": ["manor_floor_plans"],
-    "blockedConfirmHint": "The shelves look ordinary. Perhaps the attic floor plans will show the way."
+    "blockedConfirmHint": "The shelves look ordinary. The attic floor plans may show more."
   },
   "study_passage_switch": {
     "id": "study_passage_switch",

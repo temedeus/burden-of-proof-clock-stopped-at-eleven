@@ -20,7 +20,6 @@ const CLUE_ICON_BY_ID: Record<string, SpriteName> = {
     barons_diary: "barons_diary",
     rusty_old_key: "rusty_old_key",
     manor_floor_plans: "clue_floor_plans",
-    estate_documents: "clue_estate_documents",
     von_virtanens_journal: "clue_journal",
     silver_key: "clue_silver_key",
     smuggling_documents: "clue_smuggling_docs",

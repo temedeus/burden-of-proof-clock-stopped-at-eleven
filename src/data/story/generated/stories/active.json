@@ -174,14 +174,14 @@
       "name": "Bloody Apron",
       "description": "A kitchen apron stiff with dried blood — whoever wore it was close to the killing.",
       "requiresClues": ["smuggling_documents"],
-      "blockedHint": "The stalls look ordinary. The stable boy may have seen something."
+      "blockedHint": "The stalls look ordinary. The household says the horses were restless last night — ask the stable boy."
     },
     {
       "id": "cellar_evidence",
-      "name": "Cellar Evidence",
-      "description": "The wine cellar door hangs loose on crates's hinges.",
+      "name": "Wine Cellar Key",
+      "description": "An iron key that hung on a nail driven into the stained crate in the cellar storage. A foolish place to keep it — but drilling into stone is a pain.",
       "requiresClues": ["bloody_apron"],
-      "blockedHint": "Nothing of interest here."
+      "blockedHint": "Nothing stands out on the crate. The stable boy may know more about the cellars."
     },
     {
       "id": "missing_ledger_page",
@@ -285,7 +285,7 @@
       "roomId": "cellar_storage",
       "furnitureId": "blood_crate",
       "furnitureIndex": 0,
-      "hint": "A blood-stained crate sits crooked on the floor, drag marks trailing toward the south wall. Ah — the wine cellar door seems to be dangling on its hinges."
+      "hint": "An iron key hangs from a nail on the stained crate. A foolish place to keep it — but drilling into stone is a pain. It should open the wine cellar door."
     },
     {
       "clueId": "missing_ledger_page",
@@ -547,12 +547,16 @@
       "default": "The horses are spooked. Something's not right tonight.",
       "conditions": [
         {
+          "requiresClues": ["smuggling_documents", "bloody_apron", "cellar_evidence"],
+          "dialog": "You've got the wine cellar key from that crate. Stupid place to hang it — but like I said, drilling stone is a pain. Ytte's wine story still doesn't sit right with me."
+        },
+        {
           "requiresClues": ["smuggling_documents", "bloody_apron"],
-          "dialog": "That's the apron I saw — Ytte came up from the wine cellar with it last night. I thought the stains were wine, but I'm not so sure anymore. The wine cellar door was dangling on its hinges when he left."
+          "dialog": "That's the apron — Ytte came through here last night in a hurry, stains all over it. Said he'd spilled wine on it down in the cellar.\n\nFunny thing though… the wine cellar key is hanging on that stained crate down in the storage. Stupid place to put it, but drilling a stone wall is a pain."
         },
         {
           "requiresClues": ["smuggling_documents"],
-          "dialog": "Late last night I saw Ytte come from the wine cellar with his apron. Thought he'd spilled wine on it — but he looked nervy, and the cellar door was dangling loose. He stuffed something in the grey horse's stall afterward."
+          "dialog": "The horses have been acting strange all night — restless, like something disturbed them. Something weird was going on out here last night."
         }
       ]
     }

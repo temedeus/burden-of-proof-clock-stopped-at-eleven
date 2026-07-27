@@ -838,7 +838,7 @@
   "blood_crate": {
     "id": "blood_crate",
     "name": "Stained crate",
-    "description": "An ordinary wooden crate. Nothing more to examine.",
+    "description": "A wooden crate with a nail driven into the side.",
     "width": 2,
     "height": 2,
     "drawWidth": 2,

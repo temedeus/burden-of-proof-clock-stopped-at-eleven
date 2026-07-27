@@ -18,6 +18,18 @@ describe("resolveEventNpcDialog", () => {
         ).toBeNull();
     });
 
+    it("points baroness, maid, and thompson to restless horses after smuggling papers", () => {
+        for (const speakerId of ["baroness", "maid", "butler"] as const) {
+            const line = resolveEventNpcDialog({
+                speakerId,
+                diningFireResolved: true,
+                atticScareComplete: true,
+                hasClue: has("smuggling_documents")
+            });
+            expect(line, speakerId).toMatch(/horses/i);
+        }
+    });
+
     it("prefers later evidence over fire acknowledgment", () => {
         const line = resolveEventNpcDialog({
             speakerId: "baroness",

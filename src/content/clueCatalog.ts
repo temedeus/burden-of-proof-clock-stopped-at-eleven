@@ -24,7 +24,7 @@ const CLUE_ICON_BY_ID: Record<string, SpriteName> = {
     silver_key: "clue_silver_key",
     smuggling_documents: "clue_smuggling_docs",
     bloody_apron: "clue_bloody_apron",
-    cellar_evidence: "clue_cellar_evidence",
+    cellar_evidence: "clue_silver_key",
     missing_ledger_page: "clue_ledger_page",
     murder_weapon: "clue_murder_weapon"
 };

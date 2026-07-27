@@ -10,6 +10,9 @@ export const BARONESS_AFTER_FIRE_DIALOG =
 export const BARONESS_AFTER_ATTIC_DIALOG =
     "Lady von Virtanen: Another attack? In the attic? Someone is hunting you in my house. Please — be careful.";
 
+export const BARONESS_AFTER_SMUGGLING_DIALOG =
+    "Lady von Virtanen: Those papers… how dreadful. And last night the horses were restless — something strange was going on out by the stables. I heard them from my window.";
+
 export const BARONESS_AFTER_APRON_DIALOG =
     "Lady von Virtanen: A bloody kitchen apron… I scarcely want to think what that means for our staff.";
 
@@ -21,6 +24,9 @@ export const MAID_AFTER_FIRE_DIALOG =
 
 export const MAID_AFTER_ATTIC_DIALOG =
     "Mrs. Clarke: They say someone came after you in the attic… Please don't go wandering alone.";
+
+export const MAID_AFTER_SMUGGLING_DIALOG =
+    "Mrs. Clarke: Forged papers… mercy. And last night the horses were so restless — stamping and snorting as if something had disturbed them. Something weird was going on out there.";
 
 export const MAID_AFTER_APRON_DIALOG =
     "Mrs. Clarke: A kitchen apron with blood on it? Mercy — I always thought the kitchen was the safest place in the house.";
@@ -38,7 +44,7 @@ export const WALSH_AFTER_SMUGGLING_DIALOG =
     "Inspector Walsh: Forged manifests, names cut out… Follow that trail. Someone in this house is in deep.";
 
 export const WALSH_AFTER_APRON_DIALOG =
-    "Inspector Walsh: A bloody apron and a loose cellar door — check the cellars next. We're close.";
+    "Inspector Walsh: A bloody apron — speak to the stable boy again, then check the cellars. We're close.";
 
 export const REED_AFTER_FIRE_DIALOG =
     "Constable Reed: Heard about the dining room. Glad you're upright, Detective. Nobody leaves this manor.";
@@ -48,6 +54,9 @@ export const REED_AFTER_WEAPON_DIALOG =
 
 export const BUTLER_AFTER_FIRE_DIALOG =
     "Mr. Thompson: The dining room… I showed the master in there myself only hours before. What a dreadful scene.";
+
+export const BUTLER_AFTER_SMUGGLING_DIALOG =
+    "Mr. Thompson: Smuggling papers in this house? Appalling. And last night the horses were restless — something peculiar was afoot by the stables. I heard the fuss from indoors.";
 
 export const BUTLER_AFTER_APRON_DIALOG =
     "Mr. Thompson: A kitchen apron stiff with blood? I keep the household orderly — this is beyond anything I will tolerate among the staff.";
@@ -81,6 +90,7 @@ export function resolveEventNpcDialog(ctx: EventDialogContext): string | null {
         case "baroness": {
             if (weapon) return BARONESS_AFTER_WEAPON_DIALOG;
             if (apron) return BARONESS_AFTER_APRON_DIALOG;
+            if (smuggling) return BARONESS_AFTER_SMUGGLING_DIALOG;
             if (attic) return BARONESS_AFTER_ATTIC_DIALOG;
             if (fire) return BARONESS_AFTER_FIRE_DIALOG;
             return null;
@@ -88,6 +98,7 @@ export function resolveEventNpcDialog(ctx: EventDialogContext): string | null {
         case "maid": {
             if (weapon) return MAID_AFTER_WEAPON_DIALOG;
             if (apron) return MAID_AFTER_APRON_DIALOG;
+            if (smuggling) return MAID_AFTER_SMUGGLING_DIALOG;
             if (attic) return MAID_AFTER_ATTIC_DIALOG;
             if (fire) return MAID_AFTER_FIRE_DIALOG;
             return null;
@@ -109,6 +120,7 @@ export function resolveEventNpcDialog(ctx: EventDialogContext): string | null {
         case "butler": {
             if (weapon) return BUTLER_AFTER_WEAPON_DIALOG;
             if (apron) return BUTLER_AFTER_APRON_DIALOG;
+            if (smuggling) return BUTLER_AFTER_SMUGGLING_DIALOG;
             if (fire) return BUTLER_AFTER_FIRE_DIALOG;
             return null;
         }

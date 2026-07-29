@@ -10,6 +10,7 @@ import { unlockAudio } from "./audio/audioContext";
 import { spriteLoader } from "./assets/SpriteLoader";
 import { validateContentAtStartup } from "./content/validateAtStartup";
 import { clearSave, loadSave } from "./engine/SaveGame";
+import { resetSessionWorldState } from "./engine/resetSessionWorldState";
 import type { PlayerSpriteName } from "@cse/content-schema";
 import type { Difficulty } from "./systems/MurdererChaseController";
 import type { GameSaveV1 } from "./engine/SaveGame";
@@ -109,6 +110,7 @@ function createGameOptions(opts: {
         },
         onVictoryComplete: () => {
             clearSave();
+            resetSessionWorldState();
             game = null;
             appScreen = "main_menu";
             menu.setScreen("main");
@@ -119,10 +121,14 @@ function createGameOptions(opts: {
 }
 
 function startFreshGame(character: PlayerSpriteName): void {
+    // Drop any in-memory run and module-level world flags before intro.
+    game = null;
+    resetSessionWorldState();
     clearSave();
     pendingStart = { character };
     introScreen = new IntroScreen(sharedInput, character, () => {
         if (!pendingStart) return;
+        // Constructor also resets session world state (belt-and-suspenders).
         game = new Game(ctx, createGameOptions({ playerSprite: pendingStart.character }));
         appScreen = "playing";
         pendingStart = null;
@@ -196,6 +202,13 @@ function handleMenuAction(action: MenuAction): void {
             continueFromSave(save);
             break;
         }
+        case "confirm_new_game":
+            // Confirmed overwrite: destroy save and clear leaked module state now,
+            // before character select / intro (so a prior attic break cannot linger).
+            game = null;
+            clearSave();
+            resetSessionWorldState();
+            break;
         case "start":
             unlockAudio();
             startFreshGame(action.character);

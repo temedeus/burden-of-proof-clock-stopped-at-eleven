@@ -16,6 +16,7 @@ export type MenuScreen =
 export type MenuAction =
     | { type: "start"; character: PlayerSpriteName }
     | { type: "continue" }
+    | { type: "confirm_new_game" }
     | { type: "open_settings" }
     | { type: "resume" }
     | { type: "quit_to_menu" }
@@ -286,7 +287,7 @@ export class Menu {
                 return null;
             case "confirm_new_game":
                 this.setScreen("character_select");
-                return null;
+                return { type: "confirm_new_game" };
             case "cancel_new_game":
                 this.setScreen("main");
                 return null;

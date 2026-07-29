@@ -79,9 +79,9 @@ import {
 } from "./SaveGame";
 import {
     getBrokenAtticWindowIds,
-    resetAtticWindows,
     setBrokenAtticWindows
 } from "../world/atticWindows";
+import { resetSessionWorldState } from "./resetSessionWorldState";
 
 type GameState =
     | "playing"
@@ -192,7 +192,7 @@ export class Game {
             storyId?: string | null;
         }
     ) {
-        resetAtticWindows();
+        resetSessionWorldState();
         const difficulty = options?.difficulty ?? "medium";
         this.difficulty = difficulty;
         this.murdererChase = new MurdererChaseController(difficulty);

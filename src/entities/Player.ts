@@ -72,7 +72,15 @@ export class Player extends Entity {
         // move Y, then resolve collision
         this.tryMove(0, moveY, map, npcs);
 
-        const surface = resolveFootstepSound(this.x, this.y, this.width, this.height, interactables, npcs);
+        const surface = resolveFootstepSound(
+            this.x,
+            this.y,
+            this.width,
+            this.height,
+            interactables,
+            npcs,
+            map
+        );
         footstepSounds.updateWalkAnim(this.animTime, this.isMoving, surface ?? "default");
     }
 

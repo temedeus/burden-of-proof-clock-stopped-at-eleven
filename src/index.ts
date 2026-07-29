@@ -11,6 +11,7 @@ import { spriteLoader } from "./assets/SpriteLoader";
 import { validateContentAtStartup } from "./content/validateAtStartup";
 import { clearSave, loadSave } from "./engine/SaveGame";
 import { resetSessionWorldState } from "./engine/resetSessionWorldState";
+import { huntTension } from "./audio/HuntTension";
 import type { PlayerSpriteName } from "@cse/content-schema";
 import type { Difficulty } from "./systems/MurdererChaseController";
 import type { GameSaveV1 } from "./engine/SaveGame";
@@ -222,6 +223,7 @@ function handleMenuAction(action: MenuAction): void {
             break;
         case "quit_to_menu":
             game?.saveCheckpoint();
+            huntTension.stop();
             game = null;
             appScreen = "main_menu";
             menu.setScreen("main");

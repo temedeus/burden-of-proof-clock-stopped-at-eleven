@@ -1,4 +1,5 @@
 import { resetAtticWindows } from "../world/atticWindows";
+import { huntTension } from "../audio/HuntTension";
 
 /**
  * Clear module-level play-session state that outlives a `Game` instance.
@@ -7,4 +8,5 @@ import { resetAtticWindows } from "../world/atticWindows";
  */
 export function resetSessionWorldState(): void {
     resetAtticWindows();
+    huntTension.stop();
 }

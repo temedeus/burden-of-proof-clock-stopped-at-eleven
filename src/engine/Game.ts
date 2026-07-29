@@ -51,6 +51,7 @@ import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from 
 import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { gardenAmbience } from "../audio/GardenAmbience";
 import { kitchenAmbience } from "../audio/KitchenAmbience";
+import { huntTension } from "../audio/HuntTension";
 import { atticMice } from "../systems/AtticMiceController";
 import { courtyardSeagull } from "../systems/CourtyardSeagullController";
 import { clueSounds } from "../audio/ClueSounds";
@@ -1177,6 +1178,7 @@ export class Game {
     }
 
     private startVictorySequence(policeId: string): void {
+        huntTension.stop();
         const police = this.getNPCById(policeId);
         const murderer = this.getMurderer();
         if (!police || !murderer) return;
@@ -1220,6 +1222,7 @@ export class Game {
         atticMice.update(dt, this.currentRoom.id);
         courtyardSeagull.update(dt, this.currentRoom.id);
         this.roomTitleBanner = tickRoomTitleBanner(this.roomTitleBanner, dt);
+        this.syncHuntAudio();
 
         if (this.state === "victory") {
             this.victory.update(dt, () => this.getMurderer(), (id) => this.getNPCById(id));
@@ -1597,6 +1600,23 @@ export class Game {
         kitchenAmbience.syncForRoom(this.currentRoom);
         atticMice.syncForRoom(this.currentRoom.id);
         courtyardSeagull.syncForRoom(this.currentRoom.id);
+        this.syncHuntAudio();
+    }
+
+    /** Psycho tension bed while the murderer is hunting (finale or scare chase). */
+    private syncHuntAudio(): void {
+        huntTension.sync(this.isKillerHunting());
+    }
+
+    private isKillerHunting(): boolean {
+        if (this.state === "victory" || this.state === "cutscene") return false;
+        // Entire finale after accusation (head-start, chase, stun, struggle).
+        if (this.murdererChase.accusedMurderer) return true;
+        // Room scares: hunting once monologue ends (chase imminent or active).
+        if (this.atticScare.active && !this.atticScare.monologueActive) return true;
+        if (this.ledgerScare.active && !this.ledgerScare.monologueActive) return true;
+        const murderer = this.getMurderer();
+        return murderer?.isChasing() === true;
     }
 
     render(ctx: CanvasRenderingContext2D) {

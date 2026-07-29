@@ -43,6 +43,18 @@ export class StudySecretPuzzle {
         this.anim = { elapsed: 0, duration: REVEAL_DURATION, doorOpened: false };
     }
 
+    /** Instantly apply revealed world state (for save restore). */
+    applyRevealedFromSave(): void {
+        if (this.revealed) {
+            this.applyDoorState();
+            return;
+        }
+        this.anim = null;
+        removeInteractableById(this.getStudyRoom(), "secret_bookshelf");
+        removeInteractableById(this.getHiddenRoom(), "study_passage_switch");
+        this.finish();
+    }
+
     update(dt: number): StudySecretRevealResult | null {
         const anim = this.anim;
         if (!anim) return null;

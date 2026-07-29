@@ -9,7 +9,10 @@ import { clientToCanvas, isSimulateMobile, shouldShowTouchControls } from "./eng
 import { unlockAudio } from "./audio/audioContext";
 import { spriteLoader } from "./assets/SpriteLoader";
 import { validateContentAtStartup } from "./content/validateAtStartup";
+import { clearSave, loadSave } from "./engine/SaveGame";
 import type { PlayerSpriteName } from "@cse/content-schema";
+import type { Difficulty } from "./systems/MurdererChaseController";
+import type { GameSaveV1 } from "./engine/SaveGame";
 
 validateContentAtStartup();
 
@@ -85,6 +88,66 @@ updateTouchControlsVisibility();
 setupAudioUnlock();
 setupCanvasPointer();
 
+function createGameOptions(opts: {
+    playerSprite: PlayerSpriteName;
+    difficulty?: Difficulty;
+    storyId?: string | null;
+}): ConstructorParameters<typeof Game>[1] {
+    return {
+        difficulty: opts.difficulty ?? "medium",
+        playerSprite: opts.playerSprite,
+        storyId: opts.storyId,
+        onMenuRequest: () => {
+            appScreen = "pause_menu";
+            menu.setScreen("pause");
+            updateTouchControlsVisibility();
+        },
+        onGameOver: () => {
+            appScreen = "game_over";
+            menu.setScreen("game_over");
+            updateTouchControlsVisibility();
+        },
+        onVictoryComplete: () => {
+            clearSave();
+            game = null;
+            appScreen = "main_menu";
+            menu.setScreen("main");
+            updateTouchControlsVisibility();
+        },
+        input: sharedInput
+    };
+}
+
+function startFreshGame(character: PlayerSpriteName): void {
+    clearSave();
+    pendingStart = { character };
+    introScreen = new IntroScreen(sharedInput, character, () => {
+        if (!pendingStart) return;
+        game = new Game(ctx, createGameOptions({ playerSprite: pendingStart.character }));
+        appScreen = "playing";
+        pendingStart = null;
+        introScreen = null;
+        updateTouchControlsVisibility();
+        game.autosave();
+    });
+    appScreen = "intro";
+    updateTouchControlsVisibility();
+}
+
+function continueFromSave(save: GameSaveV1): void {
+    game = new Game(
+        ctx,
+        createGameOptions({
+            playerSprite: save.playerSprite,
+            difficulty: save.difficulty,
+            storyId: save.storyId
+        })
+    );
+    game.applySave(save);
+    appScreen = "playing";
+    updateTouchControlsVisibility();
+}
+
 // Preload sprites so character select and game can draw them immediately
 spriteLoader.load().then(() => {
     loop.start((dt) => {
@@ -123,39 +186,19 @@ spriteLoader.load().then(() => {
 function handleMenuAction(action: MenuAction): void {
     if (!action) return;
     switch (action.type) {
+        case "continue": {
+            unlockAudio();
+            const save = loadSave();
+            if (!save) {
+                menu.setScreen("main");
+                return;
+            }
+            continueFromSave(save);
+            break;
+        }
         case "start":
             unlockAudio();
-            pendingStart = { character: action.character };
-            introScreen = new IntroScreen(sharedInput, action.character, () => {
-                if (!pendingStart) return;
-                game = new Game(ctx, {
-                    difficulty: "medium",
-                    playerSprite: pendingStart.character,
-                    onMenuRequest: () => {
-                        appScreen = "pause_menu";
-                        menu.setScreen("pause");
-                        updateTouchControlsVisibility();
-                    },
-                    onGameOver: () => {
-                        appScreen = "game_over";
-                        menu.setScreen("game_over");
-                        updateTouchControlsVisibility();
-                    },
-                    onVictoryComplete: () => {
-                        game = null;
-                        appScreen = "main_menu";
-                        menu.setScreen("main");
-                        updateTouchControlsVisibility();
-                    },
-                    input: sharedInput
-                });
-                appScreen = "playing";
-                pendingStart = null;
-                introScreen = null;
-                updateTouchControlsVisibility();
-            });
-            appScreen = "intro";
-            updateTouchControlsVisibility();
+            startFreshGame(action.character);
             break;
         case "open_settings":
             menu.setScreen("settings");
@@ -165,6 +208,7 @@ function handleMenuAction(action: MenuAction): void {
             updateTouchControlsVisibility();
             break;
         case "quit_to_menu":
+            game?.saveCheckpoint();
             game = null;
             appScreen = "main_menu";
             menu.setScreen("main");

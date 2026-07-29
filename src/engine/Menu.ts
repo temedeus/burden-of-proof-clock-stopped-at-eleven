@@ -2,12 +2,20 @@ import { Input } from "./Input";
 import { loadSettings, setMuteSounds } from "./Settings";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { shouldShowTouchControls } from "./platform";
+import { hasSave } from "./SaveGame";
 import type { PlayerSpriteName } from "@cse/content-schema";
 
-export type MenuScreen = "main" | "character_select" | "pause" | "settings" | "game_over";
+export type MenuScreen =
+    | "main"
+    | "character_select"
+    | "new_game_confirm"
+    | "pause"
+    | "settings"
+    | "game_over";
 
 export type MenuAction =
     | { type: "start"; character: PlayerSpriteName }
+    | { type: "continue" }
     | { type: "open_settings" }
     | { type: "resume" }
     | { type: "quit_to_menu" }
@@ -105,7 +113,13 @@ export class Menu {
         return null;
     }
 
-    private getMenuTypography(h: number): { title: string; item: string; itemBold: string; hint: string; lineHeight: number } {
+    private getMenuTypography(h: number): {
+        title: string;
+        item: string;
+        itemBold: string;
+        hint: string;
+        lineHeight: number;
+    } {
         const touch = shouldShowTouchControls();
         const scale = h / 600;
         const titlePx = Math.round((touch ? 42 : 36) * scale);
@@ -126,7 +140,12 @@ export class Menu {
         if (items.length === 0) return null;
 
         const { lineHeight } = this.getMenuTypography(h);
-        const startY = h * (this.screen === "game_over" ? 0.52 : 0.42);
+        const startY =
+            this.screen === "game_over"
+                ? h * 0.52
+                : this.screen === "new_game_confirm"
+                  ? h * 0.55
+                  : h * 0.42;
         return { startY, lineHeight, count: items.length };
     }
 
@@ -162,8 +181,20 @@ export class Menu {
             centerY,
             labelGap,
             slots: [
-                { id: "female_detective", x: femaleX, y: centerY - spriteSize / 2, w: spriteSize, h: spriteSize },
-                { id: "male_detective", x: maleX, y: centerY - spriteSize / 2, w: spriteSize, h: spriteSize }
+                {
+                    id: "female_detective",
+                    x: femaleX,
+                    y: centerY - spriteSize / 2,
+                    w: spriteSize,
+                    h: spriteSize
+                },
+                {
+                    id: "male_detective",
+                    x: maleX,
+                    y: centerY - spriteSize / 2,
+                    w: spriteSize,
+                    h: spriteSize
+                }
             ],
             continueButton
         };
@@ -179,7 +210,7 @@ export class Menu {
             if (this.screen === "settings") {
                 return { type: "back" };
             }
-            if (this.screen === "character_select") {
+            if (this.screen === "character_select" || this.screen === "new_game_confirm") {
                 this.setScreen("main");
                 return null;
             }
@@ -211,10 +242,19 @@ export class Menu {
 
     private getMenuItems(): { id: string; label: string }[] {
         switch (this.screen) {
-            case "main":
+            case "main": {
+                const items: { id: string; label: string }[] = [];
+                if (hasSave()) {
+                    items.push({ id: "continue", label: "Continue" });
+                }
+                items.push({ id: "start", label: "New Game" });
+                items.push({ id: "settings", label: "Settings" });
+                return items;
+            }
+            case "new_game_confirm":
                 return [
-                    { id: "start", label: "Start Game" },
-                    { id: "settings", label: "Settings" }
+                    { id: "confirm_new_game", label: "Yes — destroy save" },
+                    { id: "cancel_new_game", label: "No — keep save" }
                 ];
             case "character_select":
                 return CHARACTER_OPTIONS.map((c) => ({ id: c.id, label: c.label }));
@@ -235,8 +275,20 @@ export class Menu {
 
     private activateItem(item: { id: string; label: string }): MenuAction {
         switch (item.id) {
+            case "continue":
+                return { type: "continue" };
             case "start":
+                if (hasSave()) {
+                    this.setScreen("new_game_confirm");
+                    return null;
+                }
                 this.setScreen("character_select");
+                return null;
+            case "confirm_new_game":
+                this.setScreen("character_select");
+                return null;
+            case "cancel_new_game":
+                this.setScreen("main");
                 return null;
             case "female_detective":
                 return { type: "start", character: "female_detective" };
@@ -293,6 +345,11 @@ export class Menu {
             return;
         }
 
+        if (this.screen === "new_game_confirm") {
+            this.renderNewGameConfirm(ctx, w, h);
+            return;
+        }
+
         if (this.screen === "character_select") {
             this.renderCharacterSelect(ctx, w, h);
             return;
@@ -331,6 +388,20 @@ export class Menu {
         }
     }
 
+    private renderNewGameConfirm(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        const type = this.getMenuTypography(h);
+        ctx.fillStyle = MENU_ACCENT;
+        ctx.font = type.title;
+        ctx.textAlign = "center";
+        ctx.fillText("Start New Game?", w / 2, h * 0.28);
+        ctx.fillStyle = TEXT_COLOR;
+        ctx.font = type.hint;
+        ctx.fillText("Overwrite saved progress?", w / 2, h * 0.38);
+        ctx.fillText("This will destroy your saved progress.", w / 2, h * 0.44);
+        this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.55);
+        ctx.textAlign = "left";
+    }
+
     private renderCharacterSelect(ctx: CanvasRenderingContext2D, w: number, h: number): void {
         const type = this.getMenuTypography(h);
         const layout = this.getCharacterSelectLayout(w, h);
@@ -357,12 +428,7 @@ export class Menu {
                 const pad = 8;
                 ctx.strokeStyle = HOVER_COLOR;
                 ctx.lineWidth = 3;
-                ctx.strokeRect(
-                    slot.x - pad,
-                    slot.y - pad,
-                    slot.w + pad * 2,
-                    slot.h + pad * 2
-                );
+                ctx.strokeRect(slot.x - pad, slot.y - pad, slot.w + pad * 2, slot.h + pad * 2);
             }
 
             ctx.save();

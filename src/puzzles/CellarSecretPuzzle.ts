@@ -46,6 +46,18 @@ export class CellarSecretPuzzle {
         this.anim = { elapsed: 0, duration: REVEAL_DURATION, doorOpened: false };
     }
 
+    /** Instantly apply revealed world state (for save restore). */
+    applyRevealedFromSave(): void {
+        if (this.revealed) {
+            this.applyDoorState();
+            return;
+        }
+        this.anim = null;
+        removeInteractableById(this.getCellarRoom(), "secret_cellar_barrels");
+        removeInteractableById(this.getTunnelRoom(), "cellar_passage_switch");
+        this.finish();
+    }
+
     update(dt: number): CellarSecretRevealResult | null {
         const anim = this.anim;
         if (!anim) return null;

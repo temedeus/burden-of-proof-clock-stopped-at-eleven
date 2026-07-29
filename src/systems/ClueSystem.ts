@@ -21,6 +21,11 @@ export class ClueSystem {
         return Array.from(this.discovered);
     }
 
+    /** Replace discovered set (save restore). Silent — no console spam. */
+    restoreClues(ids: readonly string[]): void {
+        this.discovered = new Set(ids);
+    }
+
     getMissingPrerequisites(requiredIds: string[]): string[] {
         return getMissingPrerequisites(requiredIds, (id) => this.hasClue(id));
     }

@@ -26,3 +26,14 @@ export function isAtticWindowBroken(tileX: number): boolean {
 export function resetAtticWindows(): void {
     brokenWindows.clear();
 }
+
+export function getBrokenAtticWindowIds(): number[] {
+    return Array.from(brokenWindows);
+}
+
+export function setBrokenAtticWindows(ids: readonly number[]): void {
+    brokenWindows.clear();
+    for (const id of ids) {
+        brokenWindows.add(id);
+    }
+}

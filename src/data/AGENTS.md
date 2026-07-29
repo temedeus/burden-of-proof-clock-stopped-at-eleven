@@ -55,6 +55,16 @@ Reference `furnitureId` from `src/data/furniture/*.json` in a room's `furniture`
 - **No active story:** base NPC dialog from `src/data/npcs/*.json`; only `torn_page` required to accuse (fallback).
 - **Active story loaded:** `applyStoryToGame.ts` places clues on furniture; `loadStoryContent.ts` overrides NPC dialog.
 
+## Local progress saves
+
+Player progress is a single localStorage autosave (`src/engine/SaveGame.ts`). When you ship **breaking** content changes, bump `SAVE_CONTENT_REVISION` so old saves are invalidated (Continue disappears) instead of loading into a broken state:
+
+- Renaming or removing clue / room ids
+- Changing secret-passage or unlock wiring
+- Replacing the active story case in a way that invalidates prior investigation state
+
+Pure copy/dialog tweaks that keep the same ids and layout do **not** need a revision bump.
+
 ## Validation
 
 Always run after edits:

@@ -71,6 +71,17 @@ import {
 } from "../render/GameHud";
 import type { NPCConfig, NPCDialogConfig } from "@cse/content-schema";
 import { shouldShowTouchControls } from "./platform";
+import {
+    SAVE_CONTENT_REVISION,
+    SAVE_FORMAT_VERSION,
+    saveGame,
+    type GameSaveV1
+} from "./SaveGame";
+import {
+    getBrokenAtticWindowIds,
+    resetAtticWindows,
+    setBrokenAtticWindows
+} from "../world/atticWindows";
 
 type GameState =
     | "playing"
@@ -161,6 +172,7 @@ export class Game {
     private onGameOver?: () => void;
     private onVictoryComplete?: () => void;
     private readonly content = loadGameContent();
+    private readonly difficulty: Difficulty;
 
     private roomTitleBanner: RoomTitleBanner | null = null;
     private decorAnimTime = 0;
@@ -176,9 +188,13 @@ export class Game {
             onVictoryComplete?: () => void;
             input?: Input;
             playerSprite?: PlayerSpriteName;
+            /** When continuing a save, pin the story id from the save. */
+            storyId?: string | null;
         }
     ) {
+        resetAtticWindows();
         const difficulty = options?.difficulty ?? "medium";
+        this.difficulty = difficulty;
         this.murdererChase = new MurdererChaseController(difficulty);
         this.murdererConfrontation = new MurdererConfrontation();
         this.atticScare = new AtticScareChase(difficulty, "attic");
@@ -198,7 +214,7 @@ export class Game {
             ])
         );
 
-        const resolved = resolveActiveStory();
+        const resolved = resolveActiveStory(options?.storyId);
         if (resolved) {
             this.activeStory = resolved;
             this.clueCatalog = buildClueCatalog(this.activeStory.casePacket.generatedClues);
@@ -236,6 +252,136 @@ export class Game {
 
     getActiveStoryTitle(): string | null {
         return this.activeStory?.title ?? null;
+    }
+
+    /** True when mid-cutscene / struggle / victory — do not checkpoint. */
+    canAutosave(): boolean {
+        return (
+            this.state === "playing" ||
+            this.state === "interacting" ||
+            this.state === "confirming" ||
+            this.state === "inventory"
+        );
+    }
+
+    snapshotSave(): GameSaveV1 | null {
+        const storyId = this.activeStory?.id;
+        if (!storyId) return null;
+        return {
+            version: SAVE_FORMAT_VERSION,
+            contentRevision: SAVE_CONTENT_REVISION,
+            savedAt: Date.now(),
+            storyId,
+            difficulty: this.difficulty,
+            playerSprite: this.player.getSpriteName(),
+            roomId: this.currentRoom.id,
+            player: {
+                x: this.player.x,
+                y: this.player.y,
+                facing: this.player.facing
+            },
+            discoveredClueIds: this.clueSystem.getAllClues(),
+            studySecretRevealed: this.studySecret.revealed,
+            cellarSecretRevealed: this.cellarSecret.revealed,
+            diningFireResolved: this.diningFireResolved,
+            atticScareComplete: this.atticScare.complete,
+            ledgerScareComplete: this.ledgerScare.complete,
+            confrontationComplete: this.murdererConfrontation.complete,
+            accusedMurderer: this.murdererChase.accusedMurderer,
+            cookHiddenAfterDiningScare: this.cookHiddenAfterDiningScare != null,
+            brokenAtticWindowIds: getBrokenAtticWindowIds()
+        };
+    }
+
+    /** Persist progress if not mid-cutscene / struggle / victory. */
+    autosave(): void {
+        if (!this.canAutosave()) return;
+        const snap = this.snapshotSave();
+        if (snap) saveGame(snap);
+    }
+
+    /** Force-write current snapshot when quitting from a durable state. */
+    saveCheckpoint(): void {
+        if (!this.canAutosave()) return;
+        const snap = this.snapshotSave();
+        if (snap) saveGame(snap);
+    }
+
+    applySave(save: GameSaveV1): void {
+        this.clueSystem.restoreClues(save.discoveredClueIds);
+        this.refreshStoryState();
+
+        if (save.studySecretRevealed) {
+            this.studySecret.applyRevealedFromSave();
+        }
+        if (save.cellarSecretRevealed) {
+            this.cellarSecret.applyRevealedFromSave();
+        }
+
+        this.diningFireResolved = save.diningFireResolved;
+        this.atticScare.complete = save.atticScareComplete;
+        this.ledgerScare.complete = save.ledgerScareComplete;
+        this.murdererConfrontation.complete = save.confrontationComplete;
+        this.murdererConfrontation.active = false;
+
+        setBrokenAtticWindows(save.brokenAtticWindowIds);
+
+        const room = this.rooms[save.roomId];
+        if (!room) return;
+        this.currentRoom = room;
+        this.placePlayerFromSave(room, save.player.x, save.player.y, save.player.facing);
+        this.syncRoomAmbience();
+        this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(room.id));
+
+        const murderer = this.getMurderer();
+        if (save.cookHiddenAfterDiningScare && murderer) {
+            this.hideCookAfterDiningScare(murderer);
+        } else if (
+            save.diningFireResolved &&
+            murderer &&
+            !save.accusedMurderer &&
+            !save.confrontationComplete
+        ) {
+            // After dining scare Ytte is either hidden or back in kitchen (post attic).
+            if (save.atticScareComplete) {
+                this.placeCookInKitchen(murderer);
+            }
+        } else if (save.atticScareComplete && murderer && !save.accusedMurderer) {
+            this.placeCookInKitchen(murderer);
+        }
+
+        if (save.accusedMurderer) {
+            this.murdererChase.accusedMurderer = true;
+            const chaseTarget = this.getMurderer();
+            if (chaseTarget) {
+                // Spawn near the player in the restored room for a fair resume.
+                this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
+                this.murdererChase.spawnMurdererInRoom(chaseTarget, this.currentRoom, this.rooms);
+                this.murdererChase.startMurdererChase(chaseTarget);
+            }
+        }
+
+        this.state = "playing";
+        this.refreshStoryState();
+    }
+
+    private placePlayerFromSave(
+        room: Room,
+        x: number,
+        y: number,
+        facing: "up" | "down" | "left" | "right"
+    ): void {
+        this.player.x = x;
+        this.player.y = y;
+        this.player.facing = facing;
+        this.roomTransitions.clampPlayerInsideRoom(this.player, room);
+        if (this.player.wouldCollideAt(this.player.x, this.player.y, room.map, room.npcs)) {
+            const cx = Math.floor(room.map.width / 2);
+            const cy = Math.floor(room.map.height / 2);
+            this.player.x = (cx - 1) * TILE_SIZE;
+            this.player.y = (cy - 1) * TILE_SIZE;
+            this.roomTransitions.clampPlayerInsideRoom(this.player, room);
+        }
     }
 
     private getMurdererNpcId(): string {
@@ -401,6 +547,7 @@ export class Game {
         clueSounds.playFound();
         this.clueNotification = { clueId };
         this.openDialog(this.getClueAssignmentHint(clueId));
+        this.autosave();
     }
 
     private loadNPCs(): void {
@@ -529,6 +676,7 @@ export class Game {
         talkSounds.stopDialogue();
         this.murdererChase.triggerAccusation();
         this.openDialog("Chef Ytte is after you! Find a police officer before he catches you!");
+        this.autosave();
     }
 
     private beginStruggle(murderer: NPC): void {
@@ -645,6 +793,7 @@ export class Game {
         this.messagePages = [];
         this.messagePageIndex = 0;
         this.state = "playing";
+        this.autosave();
     }
 
     private updateAtticWindowCutscene(dt: number): void {
@@ -837,6 +986,7 @@ export class Game {
         this.messagePageIndex = 0;
         this.state = "playing";
         this.restoreBaronessAfterCutscene();
+        this.autosave();
     }
 
     private openCutsceneDialog(text: string, speakerId: string): void {
@@ -1233,6 +1383,7 @@ export class Game {
                         clueSounds.playFound();
                         this.clueNotification = { clueId: result.clues[0] };
                         this.refreshStoryState();
+                        this.autosave();
                         if (result.clues.includes("murder_weapon")) {
                             this.startMurdererConfrontation();
                             return;
@@ -1301,6 +1452,7 @@ export class Game {
             studyReveal?.enterDialog ? studyReveal : cellarReveal?.enterDialog ? cellarReveal : null;
         if (revealResult?.enterDialog) {
             this.openDialog(revealResult.message);
+            this.autosave();
         }
 
         if (this.state === "confirming") {
@@ -1397,6 +1549,7 @@ export class Game {
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(targetRoomId));
 
         this.handleMurdererAfterRoomChange();
+        this.autosave();
     }
 
     private handleRoomTransition(): void {
@@ -1435,6 +1588,7 @@ export class Game {
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(transition.targetRoomId));
 
         this.handleMurdererAfterRoomChange();
+        this.autosave();
     }
 
     private syncRoomAmbience(): void {

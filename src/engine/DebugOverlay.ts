@@ -8,6 +8,7 @@ import type { ClueSystem } from "../systems/ClueSystem";
  * Check if debug mode is enabled via URL params (?debug=true or ?debug=1)
  */
 export function isDebugMode(): boolean {
+    if (typeof window === "undefined") return false;
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get("debug") === "true" || urlParams.get("debug") === "1";
 }

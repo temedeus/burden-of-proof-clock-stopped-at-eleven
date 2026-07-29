@@ -33,6 +33,15 @@ export class Player extends Entity {
         this.spriteName = spriteName;
     }
 
+    getSpriteName(): PlayerSpriteName {
+        return this.spriteName;
+    }
+
+    /** Feet-tile collision check used by save restore walkability snap. */
+    wouldCollideAt(x: number, y: number, map: TileMap, npcs: NPC[] = []): boolean {
+        return this.collides(x, y, map, npcs);
+    }
+
     update(dt: number, input: Input, map: TileMap, npcs: NPC[] = [], interactables: Interactable[] = []) {
         let dx = 0;
         let dy = 0;

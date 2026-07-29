@@ -13,7 +13,7 @@ index.html → src/index.ts
         └── playing                    → Game.update() + Game.render()
 ```
 
-`Game` (`src/engine/Game.ts`) is constructed when the player starts a case. It loads rooms/NPCs from JSON, applies the active story (if valid), builds tile maps, and runs gameplay systems.
+`Game` (`src/engine/Game.ts`) is constructed when the player starts a case (**New Game**) or resumes (**Continue**). It loads rooms/NPCs from JSON, applies the active story (if valid), builds tile maps, and runs gameplay systems. Continue skips intro/character select and calls `Game.applySave()` with the local autosave.
 
 ## Layer diagram
 
@@ -67,7 +67,7 @@ flowchart TB
 | [`packages/content-schema/`](packages/content-schema/) | Shared types, placement math, validation |
 | [`src/data/`](src/data/) | Rooms, NPCs, furniture, clues, stories (authoritative content) |
 | [`src/content/`](src/content/) | Loaders (`loadCatalog`, `loadGameContent`), story application |
-| [`src/engine/`](src/engine/) | App shell: `Loop`, `Menu`, `IntroScreen`, `Input`, `Game` coordinator |
+| [`src/engine/`](src/engine/) | App shell: `Loop`, `Menu`, `IntroScreen`, `Input`, `Game`, `SaveGame`, `Settings` |
 | [`src/world/`](src/world/) | `Room`, `TileMap`, room factory (`Rooms.ts`), NPC spawn |
 | [`src/entities/`](src/entities/) | `Player`, `NPC` |
 | [`src/systems/`](src/systems/) | Clue, dialog, interaction, room transitions, chase, victory, attic mice |
@@ -124,6 +124,33 @@ Registry sprites must be listed in [`packages/content-schema/src/sprites.ts`](pa
 
 Author in the editor (`pnpm dev:editor:full`) or edit `src/data/story/generated/stories/active.json`. See [`src/editor/README.md`](src/editor/README.md).
 
+## Local progress (offline save)
+
+Progress is **local-only** — one autosave slot in `localStorage` (same soft-fail pattern as mute settings). No cloud sync, no multi-slot UI, no service worker required.
+
+| Piece | Location |
+|-------|----------|
+| Persist / load / clear / validate | [`src/engine/SaveGame.ts`](src/engine/SaveGame.ts) |
+| Snapshot + restore + checkpoint hooks | [`src/engine/Game.ts`](src/engine/Game.ts) — `snapshotSave`, `applySave`, `autosave` |
+| Continue / New Game overwrite confirm | [`src/engine/Menu.ts`](src/engine/Menu.ts), [`src/index.ts`](src/index.ts) |
+| Mute settings (separate key) | [`src/engine/Settings.ts`](src/engine/Settings.ts) |
+
+```mermaid
+flowchart LR
+  playing[Game durable state] -->|autosave| saveMod[SaveGame]
+  saveMod --> ls[(localStorage)]
+  menu[Main menu Continue] -->|loadSave + applySave| Game
+  ls --> menu
+  victory[Victory] -->|clearSave| ls
+  newGame[New Game confirm] -->|clearSave| ls
+```
+
+**Payload** is a thin flag set (`GameSaveV1`): story id, room, player pose/sprite, discovered clues, puzzle/event flags, broken attic windows. Room tilemaps are **not** dumped — puzzle reveals and story state are rebuilt from flags against live JSON.
+
+**When written:** room transitions, clue finds, puzzle reveals, major event completions, quit-to-menu from a durable state. Skipped mid-cutscene / struggle / victory. Game over keeps the last checkpoint so Continue can resume.
+
+**Compatibility (fail closed):** saves carry `version` (format) and `contentRevision` (data). Mismatch, corrupt JSON, unknown story/room → treat as no save (Continue hidden). Bump `SAVE_CONTENT_REVISION` in `SaveGame.ts` when shipping breaking content; see [`src/data/AGENTS.md`](src/data/AGENTS.md).
+
 ## Validation & tests
 
 | When | Command / trigger |
@@ -135,11 +162,11 @@ Author in the editor (`pnpm dev:editor:full`) or edit `src/data/story/generated/
 | Editor UI | Validate buttons |
 | Editor room save | Backend runs `validateRooms` |
 
-Tests live alongside source (`*.test.ts` in `systems/`, `puzzles/`, `render/`, and `packages/content-schema/`).
+Tests live alongside source (`*.test.ts` in `engine/`, `systems/`, `puzzles/`, `render/`, `content/`, and `packages/content-schema/`).
 
 ## Editor vs runtime
 
-- **Game** (`pnpm dev`) reads bundled JSON only; no file backend.
+- **Game** (`pnpm dev`) reads bundled JSON only; no file backend. Player progress uses browser `localStorage` on the deploy origin.
 - **Editor** (`pnpm dev:editor:full`) shares `renderRoomScene` and `createRoomFromConfig` for preview parity.
 - Production ships the game entry and `src/data/**` only.
 
@@ -148,6 +175,7 @@ Tests live alongside source (`*.test.ts` in `systems/`, `puzzles/`, `render/`, a
 - **Not ECS** — small OOP layers with `Game` as coordinator.
 - **Shared schema package** — one source of truth for types and validation across game, editor, and CLI.
 - **Data-driven puzzles** — furniture can declare `interactionType: "confirm"`; exits can declare `requiresUnlock` and `skipDoorSprite`.
+- **Local autosave** — single-slot progress rebuilt onto live content; invalidate on breaking revisions rather than migrate.
 
 ## Agent instructions
 

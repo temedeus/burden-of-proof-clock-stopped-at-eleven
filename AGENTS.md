@@ -28,7 +28,7 @@ pnpm preview          # preview production build
 
 | Path | Role |
 |------|------|
-| `src/engine/` | App shell: Loop, Menu, IntroScreen, Input, Game |
+| `src/engine/` | App shell: Loop, Menu, IntroScreen, Input, Game, SaveGame, Settings |
 | `src/world/` | Room, TileMap, room factory, NPC spawn |
 | `src/entities/` | Player, NPC |
 | `src/systems/` | Clues, dialog, interaction, transitions, chase, victory |
@@ -53,6 +53,7 @@ pnpm preview          # preview production build
 | New sprite | `packages/content-schema/src/sprites.ts` + procedural art |
 | Gameplay systems | `src/systems/`, `src/puzzles/` |
 | UI copy (menu, intro, victory) | `src/engine/`, `src/render/GameHud.ts` |
+| Local progress save / Continue | `src/engine/SaveGame.ts`, `Game.ts` (`applySave` / `autosave`), `Menu.ts`, `index.ts` |
 
 For narrative/content handoffs, see [GAME_REFERENCE.md](GAME_REFERENCE.md). For code layout, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -63,6 +64,7 @@ For narrative/content handoffs, see [GAME_REFERENCE.md](GAME_REFERENCE.md). For 
 - **Minimal diffs** — match existing patterns; don't refactor unrelated code.
 - **Validate after content edits** — always run `pnpm validate`.
 - **Test when touching gameplay** — run `pnpm test` for systems, puzzles, or render changes.
+- **Breaking content vs saves** — bump `SAVE_CONTENT_REVISION` in `SaveGame.ts` when clue/room ids or puzzle wiring change incompatibly (see `src/data/AGENTS.md`).
 
 ## Rendering
 

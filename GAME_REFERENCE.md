@@ -222,7 +222,8 @@ Dialog and player-facing text come from several layers. At runtime, **story over
 | File | Contents |
 |------|----------|
 | `src/engine/IntroScreen.ts` | Premise slide, household character introductions (9 slides), detective arrival slide |
-| `src/engine/Menu.ts` | Main menu, character select, game over, settings labels |
+| `src/engine/Menu.ts` | Main menu (Continue / New Game / overwrite confirm), character select, game over, settings labels |
+| `src/engine/SaveGame.ts` | Local autosave slot (`localStorage`); not narrative copy |
 | `src/render/GameHud.ts` | Victory overlay (“Congratulations!”, “The murderer is being apprehended.”) |
 | `src/engine/ClueNotification.ts` | “Clue Found!” notification |
 | `src/engine/InventoryPanel.ts` | Inventory panel copy (“No clues found yet”, etc.) |

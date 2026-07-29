@@ -47,6 +47,8 @@ pnpm preview      # preview production build
 pnpm dev
 ```
 
+Progress is saved **locally in the browser** (one autosave slot). The main menu shows **Continue** when a valid save exists; **New Game** asks for confirmation before overwriting. Clearing site data for the deploy origin wipes progress. See [ARCHITECTURE.md](ARCHITECTURE.md) (Local progress).
+
 Optional debug mode: `http://localhost:5173/?debug=true`
 
 Debug overlays show collision boundaries, interaction targets, and reach lines. Clue objects are highlighted in **amber** (uncollected) or **gray** (already in inventory), with clue ids labeled on the tile. Reload without `?debug=true` to disable.

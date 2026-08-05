@@ -10,7 +10,7 @@ const NATIVE_W = 32;
 const NATIVE_H = 40;
 
 const BAKE_FACINGS: CharacterFacing[] = ["down", "up", "right"];
-const POSES: CharacterPose[] = ["idle", "walk_a", "walk_b"];
+const POSES: CharacterPose[] = ["idle", "walk_a", "walk_b", "walk_c", "walk_d"];
 
 export function animationCacheKey(
     sprite: PlayerSpriteName,

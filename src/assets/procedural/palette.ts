@@ -207,5 +207,119 @@ export const P = {
     horseMuzzle: "#8a7060",
     horseNostril: "#2a1810",
     horseEyeWhite: "#ece8e0",
-    horseSock: "#d8d0c8"
+    horseSock: "#d8d0c8",
+
+    // ============================================
+    // ENHANCED CHARACTER PALETTE
+    // ============================================
+
+    /** Extended skin tones - 8 total for diverse characters */
+    // Enhanced skin tones - extending the existing palette
+    skinPale: "#f0d4b8",      // Very light, aristocratic
+    skinFair: "#e8b890",      // Light
+    skinTan: "#b88860",       // Tanned
+    skinOlive: "#b08858",     // Olive undertone
+    skinDark: "#8a5838",      // Dark
+    skinDeep: "#6a4028",      // Very dark
+    
+    skinPaleShadow: "#d4b498",
+    skinFairShadow: "#c89870",
+    skinTanShadow: "#9a6848",
+    skinOliveShadow: "#906840",
+    skinDuskyShadow: "#7a5038",
+    skinDarkShadow: "#6a4028",
+    skinDeepShadow: "#503020",
+    
+    skinPaleHi: "#f8e4d0",
+    skinFairHi: "#f0c8a8",
+    skinTanHi: "#d0a078",
+    skinOliveHi: "#c89868",
+    skinDarkHi: "#a87048",
+    skinDeepHi: "#8a5840",
+
+    /** Extended hair colors - 15 total */
+    hairBlonde: "#e8c880",     // Light blonde
+    hairGold: "#d0b040",       // Golden blonde
+    hairHoney: "#b89030",      // Honey blonde
+    hairAuburn: "#8a4820",     // Auburn
+    hairChestnut: "#6a3820",   // Chestnut brown
+    hairDarkBrown: "#2a1810",  // Dark brown
+    hairJetBlack: "#080808",   // Jet black
+    hairPlatinum: "#d8d8e0",   // Platinum blonde
+    
+    /** Hair highlights and shadows */
+    hairBlondeHi: "#f0d898",
+    hairGoldHi: "#e8c850",
+    hairBrownHi: "#8a5030",
+    hairBlackHi: "#3a2818",
+    hairSilverHi: "#d8d8e0",
+    
+    hairBlondeShadow: "#b89850",
+    hairGoldShadow: "#9a7830",
+    hairBrownShadow: "#4a2010",
+    hairBlackShadow: "#0a0808",
+
+    /** Eye colors */
+    eyeHazel: "#6a5830",       // Hazel
+    eyeBrown: "#4a2818",      // Brown
+    eyeAmber: "#8a6830",      // Amber
+    
+    /** Lip colors */
+    lipPink: "#a84848",        // Pink
+    lipRose: "#8a3838",        // Rose
+    lipNatural: "#6a3828",     // Natural tone
+
+    /** Enhanced clothing colors */
+    // Coats and jackets
+    coatCharcoal: "#282830",   // Charcoal
+    coatBurgundy: "#4a1828",    // Burgundy
+    coatEmerald: "#186a38",    // Emerald green
+    coatTeal: "#185048",       // Teal
+    coatMustard: "#8a7020",    // Mustard
+    
+    // Dress and skirt colors
+    dressCrimson: "#6a1828",    // Crimson
+    dressViolet: "#4a2848",    // Violet
+    dressForest: "#285828",    // Forest green
+    dressSapphire: "#18386a",  // Sapphire
+    
+    // Shirt and blouse colors
+    shirtLinen: "#d8c8a8",     // Linen
+    shirtSky: "#8ab8d4",      // Sky blue
+    shirtLavender: "#b8a8d8", // Lavender
+    
+    // Accessories and details
+    buttonGold: "#c8a030",      // Gold buttons
+    buttonBrass: "#a88840",     // Brass buttons
+    
+    beltBrown: "#5a4030",       // Brown leather
+    
+    gloveWhite: "#e8e8f0",     // White gloves
+    
+    // Jewelry
+    jewelryGold: "#d0b040",     // Gold jewelry
+    jewelrySilver: "#d8d8e0",  // Silver jewelry
+    jewelryRuby: "#8a1818",     // Ruby
+    jewelrySapphire: "#18388a", // Sapphire
+    jewelryEmerald: "#186a38",  // Emerald
+
+    // Shoes extended
+    shoeBlack: "#1a1410",       // Black shoes
+    shoeOxblood: "#4a1818",     // Oxblood shoes
+    shoePolished: "#281810",    // Polished black
+    
+    // Formal wear
+    tuxedoBlack: "#080808",    // Tuxedo black
+    tuxedoWhite: "#f8f8f8",    // Tuxedo shirt
+    bowtieRed: "#8a1818",      // Red bowtie
+
+    // Fabric patterns (2px micro-patterns for visual texture)
+    // These are used in combination to create striped/checkered effects
+    fabricPatternA: "#684838", // Pattern color A
+    fabricPatternB: "#503828", // Pattern color B
+
+    // Semi-transparent overlays for lighting effects
+    overlayShadow: "rgba(0,0,0,0.2)",
+    overlayHighlight: "rgba(255,255,255,0.15)",
+
 } as const;

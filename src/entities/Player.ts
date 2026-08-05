@@ -163,7 +163,14 @@ export class Player extends Entity {
 
     private getPose(): CharacterPose {
         if (!this.isMoving) return "idle";
-        return Math.floor(this.animTime * WALK_ANIM_FPS) % 2 === 0 ? "walk_a" : "walk_b";
+        const frame = Math.floor(this.animTime * WALK_ANIM_FPS) % 4;
+        switch (frame) {
+            case 0: return "walk_a";
+            case 1: return "walk_b";
+            case 2: return "walk_c";
+            case 3: return "walk_d";
+            default: return "walk_a";
+        }
     }
 
     render(ctx: CanvasRenderingContext2D) {

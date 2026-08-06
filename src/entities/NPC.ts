@@ -321,7 +321,7 @@ export class NPC extends Entity {
 
     // Render name above NPC
     ctx.fillStyle = "#fff";
-    ctx.font = "16px serif";
+    ctx.font = "16px \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.textAlign = "center";
     ctx.fillText(this.name, this.x + this.width / 2, this.y - 5);
     ctx.textAlign = "left"; // Reset alignment

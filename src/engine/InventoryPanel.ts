@@ -206,13 +206,13 @@ export class InventoryPanel {
         ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
 
         ctx.fillStyle = "#fff";
-        ctx.font = "bold 24px serif";
+        ctx.font = "bold 24px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.textAlign = "center";
         ctx.fillText("Inventory", ctx.canvas.width / 2, panelY + 40);
 
         if (clues.length === 0) {
             ctx.fillStyle = "#888";
-            ctx.font = "18px serif";
+            ctx.font = "18px \"IM Fell English\", \"Libre Baskerville\", serif";
             ctx.fillText("No clues found yet", ctx.canvas.width / 2, panelY + 120);
             this.drawFooterHint(ctx, panelY, panelHeight);
             ctx.textAlign = "left";
@@ -297,11 +297,11 @@ export class InventoryPanel {
 
         ctx.textAlign = "left";
         ctx.fillStyle = SELECTED_BORDER;
-        ctx.font = "bold 16px serif";
+        ctx.font = "bold 16px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillText(clue.name, boxX + 12, boxY + 24);
 
         ctx.fillStyle = "#ccc";
-        ctx.font = "14px serif";
+        ctx.font = "14px \"IM Fell English\", \"Libre Baskerville\", serif";
         const lines = wrapText(ctx, clue.description, boxWidth - 24).slice(0, 5);
         for (let i = 0; i < lines.length; i++) {
             ctx.fillText(lines[i], boxX + 12, boxY + 48 + i * 18);
@@ -310,7 +310,7 @@ export class InventoryPanel {
 
     private drawFooterHint(ctx: CanvasRenderingContext2D, panelY: number, panelHeight: number): void {
         ctx.fillStyle = "#888";
-        ctx.font = "14px serif";
+        ctx.font = "14px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.textAlign = "center";
         const touch = shouldShowTouchControls();
         const hint = touch

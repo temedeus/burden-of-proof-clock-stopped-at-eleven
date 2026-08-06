@@ -54,7 +54,7 @@ export function paginateDialog(
     text: string,
     maxLinesPerPage = DIALOG_LINES_PER_PAGE
 ): string[] {
-    ctx.font = "16px serif";
+    ctx.font = "16px \"IM Fell English\", \"Libre Baskerville\", serif";
     const maxWidth = getDialogMaxTextWidth(ctx.canvas.width);
     const wrapped = wrapDialogText(ctx, text, maxWidth);
     const pages: string[] = [];
@@ -76,7 +76,7 @@ export function drawMessageBox(
     text: string,
     options?: MessageBoxOptions
 ): void {
-    ctx.font = "16px serif";
+    ctx.font = "16px \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.textAlign = "left";
 
     const boxWidth = Math.floor(ctx.canvas.width * DIALOG_WIDTH_RATIO);
@@ -105,7 +105,7 @@ export function drawMessageBox(
 
     if (showContinue) {
         ctx.fillStyle = "rgba(255,255,255,0.75)";
-        ctx.font = "14px serif";
+        ctx.font = "14px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillText(
             `(${pageIndex + 1}/${pageCount})  E — continue`,
             boxX + padding,
@@ -123,7 +123,7 @@ export function drawRoomTitleBanner(ctx: CanvasRenderingContext2D, banner: RoomT
     ctx.globalAlpha = alpha;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = "bold 36px serif";
+    ctx.font = "bold 36px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
     ctx.strokeStyle = "rgba(0, 0, 0, 0.55)";
     ctx.lineWidth = 4;
@@ -160,7 +160,7 @@ export function drawStruggleMeter(
     ctx.fillRect(barX - 12, barY - 42, barW + 24, barH + 70);
 
     ctx.fillStyle = "#e8e0d5";
-    ctx.font = "bold 20px serif";
+    ctx.font = "bold 20px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.textAlign = "center";
     ctx.fillText(title, w / 2, barY - 16);
 
@@ -177,7 +177,7 @@ export function drawStruggleMeter(
     ctx.fillRect(barX + 2, barY + 2, (barW - 4) * fill, barH - 4);
 
     ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.font = "16px serif";
+    ctx.font = "16px \"IM Fell English\", \"Libre Baskerville\", serif";
     const hint = touchControls ? "Tap Interact repeatedly!" : "Mash E / Space!";
     ctx.fillText(hint, w / 2, barY + barH + 22);
     ctx.textAlign = "left";
@@ -198,13 +198,13 @@ export function drawVictoryOverlay(ctx: CanvasRenderingContext2D, victoryTimer: 
     ctx.save();
     ctx.globalAlpha = textAlpha;
     ctx.fillStyle = "#fff";
-    ctx.font = "bold 48px serif";
+    ctx.font = "bold 48px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.textAlign = "center";
     ctx.fillText("Congratulations!", ctx.canvas.width / 2, ctx.canvas.height / 2 - 40);
-    ctx.font = "24px serif";
+    ctx.font = "24px \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.fillText("The murderer is being apprehended.", ctx.canvas.width / 2, ctx.canvas.height / 2 + 10);
     if (victoryTimer <= 0) {
-        ctx.font = "20px serif";
+        ctx.font = "20px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillStyle = "rgba(255,255,255,0.9)";
         ctx.fillText(
             "Press Enter or Escape to return to main menu",
@@ -218,7 +218,7 @@ export function drawVictoryOverlay(ctx: CanvasRenderingContext2D, victoryTimer: 
 /** Bottom-of-screen contextual hint (hearth shove, locked doors, etc.). */
 export function drawActionHint(ctx: CanvasRenderingContext2D, text: string): void {
     ctx.save();
-    ctx.font = "18px serif";
+    ctx.font = "18px \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.textAlign = "center";
     const metrics = ctx.measureText(text);
     const padX = 16;

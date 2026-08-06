@@ -26,12 +26,12 @@ export function renderClueNotification(
 
     // Text
     ctx.fillStyle = "#ffd700";
-    ctx.font = "bold 16px serif";
+    ctx.font = "bold 16px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.textAlign = "center";
     ctx.fillText("Clue Found!", ctx.canvas.width / 2, notifY + 30);
 
     ctx.fillStyle = "#fff";
-    ctx.font = "14px serif";
+    ctx.font = "14px \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.fillText(clueName, ctx.canvas.width / 2, notifY + 55);
 
     ctx.textAlign = "left";

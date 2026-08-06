@@ -8,6 +8,7 @@ body {
   background: #111;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  font-family: "IM Fell English", "Libre Baskerville", serif;
 }
 
 #game-shell {
@@ -162,7 +163,7 @@ body {
   border-radius: 50%;
   background: rgba(42, 31, 31, 0.82);
   color: #e8e0d5;
-  font: bold 14px serif;
+  font: bold 14px "IM Fell English SC", "Libre Baskerville", serif;
   cursor: pointer;
   touch-action: none;
   user-select: none;
@@ -194,7 +195,7 @@ body {
   background: rgba(0, 0, 0, 0.92);
   color: #e8e0d5;
   text-align: center;
-  font: 18px serif;
+  font: 18px "IM Fell English", "Libre Baskerville", serif;
   box-sizing: border-box;
 }
 
@@ -205,7 +206,7 @@ body {
 }
 
 #rotate-hint button {
-  font: 16px serif;
+  font: 16px "IM Fell English SC", "Libre Baskerville", serif;
   padding: 10px 20px;
   border: 2px solid #8b4513;
   border-radius: 8px;

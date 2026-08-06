@@ -128,10 +128,10 @@ export class Menu {
         const hintPx = Math.round((touch ? 20 : 18) * scale);
         const lineHeight = Math.round((touch ? 68 : 54) * scale);
         return {
-            title: `bold ${titlePx}px serif`,
-            item: `${itemPx}px serif`,
-            itemBold: `bold ${itemPx}px serif`,
-            hint: `${hintPx}px serif`,
+            title: `bold ${titlePx}px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif`,
+            item: `${itemPx}px \"IM Fell English\", \"Libre Baskerville\", serif`,
+            itemBold: `bold ${itemPx}px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif`,
+            hint: `${hintPx}px \"IM Fell English\", \"Libre Baskerville\", serif`,
             lineHeight
         };
     }

@@ -62,7 +62,7 @@ export class IntroScreen {
         } else if (this.slideIndex >= 1 && this.slideIndex <= CHARACTER_SLIDES.length) {
             if (this.slideIndex === 1) {
                 ctx.fillStyle = "#8b4513";
-                ctx.font = "bold 26px serif";
+                ctx.font = "bold 26px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
                 ctx.textAlign = "center";
                 ctx.fillText("von Virtanen Manor — the household", w / 2, h * 0.18);
             }
@@ -71,7 +71,7 @@ export class IntroScreen {
 
         const promptY = h * 0.88;
         ctx.fillStyle = "rgba(255,255,255,0.7)";
-        ctx.font = "18px serif";
+        ctx.font = "18px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.textAlign = "center";
         const touch = shouldShowTouchControls();
         if (isLastSlide) {
@@ -85,7 +85,7 @@ export class IntroScreen {
         }
 
         const progress = `${this.slideIndex + 1} / ${this.totalSlides}`;
-        ctx.font = "14px serif";
+        ctx.font = "14px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillStyle = "rgba(255,255,255,0.4)";
         ctx.fillText(progress, w / 2, h - 20);
         ctx.textAlign = "left";
@@ -96,12 +96,12 @@ export class IntroScreen {
         const lineHeight = 28;
 
         ctx.fillStyle = "#8b4513";
-        ctx.font = "bold 32px serif";
+        ctx.font = "bold 32px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.textAlign = "center";
         ctx.fillText("Murder at von Virtanen Manor", centerX, h * 0.2);
 
         ctx.fillStyle = "rgba(255,255,255,0.9)";
-        ctx.font = "20px serif";
+        ctx.font = "20px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.textAlign = "center";
 
         const lines = [
@@ -118,7 +118,7 @@ export class IntroScreen {
             y += lineHeight;
         }
 
-        ctx.font = "18px serif";
+        ctx.font = "18px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillStyle = "rgba(200,180,140,0.95)";
         ctx.fillText("— von Virtanen Manor, the night of the murder —", centerX, y + lineHeight);
     }
@@ -138,13 +138,13 @@ export class IntroScreen {
         );
 
         ctx.fillStyle = "#c4a574";
-        ctx.font = "bold 28px serif";
+        ctx.font = "bold 28px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.textAlign = "center";
         ctx.fillText(slide.name, centerX, y + spriteSize / 2 + 36);
-        ctx.font = "20px serif";
+        ctx.font = "20px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillStyle = "rgba(255,255,255,0.85)";
         ctx.fillText(slide.role, centerX, y + spriteSize / 2 + 62);
-        ctx.font = "18px serif";
+        ctx.font = "18px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillStyle = "rgba(255,255,255,0.7)";
         ctx.fillText(slide.line, centerX, y + spriteSize / 2 + 92);
     }
@@ -155,7 +155,7 @@ export class IntroScreen {
         const y = h * 0.4;
 
         ctx.fillStyle = "#8b4513";
-        ctx.font = "bold 24px serif";
+        ctx.font = "bold 24px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.textAlign = "center";
         ctx.fillText("Arriving to investigate...", centerX, h * 0.22);
 
@@ -163,9 +163,9 @@ export class IntroScreen {
 
         const label = this.playerSprite === "female_detective" ? "Clara Case" : "Max Trace";
         ctx.fillStyle = "#c4a574";
-        ctx.font = "bold 26px serif";
+        ctx.font = "bold 26px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillText(label, centerX, y + spriteSize / 2 + 40);
-        ctx.font = "20px serif";
+        ctx.font = "20px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillStyle = "rgba(255,255,255,0.9)";
         ctx.fillText("comes to von Virtanen Manor to solve the case.", centerX, y + spriteSize / 2 + 72);
     }

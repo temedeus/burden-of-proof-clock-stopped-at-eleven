@@ -98,7 +98,9 @@ export class IntroScreen {
         ctx.fillStyle = "#8b4513";
         ctx.font = "bold 32px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.textAlign = "center";
-        ctx.fillText("Murder at von Virtanen Manor", centerX, h * 0.2);
+        
+        // Draw curved text: thick on ends, narrow in middle
+        this.drawCurvedText(ctx, "Murder at von Virtanen Manor", centerX, h * 0.2, w * 0.8);
 
         ctx.fillStyle = "rgba(255,255,255,0.9)";
         ctx.font = "20px \"IM Fell English\", \"Libre Baskerville\", serif";
@@ -121,6 +123,39 @@ export class IntroScreen {
         ctx.font = "18px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillStyle = "rgba(200,180,140,0.95)";
         ctx.fillText("— von Virtanen Manor, the night of the murder —", centerX, y + lineHeight);
+    }
+
+    private drawCurvedText(ctx: CanvasRenderingContext2D, text: string, centerX: number, y: number, maxWidth: number): void {
+        const chars = text.split('');
+        const charCount = chars.length;
+        
+        // Measure width of full unscaled text for centering
+        const baseWidth = ctx.measureText(text).width;
+        const startX = centerX - baseWidth / 2;
+        
+        // Draw each character with horizontal scale based on position
+        let x = startX;
+        for (let i = 0; i < charCount; i++) {
+            const progress = i / (charCount - 1); // 0 to 1
+            
+            // Horizontal distance from center (normalized to -1 to +1)
+            const hDist = progress * 2 - 1;
+            // Scale factor: thicker at edges (1.0), narrower in middle (0.7)
+            const scale = 0.7 + 0.3 * Math.abs(hDist);
+            
+            // Get unscaled width of this character
+            const charWidth = ctx.measureText(chars[i]).width;
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, 1);
+            ctx.textAlign = 'left';
+            ctx.fillText(chars[i], 0, 0);
+            ctx.restore();
+            
+            // Move to next character position (using unscaled width)
+            x += charWidth;
+        }
     }
 
     private renderCharacterSlide(ctx: CanvasRenderingContext2D, w: number, h: number, slide: CharacterSlide): void {

@@ -326,7 +326,7 @@ export class Menu {
             ctx.fillStyle = MENU_ACCENT;
             ctx.font = type.title;
             ctx.textAlign = "center";
-            ctx.fillText("Murder at von Virtanen Manor", w / 2, h * 0.28);
+            this.drawCurvedTitleText(ctx, "Murder at von Virtanen Manor", w / 2, h * 0.28, w * 0.85);
 
             this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.42);
             ctx.textAlign = "left";
@@ -484,6 +484,48 @@ export class Menu {
         ctx.fillText("Settings", w / 2, h * 0.28);
         this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.42);
         ctx.textAlign = "left";
+    }
+
+    /** Draw curved title text: thicker at edges, thinner at center, with vertical curve */
+    private drawCurvedTitleText(ctx: CanvasRenderingContext2D, text: string, centerX: number, centerY: number, maxWidth: number): void {
+        const chars = text.split('');
+        const charCount = chars.length;
+        
+        // Measure width of full unscaled text for centering
+        const baseWidth = ctx.measureText(text).width;
+        const startX = centerX - baseWidth / 2;
+        
+        // Curve parameters: controls the height of the arc
+        const curveHeight = 24;
+        
+        // Draw each character with scaling and vertical offset
+        let x = startX;
+        for (let i = 0; i < charCount; i++) {
+            const progress = i / (charCount - 1); // 0 to 1
+            
+            // Horizontal distance from center (normalized to -1 to +1)
+            const hDist = progress * 2 - 1;
+            // Scale factor: thicker at edges (1.0), narrower in middle (0.7)
+            const scale = 0.7 + 0.3 * Math.abs(hDist);
+            
+            // Vertical curve offset: characters form a gentle arc
+            // Positive curveHeight = concave down (smile shape)
+            // Negative curveHeight = concave up (frown shape)
+            const curveOffset = curveHeight * (Math.pow(hDist, 2) - 0.25);
+            
+            // Get unscaled width of this character
+            const charWidth = ctx.measureText(chars[i]).width;
+            
+            ctx.save();
+            ctx.translate(x, centerY + curveOffset);
+            ctx.scale(scale, 1);
+            ctx.textAlign = 'left';
+            ctx.fillText(chars[i], 0, 0);
+            ctx.restore();
+            
+            // Move to next character position (using unscaled width)
+            x += charWidth;
+        }
     }
 
     /** Full-screen manor background for main menu (spritesheet3: manor_building) */

@@ -164,7 +164,7 @@ Each line is a bidirectional connection unless noted.
 | **courtyard** | cellar_storage | Cellar hatch; **interaction only** (confirm prompt, no walk-through) |
 | **stable** | courtyard | |
 | **cellar_storage** | courtyard | Stairs up to hatch |
-| **cellar_storage** | wine_cellar | South |
+| **cellar_storage** | wine_cellar | South; **locked** until `cellar_evidence` clue (wine_cellar_door) |
 | **cellar_storage** | secret_tunnel | South; **locked** until `cellar_secret` puzzle |
 | **wine_cellar** | cellar_storage | North |
 
@@ -191,10 +191,13 @@ Switches in **hidden_room** and **secret_tunnel** can reopen passages from the f
 
 | Room | NPCs |
 |------|------|
-| hall | von Virtanen (baron — **dead body**, examine), Mrs. Clarke (maid), Ytte (cook), Lady von Virtanen (baroness), Inspector Walsh (police) |
+| hall | von Virtanen (baron — **dead body**, examine), Lady von Virtanen (baroness), Inspector Walsh (police) |
 | library | Mr. Thompson (butler) |
-| kitchen | Groundskeeper (worker_man); Chef Ytte; 2 examine-only kitchen helpers; animated stoves |
-| study | Constable Reed (police2), Stable Boy (worker_boy) |
+| kitchen | Ytte (cook); 2 examine-only kitchen helpers (kitchen_helper_a, kitchen_helper_b); animated stoves |
+| study | Constable Reed (police2) |
+| garden | Groundskeeper (worker_man) |
+| maid_room | Mrs. Clarke (maid) |
+| stable | Stable Boy (worker_boy) |
 
 ---
 
@@ -207,13 +210,16 @@ Dialog and player-facing text come from several layers. At runtime, **story over
 | File | Contents |
 |------|----------|
 | `src/data/npcs/baron.json` | von Virtanen — examine-only corpse (`examineClueId`: `examined_body`) |
+| `src/data/npcs/baroness.json` | Lady von Virtanen — default only |
 | `src/data/npcs/butler.json` | Mr. Thompson — default dialog |
 | `src/data/npcs/cook.json` | Ytte — default dialog |
-| `src/data/npcs/baroness.json` | Lady von Virtanen — default only |
+| `src/data/npcs/kitchen_helper_a.json` | Kitchen Helper A — examine-only |
+| `src/data/npcs/kitchen_helper_b.json` | Kitchen Helper B — examine-only |
+| `src/data/npcs/maid.json` | Mrs. Clarke (maid) — default only |
 | `src/data/npcs/police.json` | Inspector Walsh — default only |
 | `src/data/npcs/police2.json` | Constable Reed — default only |
-| `src/data/npcs/worker_man.json` | Groundskeeper — default only |
 | `src/data/npcs/worker_boy.json` | Stable Boy — default only |
+| `src/data/npcs/worker_man.json` | Groundskeeper — default only |
 | `src/data/story/generated/stories/active.json` | **Active story overrides** — `npcDialogOverrides` for police, baroness, maid, cook, butler, groundskeeper, stable boy |
 | `src/content/eventNpcDialog.ts` | Post-fire / attic / apron / weapon talk lines for household + police |
 

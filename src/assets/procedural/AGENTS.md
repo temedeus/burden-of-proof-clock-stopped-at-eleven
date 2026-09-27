@@ -37,8 +37,15 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | `attic_mouse.ts` | Attic mice (via `AtticMiceController`) |
 | `seagull.ts` | Courtyard seagull (via `CourtyardSeagullController`) |
 | `animals.ts` | Horses (animated stable booths) |
+| `ballroom_windows.ts` | Animated ballroom clerestory windows (dancing_room) |
 
 `oil_lamp` is in `sprites.ts` but drawn at runtime, not baked in `registry.ts`.
+
+**Registry-baked modules:**
+
+| Module | Used for |
+|--------|----------|
+| `pond.ts` | Garden pond (baked via `POND_SPRITES` in `registry.ts`) |
 
 ## Conventions
 

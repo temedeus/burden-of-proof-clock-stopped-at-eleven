@@ -3,16 +3,16 @@ import { TILE_SIZE } from "../world/constants";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TileMap } from "../world/TileMap";
 import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_PALE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_ATTIC_WALL, TILE_PALE_WALL, TILE_INVISIBLE_WALL, TILE_FURNITURE, TILE_FENCE, TILE_FENCE_POST, TILE_BANISTER, TILE_BANISTER_POST, TILE_WOOD_FENCE, TILE_WOOD_FENCE_POST, TILE_WOOD_FENCE_V } from "../world/TileTypes";
+import { getHumanoidStyle, type CharacterFacing } from "../assets/procedural/characters";
 import {
-    drawHumanoidFrame,
-    getHumanoidStyle,
-    type CharacterFacing
-} from "../assets/procedural/characters";
+    getHumanoidFrame,
+    HUMANOID_NATIVE_H,
+    HUMANOID_NATIVE_W
+} from "../assets/procedural/characterAnimation";
+import { getSpriteDef } from "../assets/procedural/registry";
 import type { Facing } from "./Player";
 
 const DEFAULT_CHASE_SPEED = 100;
-const HUMANOID_NATIVE_W = 32;
-const HUMANOID_NATIVE_H = 40;
 
 export class NPC extends Entity {
   width = TILE_SIZE * 2;
@@ -245,28 +245,36 @@ export class NPC extends Entity {
     return false;
   }
 
+  /** Sprite height when drawn at uniform scale (head overhangs above the entity box). */
+  private spriteDrawHeight(): number {
+    const def = getSpriteDef(this.spriteName);
+    const nativeW = def?.nativeWidth ?? HUMANOID_NATIVE_W;
+    const nativeH = def?.nativeHeight ?? HUMANOID_NATIVE_H;
+    return Math.round(nativeH * (this.width / nativeW));
+  }
+
   private drawIdleSprite(ctx: CanvasRenderingContext2D, dx: number, dy: number): void {
+    const drawHeight = this.spriteDrawHeight();
+    const top = Math.round(dy + this.height - drawHeight);
+    const left = Math.round(dx);
     const style = getHumanoidStyle(this.spriteName);
     if (!style) {
-      spriteLoader.drawSprite(ctx, this.spriteName, dx, dy, this.width, this.height);
+      spriteLoader.drawSprite(ctx, this.spriteName, left, top, this.width, drawHeight);
       return;
     }
 
     const bakeFacing: CharacterFacing =
       this.facing === "up" ? "up" : this.facing === "down" ? "down" : "right";
-    const mirror = this.facing === "left";
-    const sx = this.width / HUMANOID_NATIVE_W;
-    const sy = this.height / HUMANOID_NATIVE_H;
+    const frame = getHumanoidFrame(style, bakeFacing, "idle");
 
     ctx.save();
     ctx.imageSmoothingEnabled = false;
-    ctx.translate(dx, dy);
-    ctx.scale(sx, sy);
-    if (mirror) {
-      ctx.translate(HUMANOID_NATIVE_W, 0);
+    ctx.translate(left, top);
+    if (this.facing === "left") {
+      ctx.translate(this.width, 0);
       ctx.scale(-1, 1);
     }
-    drawHumanoidFrame(ctx, style, bakeFacing, "idle");
+    ctx.drawImage(frame, 0, 0, this.width, drawHeight);
     ctx.restore();
   }
 
@@ -323,7 +331,7 @@ export class NPC extends Entity {
     ctx.fillStyle = "#fff";
     ctx.font = "16px \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.textAlign = "center";
-    ctx.fillText(this.name, this.x + this.width / 2, this.y - 5);
+    ctx.fillText(this.name, this.x + this.width / 2, this.y + this.height - this.spriteDrawHeight() - 5);
     ctx.textAlign = "left"; // Reset alignment
   }
 

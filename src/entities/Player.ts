@@ -6,6 +6,7 @@ import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_PALE_ROCK_WALL, TILE_MA
 import { NPC } from "./NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
 import type { CharacterPose } from "../assets/procedural/characters";
+import { HUMANOID_NATIVE_H, HUMANOID_NATIVE_W } from "../assets/procedural/characterAnimation";
 import { footstepSounds } from "../audio/FootstepSounds";
 import { resolveFootstepSound } from "../audio/footstepSurface";
 import type { Interactable } from "../world/Interactable";
@@ -184,29 +185,28 @@ export class Player extends Entity {
             ctx.translate(pivotX, pivotY + sink);
             ctx.rotate(angle);
             ctx.translate(-pivotX, -pivotY);
-            spriteLoader.drawCharacterFrame(
-                ctx,
-                this.spriteName,
-                this.facing,
-                this.getPose(),
-                this.x,
-                this.y,
-                this.width,
-                this.height
-            );
+            this.drawFrame(ctx);
             ctx.restore();
             return;
         }
 
+        this.drawFrame(ctx);
+    }
+
+    /** Uniform integer scale (no aspect squash); feet stay on the entity box bottom, head overhangs above. */
+    private drawFrame(ctx: CanvasRenderingContext2D): void {
+        const scale = this.width / HUMANOID_NATIVE_W;
+        const drawHeight = HUMANOID_NATIVE_H * scale;
         spriteLoader.drawCharacterFrame(
             ctx,
             this.spriteName,
             this.facing,
             this.getPose(),
-            this.x,
-            this.y,
+            // Whole-pixel position keeps the 2x art from shimmering as the player moves
+            Math.round(this.x),
+            Math.round(this.y + this.height - drawHeight),
             this.width,
-            this.height
+            drawHeight
         );
     }
 

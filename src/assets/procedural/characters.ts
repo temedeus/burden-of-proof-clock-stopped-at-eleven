@@ -1,5 +1,5 @@
 import { P } from "./palette";
-import { r, rr, c, t, p, hline, vline } from "./pixel";
+import { r, p, hline, vline, rrCrisp as rr, discCrisp, triCrisp as t, shade } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
 
 export type CharacterFacing = "down" | "up" | "right";
@@ -27,6 +27,8 @@ export interface HumanoidStyle {
     pants?: string;
     shoes?: string;
     accent?: string;
+    /** Shirt visible in the coat's V-neck; when set, `accent` colours only the buttons. */
+    shirt?: string;
     /** Victorian dress silhouette instead of coat and trousers. */
     dress?: DressStyle;
     /** Updo / bun — typical for period ladies. */
@@ -125,26 +127,32 @@ export interface ExpressionConfig {
     };
 }
 
-/** Leg Y offsets per pose (left leg, right leg) and optional body bob */
+/** Top row of planted feet for trousered figures (feet are 2 rows tall). */
+const GROUND_Y = 32;
+
+/**
+ * Front/back walk offsets. Feet stay planted on GROUND_Y; the stepping foot reads
+ * 1px lower (closer to camera), the passing foot 1px lifted. Arm swing shortens
+ * (forward, foreshortened) or lengthens (back) the visible sleeve.
+ */
 function poseOffsets(pose: CharacterPose): {
-    leftLegY: number;
-    rightLegY: number;
     bodyBob: number;
-    leftArmY: number;
-    rightArmY: number;
-    headBob: number;
+    leftFootDy: number;
+    rightFootDy: number;
+    leftArmSwing: number;
+    rightArmSwing: number;
 } {
     switch (pose) {
         case "walk_a":
-            return { leftLegY: 26, rightLegY: 22, bodyBob: 1, leftArmY: 14, rightArmY: 10, headBob: 1 };
+            return { bodyBob: 1, leftFootDy: 1, rightFootDy: -1, leftArmSwing: 1, rightArmSwing: -1 };
         case "walk_b":
-            return { leftLegY: 24, rightLegY: 24, bodyBob: 0, leftArmY: 12, rightArmY: 12, headBob: 0 };
+            return { bodyBob: 0, leftFootDy: 0, rightFootDy: -1, leftArmSwing: 0, rightArmSwing: 0 };
         case "walk_c":
-            return { leftLegY: 22, rightLegY: 26, bodyBob: 1, leftArmY: 10, rightArmY: 14, headBob: -1 };
+            return { bodyBob: 1, leftFootDy: -1, rightFootDy: 1, leftArmSwing: -1, rightArmSwing: 1 };
         case "walk_d":
-            return { leftLegY: 24, rightLegY: 24, bodyBob: 0, leftArmY: 12, rightArmY: 12, headBob: 0 };
+            return { bodyBob: 0, leftFootDy: -1, rightFootDy: 0, leftArmSwing: 0, rightArmSwing: 0 };
         default:
-            return { leftLegY: 24, rightLegY: 24, bodyBob: 0, leftArmY: 12, rightArmY: 12, headBob: 0 };
+            return { bodyBob: 0, leftFootDy: 0, rightFootDy: 0, leftArmSwing: 0, rightArmSwing: 0 };
     }
 }
 
@@ -326,780 +334,971 @@ export function getExpressionConfig(expression?: string): ExpressionConfig {
     }
 }
 
-/**
- * Draw facial expression
- */
-function drawExpression(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    x: number,
-    y: number,
-    by: number,
-    headBob: number,
-    isSideView: boolean = false
-): void {
+// ============================================================================
+// Head & face — every feature anchors to the head box so nothing drifts when
+// the body bobs or proportions change. Light comes from the upper left.
+// ============================================================================
+
+/** Head box in native sprite pixels. */
+interface HeadBox {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+interface SkinTones {
+    skin: string;
+    shadow: string;
+    hi: string;
+}
+
+function skinTones(s: HumanoidStyle): SkinTones {
     const skin = s.skin ?? P.skin;
-    const hair = s.hair;
-    const expr = getExpressionConfig(s.expression);
-    const eyeColor = s.eyeColor ?? P.black;
-
-    if (isSideView) {
-        // Side view expression - only one eye visible
-        const eyeX = x + 4;
-        const eyeY = y + 6 + by + headBob + expr.eyes.yOffset;
-        
-        // Eye
-        switch (expr.eyes.shape) {
-            case 'surprised':
-                r(ctx, eyeX, eyeY - 1, 2, 3, P.white);
-                c(ctx, eyeX + 1, eyeY, 1, eyeColor);
-                break;
-            case 'happy':
-            case 'sad':
-                r(ctx, eyeX, eyeY, 2, 1, P.black);
-                p(ctx, eyeX + 1, eyeY, eyeColor);
-                break;
-            case 'tired':
-                hline(ctx, eyeX, eyeY + 1, 2, P.black);
-                break;
-            default:
-                r(ctx, eyeX, eyeY, 2, 1, P.black);
-        }
-        
-        // Eyebrow
-        switch (expr.eyebrows.shape) {
-            case 'raised':
-                hline(ctx, eyeX, y + 4 + by + headBob + expr.eyebrows.yOffset, 2, hair);
-                hline(ctx, eyeX + 1, y + 3 + by + headBob + expr.eyebrows.yOffset, 1, hair);
-                break;
-            case 'furrowed':
-            case 'knitted':
-                hline(ctx, eyeX, y + 5 + by + headBob + expr.eyebrows.yOffset, 3, hair);
-                break;
-            case 'curved':
-                hline(ctx, eyeX, y + 4 + by + headBob + expr.eyebrows.yOffset, 2, hair);
-                p(ctx, eyeX + 2, y + 3 + by + headBob + expr.eyebrows.yOffset, hair);
-                break;
-            default:
-                hline(ctx, eyeX, y + 5 + by + headBob + expr.eyebrows.yOffset, 2, hair);
-        }
-        
-        // Mouth (side view)
-        switch (expr.mouth.shape) {
-            case 'smile':
-                p(ctx, x + 6, y + 10 + by + headBob + expr.mouth.yOffset, P.outline);
-                p(ctx, x + 7, y + 9 + by + headBob + expr.mouth.yOffset, P.outline);
-                break;
-            case 'frown':
-                p(ctx, x + 6, y + 10 + by + headBob + expr.mouth.yOffset, P.outline);
-                p(ctx, x + 7, y + 11 + by + headBob + expr.mouth.yOffset, P.outline);
-                break;
-            case 'open':
-                p(ctx, x + 6, y + 10 + by + headBob + expr.mouth.yOffset, P.outline);
-                p(ctx, x + 6, y + 11 + by + headBob + expr.mouth.yOffset, P.outline);
-                break;
-            default:
-                p(ctx, x + 6, y + 10 + by + headBob + expr.mouth.yOffset, P.outline);
-        }
-        
-    } else {
-        // Front view expression
-        const leftEyeX = x;
-        const rightEyeX = x + 4;
-        const eyeY = y + 1 + by + headBob + expr.eyes.yOffset;
-        
-        // Left eye
-        switch (expr.eyes.shape) {
-            case 'surprised':
-                r(ctx, leftEyeX, eyeY - 1, 2, 3, P.white);
-                c(ctx, leftEyeX + 1, eyeY, 1, eyeColor);
-                break;
-            case 'happy':
-            case 'sad':
-                r(ctx, leftEyeX, eyeY, 2, 1, P.black);
-                p(ctx, leftEyeX + 1, eyeY, eyeColor);
-                break;
-            case 'tired':
-                hline(ctx, leftEyeX, eyeY + 1, 2, P.black);
-                break;
-            case 'angry':
-            case 'determined':
-            case 'normal':
-            default:
-                r(ctx, leftEyeX, eyeY, 2, 1, P.black);
-        }
-        
-        // Right eye
-        switch (expr.eyes.shape) {
-            case 'surprised':
-                r(ctx, rightEyeX, eyeY - 1, 2, 3, P.white);
-                c(ctx, rightEyeX + 1, eyeY, 1, eyeColor);
-                break;
-            case 'happy':
-            case 'sad':
-                r(ctx, rightEyeX, eyeY, 2, 1, P.black);
-                p(ctx, rightEyeX + 1, eyeY, eyeColor);
-                break;
-            case 'tired':
-                hline(ctx, rightEyeX, eyeY + 1, 2, P.black);
-                break;
-            default:
-                r(ctx, rightEyeX, eyeY, 2, 1, P.black);
-        }
-        
-        // Left eyebrow
-        switch (expr.eyebrows.shape) {
-            case 'raised':
-                hline(ctx, leftEyeX, y + by + headBob + expr.eyebrows.yOffset, 2, hair);
-                hline(ctx, leftEyeX + 1, y - 1 + by + headBob + expr.eyebrows.yOffset, 1, hair);
-                break;
-            case 'furrowed':
-            case 'knitted':
-                hline(ctx, leftEyeX - 1, y + 1 + by + headBob + expr.eyebrows.yOffset, 3, hair);
-                break;
-            case 'curved':
-                hline(ctx, leftEyeX, y + by + headBob + expr.eyebrows.yOffset, 2, hair);
-                p(ctx, leftEyeX + 2, y - 1 + by + headBob + expr.eyebrows.yOffset, hair);
-                break;
-            default:
-                hline(ctx, leftEyeX, y + by + headBob + expr.eyebrows.yOffset, 2, hair);
-        }
-        
-        // Right eyebrow
-        switch (expr.eyebrows.shape) {
-            case 'raised':
-                hline(ctx, rightEyeX, y + by + headBob + expr.eyebrows.yOffset, 2, hair);
-                hline(ctx, rightEyeX + 1, y - 1 + by + headBob + expr.eyebrows.yOffset, 1, hair);
-                break;
-            case 'furrowed':
-            case 'knitted':
-                hline(ctx, rightEyeX - 1, y + 1 + by + headBob + expr.eyebrows.yOffset, 3, hair);
-                break;
-            case 'curved':
-                hline(ctx, rightEyeX, y + by + headBob + expr.eyebrows.yOffset, 2, hair);
-                p(ctx, rightEyeX + 2, y - 1 + by + headBob + expr.eyebrows.yOffset, hair);
-                break;
-            default:
-                hline(ctx, rightEyeX, y + by + headBob + expr.eyebrows.yOffset, 2, hair);
-        }
-        
-        // Mouth (front view)
-        const mouthX = x + 1;
-        const mouthY = y + 3 + by + headBob + expr.mouth.yOffset;
-        
-        switch (expr.mouth.shape) {
-            case 'smile':
-                hline(ctx, mouthX, mouthY + 1, expr.mouth.width, P.outline);
-                p(ctx, mouthX + 2, mouthY, P.outline);
-                break;
-            case 'frown':
-                hline(ctx, mouthX, mouthY + 1, expr.mouth.width, P.outline);
-                p(ctx, mouthX + 2, mouthY + 2, P.outline);
-                break;
-            case 'open':
-                hline(ctx, mouthX + 1, mouthY, expr.mouth.width - 2, P.outline);
-                hline(ctx, mouthX + 1, mouthY + 1, expr.mouth.width - 2, P.outline);
-                break;
-            case 'grimace':
-                hline(ctx, mouthX, mouthY, expr.mouth.width, P.outline);
-                hline(ctx, mouthX + 1, mouthY + 1, expr.mouth.width - 2, P.outline);
-                break;
-            case 'tight':
-                hline(ctx, mouthX + 1, mouthY + 1, expr.mouth.width - 2, P.outline);
-                break;
-            default:
-                hline(ctx, mouthX, mouthY, expr.mouth.width, P.outline);
-        }
-    }
+    return { skin, shadow: shade(skin, -0.22), hi: shade(skin, 0.18) };
 }
 
-/**
- * Draw glasses accessory
- */
-function drawGlasses(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    x: number,
-    y: number,
-    by: number,
-    headBob: number,
-    isSideView: boolean = false
-): void {
-    if (!s.glasses) return;
-    
-    const glassesColor = s.glasses;
-    const style = s.glassesStyle ?? 'round';
-    
-    if (isSideView) {
-        // Side view glasses
-        switch (style) {
-            case 'round':
-                c(ctx, x + 5, y + 4 + by + headBob, 3, glassesColor);
-                r(ctx, x + 6, y + 4 + by + headBob, 1, 2, glassesColor);
-                break;
-            case 'square':
-                r(ctx, x + 5, y + 4 + by + headBob, 3, 3, glassesColor);
-                r(ctx, x + 7, y + 4 + by + headBob, 1, 2, glassesColor);
-                break;
-            case 'oval':
-                rr(ctx, x + 5, y + 4 + by + headBob, 3, 2, 1, glassesColor);
-                r(ctx, x + 7, y + 4 + by + headBob, 1, 2, glassesColor);
-                break;
-            case 'monocle':
-                c(ctx, x + 5, y + 4 + by + headBob, 2, glassesColor);
-                break;
-        }
-    } else {
-        // Front view glasses
-        const leftLensX = x - 1;
-        const rightLensX = x + 3;
-        const lensY = y + by + headBob;
-        
-        switch (style) {
-            case 'round':
-                c(ctx, leftLensX + 1, lensY + 1, 2, glassesColor);
-                c(ctx, rightLensX + 1, lensY + 1, 2, glassesColor);
-                // Bridge
-                hline(ctx, leftLensX + 2, lensY + 1, 2, glassesColor);
-                // Arms
-                r(ctx, leftLensX, lensY + 1, 1, 2, glassesColor);
-                r(ctx, rightLensX + 2, lensY + 1, 1, 2, glassesColor);
-                break;
-            case 'square':
-                r(ctx, leftLensX, lensY, 3, 3, glassesColor);
-                r(ctx, rightLensX, lensY, 3, 3, glassesColor);
-                // Bridge
-                hline(ctx, leftLensX + 2, lensY + 1, 2, glassesColor);
-                // Arms
-                r(ctx, leftLensX - 1, lensY + 1, 1, 2, glassesColor);
-                r(ctx, rightLensX + 3, lensY + 1, 1, 2, glassesColor);
-                break;
-            case 'oval':
-                rr(ctx, leftLensX, lensY, 3, 2, 1, glassesColor);
-                rr(ctx, rightLensX, lensY, 3, 2, 1, glassesColor);
-                // Bridge
-                hline(ctx, leftLensX + 2, lensY + 1, 2, glassesColor);
-                // Arms
-                r(ctx, leftLensX, lensY + 1, 1, 2, glassesColor);
-                r(ctx, rightLensX + 2, lensY + 1, 1, 2, glassesColor);
-                break;
-            case 'monocle':
-                c(ctx, rightLensX + 1, lensY + 1, 2, glassesColor);
-                r(ctx, rightLensX + 2, lensY + 1, 1, 2, glassesColor);
-                break;
-        }
-    }
+/** Soft mouth line; ladies get a muted lip tint. */
+function mouthColor(s: HumanoidStyle, tones: SkinTones): string {
+    return s.dress ? shade(P.redLight, -0.2) : shade(tones.skin, -0.38);
 }
 
-/**
- * Draw jewelry accessories
- */
-function drawJewelry(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    x: number,
-    y: number,
-    by: number,
-    isSideView: boolean = false
-): void {
-    if (!s.jewelry) return;
-    
-    const jewelryColor = s.jewelry;
-    const jewelryType = s.jewelryType ?? 'necklace';
-    
-    if (jewelryType === 'earrings' || jewelryType === 'both') {
-        // Earrings
-        if (isSideView) {
-            // Only one earring visible from side
-            c(ctx, x + 7, y + 7 + by, 1, jewelryColor);
-            p(ctx, x + 7, y + 8 + by, jewelryColor);
-        } else {
-            // Both earrings visible from front
-            c(ctx, x - 1, y + 7 + by, 1, jewelryColor);
-            c(ctx, x + 5, y + 7 + by, 1, jewelryColor);
-        }
-    }
-    
-    if (jewelryType === 'necklace' || jewelryType === 'both') {
-        // Necklace
-        if (isSideView) {
-            hline(ctx, x + 6, y + 10 + by, 3, jewelryColor);
-            p(ctx, x + 7, y + 11 + by, jewelryColor);
-        } else {
-            // Front view - necklace around neck
-            rr(ctx, x + 1, y + 10 + by, 4, 2, 1, jewelryColor);
-            p(ctx, x + 2, y + 11 + by, jewelryColor);
-        }
-    }
+function makeHead(s: HumanoidStyle, y: number): HeadBox {
+    const body = getBodyProportions(s.bodyType);
+    return {
+        x: 16 - Math.floor(body.headWidth / 2),
+        y: y + body.headYOffset,
+        w: body.headWidth,
+        h: body.headHeight
+    };
 }
 
-/**
- * Draw facial hair
- */
-function drawFacialHair(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    x: number,
-    y: number,
-    by: number,
-    headBob: number,
-    isSideView: boolean = false
-): void {
-    if (!s.facialHair || s.facialHair === 'none' || !s.hair) return;
-    
-    const hairColor = s.hair;
-    
-    if (isSideView) {
-        // Side view facial hair
-        switch (s.facialHair) {
-            case 'mustache':
-                hline(ctx, x + 6, y + 9 + by + headBob, 4, hairColor);
-                break;
-            case 'beard':
-                r(ctx, x + 5, y + 9 + by + headBob, 5, 4, hairColor);
-                break;
-            case 'goatee':
-                r(ctx, x + 6, y + 9 + by + headBob, 3, 3, hairColor);
-                hline(ctx, x + 5, y + 12 + by + headBob, 5, hairColor);
-                break;
-            case 'sideburns':
-                r(ctx, x + 4, y + 6 + by + headBob, 2, 6, hairColor);
-                break;
-            case 'stubble':
-                // Light stubble effect
-                p(ctx, x + 5, y + 9 + by + headBob, hairColor);
-                p(ctx, x + 7, y + 9 + by + headBob, hairColor);
-                p(ctx, x + 6, y + 10 + by + headBob, hairColor);
-                break;
-        }
-    } else {
-        // Front view facial hair
-        switch (s.facialHair) {
-            case 'mustache':
-                hline(ctx, x + 1, y + 9 + by + headBob, 6, hairColor);
-                hline(ctx, x, y + 10 + by + headBob, 8, hairColor);
-                break;
-            case 'beard':
-                r(ctx, x, y + 8 + by + headBob, 8, 5, hairColor);
-                break;
-            case 'goatee':
-                r(ctx, x + 2, y + 8 + by + headBob, 4, 4, hairColor);
-                break;
-            case 'sideburns':
-                r(ctx, x - 1, y + 6 + by + headBob, 2, 6, hairColor);
-                r(ctx, x + 6, y + 6 + by + headBob, 2, 6, hairColor);
-                break;
-            case 'stubble':
-                // Light stubble effect - scattered pixels
-                for (let i = 0; i < 5; i++) {
-                    p(ctx, x + 1 + Math.floor(i * 1.5), y + 9 + by + headBob + Math.floor(i / 2), hairColor);
-                }
-                break;
-        }
-    }
+function faceRows(head: HeadBox): { eyeY: number; noseY: number; mouthY: number } {
+    const mouthY = head.y + head.h - 2;
+    return { eyeY: head.y + Math.floor(head.h * 0.4), noseY: mouthY - 1, mouthY };
 }
 
-/**
- * Draw age-related features (wrinkles, scars, freckles)
- */
-function drawAgeFeatures(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    x: number,
-    y: number,
-    by: number,
-    headBob: number,
-    isSideView: boolean = false
-): void {
-    const skin = s.skin ?? P.skin;
-    const skinShadow = P.skinShadow;
-    
-    // Wrinkles
-    if (s.wrinkles) {
-        if (isSideView) {
-            // Forehead wrinkles
-            hline(ctx, x + 4, y + 2 + by + headBob, 3, skinShadow);
-            hline(ctx, x + 5, y + 3 + by + headBob, 2, skinShadow);
-            // Cheek wrinkles
-            p(ctx, x + 6, y + 7 + by + headBob, skinShadow);
-            p(ctx, x + 7, y + 8 + by + headBob, skinShadow);
-        } else {
-            // Forehead wrinkles
-            hline(ctx, x, y + 2 + by + headBob, 2, skinShadow);
-            hline(ctx, x + 3, y + 2 + by + headBob, 2, skinShadow);
-            // Crow's feet around eyes
-            p(ctx, x - 1, y + 4 + by + headBob, skinShadow);
-            p(ctx, x + 6, y + 4 + by + headBob, skinShadow);
-        }
-    }
-    
-    // Freckles
-    if (s.freckles) {
-        const freckleColor = P.brickDark;
-        if (isSideView) {
-            p(ctx, x + 5, y + 5 + by + headBob, freckleColor);
-            p(ctx, x + 6, y + 6 + by + headBob, freckleColor);
-            p(ctx, x + 7, y + 7 + by + headBob, freckleColor);
-        } else {
-            p(ctx, x, y + 5 + by + headBob, freckleColor);
-            p(ctx, x + 2, y + 5 + by + headBob, freckleColor);
-            p(ctx, x + 4, y + 6 + by + headBob, freckleColor);
-            p(ctx, x + 6, y + 5 + by + headBob, freckleColor);
-        }
-    }
-    
-    // Scars
-    if (s.scars) {
-        const scarColor = P.red; // Use existing red color for scars
-        if (isSideView) {
-            // Scar on cheek
-            hline(ctx, x + 6, y + 8 + by + headBob, 2, scarColor);
-        } else {
-            // Scar on left cheek
-            hline(ctx, x - 1, y + 8 + by + headBob, 2, scarColor);
-        }
-    }
+/** Left x of each 2px-wide eye, symmetric about the head centre. */
+function frontEyes(head: HeadBox): { l: number; r: number } {
+    const inset = head.w >= 8 ? Math.floor((head.w - 6) / 2) : 1;
+    return { l: head.x + inset, r: head.x + head.w - 2 - inset };
 }
 
-/**
- * Add form shadows to character for depth
- * These are subtle shadows under chin, arms, etc.
- */
-function addFormShadowsFront(
-    ctx: CanvasRenderingContext2D,
-    skin: string,
-    by: number
-): void {
-    // Shadow under chin (creates jawline definition)
-    rr(ctx, 13, 9 + by, 6, 1, 2, P.skinShadow);
-    
-    // Shadows under arms where they meet torso
-    r(ctx, 10, 13 + by, 2, 2, P.shadow);
-    r(ctx, 20, 13 + by, 2, 2, P.shadow);
+function hairStyleOf(s: HumanoidStyle): NonNullable<HumanoidStyle["hairStyle"]> {
+    return s.hairStyle ?? (s.hairUp ? "updo" : s.dress ? "long" : "medium");
 }
 
-/**
- * Add highlights to character for depth
- */
-function addHighlightsFront(
-    ctx: CanvasRenderingContext2D,
-    skin: string,
-    by: number
-): void {
-    // Cheekbone highlights
-    p(ctx, 14, 5 + by, P.skinHi);
-    p(ctx, 19, 5 + by, P.skinHi);
-    
-    // Nose bridge highlight
-    p(ctx, 16, 7 + by, P.skinHi);
-    
-    // Chin highlight
-    p(ctx, 15, 9 + by, P.skinHi);
+/** Neck (behind the head) down to the torso top. */
+function drawNeck(ctx: CanvasRenderingContext2D, x: number, head: HeadBox, torsoTop: number, tones: SkinTones): void {
+    const y = head.y + head.h - 2;
+    if (torsoTop > y) r(ctx, x, y, 4, torsoTop - y, tones.shadow);
 }
 
-/**
- * Add form shadows to side view
- */
-function addFormShadowsSide(
-    ctx: CanvasRenderingContext2D,
-    skin: string,
-    by: number
-): void {
-    // Shadow under chin
-    rr(ctx, 15, 9 + by, 4, 1, 1, P.skinShadow);
-    
-    // Shadow on neck
-    p(ctx, 15, 10 + by, P.skinShadow);
-    
-    // Shadow under arm
-    r(ctx, 16, 14 + by, 3, 1, P.shadow);
-}
-
-/**
- * Add highlights to side view
- */
-function addHighlightsSide(
-    ctx: CanvasRenderingContext2D,
-    skin: string,
-    by: number
-): void {
+function drawHeadFront(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, torsoTop: number): void {
+    const tones = skinTones(s);
+    const cx = head.x + Math.floor(head.w / 2);
+    const { eyeY, noseY } = faceRows(head);
+    drawNeck(ctx, cx - 2, head, torsoTop, tones);
+    // Ears sit just outside the skull; far (right) ear in shadow
+    p(ctx, head.x - 1, eyeY + 1, tones.skin);
+    p(ctx, head.x + head.w, eyeY + 1, tones.shadow);
+    rr(ctx, head.x, head.y, head.w, head.h, 4, tones.skin);
+    // Shadow side of the face
+    vline(ctx, head.x + head.w - 1, head.y + 2, head.h - 4, tones.shadow);
+    // Nose: lit bridge, shadow under the tip
+    p(ctx, cx - 1, noseY - 1, tones.hi);
+    p(ctx, cx, noseY, tones.shadow);
     // Cheekbone highlight
-    p(ctx, 17, 4 + by, P.skinHi);
-    
-    // Nose highlight
-    p(ctx, 18, 6 + by, P.skinHi);
-    
-    // Shoulder highlight
-    p(ctx, 15, 11 + by, P.skinHi);
+    p(ctx, frontEyes(head).l, eyeY + 1, tones.hi);
 }
 
-function dressPoseOffsets(pose: CharacterPose): {
+function drawHeadBack(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, torsoTop: number): void {
+    const tones = skinTones(s);
+    const { eyeY } = faceRows(head);
+    drawNeck(ctx, head.x + Math.floor(head.w / 2) - 2, head, torsoTop, tones);
+    p(ctx, head.x - 1, eyeY + 1, tones.shadow);
+    p(ctx, head.x + head.w, eyeY + 1, tones.shadow);
+    rr(ctx, head.x, head.y, head.w, head.h, 4, tones.skin);
+    vline(ctx, head.x + head.w - 1, head.y + 2, head.h - 4, tones.shadow);
+}
+
+/** Side view faces right; the back of the head is at head.x. */
+function drawHeadSide(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, torsoTop: number): void {
+    const tones = skinTones(s);
+    const { eyeY, noseY } = faceRows(head);
+    drawNeck(ctx, head.x + 2, head, torsoTop, tones);
+    rr(ctx, head.x, head.y, head.w, head.h, 3, tones.skin);
+    // Nose bump and its underside
+    p(ctx, head.x + head.w, noseY - 1, tones.skin);
+    p(ctx, head.x + head.w, noseY, tones.shadow);
+    // Ear
+    vline(ctx, head.x + 3, eyeY, 2, tones.shadow);
+    // Jaw underside
+    hline(ctx, head.x + 1, head.y + head.h - 1, 4, tones.shadow);
+}
+
+function drawFaceFront(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox): void {
+    const tones = skinTones(s);
+    const expr = getExpressionConfig(s.expression);
+    const { eyeY, mouthY } = faceRows(head);
+    const eyes = frontEyes(head);
+    const pupil = shade(s.eyeColor ?? P.black, -0.35);
+    const sclera = shade(tones.skin, 0.6);
+    const lid = shade(tones.skin, -0.4);
+    const brow = shade(s.hair, -0.15);
+    const browY = eyeY - 1;
+
+    // [eye x, inner (pupil) x, x one step toward the nose]
+    const pairs: [number, number, number][] = [
+        [eyes.l, eyes.l + 1, eyes.l + 2],
+        [eyes.r, eyes.r, eyes.r - 1]
+    ];
+    for (const [ex, inner, toward] of pairs) {
+        const outer = inner === ex ? ex + 1 : ex;
+        switch (expr.eyes.shape) {
+            case "happy":
+                hline(ctx, ex, eyeY, 2, lid);
+                break;
+            case "surprised":
+                r(ctx, ex, eyeY - 1, 2, 2, sclera);
+                p(ctx, inner, eyeY, pupil);
+                break;
+            case "tired":
+                p(ctx, outer, eyeY, lid);
+                p(ctx, inner, eyeY, pupil);
+                break;
+            default:
+                p(ctx, outer, eyeY, sclera);
+                p(ctx, inner, eyeY, pupil);
+        }
+        switch (expr.eyebrows.shape) {
+            case "raised":
+                hline(ctx, ex, browY - 1, 2, brow);
+                break;
+            case "furrowed":
+            case "knitted":
+                hline(ctx, ex, browY, 2, brow);
+                p(ctx, toward, browY, brow);
+                break;
+            case "curved":
+                p(ctx, outer, browY, brow);
+                p(ctx, inner, browY - 1, brow);
+                break;
+            default:
+                hline(ctx, ex, browY, 2, brow);
+        }
+    }
+
+    const mouth = mouthColor(s, tones);
+    // Neutral mouths are 2px; wider expression widths read as moustaches at this scale
+    const mw = Math.max(2, Math.min(expr.mouth.width - 2, head.w - 4));
+    const mx = head.x + Math.floor((head.w - mw) / 2);
+    switch (expr.mouth.shape) {
+        case "smile":
+            hline(ctx, mx + 1, mouthY, mw - 2, mouth);
+            p(ctx, mx, mouthY - 1, mouth);
+            p(ctx, mx + mw - 1, mouthY - 1, mouth);
+            break;
+        case "frown":
+            hline(ctx, mx + 1, mouthY, mw - 2, mouth);
+            p(ctx, mx, mouthY + 1, mouth);
+            p(ctx, mx + mw - 1, mouthY + 1, mouth);
+            break;
+        case "open":
+            r(ctx, mx + 1, mouthY, Math.max(1, mw - 2), 2, P.outline);
+            break;
+        case "tight":
+            hline(ctx, mx + 1, mouthY, Math.max(1, mw - 2), mouth);
+            break;
+        default:
+            hline(ctx, mx, mouthY, mw, mouth);
+    }
+}
+
+function drawFaceSide(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox): void {
+    const tones = skinTones(s);
+    const expr = getExpressionConfig(s.expression);
+    const { eyeY, mouthY } = faceRows(head);
+    const ex = head.x + head.w - 3;
+    const pupil = shade(s.eyeColor ?? P.black, -0.35);
+    const sclera = shade(tones.skin, 0.6);
+    const lid = shade(tones.skin, -0.4);
+    const brow = shade(s.hair, -0.15);
+    const mouth = mouthColor(s, tones);
+    const mouthX = head.x + head.w - 2;
+
+    switch (expr.eyes.shape) {
+        case "happy":
+            hline(ctx, ex, eyeY, 2, lid);
+            break;
+        case "surprised":
+            r(ctx, ex, eyeY - 1, 2, 2, sclera);
+            p(ctx, ex + 1, eyeY, pupil);
+            break;
+        case "tired":
+            p(ctx, ex, eyeY, lid);
+            p(ctx, ex + 1, eyeY, pupil);
+            break;
+        default:
+            p(ctx, ex, eyeY, sclera);
+            p(ctx, ex + 1, eyeY, pupil);
+    }
+    switch (expr.eyebrows.shape) {
+        case "raised":
+            hline(ctx, ex, eyeY - 2, 2, brow);
+            break;
+        case "furrowed":
+        case "knitted":
+            hline(ctx, ex, eyeY - 1, 3, brow);
+            break;
+        default:
+            hline(ctx, ex, eyeY - 1, 2, brow);
+    }
+    switch (expr.mouth.shape) {
+        case "smile":
+            p(ctx, mouthX, mouthY, mouth);
+            p(ctx, mouthX - 1, mouthY - 1, mouth);
+            break;
+        case "frown":
+            p(ctx, mouthX, mouthY, mouth);
+            p(ctx, mouthX - 1, mouthY + 1, mouth);
+            break;
+        case "open":
+            hline(ctx, mouthX, mouthY, 2, P.outline);
+            break;
+        default:
+            hline(ctx, mouthX - 1, mouthY, 2, mouth);
+    }
+}
+
+function drawGlasses(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, side: boolean): void {
+    if (!s.glasses) return;
+    const g = s.glasses;
+    const style = s.glassesStyle ?? "round";
+    const { eyeY } = faceRows(head);
+
+    if (side) {
+        const ex = head.x + head.w - 3;
+        p(ctx, ex + 2, eyeY, g);
+        hline(ctx, ex, eyeY + 1, 2, g);
+        if (style === "monocle") {
+            p(ctx, ex - 1, eyeY, g);
+            p(ctx, ex, eyeY + 2, g);
+        } else {
+            // Rim back edge + temple arm to the ear
+            hline(ctx, head.x + 3, eyeY, ex - head.x - 3, g);
+        }
+        return;
+    }
+
+    const eyes = frontEyes(head);
+    const lenses = style === "monocle" ? [eyes.r] : [eyes.l, eyes.r];
+    for (const ex of lenses) {
+        p(ctx, ex - 1, eyeY, g);
+        p(ctx, ex + 2, eyeY, g);
+        hline(ctx, ex, eyeY + 1, 2, g);
+        if (style === "square") hline(ctx, ex - 1, eyeY - 1, 4, g);
+    }
+    if (style === "monocle") {
+        vline(ctx, eyes.r + 2, eyeY + 1, 3, g);
+    }
+}
+
+function drawEarrings(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, side: boolean): void {
+    if (!s.jewelry || (s.jewelryType !== "earrings" && s.jewelryType !== "both")) return;
+    const { eyeY } = faceRows(head);
+    if (side) {
+        p(ctx, head.x + 3, eyeY + 2, s.jewelry);
+    } else {
+        p(ctx, head.x - 1, eyeY + 2, s.jewelry);
+        p(ctx, head.x + head.w, eyeY + 2, s.jewelry);
+    }
+}
+
+/** Drawn after the torso so it sits on the collar. */
+function drawNecklace(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, torsoTop: number, side: boolean): void {
+    if (!s.jewelry) return;
+    const type = s.jewelryType ?? "necklace";
+    if (type !== "necklace" && type !== "both") return;
+    if (side) {
+        p(ctx, head.x + head.w - 3, torsoTop, s.jewelry);
+        p(ctx, head.x + head.w - 2, torsoTop + 1, s.jewelry);
+        return;
+    }
+    const cx = head.x + Math.floor(head.w / 2);
+    hline(ctx, cx - 2, torsoTop, 4, s.jewelry);
+    r(ctx, cx - 1, torsoTop + 1, 2, 1, shade(s.jewelry, -0.2));
+}
+
+function drawFacialHair(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, side: boolean): void {
+    if (!s.facialHair || s.facialHair === "none") return;
+    const hair = shade(s.hair, -0.1);
+    const { eyeY, noseY, mouthY } = faceRows(head);
+    const bottom = head.y + head.h - 1;
+
+    if (side) {
+        const front = head.x + head.w - 1;
+        switch (s.facialHair) {
+            case "mustache":
+                hline(ctx, front - 2, noseY, 3, hair);
+                break;
+            case "beard":
+                r(ctx, head.x + 3, eyeY + 2, 2, bottom - eyeY - 1, hair);
+                hline(ctx, head.x + 3, bottom, head.w - 3, hair);
+                hline(ctx, head.x + 4, bottom + 1, head.w - 4, hair);
+                hline(ctx, front - 2, noseY, 3, hair);
+                break;
+            case "goatee":
+                r(ctx, front - 1, bottom - 1, 2, 3, hair);
+                break;
+            case "sideburns":
+                vline(ctx, head.x + 4, head.y + 2, eyeY - head.y + 2, hair);
+                break;
+            case "stubble": {
+                const stubble = shade(skinTones(s).skin, -0.15);
+                hline(ctx, head.x + 3, bottom, head.w - 4, stubble);
+                p(ctx, front, mouthY + 1, stubble);
+                break;
+            }
+        }
+        return;
+    }
+
+    const cx = head.x + Math.floor(head.w / 2);
+    switch (s.facialHair) {
+        case "mustache":
+            hline(ctx, cx - 2, noseY, 4, hair);
+            p(ctx, cx - 3, mouthY, hair);
+            p(ctx, cx + 2, mouthY, hair);
+            break;
+        case "beard":
+            vline(ctx, head.x, eyeY + 1, bottom - eyeY, hair);
+            vline(ctx, head.x + head.w - 1, eyeY + 1, bottom - eyeY, hair);
+            hline(ctx, head.x + 1, bottom, head.w - 2, hair);
+            hline(ctx, head.x + 2, bottom + 1, head.w - 4, hair);
+            hline(ctx, cx - 2, noseY, 4, hair);
+            break;
+        case "goatee":
+            r(ctx, cx - 1, bottom, 2, 2, hair);
+            hline(ctx, cx - 2, noseY, 4, hair);
+            break;
+        case "sideburns":
+            vline(ctx, head.x, head.y + 2, eyeY - head.y + 2, hair);
+            vline(ctx, head.x + head.w - 1, head.y + 2, eyeY - head.y + 2, hair);
+            break;
+        case "stubble": {
+            const stubble = shade(skinTones(s).skin, -0.15);
+            hline(ctx, head.x + 2, bottom, head.w - 4, stubble);
+            p(ctx, head.x + 1, mouthY, stubble);
+            p(ctx, head.x + head.w - 2, mouthY, stubble);
+            break;
+        }
+    }
+}
+
+function drawAgeFeatures(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, side: boolean): void {
+    const tones = skinTones(s);
+    const line = shade(tones.skin, -0.3);
+    const { eyeY, noseY } = faceRows(head);
+    const scar = shade(P.red, 0.25);
+
+    if (side) {
+        const ex = head.x + head.w - 3;
+        if (s.wrinkles) {
+            p(ctx, ex - 1, eyeY + 1, line);
+            p(ctx, ex, noseY, line);
+        }
+        if (s.freckles) {
+            p(ctx, ex, eyeY + 2, line);
+            p(ctx, ex - 1, eyeY + 2, line);
+        }
+        if (s.scars) {
+            p(ctx, ex - 1, eyeY + 1, scar);
+            p(ctx, ex - 2, eyeY + 2, scar);
+        }
+        return;
+    }
+
+    const eyes = frontEyes(head);
+    const cx = head.x + Math.floor(head.w / 2);
+    if (s.wrinkles) {
+        // Crow's feet + smile lines
+        p(ctx, eyes.l - 1, eyeY + 1, line);
+        p(ctx, eyes.r + 2, eyeY + 1, line);
+        p(ctx, cx - 2, noseY, line);
+        p(ctx, cx + 1, noseY, line);
+    }
+    if (s.freckles) {
+        p(ctx, eyes.l, eyeY + 2, line);
+        p(ctx, eyes.l + 1, eyeY + 1, line);
+        p(ctx, eyes.r + 1, eyeY + 2, line);
+        p(ctx, eyes.r, eyeY + 1, line);
+    }
+    if (s.scars) {
+        p(ctx, eyes.l + 1, eyeY + 1, scar);
+        p(ctx, eyes.l, eyeY + 2, scar);
+    }
+}
+
+// ============================================================================
+// Hair & hats
+// ============================================================================
+
+function hairSheen(ctx: CanvasRenderingContext2D, hair: string, head: HeadBox): void {
+    hline(ctx, head.x, head.y - 1, 2, shade(hair, 0.2));
+}
+
+function drawHairFront(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox): void {
+    const hair = s.hair;
+    const dark = shade(hair, -0.25);
+    const { x, y, w } = head;
+    const cx = x + Math.floor(w / 2);
+    const style = hairStyleOf(s);
+    if (style === "bald") return;
+
+    switch (style) {
+        case "short":
+            rr(ctx, x - 1, y - 2, w + 2, 4, 2, hair);
+            r(ctx, x - 1, y + 2, 1, 2, hair);
+            r(ctx, x + w, y + 2, 1, 2, dark);
+            break;
+        case "long":
+            rr(ctx, x - 2, y - 3, w + 4, 5, 2, hair);
+            r(ctx, x - 2, y + 1, 2, 9, hair);
+            r(ctx, x + w, y + 1, 2, 9, dark);
+            break;
+        case "updo":
+        case "bun":
+            discCrisp(ctx, cx, y - 3, 2, dark);
+            rr(ctx, x - 1, y - 2, w + 2, 4, 2, hair);
+            vline(ctx, x - 1, y + 1, 4, hair);
+            vline(ctx, x + w, y + 1, 4, dark);
+            break;
+        case "braid":
+            rr(ctx, x - 1, y - 2, w + 2, 4, 2, hair);
+            vline(ctx, x - 1, y + 1, 3, hair);
+            for (let i = 0; i < 9; i++) {
+                hline(ctx, x + w - (i % 2), y + 1 + i, 2, i % 2 ? hair : dark);
+            }
+            break;
+        case "curly":
+            rr(ctx, x - 2, y - 3, w + 4, 5, 3, hair);
+            r(ctx, x - 2, y + 1, 2, 3, hair);
+            r(ctx, x + w, y + 1, 2, 3, dark);
+            p(ctx, x + 1, y - 2, dark);
+            p(ctx, x + 4, y - 1, dark);
+            p(ctx, x + w - 1, y - 2, dark);
+            break;
+        case "wavy":
+            rr(ctx, x - 1, y - 3, w + 2, 5, 2, hair);
+            for (let i = 0; i < 6; i++) {
+                const wave = i % 3 === 1 ? -1 : 0;
+                hline(ctx, x - 1 + wave, y + 1 + i, 2, hair);
+                hline(ctx, x + w - 1 - wave, y + 1 + i, 2, dark);
+            }
+            break;
+        default:
+            // medium
+            rr(ctx, x - 1, y - 2, w + 2, 4, 2, hair);
+            r(ctx, x - 1, y + 1, 2, 5, hair);
+            r(ctx, x + w - 1, y + 1, 2, 5, dark);
+    }
+
+    const part = s.hairPart ?? "none";
+    if (part !== "none") {
+        const px = part === "left" ? x + 2 : part === "right" ? x + w - 3 : cx;
+        vline(ctx, px, y - 2, 2, dark);
+    }
+    hairSheen(ctx, hair, head);
+}
+
+function drawHairBack(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox): void {
+    const hair = s.hair;
+    const dark = shade(hair, -0.25);
+    const { x, y, w, h } = head;
+    const cx = x + Math.floor(w / 2);
+
+    switch (hairStyleOf(s)) {
+        case "bald":
+            return;
+        case "short":
+            rr(ctx, x - 1, y - 2, w + 2, h - 1, 2, hair);
+            break;
+        case "long":
+            rr(ctx, x - 2, y - 3, w + 4, h + 9, 2, hair);
+            vline(ctx, x + w + 1, y, h + 5, dark);
+            break;
+        case "updo":
+        case "bun":
+            rr(ctx, x - 1, y - 2, w + 2, h - 1, 2, hair);
+            discCrisp(ctx, cx, y + 1, 2, dark);
+            p(ctx, cx - 1, y, hair);
+            break;
+        case "braid":
+            rr(ctx, x - 1, y - 2, w + 2, h, 2, hair);
+            for (let i = 0; i < 9; i++) {
+                hline(ctx, cx - 1, y + h - 2 + i, 2, i % 2 ? hair : dark);
+            }
+            break;
+        case "curly":
+            rr(ctx, x - 2, y - 3, w + 4, h + 1, 3, hair);
+            p(ctx, x + 1, y, dark);
+            p(ctx, x + w - 2, y + 2, dark);
+            break;
+        default:
+            // medium / wavy
+            rr(ctx, x - 1, y - 2, w + 2, h, 2, hair);
+    }
+    vline(ctx, x + w, y, h - 3, dark);
+    hairSheen(ctx, hair, head);
+}
+
+/** Side view (facing right): hair masses toward the back of the head (head.x). */
+function drawHairSide(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox): void {
+    const hair = s.hair;
+    const dark = shade(hair, -0.25);
+    const { x, y, w } = head;
+    const style = hairStyleOf(s);
+    if (style === "bald") return;
+
+    switch (style) {
+        case "long":
+            rr(ctx, x - 2, y - 3, w + 1, 5, 2, hair);
+            r(ctx, x - 2, y + 1, 4, 10, hair);
+            vline(ctx, x - 2, y + 3, 8, dark);
+            break;
+        case "curly":
+            rr(ctx, x - 2, y - 3, w + 1, 5, 3, hair);
+            r(ctx, x - 2, y + 1, 4, 4, hair);
+            p(ctx, x, y - 1, dark);
+            p(ctx, x - 1, y + 3, dark);
+            break;
+        case "wavy":
+            rr(ctx, x - 1, y - 3, w, 5, 2, hair);
+            r(ctx, x - 1, y + 1, 4, 6, hair);
+            vline(ctx, x - 1, y + 2, 4, dark);
+            break;
+        default:
+            rr(ctx, x - 1, y - 2, w, 4, 2, hair);
+            if (style === "short") {
+                r(ctx, x, y + 1, 3, 3, hair);
+            } else {
+                // medium, updo, bun, braid — back of the head down to the nape
+                r(ctx, x - 1, y + 1, 4, style === "medium" ? 5 : 3, hair);
+            }
+            if (style === "updo" || style === "bun") {
+                discCrisp(ctx, x, y - 1, 2, dark);
+            }
+            if (style === "braid") {
+                for (let i = 0; i < 7; i++) {
+                    hline(ctx, x - 1, y + 4 + i, 2, i % 2 ? hair : dark);
+                }
+            }
+    }
+    hairSheen(ctx, hair, { ...head, x: x + 1 });
+}
+
+function drawHatFrontBack(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, small: boolean): void {
+    if (!s.hat) return;
+    const { x, y, w } = head;
+    const under = shade(s.hat, -0.3);
+    if (small) {
+        rr(ctx, x - 1, y - 3, w + 2, 3, 1, s.hat);
+        hline(ctx, x - 2, y - 1, w + 4, under);
+        if (s.hatBand) hline(ctx, x - 1, y - 2, w + 2, s.hatBand);
+        hline(ctx, x, y - 3, 3, shade(s.hat, 0.2));
+        return;
+    }
+    rr(ctx, x - 2, y - 3, w + 4, 4, 1, s.hat);
+    r(ctx, x - 4, y, w + 8, 1, s.hat);
+    hline(ctx, x - 4, y + 1, w + 8, under);
+    if (s.hatBand) hline(ctx, x - 2, y - 1, w + 4, s.hatBand);
+    hline(ctx, x - 1, y - 3, 3, shade(s.hat, 0.2));
+}
+
+function drawHatSide(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: HeadBox, small: boolean): void {
+    if (!s.hat) return;
+    const { x, y, w } = head;
+    const under = shade(s.hat, -0.3);
+    if (small) {
+        rr(ctx, x, y - 3, w, 3, 1, s.hat);
+        hline(ctx, x - 1, y - 1, w + 2, under);
+        if (s.hatBand) hline(ctx, x, y - 2, w, s.hatBand);
+        return;
+    }
+    rr(ctx, x, y - 3, w, 4, 1, s.hat);
+    hline(ctx, x - 2, y, w + 5, s.hat);
+    hline(ctx, x - 2, y + 1, w + 5, under);
+    if (s.hatBand) hline(ctx, x, y - 1, w, s.hatBand);
+    hline(ctx, x + 1, y - 3, 3, shade(s.hat, 0.2));
+}
+
+/** Head, hair, face and accessories in the right order for one facing. */
+function drawFullHead(
+    ctx: CanvasRenderingContext2D,
+    s: HumanoidStyle,
+    head: HeadBox,
+    torsoTop: number,
+    facing: CharacterFacing
+): void {
+    const small = !!s.dress;
+    if (facing === "up") {
+        drawHeadBack(ctx, s, head, torsoTop);
+        drawHairBack(ctx, s, head);
+        drawHatFrontBack(ctx, s, head, small);
+        return;
+    }
+    const side = facing === "right";
+    if (side) {
+        drawHeadSide(ctx, s, head, torsoTop);
+        drawHairSide(ctx, s, head);
+        drawFaceSide(ctx, s, head);
+    } else {
+        drawHeadFront(ctx, s, head, torsoTop);
+        drawHairFront(ctx, s, head);
+        drawFaceFront(ctx, s, head);
+    }
+    drawAgeFeatures(ctx, s, head, side);
+    drawFacialHair(ctx, s, head, side);
+    drawGlasses(ctx, s, head, side);
+    drawEarrings(ctx, s, head, side);
+    if (side) drawHatSide(ctx, s, head, small);
+    else drawHatFrontBack(ctx, s, head, small);
+}
+
+// ============================================================================
+// Body
+// ============================================================================
+
+const GROUND_SHADOW = "rgba(0,0,0,0.28)";
+
+function drawGroundShadow(ctx: CanvasRenderingContext2D, y: number, halfW: number): void {
+    hline(ctx, 16 - halfW, y, halfW * 2, GROUND_SHADOW);
+    hline(ctx, 16 - halfW + 2, y + 1, halfW * 2 - 4, GROUND_SHADOW);
+}
+
+/** Front/back arms hanging from the shoulders; inner edge darkened to separate from torso. */
+function drawFrontArms(
+    ctx: CanvasRenderingContext2D,
+    leftX: number,
+    rightX: number,
+    top: number,
+    sleeveLen: number,
+    swingL: number,
+    swingR: number,
+    sleeve: string,
+    tones: SkinTones
+): void {
+    const lit = shade(sleeve, 0.15);
+    const dark = shade(sleeve, -0.3);
+    const arms: [number, number, boolean][] = [
+        [leftX, swingL, true],
+        [rightX, swingR, false]
+    ];
+    for (const [x, swing, isLeft] of arms) {
+        const len = sleeveLen + swing;
+        r(ctx, x, top, 4, len, sleeve);
+        // Sloped shoulder
+        ctx.clearRect(isLeft ? x : x + 3, top, 1, 1);
+        vline(ctx, isLeft ? x : x + 3, top + 1, len - 1, isLeft ? lit : dark);
+        vline(ctx, isLeft ? x + 3 : x, top + 1, len - 1, dark);
+        // Hand
+        const hx = isLeft ? x : x + 1;
+        r(ctx, hx, top + len, 3, 3, tones.skin);
+        p(ctx, hx + 2, top + len + 2, tones.shadow);
+        hline(ctx, hx, top + len, 3, tones.shadow);
+    }
+}
+
+function drawFrontLegs(
+    ctx: CanvasRenderingContext2D,
+    pants: string,
+    shoe: string,
+    hipY: number,
+    leftFootDy: number,
+    rightFootDy: number
+): void {
+    const seam = shade(pants, -0.3);
+    const shoeHi = shade(shoe, 0.3);
+    const legs: [number, number, boolean][] = [
+        [11, leftFootDy, true],
+        [17, rightFootDy, false]
+    ];
+    for (const [x, dy, isLeft] of legs) {
+        const footTop = GROUND_Y + dy;
+        r(ctx, x, hipY, 4, footTop - hipY, pants);
+        vline(ctx, isLeft ? x + 3 : x, hipY, footTop - hipY, seam);
+        r(ctx, x, footTop, 4, 2, shoe);
+        hline(ctx, x + 1, footTop, 2, shoeHi);
+    }
+}
+
+function drawCoatFront(ctx: CanvasRenderingContext2D, s: HumanoidStyle, top: number, back: boolean): void {
+    const dark = shade(s.coat, -0.3);
+    r(ctx, 10, top, 12, 14, s.coat);
+    hline(ctx, 11, top, 10, s.coatLight);
+    r(ctx, 11, top + 1, 3, 11, s.coatLight);
+    vline(ctx, 20, top + 1, 13, dark);
+    hline(ctx, 10, top + 13, 12, dark);
+    vline(ctx, 10, top, 14, P.outline);
+    vline(ctx, 21, top, 14, P.outline);
+
+    if (back) {
+        // Centre seam + vent
+        vline(ctx, 16, top + 2, 12, dark);
+        return;
+    }
+
+    // V-neck: shirt (or accent vest) between the lapels
+    const vColor = s.shirt ?? s.accent;
+    if (vColor) {
+        t(ctx, 13, top, 19, top, 16, top + 5, vColor);
+    }
+    // Lapel edges
+    p(ctx, 14, top + 2, dark);
+    p(ctx, 15, top + 3, dark);
+    p(ctx, 17, top + 3, dark);
+    p(ctx, 18, top + 2, dark);
+    // Buttons
+    const button = s.accent ? shade(s.accent, s.shirt ? 0 : -0.25) : dark;
+    for (const by of [6, 9, 12]) p(ctx, 16, top + by, button);
+}
+
+function drawHumanoidFront(
+    ctx: CanvasRenderingContext2D,
+    s: HumanoidStyle,
+    pose: CharacterPose
+): void {
+    const o = poseOffsets(pose);
+    const top = 10 + o.bodyBob;
+    const tones = skinTones(s);
+    const head = makeHead(s, 2 + o.bodyBob);
+
+    drawGroundShadow(ctx, GROUND_Y + 2, 7);
+    drawFrontLegs(ctx, s.pants ?? P.shadow, s.shoes ?? P.shoeBrown, top + 14, o.leftFootDy, o.rightFootDy);
+    drawCoatFront(ctx, s, top, false);
+    drawFrontArms(ctx, 6, 22, top + 1, 9, o.leftArmSwing, o.rightArmSwing, s.coat, tones);
+    drawFullHead(ctx, s, head, top, "down");
+    drawNecklace(ctx, s, head, top, false);
+}
+
+function drawHumanoidBack(
+    ctx: CanvasRenderingContext2D,
+    s: HumanoidStyle,
+    pose: CharacterPose
+): void {
+    const o = poseOffsets(pose);
+    const top = 10 + o.bodyBob;
+    const tones = skinTones(s);
+    const head = makeHead(s, 2 + o.bodyBob);
+
+    drawGroundShadow(ctx, GROUND_Y + 2, 7);
+    // Seen from behind, the character's left leg is on screen-right
+    drawFrontLegs(ctx, s.pants ?? P.shadow, s.shoes ?? P.shoeBrown, top + 14, o.rightFootDy, o.leftFootDy);
+    drawCoatFront(ctx, s, top, true);
+    drawFrontArms(ctx, 6, 22, top + 1, 9, o.rightArmSwing, o.leftArmSwing, s.coat, tones);
+    drawFullHead(ctx, s, head, top, "up");
+}
+
+/** Side-view stride: foot x per leg (hip at x=16 near / 15 far) and lift in px. */
+function sideWalk(pose: CharacterPose): {
     bodyBob: number;
-    leftArmY: number;
-    rightArmY: number;
-    skirtSway: number;
-    hemSpread: number;
-    headBob: number;
+    nearFootX: number;
+    farFootX: number;
+    nearLift: number;
+    farLift: number;
+    armSwing: number;
 } {
     switch (pose) {
         case "walk_a":
-            return { bodyBob: 1, leftArmY: 13, rightArmY: 11, skirtSway: -1, hemSpread: 1, headBob: 1 };
+            return { bodyBob: 1, nearFootX: 19, farFootX: 12, nearLift: 0, farLift: 0, armSwing: -2 };
         case "walk_b":
-            return { bodyBob: 0, leftArmY: 12, rightArmY: 12, skirtSway: 0, hemSpread: 0, headBob: 0 };
+            return { bodyBob: 0, nearFootX: 16, farFootX: 14, nearLift: 0, farLift: 2, armSwing: 0 };
         case "walk_c":
-            return { bodyBob: 1, leftArmY: 11, rightArmY: 13, skirtSway: 1, hemSpread: 1, headBob: -1 };
+            return { bodyBob: 1, nearFootX: 13, farFootX: 18, nearLift: 0, farLift: 0, armSwing: 2 };
         case "walk_d":
-            return { bodyBob: 0, leftArmY: 12, rightArmY: 12, skirtSway: 0, hemSpread: 0, headBob: 0 };
+            return { bodyBob: 0, nearFootX: 17, farFootX: 15, nearLift: 2, farLift: 0, armSwing: 0 };
         default:
-            return { bodyBob: 0, leftArmY: 12, rightArmY: 12, skirtSway: 0, hemSpread: 0, headBob: 0 };
+            return { bodyBob: 0, nearFootX: 16, farFootX: 15, nearLift: 0, farLift: 0, armSwing: 0 };
     }
 }
 
-function drawVictorianHairFront(
+/** A 3px-wide limb interpolated from (topX, topY) to (bottomX, topY + len - 1). */
+function slantedLimb(
+    ctx: CanvasRenderingContext2D,
+    topX: number,
+    topY: number,
+    bottomX: number,
+    len: number,
+    color: string,
+    edge?: string
+): void {
+    for (let i = 0; i < len; i++) {
+        const tt = len <= 1 ? 1 : i / (len - 1);
+        const x = Math.round(topX + (bottomX - topX) * tt);
+        hline(ctx, x, topY + i, 3, color);
+        if (edge) p(ctx, x, topY + i, edge);
+    }
+}
+
+function drawSideLeg(
+    ctx: CanvasRenderingContext2D,
+    hipX: number,
+    hipY: number,
+    footX: number,
+    lift: number,
+    groundY: number,
+    pants: string,
+    shoe: string
+): void {
+    const footTop = groundY - lift;
+    slantedLimb(ctx, hipX, hipY, footX, footTop - hipY, pants, shade(pants, -0.25));
+    // Toe points forward (right)
+    r(ctx, footX, footTop, 4, 2, shoe);
+    hline(ctx, footX + 1, footTop, 2, shade(shoe, 0.3));
+}
+
+function drawSideArm(
+    ctx: CanvasRenderingContext2D,
+    shoulderX: number,
+    top: number,
+    sleeveLen: number,
+    swing: number,
+    sleeve: string,
+    tones: SkinTones
+): void {
+    const handX = shoulderX + swing;
+    slantedLimb(ctx, shoulderX, top, handX, sleeveLen, shade(sleeve, 0.08), shade(sleeve, -0.35));
+    r(ctx, handX, top + sleeveLen, 3, 3, tones.skin);
+    hline(ctx, handX, top + sleeveLen, 3, tones.shadow);
+    p(ctx, handX, top + sleeveLen + 2, tones.shadow);
+}
+
+function drawHumanoidSide(
     ctx: CanvasRenderingContext2D,
     s: HumanoidStyle,
-    by: number
+    pose: CharacterPose
 ): void {
-    if (s.hairUp) {
-        // Updo style - rounded hair mass with bun
-        rr(ctx, 11, 0 + by, 10, 5, 3, s.hair);
-        // Bun at back
-        c(ctx, 15, 1 + by, 4, s.hair);
-        // Strands framing face
-        rr(ctx, 10, 4 + by, 2, 5, 1, s.hair);
-        rr(ctx, 18, 4 + by, 2, 5, 1, s.hair);
-    } else {
-        // Flowing hair with rounded top
-        rr(ctx, 11, 2 + by, 10, 4, 3, s.hair);
-        // Side hair strands
-        rr(ctx, 10, 5 + by, 2, 7, 1, s.hair);
-        rr(ctx, 18, 5 + by, 2, 7, 1, s.hair);
-        // Hair ends at shoulders
-        hline(ctx, 11, 9 + by, 2, s.hair);
-        hline(ctx, 17, 9 + by, 2, s.hair);
+    const w = sideWalk(pose);
+    const top = 10 + w.bodyBob;
+    const tones = skinTones(s);
+    const head = makeHead(s, 2 + w.bodyBob);
+    const pants = s.pants ?? P.pantsSide;
+    const shoe = s.shoes ?? P.shoeBrown;
+    const dark = shade(s.coat, -0.3);
+
+    drawGroundShadow(ctx, GROUND_Y + 2, 6);
+    drawSideLeg(ctx, 15, top + 14, w.farFootX, w.farLift, GROUND_Y, s.pants ? shade(pants, -0.25) : P.pantsSideFar, shade(shoe, -0.3));
+
+    // Torso in profile: lit back, shadowed chest
+    r(ctx, 13, top, 8, 14, s.coat);
+    r(ctx, 14, top + 1, 2, 11, s.coatLight);
+    vline(ctx, 20, top + 1, 13, dark);
+    hline(ctx, 13, top + 13, 8, dark);
+    vline(ctx, 13, top, 14, P.outline);
+    vline(ctx, 21, top + 1, 12, P.outline);
+    if (s.shirt ?? s.accent) hline(ctx, 18, top, 3, (s.shirt ?? s.accent)!);
+    if (s.accent) {
+        p(ctx, 19, top + 6, s.accent);
+        p(ctx, 19, top + 9, s.accent);
+    }
+
+    drawSideLeg(ctx, 16, top + 14, w.nearFootX, w.nearLift, GROUND_Y, pants, shoe);
+    drawFullHead(ctx, s, head, top, "right");
+    drawNecklace(ctx, s, head, top, true);
+    drawSideArm(ctx, 16, top + 1, 9, w.armSwing, s.coat, tones);
+}
+
+// ============================================================================
+// Dresses
+// ============================================================================
+
+function dressPoseOffsets(pose: CharacterPose): {
+    bodyBob: number;
+    leftArmSwing: number;
+    rightArmSwing: number;
+    skirtSway: number;
+    hemSpread: number;
+} {
+    switch (pose) {
+        case "walk_a":
+            return { bodyBob: 1, leftArmSwing: 1, rightArmSwing: -1, skirtSway: -1, hemSpread: 1 };
+        case "walk_c":
+            return { bodyBob: 1, leftArmSwing: -1, rightArmSwing: 1, skirtSway: 1, hemSpread: 1 };
+        default:
+            return { bodyBob: 0, leftArmSwing: 0, rightArmSwing: 0, skirtSway: 0, hemSpread: 0 };
     }
 }
 
-function drawVictorianHairBack(ctx: CanvasRenderingContext2D, s: HumanoidStyle, by: number): void {
-    r(ctx, 11, 0 + by, 10, 5, s.hair);
-    r(ctx, 12, 4 + by, 8, 4, s.hair);
-    if (s.hairUp) {
-        r(ctx, 13, 0 + by, 6, 3, s.hair);
-    }
-}
+const DRESS_HEM_Y = 35;
 
-/**
- * Draw enhanced hair styles for front view
- */
-function drawEnhancedHairFront(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    headX: number,
-    headY: number,
-    body: BodyProportions,
-    by: number
-): void {
-    const hair = s.hair;
-    const hairStyle = s.hairStyle ?? (s.hairUp ? 'updo' : 'medium');
-    const hairPart = s.hairPart ?? 'center';
-    const hairHeight = body.hairHeight;
-    
-    const hairY = headY - hairHeight;
-    const headCenterX = headX + Math.floor(body.headWidth / 2);
-    
-    switch (hairStyle) {
-        case 'bald':
-            // No hair
-            break;
-            
-        case 'short':
-            // Short hair - close to head
-            rr(ctx, headX, headY - 2, body.headWidth, 3, Math.min(2, Math.floor(body.headWidth / 2)), hair);
-            break;
-            
-        case 'medium':
-            // Medium length hair
-            rr(ctx, headX - 1, headY - 3, body.headWidth + 2, 4, Math.min(3, Math.floor((body.headWidth + 2) / 2)), hair);
-            // Side parts
-            if (hairPart === 'center') {
-                rr(ctx, headX - 1, headY - 2, 2, 6, 1, hair);
-                rr(ctx, headX + body.headWidth + 1, headY - 2, 2, 6, 1, hair);
-            } else if (hairPart === 'left') {
-                rr(ctx, headX - 1, headY - 2, 3, 6, 1, hair);
-                rr(ctx, headX + body.headWidth, headY - 2, 2, 6, 1, hair);
-            } else if (hairPart === 'right') {
-                rr(ctx, headX - 1, headY - 2, 2, 6, 1, hair);
-                rr(ctx, headX + body.headWidth + 1, headY - 2, 3, 6, 1, hair);
-            }
-            break;
-            
-        case 'long':
-            // Long flowing hair
-            rr(ctx, headX - 2, headY - 4, body.headWidth + 4, 5, Math.min(4, Math.floor((body.headWidth + 4) / 2)), hair);
-            // Side strands
-            rr(ctx, headX - 2, headY - 3, 2, 8, 1, hair);
-            rr(ctx, headX + body.headWidth + 2, headY - 3, 2, 8, 1, hair);
-            // Hair ends
-            hline(ctx, headX - 1, headY + 3, 2, hair);
-            hline(ctx, headX + body.headWidth + 1, headY + 3, 2, hair);
-            break;
-            
-        case 'updo':
-        case 'bun':
-            // Updo/bun style
-            rr(ctx, headX + 1, headY - 3, body.headWidth - 2, 4, Math.min(3, Math.floor((body.headWidth - 2) / 2)), hair);
-            // Bun at back
-            c(ctx, headCenterX, headY - 4, 3, hair);
-            // Strands framing face
-            rr(ctx, headX, headY - 1, 2, 5, 1, hair);
-            rr(ctx, headX + body.headWidth - 2, headY - 1, 2, 5, 1, hair);
-            break;
-            
-        case 'braid':
-            // Braid style - hair braided to one side
-            rr(ctx, headX - 1, headY - 3, body.headWidth + 2, 4, Math.min(3, Math.floor((body.headWidth + 2) / 2)), hair);
-            // Braid on right side
-            rr(ctx, headX + body.headWidth, headY, 3, 8, 1, hair);
-            hline(ctx, headX + body.headWidth + 1, headY + 2, 2, hair);
-            hline(ctx, headX + body.headWidth + 2, headY + 3, 1, hair);
-            break;
-            
-        case 'curly':
-            // Curly hair - voluminous
-            rr(ctx, headX - 2, headY - 5, body.headWidth + 4, 6, Math.min(4, Math.floor((body.headWidth + 4) / 2)), hair);
-            // Curly strands
-            c(ctx, headX - 1, headY - 3, 2, hair);
-            c(ctx, headX + body.headWidth + 1, headY - 3, 2, hair);
-            c(ctx, headX + 2, headY - 5, 2, hair);
-            break;
-            
-        case 'wavy':
-            // Wavy hair
-            rr(ctx, headX - 1, headY - 4, body.headWidth + 2, 5, Math.min(3, Math.floor((body.headWidth + 2) / 2)), hair);
-            // Wavy pattern
-            hline(ctx, headX, headY - 2, 3, hair);
-            hline(ctx, headX + body.headWidth - 2, headY - 2, 3, hair);
-            hline(ctx, headX + 1, headY + 1, 2, hair);
-            hline(ctx, headX + body.headWidth - 3, headY + 1, 2, hair);
-            break;
-    }
-}
-
-/**
- * Draw enhanced hair styles for side view
- */
-function drawEnhancedHairSide(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    headX: number,
-    headY: number,
-    body: BodyProportions,
-    by: number
-): void {
-    const hair = s.hair;
-    const hairStyle = s.hairStyle ?? (s.hairUp ? 'updo' : 'medium');
-    const headCenterX = headX + Math.floor(body.headWidth / 2);
-    
-    switch (hairStyle) {
-        case 'bald':
-            // No hair
-            break;
-            
-        case 'short':
-            // Short hair - close to head
-            rr(ctx, headX + 2, headY - 1, body.headWidth - 2, 2, 1, hair);
-            break;
-            
-        case 'medium':
-            // Medium length hair from side
-            rr(ctx, headX + 2, headY - 2, body.headWidth, 3, 1, hair);
-            rr(ctx, headX + 4, headY, 4, 4, 1, hair);
-            break;
-            
-        case 'long':
-            // Long flowing hair from side
-            rr(ctx, headX + 2, headY - 3, body.headWidth + 2, 4, 2, hair);
-            rr(ctx, headX + 5, headY + 1, 4, 7, 1, hair);
-            // Hair ends
-            hline(ctx, headX + 6, headY + 8, 3, hair);
-            break;
-            
-        case 'updo':
-        case 'bun':
-            // Updo/bun from side
-            rr(ctx, headX + 2, headY - 3, body.headWidth, 3, 2, hair);
-            rr(ctx, headX + 3, headY - 1, body.headWidth - 1, 4, 2, hair);
-            // Bun
-            c(ctx, headX + 5, headY - 4, 2, hair);
-            break;
-            
-        case 'braid':
-            // Braid from side
-            rr(ctx, headX + 2, headY - 2, body.headWidth + 1, 3, 1, hair);
-            // Braid
-            rr(ctx, headX + 6, headY, 3, 8, 1, hair);
-            hline(ctx, headX + 7, headY + 2, 2, hair);
-            break;
-            
-        case 'curly':
-            // Curly hair from side - voluminous
-            rr(ctx, headX + 1, headY - 4, body.headWidth + 3, 5, 2, hair);
-            rr(ctx, headX + 4, headY, 5, 5, 1, hair);
-            // Curls
-            c(ctx, headX + 3, headY - 2, 2, hair);
-            c(ctx, headX + 6, headY + 2, 2, hair);
-            break;
-            
-        case 'wavy':
-            // Wavy hair from side
-            rr(ctx, headX + 2, headY - 3, body.headWidth + 2, 4, 2, hair);
-            rr(ctx, headX + 5, headY, 4, 6, 1, hair);
-            // Wavy pattern
-            hline(ctx, headX + 4, headY - 1, 3, hair);
-            hline(ctx, headX + 5, headY + 3, 2, hair);
-            break;
-    }
-}
-
-function drawVictorianHairSide(ctx: CanvasRenderingContext2D, s: HumanoidStyle, by: number): void {
-    if (s.hairUp) {
-        // Updo from side
-        rr(ctx, 17, 0 + by, 5, 3, 2, s.hair);
-        rr(ctx, 16, 2 + by, 6, 4, 2, s.hair);
-        // Bun
-        c(ctx, 19, 1 + by, 3, s.hair);
-    } else {
-        // Flowing hair from side
-        rr(ctx, 16, 2 + by, 6, 3, 2, s.hair);
-        rr(ctx, 19, 4 + by, 4, 7, 1, s.hair);
-        // Hair ends
-        hline(ctx, 20, 10 + by, 3, s.hair);
-    }
-}
-
+/** Bell skirt with vertical folds; waist stays put, sway grows toward the hem. */
 function drawSkirtFront(
     ctx: CanvasRenderingContext2D,
     d: DressStyle,
     topY: number,
-    bottomY: number,
     sway: number,
     hemSpread: number
 ): void {
+    const bottomY = DRESS_HEM_Y;
     for (let y = topY; y <= bottomY; y++) {
-        const t = (y - topY) / Math.max(1, bottomY - topY);
-        const halfW = 5 + Math.floor(t * (6 + hemSpread));
-        const cx = 16 + sway;
-        const rowColor = y % 2 === 0 ? d.skirt : d.skirtLight;
-        r(ctx, cx - halfW, y, halfW * 2, 1, rowColor);
+        const tt = (y - topY) / Math.max(1, bottomY - topY);
+        const halfW = 5 + Math.floor(tt * (6 + hemSpread));
+        const left = 16 + Math.round(sway * tt) - halfW;
+        const width = halfW * 2;
+        r(ctx, left, y, width, 1, d.skirt);
+        r(ctx, left + 1, y, Math.max(1, Math.floor(width * 0.22)), 1, d.skirtLight);
+        const shadowW = Math.max(1, Math.floor(width * 0.18));
+        r(ctx, left + width - shadowW, y, shadowW, 1, d.skirtShadow);
+        if (tt > 0.25) {
+            p(ctx, left + Math.round(width * 0.42), y, d.skirtShadow);
+            p(ctx, left + Math.round(width * 0.66), y, d.skirtShadow);
+        }
     }
-    // Shadow with rounded edges
-    rr(ctx, 13 + sway, topY + 3, 3, bottomY - topY - 5, 1, d.skirtShadow);
-    rr(ctx, 16 + sway, topY + 5, 2, bottomY - topY - 7, 1, d.skirtShadow);
-    if (d.trim) {
-        const hemL = 8 + sway - hemSpread;
-        const hemR = 24 + sway + hemSpread;
-        hline(ctx, hemL, bottomY, hemR - hemL, d.trim);
+    const hemL = 16 + sway - 11 - hemSpread;
+    if (d.trim) hline(ctx, hemL, bottomY, 22 + hemSpread * 2, d.trim);
+}
+
+function drawDressFeet(ctx: CanvasRenderingContext2D, s: HumanoidStyle, sway: number, pose: CharacterPose): void {
+    const shoe = s.shoes ?? P.shoeBrown;
+    const hi = shade(shoe, 0.3);
+    // Only the stepping foot peeks out past the hem while walking
+    const showLeft = pose !== "walk_c";
+    const showRight = pose !== "walk_a";
+    if (showLeft) {
+        r(ctx, 12 + sway, DRESS_HEM_Y + 1, 3, 2, shoe);
+        p(ctx, 13 + sway, DRESS_HEM_Y + 1, hi);
     }
+    if (showRight) {
+        r(ctx, 17 + sway, DRESS_HEM_Y + 1, 3, 2, shoe);
+        p(ctx, 18 + sway, DRESS_HEM_Y + 1, hi);
+    }
+}
+
+function drawBodiceFront(ctx: CanvasRenderingContext2D, s: HumanoidStyle, top: number, back: boolean): void {
+    const d = s.dress!;
+    r(ctx, 11, top, 10, 8, d.bodice);
+    r(ctx, 12, top + 1, 2, 6, d.bodiceLight);
+    vline(ctx, 19, top + 1, 7, shade(d.bodice, -0.3));
+    if (d.collar) hline(ctx, 13, top, 6, d.collar);
+    if (d.trim) hline(ctx, 12, top + 7, 8, d.trim);
+    if (back) {
+        // Lacing / buttons down the back
+        for (let i = 2; i < 7; i += 2) p(ctx, 16, top + i, shade(d.bodice, 0.25));
+        return;
+    }
+    if (s.accent) r(ctx, 15, top + 2, 2, 2, s.accent);
+}
+
+function drawApronFront(ctx: CanvasRenderingContext2D, apron: string, top: number): void {
+    const fold = shade(apron, -0.15);
+    vline(ctx, 12, top, 3, apron);
+    vline(ctx, 19, top, 3, apron);
+    r(ctx, 13, top + 2, 6, 6, apron);
+    r(ctx, 12, top + 8, 8, 13, apron);
+    vline(ctx, 19, top + 8, 13, fold);
+    vline(ctx, 15, top + 10, 10, fold);
+    hline(ctx, 12, top + 7, 8, fold);
 }
 
 function drawDressFront(
@@ -1108,86 +1307,19 @@ function drawDressFront(
     pose: CharacterPose
 ): void {
     const d = s.dress!;
-    const skin = s.skin ?? P.skin;
-    const shoe = s.shoes ?? P.shoeBrown;
     const o = dressPoseOffsets(pose);
-    const by = o.bodyBob;
-    const headBob = o.headBob;
-    const sleeve = d.sleeve ?? d.bodice;
-    
-    // Get body proportions
-    const body = getBodyProportions(s.bodyType);
-    
-    // Calculate head position with body proportions
-    const headX = 16 - Math.floor(body.headWidth / 2);
-    const headY = 3 + body.headYOffset + by + headBob;
+    const top = 11 + o.bodyBob;
+    const tones = skinTones(s);
+    const head = makeHead(s, 3 + o.bodyBob);
 
-    // Head with rounded shape (with head bob for walk cycle)
-    rr(ctx, headX, headY, body.headWidth, body.headHeight, Math.min(4, body.headWidth), skin);
-    
-    // Hair - use new hair style if specified, otherwise fall back to Victorian
-    if (s.hairStyle || s.hairPart) {
-        drawEnhancedHairFront(ctx, s, headX, headY, body, by + headBob);
-    } else {
-        drawVictorianHairFront(ctx, s, by + headBob);
-    }
-    
-    // Draw facial features with expression support
-    drawExpression(ctx, s, headX + 2, headY + 2, by, headBob);
-    
-    // Nose (subtle)
-    p(ctx, 15, 8 + by + headBob, P.skinShadow);
-    
-    // Add form shadows for depth
-    addFormShadowsFront(ctx, skin, by);
-    
-    // Add highlights for depth
-    addHighlightsFront(ctx, skin, by);
-    
-    // Draw accessories
-    if (s.glasses) {
-        drawGlasses(ctx, s, headX + 3, headY - 1, by, headBob);
-    }
-    if (s.jewelry) {
-        drawJewelry(ctx, s, headX + 3, headY, by);
-    }
-    if (s.facialHair && s.facialHair !== 'none') {
-        drawFacialHair(ctx, s, headX + 2, headY + 2, by, headBob);
-    }
-    
-    // Draw age features
-    drawAgeFeatures(ctx, s, headX + 3, headY, by, headBob);
-
-    if (s.hat) {
-        r(ctx, 11, 0 + by, 10, 3, s.hat);
-        r(ctx, 10, 2 + by, 12, 1, s.hat);
-        if (s.hatBand) r(ctx, 11, 2 + by, 10, 1, s.hatBand);
-    }
-
-    if (d.collar) {
-        r(ctx, 12, 9 + by, 8, 2, d.collar);
-    }
-
-    r(ctx, 11, 10 + by, 10, 8, d.bodice);
-    r(ctx, 12, 11 + by, 8, 4, d.bodiceLight);
-    if (d.trim) r(ctx, 13, 17 + by, 6, 1, d.trim);
-    if (s.accent) r(ctx, 14, 13 + by, 4, 3, s.accent);
-
-    r(ctx, 7, o.leftArmY + by, 4, 11, sleeve);
-    r(ctx, 21, o.rightArmY + by, 4, 11, sleeve);
-    r(ctx, 7, 19 + by, 3, 3, skin);
-    r(ctx, 22, 19 + by, 3, 3, skin);
-
-    if (d.apron) {
-        r(ctx, 11, 10 + by, 1, 4, d.apron);
-        r(ctx, 20, 10 + by, 1, 4, d.apron);
-        r(ctx, 12, 12 + by, 8, 16, d.apron);
-        r(ctx, 13, 28 + by, 6, 1, d.apron);
-    }
-
-    drawSkirtFront(ctx, d, 18 + by, 35 + by, o.skirtSway, o.hemSpread);
-    drawFoot(ctx, 11 + o.skirtSway, 36 + by, 3, 2, shoe, P.shoeBrownHi);
-    drawFoot(ctx, 18 + o.skirtSway, 36 + by, 3, 2, shoe, P.shoeBrownHi);
+    drawGroundShadow(ctx, DRESS_HEM_Y + 2, 9);
+    drawDressFeet(ctx, s, o.skirtSway, pose);
+    drawSkirtFront(ctx, d, top + 8, o.skirtSway, o.hemSpread);
+    drawBodiceFront(ctx, s, top, false);
+    if (d.apron) drawApronFront(ctx, d.apron, top);
+    drawFrontArms(ctx, 7, 21, top + 1, 8, o.leftArmSwing, o.rightArmSwing, d.sleeve ?? d.bodice, tones);
+    drawFullHead(ctx, s, head, top, "down");
+    drawNecklace(ctx, s, head, top, false);
 }
 
 function drawDressBack(
@@ -1196,26 +1328,22 @@ function drawDressBack(
     pose: CharacterPose
 ): void {
     const d = s.dress!;
-    const shoe = s.shoes ?? P.shoeBrown;
     const o = dressPoseOffsets(pose);
-    const by = o.bodyBob;
-    const headBob = o.headBob;
-    const sleeve = d.sleeve ?? d.bodice;
+    const top = 11 + o.bodyBob;
+    const tones = skinTones(s);
+    const head = makeHead(s, 3 + o.bodyBob);
 
-    drawVictorianHairBack(ctx, s, by + headBob);
-
-    r(ctx, 11, 10 + by, 10, 8, d.bodice);
-    r(ctx, 12, 11 + by, 8, 5, d.bodiceLight);
-    if (d.trim) r(ctx, 13, 17 + by, 6, 1, d.trim);
-
-    r(ctx, 8, o.leftArmY + by, 3, 10, sleeve);
-    r(ctx, 21, o.rightArmY + by, 3, 10, sleeve);
-
-    r(ctx, 14, 16 + by, 4, 3, d.skirtShadow);
-
-    drawSkirtFront(ctx, d, 18 + by, 35 + by, o.skirtSway, o.hemSpread + 1);
-    drawFoot(ctx, 11 + o.skirtSway, 36 + by, 3, 2, shoe, P.shoeBrownHi);
-    drawFoot(ctx, 18 + o.skirtSway, 36 + by, 3, 2, shoe, P.shoeBrownHi);
+    drawGroundShadow(ctx, DRESS_HEM_Y + 2, 9);
+    drawDressFeet(ctx, s, o.skirtSway, pose);
+    drawSkirtFront(ctx, d, top + 8, o.skirtSway, o.hemSpread + 1);
+    drawBodiceFront(ctx, s, top, true);
+    if (d.apron) {
+        // Apron ties
+        hline(ctx, 13, top + 7, 6, d.apron);
+        r(ctx, 15, top + 8, 2, 3, d.apron);
+    }
+    drawFrontArms(ctx, 7, 21, top + 1, 8, o.rightArmSwing, o.leftArmSwing, d.sleeve ?? d.bodice, tones);
+    drawFullHead(ctx, s, head, top, "up");
 }
 
 function drawDressSide(
@@ -1224,359 +1352,49 @@ function drawDressSide(
     pose: CharacterPose
 ): void {
     const d = s.dress!;
-    const skin = s.skin ?? P.skin;
-    const shoe = s.shoes ?? P.shoeBrown;
     const o = dressPoseOffsets(pose);
-    const by = o.bodyBob;
-    const headBob = o.headBob;
-    const sleeve = d.sleeve ?? d.bodice;
+    const top = 11 + o.bodyBob;
+    const tones = skinTones(s);
+    const head = makeHead(s, 3 + o.bodyBob);
     const sway = o.skirtSway;
+    const shoe = s.shoes ?? P.shoeBrown;
+    const swing = pose === "walk_a" ? -2 : pose === "walk_c" ? 2 : 0;
 
-    r(ctx, 14, 3 + by + headBob, 7, 7, skin);
-    drawVictorianHairSide(ctx, s, by + headBob);
-    r(ctx, 18, 6 + by + headBob, 2, 2, P.black);
+    drawGroundShadow(ctx, DRESS_HEM_Y + 2, 7);
 
-    if (s.hat) {
-        rr(ctx, 13, 0 + by, 10, 3, 2, s.hat);
-        if (s.hatBand) hline(ctx, 14, 2 + by, 7, s.hatBand);
+    // Leading foot peeks out at the front of the hem
+    const footX = pose === "walk_a" ? 18 : pose === "walk_c" ? 15 : 16;
+    r(ctx, footX + sway, DRESS_HEM_Y + 1, 4, 2, shoe);
+    hline(ctx, footX + sway + 1, DRESS_HEM_Y + 1, 2, shade(shoe, 0.3));
+
+    // Skirt in profile: bustle sweeps back (left), front falls nearly straight
+    const skirtTop = top + 8;
+    for (let y = skirtTop; y <= DRESS_HEM_Y; y++) {
+        const tt = (y - skirtTop) / Math.max(1, DRESS_HEM_Y - skirtTop);
+        const shift = Math.round(sway * tt);
+        const left = 13 - Math.floor(tt * 5) + shift;
+        const right = 20 + Math.floor(tt * 2) + shift;
+        const width = right - left;
+        r(ctx, left, y, width, 1, d.skirt);
+        r(ctx, left, y, Math.max(1, Math.floor(width * 0.3)), 1, d.skirtLight);
+        p(ctx, right - 1, y, d.skirtShadow);
+        if (tt > 0.3) p(ctx, left + Math.round(width * 0.55), y, d.skirtShadow);
     }
+    if (d.trim) hline(ctx, 8 + sway, DRESS_HEM_Y, 15, d.trim);
 
-    if (d.collar) {
-        // Side view collar
-        hline(ctx, 14, 9 + by, 5, d.collar);
-    }
-
-    r(ctx, 12, 10 + by, 9, 8, d.bodice);
-    r(ctx, 13, 11 + by, 5, 4, d.bodiceLight);
-    if (d.trim) hline(ctx, 14, 17 + by, 4, d.trim);
-
-    r(ctx, 20, 12 + by, 4, 10, sleeve);
-    r(ctx, 21, 18 + by, 3, 3, skin);
-
+    r(ctx, 13, top, 7, 8, d.bodice);
+    r(ctx, 14, top + 1, 2, 6, d.bodiceLight);
+    vline(ctx, 19, top + 1, 7, shade(d.bodice, -0.3));
+    if (d.collar) hline(ctx, 16, top, 4, d.collar);
+    if (d.trim) hline(ctx, 13, top + 7, 7, d.trim);
     if (d.apron) {
-        r(ctx, 13, 12 + by, 6, 15, d.apron);
+        r(ctx, 18, top + 2, 2, 6, d.apron);
+        r(ctx, 18, top + 8, 3, 13, d.apron);
     }
 
-    const topY = 18 + by;
-    const bottomY = 35 + by;
-    for (let y = topY; y <= bottomY; y++) {
-        const t = (y - topY) / Math.max(1, bottomY - topY);
-        const frontW = 3 + Math.floor(t * 2);
-        const backW = 4 + Math.floor(t * 5);
-        r(ctx, 14 + sway, y, frontW, 1, y % 2 === 0 ? d.skirt : d.skirtLight);
-        r(ctx, 10 + sway - Math.floor(t * 2), y, backW, 1, y % 2 === 0 ? d.skirtLight : d.skirt);
-    }
-    r(ctx, 11 + sway, topY + 4, 2, bottomY - topY - 6, d.skirtShadow);
-    if (d.trim) {
-        r(ctx, 8 + sway, bottomY, 12, 1, d.trim);
-    }
-
-    const footY = 36 + by;
-    if (pose === "idle") {
-        drawFoot(ctx, 15 + sway, footY, 4, 2, shoe, P.shoeBrownHi);
-    } else {
-        drawFoot(ctx, 16 + sway + (pose === "walk_a" ? 2 : 0), footY, 4, 2, shoe, P.shoeBrownHi);
-    }
-}
-
-function drawHumanoidFront(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    pose: CharacterPose
-): void {
-    const skin = s.skin ?? P.skin;
-    const pants = s.pants ?? P.shadow;
-    const shoe = s.shoes ?? P.shoeBrown;
-    const shoeHi = P.shoeBrownHi;
-    const o = poseOffsets(pose);
-    const by = o.bodyBob;
-    const headBob = o.headBob;
-    
-    // Get body proportions
-    const body = getBodyProportions(s.bodyType);
-    
-    // Calculate head position with body proportions
-    const headX = 16 - Math.floor(body.headWidth / 2);
-    const headY = 2 + body.headYOffset + by + headBob;
-
-    // Head with rounded shape (with head bob for walk cycle)
-    rr(ctx, headX, headY, body.headWidth, body.headHeight, Math.min(4, body.headWidth), skin);
-    
-    // Hair - use new hair style if specified, otherwise use classic style
-    if (s.hairStyle || s.hairPart) {
-        drawEnhancedHairFront(ctx, s, headX, headY, body, by + headBob);
-    } else {
-        // Classic hair with rounded top
-        rr(ctx, 11, 0 + by + headBob, 10, 3, 3, s.hair);
-        // Side hair
-        rr(ctx, 10, 3 + by + headBob, 2, 6, 1, s.hair);
-        rr(ctx, 19, 3 + by + headBob, 2, 6, 1, s.hair);
-    }
-    
-    // Draw facial features with expression support
-    drawExpression(ctx, s, headX + 2, headY + 2, by, headBob);
-    
-    // Nose (subtle)
-    p(ctx, 15, 8 + by + headBob, P.skinShadow);
-    p(ctx, 16, 8 + by + headBob, P.skinShadow);
-    
-    // Add form shadows for depth
-    addFormShadowsFront(ctx, skin, by);
-    
-    // Add highlights for depth
-    addHighlightsFront(ctx, skin, by);
-    
-    // Draw accessories
-    if (s.glasses) {
-        drawGlasses(ctx, s, headX + 3, headY - 1, by, headBob);
-    }
-    if (s.jewelry) {
-        drawJewelry(ctx, s, headX + 3, headY, by);
-    }
-    if (s.facialHair && s.facialHair !== 'none') {
-        drawFacialHair(ctx, s, headX + 2, headY + 2, by, headBob);
-    }
-    
-    // Draw age features
-    drawAgeFeatures(ctx, s, headX + 3, headY, by, headBob);
-
-    if (s.hat) {
-        rr(ctx, 10, 0 + by, 12, 4, 2, s.hat);
-        r(ctx, 8, 2 + by, 16, 2, s.hat);
-        if (s.hatBand) hline(ctx, 10, 3 + by, 12, s.hatBand);
-    }
-
-    r(ctx, 10, 10 + by, 12, 14, s.coat);
-    r(ctx, 11, 11 + by, 10, 4, s.coatLight);
-    if (s.accent) r(ctx, 14, 14 + by, 4, 6, s.accent);
-
-    // Collar details
-    if (s.coatLight) {
-        t(ctx, 12, 10 + by, 16, 8 + by, 20, 10 + by, s.coatLight);
-    }
-    
-    // Buttons down the front
-    if (s.accent) {
-        c(ctx, 15, 14 + by, 1, s.accent);
-        c(ctx, 15, 17 + by, 1, s.accent);
-        c(ctx, 15, 20 + by, 1, s.accent);
-    }
-
-    r(ctx, 6, o.leftArmY + by, 4, 12, s.coat);
-    r(ctx, 22, o.rightArmY + by, 4, 12, s.coat);
-    r(ctx, 6, 20 + by, 4, 4, skin);
-    r(ctx, 22, 20 + by, 4, 4, skin);
-
-    r(ctx, 11, o.leftLegY + by, 4, 8, pants);
-    r(ctx, 17, o.rightLegY + by, 4, 8, pants);
-    drawFrontShoes(ctx, o.leftLegY, o.rightLegY, by, shoe, shoeHi);
-
-    r(ctx, 10, 10 + by, 1, 14, P.outline);
-    r(ctx, 21, 10 + by, 1, 14, P.outline);
-}
-
-function drawHumanoidBack(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    pose: CharacterPose
-): void {
-    const pants = s.pants ?? P.shadow;
-    const shoe = s.shoes ?? P.shoeBrown;
-    const shoeHi = P.shoeBrownHi;
-    const o = poseOffsets(pose);
-    const by = o.bodyBob;
-    const headBob = o.headBob;
-    
-    // Get body proportions
-    const body = getBodyProportions(s.bodyType);
-    
-    // Calculate head position with body proportions
-    const headX = 16 - Math.floor(body.headWidth / 2);
-    const headY = 4 + body.headYOffset + by + headBob;
-
-    // Hair from back with rounded shape (with head bob)
-    if (s.hairStyle) {
-        // Use enhanced hair for back view
-        rr(ctx, headX - 1, headY - body.headHeight - 2, body.headWidth + 2, body.headHeight + 2, 3, s.hair);
-        if (s.hairStyle === 'long' || s.hairStyle === 'wavy' || s.hairStyle === 'curly') {
-            rr(ctx, headX, headY, body.headWidth, 8, 2, s.hair);
-        }
-    } else {
-        rr(ctx, 10, 0 + by + headBob, 12, 7, 3, s.hair);
-    }
-    
-    // Head (back view) - oval shape (with head bob)
-    rr(ctx, headX, headY, body.headWidth, body.headHeight - 2, Math.min(3, Math.floor(body.headWidth / 2)), s.skin ?? P.skin);
-    
-    // Draw accessories visible from back (jewelry, etc.)
-    if (s.jewelry && (s.jewelryType === 'necklace' || s.jewelryType === 'both')) {
-        drawJewelry(ctx, s, headX + 3, headY + body.headHeight - 2, by, false);
-    }
-
-    r(ctx, 10, 10 + by, 12, 15, s.coat);
-    r(ctx, 11, 12 + by, 10, 8, s.coatLight);
-
-    r(ctx, 8, o.leftArmY + by, 3, 10, s.coat);
-    r(ctx, 21, o.rightArmY + by, 3, 10, s.coat);
-
-    r(ctx, 11, o.leftLegY + by, 4, 8, pants);
-    r(ctx, 17, o.rightLegY + by, 4, 8, pants);
-    drawFrontShoes(ctx, o.leftLegY, o.rightLegY, by, shoe, shoeHi);
-}
-
-/** Side-view leg positions: near (front) vs far (back) leg + foot */
-function sideLegLayout(pose: CharacterPose): {
-    farX: number;
-    farY: number;
-    nearX: number;
-    nearY: number;
-    nearToeX: number;
-} {
-    switch (pose) {
-        case "walk_a":
-            return { farX: 14, farY: 24, nearX: 16, nearY: 27, nearToeX: 20 };
-        case "walk_b":
-            return { farX: 15, farY: 27, nearX: 17, nearY: 24, nearToeX: 19 };
-        default:
-            return { farX: 15, farY: 25, nearX: 16, nearY: 25, nearToeX: 18 };
-    }
-}
-
-function drawFoot(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    shoe: string,
-    shoeHi: string
-): void {
-    // Shoe base with rounded toe
-    rr(ctx, x, y, w, h, 2, shoe);
-    // Toe cap highlight
-    rr(ctx, x, y, w, h/2, 1, shoeHi);
-    // Heel definition
-    if (h >= 3) {
-        r(ctx, x + w - 2, y + h - 2, 2, 2, shoeHi);
-    }
-}
-
-/** Front/back: one shoe under a leg with gap between left and right */
-function drawFrontShoes(
-    ctx: CanvasRenderingContext2D,
-    leftLegY: number,
-    rightLegY: number,
-    by: number,
-    shoe: string,
-    shoeHi: string
-): void {
-    const leftFootY = leftLegY + 8 + by;
-    const rightFootY = rightLegY + 8 + by;
-    
-    // Cast shadows under feet (subtle)
-    r(ctx, 9, leftFootY + 2, 5, 1, P.shadow);
-    r(ctx, 18, rightFootY + 2, 5, 1, P.shadow);
-    
-    drawFoot(ctx, 10, leftFootY, 4, 3, shoe, shoeHi);
-    drawFoot(ctx, 19, rightFootY, 4, 3, shoe, shoeHi);
-}
-
-function drawHumanoidSide(
-    ctx: CanvasRenderingContext2D,
-    s: HumanoidStyle,
-    pose: CharacterPose
-): void {
-    const skin = s.skin ?? P.skin;
-    const pants = s.pants ?? P.pantsSide;
-    const pantsFar = P.pantsSideFar;
-    const shoe = s.shoes ?? P.shoeBrown;
-    const shoeHi = P.shoeBrownHi;
-    const o = poseOffsets(pose);
-    const by = o.bodyBob;
-    const headBob = o.headBob;
-    const legs = sideLegLayout(pose);
-    
-    // Get body proportions
-    const body = getBodyProportions(s.bodyType);
-    
-    // Calculate head position with body proportions
-    const headX = 16 - Math.floor(body.headWidth / 2);
-    const headY = 2 + body.headYOffset + by + headBob;
-
-    // Head with rounded shape (side view with head bob)
-    rr(ctx, headX, headY, body.headWidth, body.headHeight, Math.min(3, Math.floor(body.headWidth / 2)), skin);
-    
-    // Hair from side - use new hair style if specified
-    if (s.hairStyle) {
-        drawEnhancedHairSide(ctx, s, headX, headY, body, by + headBob);
-    } else {
-        rr(ctx, 16, 2 + by + headBob, 6, 3, 2, s.hair);
-        if (!s.hairUp) {
-            // Additional hair flowing down
-            rr(ctx, 18, 5 + by + headBob, 4, 4, 1, s.hair);
-        }
-    }
-    
-    // Draw facial features with expression support (side view)
-    drawExpression(ctx, s, headX + 2, headY + 2, by, headBob, true);
-    
-    // Nose (side view)
-    p(ctx, 19, 7 + by + headBob, P.skinShadow);
-    
-    // Add form shadows for depth
-    addFormShadowsSide(ctx, skin, by);
-    
-    // Add highlights for depth
-    addHighlightsSide(ctx, skin, by);
-    
-    // Draw accessories (side view)
-    if (s.glasses) {
-        drawGlasses(ctx, s, headX + 2, headY, by, headBob, true);
-    }
-    if (s.jewelry) {
-        drawJewelry(ctx, s, headX + 3, headY, by, true);
-    }
-    if (s.facialHair && s.facialHair !== 'none') {
-        drawFacialHair(ctx, s, headX + 2, headY + 2, by, headBob, true);
-    }
-    
-    // Draw age features (side view)
-    drawAgeFeatures(ctx, s, headX + 3, headY, by, headBob, true);
-
-    if (s.hat) {
-        rr(ctx, 12, 0 + by, 12, 4, 2, s.hat);
-        if (s.hatBand) hline(ctx, 14, 3 + by, 8, s.hatBand);
-    }
-
-    r(ctx, 12, 10 + by, 10, 14, s.coat);
-    r(ctx, 13, 12 + by, 6, 5, s.coatLight);
-    
-    // Buttons on side
-    if (s.accent) {
-        c(ctx, 13, 14 + by, 1, s.accent);
-        c(ctx, 13, 17 + by, 1, s.accent);
-    }
-    
-    // Coat light highlight on shoulder
-    if (s.coatLight) {
-        hline(ctx, 14, 12 + by, 4, s.coatLight);
-    }
-
-    r(ctx, 20, 12 + by, 4, 10, s.coat);
-    r(ctx, 21, 18 + by, 3, 4, skin);
-
-    // Far leg (behind) — thinner, higher, muted pant tone
-    r(ctx, legs.farX, legs.farY + by, 3, 6, pantsFar);
-    drawFoot(ctx, legs.farX, legs.farY + 6 + by, 3, 3, shoe, shoeHi);
-
-    // Near leg (front) — separate foot, toe toward facing direction when walking
-    r(ctx, legs.nearX, legs.nearY + by, 4, 7, pants);
-    if (pose === "idle") {
-        drawFoot(ctx, legs.nearX, legs.nearY + 7 + by, 4, 3, shoe, shoeHi);
-    } else {
-        drawFoot(ctx, legs.nearToeX - 3, legs.nearY + 7 + by, 4, 3, shoe, shoeHi);
-        r(ctx, legs.nearToeX - 1, legs.nearY + 8 + by, 2, 2, shoeHi);
-    }
+    drawFullHead(ctx, s, head, top, "right");
+    drawNecklace(ctx, s, head, top, true);
+    drawSideArm(ctx, 15, top + 1, 8, swing, d.sleeve ?? d.bodice, tones);
 }
 
 /** Draw one animation frame (bake facing `right`; mirror for `left` at render time) */
@@ -1586,7 +1404,6 @@ export function drawHumanoidFrame(
     facing: CharacterFacing,
     pose: CharacterPose
 ): void {
-    r(ctx, 0, 0, 32, 40, P.transparent);
     if (s.dress) {
         switch (facing) {
             case "up":
@@ -1643,6 +1460,7 @@ export const PLAYER_CHARACTER_STYLES: Record<string, HumanoidStyle> = {
         coatLight: P.coatNavyLight,
         hair: P.black,
         accent: P.gold,
+        shirt: P.cream,
         bodyType: 'average',
         hairStyle: 'short',
         expression: 'determined',

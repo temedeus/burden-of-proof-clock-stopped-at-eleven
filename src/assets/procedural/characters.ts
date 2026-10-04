@@ -1,5 +1,5 @@
 import { P } from "./palette";
-import { r, p, hline, vline, rrCrisp as rr, discCrisp, triCrisp as t, shade } from "./pixel";
+import { grid, r, p, hline, vline, rrCrisp as rr, discCrisp, triCrisp as t, shade } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
 
 export type CharacterFacing = "down" | "up" | "right";
@@ -1550,46 +1550,120 @@ function drawHoodedFigure(ctx: CanvasRenderingContext2D): void {
     r(ctx, 17, 33, 5, 2, P.outline);
 }
 
-/** von Virtanen (victim) lying dead on the floor with a blood pool beneath. */
+/** Irregular two-tone blood pool (union of discs) with glossy highlights and broom streaks. */
+function drawBloodPool(ctx: CanvasRenderingContext2D): void {
+    const lobes: [number, number, number][] = [
+        [14, 27, 8], [8, 29, 5], [21, 30, 6], [12, 33, 4], [5, 25, 3], [24, 25, 3], [17, 34, 3]
+    ];
+    const edge = "#3e0a0a";
+    const pool = "#5c1010";
+    const wet = P.red;
+    for (const [x, y, rad] of lobes) discCrisp(ctx, x, y, rad, edge);
+    for (const [x, y, rad] of lobes) discCrisp(ctx, x, y, rad - 1, pool);
+    for (const [x, y, rad] of lobes) if (rad > 3) discCrisp(ctx, x - 1, y - 1, rad - 3, wet);
+    // Specular glints on the wet surface
+    for (const [x, y] of [[9, 27], [19, 29], [13, 32], [22, 31]] as const) p(ctx, x, y, P.redLight);
+    // Faint broom marks dragged out of the pool toward the lower right
+    for (let k = 0; k < 3; k++) {
+        for (let i = 0; i < 9; i++) {
+            if ((i + k) % 4 === 3) continue;
+            p(ctx, 19 + k * 2 + i, 33 + Math.floor(i / 2), "#4a1010");
+        }
+    }
+}
+
+const DEAD_BARON_COLORS: Record<string, string> = {
+    o: "#140e0c",
+    H: P.highlight,
+    h: P.light,
+    S: "#cfb39c",
+    s: "#a88a74",
+    n: "#a88a74",
+    z: "#7a6670",
+    k: "#8a6e64",
+    K: "#1e1a1c",
+    w: P.cream,
+    W: "#b8ae9c",
+    R: P.red,
+    r: "#4a0c0c",
+    g: P.gold,
+    T: "#2e2a2a",
+    t: "#4a4442",
+    B: "#0e0a0a",
+    b: "#7a7270"
+};
+
+/** von Virtanen (victim) lying dead on his back, crown to the left, in a pool of blood. */
 function drawDeadBaronBody(ctx: CanvasRenderingContext2D): void {
-    const s = BARON_STYLE;
-    const skin = P.skin;
+    const pal = DEAD_BARON_COLORS;
+    drawBloodPool(ctx);
 
-    // Blood pool under the body — drawn first so the torso sits on top of it
-    r(ctx, 1, 22, 30, 14, P.brickDark);
-    r(ctx, 3, 23, 26, 12, P.red);
-    r(ctx, 5, 24, 22, 10, P.redLight);
-    r(ctx, 8, 28, 16, 5, P.brick);
-    r(ctx, 10, 32, 12, 3, P.red);
+    // Top hat knocked off, lying on its side above the legs
+    grid(ctx, 21, 14, 1, [
+        ".o.......",
+        "oKoooooo.",
+        "oKgKKKKKo",
+        "oKgtKKKKo",
+        "oKgKKKKKo",
+        "oKoooooo.",
+        ".o......."
+    ], pal);
 
-    // Legs (sprawled to the right)
-    r(ctx, 22, 24, 6, 4, s.pants!);
-    r(ctx, 27, 25, 5, 4, s.pants!);
-    r(ctx, 24, 28, 4, 3, P.shoeBrown);
-    r(ctx, 29, 28, 4, 3, P.shoeBrown);
+    // Legs, slightly splayed; shoes point up at the viewer
+    grid(ctx, 19, 22, 1, [
+        "oooooooooo...",
+        "TttTTTTTTobo.",
+        "TTTTTTTTToBBo",
+        "oooooooooooo.",
+        "TTTttTTTTobo.",
+        "TTTTTTTTTTBBo",
+        "oooooooooooo."
+    ], pal);
 
-    // Torso on its back
-    r(ctx, 8, 20, 16, 10, s.coat);
-    r(ctx, 9, 21, 14, 4, s.coatLight);
-    r(ctx, 14, 22, 6, 4, P.red);
-    r(ctx, 15, 23, 4, 2, P.brickDark);
+    // Arm limp along the side, hand by the hip
+    grid(ctx, 8, 30, 1, [
+        "oooooooooooo.",
+        "oKKKKKKKKoSso",
+        "oooooooooooo."
+    ], pal);
 
-    // Arms outstretched
-    r(ctx, 4, 22, 5, 3, s.coat);
-    r(ctx, 23, 21, 5, 3, s.coat);
-    r(ctx, 3, 23, 3, 3, skin);
-    r(ctx, 25, 22, 3, 3, skin);
+    // Evening coat torn open at the chest; white shirt front, gold watch chain
+    grid(ctx, 7, 21, 1, [
+        "  ooooooooo  ",
+        " okKKKKKKKKo ",
+        "oKkwwKKKKKKKo",
+        "oKwwWwKKKKKKo",
+        "oKkwWRRKKKKKo",
+        "oKkwRrRRKgKKo",
+        "oKkwwRKKKKgKo",
+        "oKkwWwKKKKKKo",
+        " okKKKKKKKKo ",
+        "  ooooooooo  "
+    ], pal);
 
-    // Head tilted to the left
-    r(ctx, 2, 16, 8, 8, skin);
-    r(ctx, 2, 16, 8, 3, s.hair);
-    r(ctx, 1, 17, 2, 4, s.hair);
-    r(ctx, 4, 20, 2, 1, P.outline);
-    r(ctx, 7, 20, 2, 1, P.outline);
+    // Arm flung out above the head
+    grid(ctx, 2, 14, 1, [
+        " oo     ",
+        "oSSo    ",
+        "osSso   ",
+        " oKKo   ",
+        "  oKko  ",
+        "   oKKo ",
+        "    oKKo",
+        "     oKK"
+    ], pal);
 
-    // Hat fallen beside the head
-    r(ctx, 0, 22, 7, 3, s.hat!);
-    r(ctx, 1, 23, 5, 1, s.hatBand!);
+    // Head, crown to the left, face up: closed eyes stacked, grey hair
+    grid(ctx, 0, 21, 1, [
+        "  ooo   ",
+        " oHHSSo ",
+        "oHHSkSSo",
+        "oHhSSnzo",
+        "oHhSSnzo",
+        "oHHSkSSo",
+        " oHHSSo ",
+        "  ooo   "
+    ], pal);
 }
 
 /** Humanoid styles that support directional facing (idle NPC poses). */

@@ -46,6 +46,7 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | Module | Used for |
 |--------|----------|
 | `pond.ts` | Garden pond (baked via `POND_SPRITES` in `registry.ts`) |
+| `stuffed_moose.ts` | Study moose trophy (32×48 pixel template, baked via `furniture.ts`) |
 
 ## Conventions
 

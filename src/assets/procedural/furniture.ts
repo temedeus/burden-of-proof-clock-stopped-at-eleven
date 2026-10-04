@@ -1,45 +1,24 @@
 import { P } from "./palette";
 import { grid, mirrorH, mirrorV, r } from "./pixel";
-import { drawFireplaceStone } from "./fireplace";
+import { drawFireplaceStatic, FIREPLACE_H, FIREPLACE_W } from "./fireplace";
 import { drawOilLampNorthBase } from "./oil_lamp";
+import {
+    drawAtticOldChest,
+    drawAtticPost,
+    drawCarpet,
+    drawClockGlassShards,
+    drawDiningTable,
+    drawHallClock,
+    drawKitchenTable,
+    drawLockedCabinet,
+    drawOldShelf,
+    drawReadingTable,
+    drawSecretBookshelf,
+    drawWineBarrel,
+    drawWineRack
+} from "./furnitureInterior";
 import { drawStuffedMoose, STUFFED_MOOSE_H, STUFFED_MOOSE_W } from "./stuffed_moose";
 import type { ProceduralSpriteDef } from "./types";
-
-/** Top-down oak cask drawn at a pixel origin (shared by single and clustered barrels). */
-function drawWineBarrelTopDown(ctx: CanvasRenderingContext2D, ox: number, oy: number, cell = 2): void {
-    grid(
-        ctx,
-        ox,
-        oy,
-        cell,
-        [
-            "....dddddddd....",
-            "..ddhhhhhhll..",
-            ".ddhhhhhhhlll.",
-            "ddhhhhhhhhllll",
-            "ddhhhhhhhhllll",
-            "ddhhhhhhhhllll",
-            "ddhhhhhhhhllll",
-            ".ddhhhhhhhlll.",
-            "..ddhhhhhhll..",
-            "....dddddddd...."
-        ],
-        { d: P.woodDark, h: P.wood, l: P.woodLight }
-    );
-    r(ctx, ox - cell, oy + 3 * cell, 16 * cell, cell, P.silverDark);
-    r(ctx, ox - cell, oy + 5 * cell, 16 * cell, cell, P.silver);
-    r(ctx, ox - cell, oy + 7 * cell, 16 * cell, cell, P.silverDark);
-    r(ctx, ox + 3 * cell, oy + 2 * cell, cell, 8 * cell, P.woodHi);
-    r(ctx, ox + 7 * cell, oy + cell, cell, 9 * cell, P.woodDark);
-    r(ctx, ox + 6 * cell, oy + 4 * cell, 2 * cell, 2 * cell, P.shadow);
-
-    // Short cradle feet under the cask
-    const footY = oy + 10 * cell;
-    r(ctx, ox + 1 * cell, footY, 4 * cell, 2 * cell, P.woodDark);
-    r(ctx, ox + 2 * cell, footY, 2 * cell, cell, P.wood);
-    r(ctx, ox + 11 * cell, footY, 4 * cell, 2 * cell, P.woodDark);
-    r(ctx, ox + 12 * cell, footY, 2 * cell, cell, P.wood);
-}
 
 const COBWEB_COLORS = { l: P.light, c: P.cream, h: P.highlight, m: P.mid };
 
@@ -167,24 +146,6 @@ function drawAtticRoofBar(ctx: CanvasRenderingContext2D, w: number, h: number): 
             r(ctx, bx, top - 1, 8, beamH + 2, P.silverDark);
             r(ctx, bx + 1, top + 1, 6, beamH - 2, P.silver);
         }
-    }
-}
-
-/** Tall support post — collision only at the floor footing. */
-function drawAtticFloorPost(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const cx = Math.floor(w / 2) - 5;
-    const footingH = Math.min(28, Math.floor(h * 0.12));
-    const postTop = Math.floor(h * 0.06);
-    const postBottom = h - footingH;
-    r(ctx, cx, postTop, 10, postBottom - postTop, P.woodDark);
-    r(ctx, cx + 2, postTop + 2, 6, postBottom - postTop - 4, P.wood);
-    r(ctx, cx + 2, postTop + 2, 2, postBottom - postTop - 4, P.woodLight);
-    r(ctx, cx + 1, postTop, 8, 6, P.woodHi);
-    r(ctx, cx - 4, h - footingH, 18, footingH, P.woodDark);
-    r(ctx, cx - 2, h - footingH + 4, 14, footingH - 6, P.wood);
-    r(ctx, cx - 2, h - footingH + 4, 14, 3, P.woodLight);
-    for (let ny = postTop + 12; ny < postBottom - 8; ny += 28) {
-        r(ctx, cx + 6, ny, 2, 2, P.silverDark);
     }
 }
 
@@ -319,70 +280,12 @@ function drawTableLegs(
     }
 }
 
-function drawRoundPlate(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
-    grid(
-        ctx,
-        cx - 4,
-        cy - 3,
-        1,
-        ["..ssss..", ".sswwss.", "sswwwwss", "sswwwwss", ".sswwss.", "..ssss.."],
-        { s: P.silver, w: P.white }
-    );
-    r(ctx, cx - 1, cy, 3, 2, P.foodBrown);
-    r(ctx, cx + 1, cy - 1, 2, 2, P.foodGreen);
-}
-
-function drawGoblet(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
-    r(ctx, cx, cy - 3, 3, 2, P.wine);
-    r(ctx, cx - 1, cy - 1, 5, 1, P.silver);
-    r(ctx, cx, cy, 3, 3, P.silver);
-    r(ctx, cx + 1, cy + 3, 1, 2, P.silverDark);
-}
-
-function drawPlaceSetting(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
-    drawGoblet(ctx, cx + 1, cy - 2);
-    drawRoundPlate(ctx, cx, cy + 4);
-    r(ctx, cx - 4, cy + 5, 1, 5, P.silver);
-    r(ctx, cx + 8, cy + 5, 1, 5, P.silver);
-    r(ctx, cx + 8, cy + 5, 2, 1, P.silverDark);
-}
-
-function drawCenterFeast(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
-    r(ctx, cx - 2, cy - 6, 2, 7, P.cream);
-    r(ctx, cx - 2, cy - 8, 2, 2, P.candle);
-    r(ctx, cx + 12, cy - 6, 2, 7, P.cream);
-    r(ctx, cx + 12, cy - 8, 2, 2, P.candle);
-
-    grid(ctx, cx - 10, cy + 4, 1, ["..ssssss..", ".sswwwwss.", "sswwwwwwss", "sswwwwwwss", ".sswwwwss.", "..ssssss.."], {
-        s: P.silver,
-        w: P.white
-    });
-
-    grid(ctx, cx - 5, cy + 7, 1, ["..bb..", ".bbbb.", "bbbbbb", "bbbbbb", ".bbbb.", "..bb.."], { b: P.foodBrown });
-
-    r(ctx, cx + 1, cy + 9, 2, 1, P.highlight);
-    r(ctx, cx - 14, cy + 8, 5, 4, P.silver);
-    r(ctx, cx - 13, cy + 9, 3, 2, P.foodGreen);
-    r(ctx, cx + 10, cy + 8, 5, 4, P.silver);
-    r(ctx, cx + 11, cy + 9, 3, 2, P.gold);
-}
-
 export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     fireplace: {
-        nativeWidth: 48,
-        nativeHeight: 56,
+        nativeWidth: FIREPLACE_W,
+        nativeHeight: FIREPLACE_H,
         draw(ctx) {
-            drawFireplaceStone(ctx);
-            const fireC = { y: P.fireYellow, o: P.fireOrange, r: P.fireRed, k: P.black };
-            grid(ctx, 14, 20, 2, [
-                "...ror...",
-                "..roror..",
-                ".roroyor.",
-                "roroyoyor",
-                ".oyoyoyo.",
-                "..oyoyo..",
-                "...oyo..."
-            ], fireC);
+            drawFireplaceStatic(ctx);
         }
     },
 
@@ -506,102 +409,18 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     dining_table: {
-        nativeWidth: 96,
-        nativeHeight: 56,
+        nativeWidth: 128,
+        nativeHeight: 64,
         draw(ctx) {
-            const topY = 8;
-            const topH = 24;
-            const apronY = topY + topH;
-            const legY = apronY + 4;
-
-            // Chair backs along long sides
-            for (const cx of [4, 84]) {
-                r(ctx, cx, 4, 8, 12, P.wood);
-                r(ctx, cx + 1, 2, 6, 4, P.woodHi);
-                r(ctx, cx + 2, 14, 4, 4, P.woodDark);
-            }
-
-            // Top — slight perspective (wider at front)
-            r(ctx, 4, topY, 88, topH, P.woodLight);
-            r(ctx, 2, topY + 2, 92, topH - 2, P.wood);
-            r(ctx, 0, topY + 4, 96, topH - 4, P.woodLight);
-            r(ctx, 0, topY + 4, 96, 2, P.woodHi);
-            r(ctx, 0, topY + topH - 2, 96, 2, P.woodDark);
-
-            // Tablecloth with corner drape hints
-            r(ctx, 6, topY + 4, 84, topH - 8, P.cream);
-            r(ctx, 6, topY + 4, 84, 2, P.white);
-            r(ctx, 6, topY + topH - 6, 84, 1, P.highlight);
-            r(ctx, 6, topY + 6, 2, topH - 12, P.highlight);
-            r(ctx, 88, topY + 6, 2, topH - 12, P.highlight);
-            r(ctx, 4, topY + topH - 5, 3, 3, P.cream);
-            r(ctx, 89, topY + topH - 5, 3, 3, P.cream);
-
-            drawCenterFeast(ctx, 44, topY + 6);
-
-            const nearRow = topY + 16;
-            const farRow = topY + 8;
-            for (const cx of [10, 24, 38, 54, 68, 82]) {
-                drawPlaceSetting(ctx, cx, nearRow);
-            }
-            for (const cx of [18, 42, 66]) {
-                drawGoblet(ctx, cx, farRow);
-                drawRoundPlate(ctx, cx, farRow + 6);
-            }
-
-            r(ctx, 38, topY + 18, 4, 3, P.foodBrown);
-            r(ctx, 54, topY + 18, 4, 3, P.foodBrown);
-
-            r(ctx, 4, apronY, 88, 4, P.wood);
-            r(ctx, 4, apronY, 88, 1, P.woodDark);
-            drawTableLegs(ctx, [10, 81], legY, 54);
+            drawDiningTable(ctx);
         }
     },
 
     kitchen_table: {
-        nativeWidth: 64,
-        nativeHeight: 32,
+        nativeWidth: 128,
+        nativeHeight: 64,
         draw(ctx) {
-            const topY = 8;
-            const topH = 16;
-
-            // Thick tabletop — two tile rows (y 8–23)
-            r(ctx, 2, topY, 60, topH, P.woodLight);
-            r(ctx, 2, topY, 60, 3, P.woodHi);
-            r(ctx, 2, topY + topH - 4, 60, 4, P.wood);
-            r(ctx, 2, topY, 2, topH, P.woodHi);
-            r(ctx, 60, topY, 2, topH, P.woodDark);
-            r(ctx, 2, topY + topH - 2, 60, 2, P.woodDark);
-            // Wood grain on surface
-            for (const gx of [10, 22, 34, 46, 54]) {
-                r(ctx, gx, topY + 4, 1, 6, P.wood);
-            }
-            r(ctx, 6, topY + 6, 52, 1, P.wood);
-
-            // Apron under tabletop
-            r(ctx, 4, topY + topH, 56, 3, P.wood);
-            r(ctx, 4, topY + topH + 2, 56, 1, P.woodDark);
-
-            // Sturdy legs (front two visible)
-            drawTableLegs(ctx, [8, 51], topY + topH + 3, 31);
-
-            // Kitchen prep items on surface
-            r(ctx, 8, 2, 14, 6, P.stoneLight);
-            r(ctx, 9, 3, 12, 1, P.woodHi);
-            r(ctx, 10, 4, 10, 3, P.cream);
-            r(ctx, 11, 5, 2, 1, P.foodBrown);
-
-            grid(ctx, 28, 1, 1, ["..ss..", ".ssww.", "sswwss", "sswwss", ".ssww.", "..ss.."], {
-                s: P.silver,
-                w: P.white
-            });
-            r(ctx, 30, 4, 4, 2, P.foodGreen);
-
-            r(ctx, 46, 3, 10, 5, P.cream);
-            r(ctx, 47, 2, 8, 2, P.highlight);
-            r(ctx, 48, 4, 6, 3, P.white);
-            r(ctx, 4, topY + 2, 4, 2, P.cream);
-            r(ctx, 56, topY + 3, 3, 2, P.cream);
+            drawKitchenTable(ctx);
         }
     },
 
@@ -695,30 +514,10 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     carpet: {
-        nativeWidth: 48,
-        nativeHeight: 32,
+        nativeWidth: 144,
+        nativeHeight: 96,
         draw(ctx) {
-            r(ctx, 1, 3, 46, 26, P.carpetBorder);
-            r(ctx, 3, 5, 42, 22, P.carpetPlum);
-            r(ctx, 5, 7, 38, 18, P.carpetPlumLight);
-
-            r(ctx, 14, 10, 20, 12, P.carpetPlum);
-            r(ctx, 18, 12, 12, 8, P.carpetRedLight);
-            r(ctx, 20, 14, 8, 4, P.gold);
-
-            const corner = (cx: number, cy: number) => {
-                r(ctx, cx, cy, 4, 4, P.gold);
-                r(ctx, cx + 1, cy + 1, 2, 2, P.carpetPlumLight);
-            };
-            corner(6, 8);
-            corner(38, 8);
-            corner(6, 20);
-            corner(38, 20);
-
-            r(ctx, 7, 6, 34, 1, P.goldDark);
-            r(ctx, 7, 25, 34, 1, P.goldDark);
-            r(ctx, 6, 7, 1, 18, P.goldDark);
-            r(ctx, 41, 7, 1, 18, P.goldDark);
+            drawCarpet(ctx);
         }
     },
 
@@ -894,30 +693,9 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
 
     secret_bookshelf: {
         nativeWidth: 96,
-        nativeHeight: 48,
+        nativeHeight: 64,
         draw(ctx) {
-            const bookColors = [P.red, P.blue, P.green, P.gold, P.redLight];
-            for (let unit = 0; unit < 3; unit++) {
-                const ox = unit * 32;
-                r(ctx, ox + 2, 0, 28, 48, P.woodDark);
-                r(ctx, ox + 4, 2, 24, 44, P.wood);
-                for (let y = 6; y < 44; y += 12) {
-                    r(ctx, ox + 4, y, 24, 2, P.woodLight);
-                }
-                for (let shelf = 0; shelf < 3; shelf++) {
-                    const by = 8 + shelf * 12;
-                    for (let i = 0; i < 5; i++) {
-                        r(ctx, ox + 6 + i * 4, by, 3, 8, bookColors[(i + unit) % bookColors.length]);
-                    }
-                }
-                r(ctx, ox + 2, 0, 2, 48, P.outline);
-                r(ctx, ox + 28, 0, 2, 48, P.outline);
-            }
-            // Loose book on the center shelf, pulled partway out
-            r(ctx, 42, 18, 6, 10, P.red);
-            r(ctx, 48, 16, 10, 12, P.redLight);
-            r(ctx, 56, 17, 4, 10, P.cream);
-            r(ctx, 58, 18, 2, 8, P.highlight);
+            drawSecretBookshelf(ctx);
         }
     },
 
@@ -940,7 +718,7 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 64,
         nativeHeight: 64,
         draw(ctx) {
-            drawWineBarrelTopDown(ctx, 14, 10, 2);
+            drawWineBarrel(ctx);
         }
     },
 
@@ -948,32 +726,7 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 96,
         nativeHeight: 64,
         draw(ctx) {
-            // Stone alcove with horizontal bottle slots (classic cellar rack)
-            r(ctx, 0, 8, 96, 56, P.rockDark);
-            r(ctx, 2, 10, 92, 52, P.rock);
-            r(ctx, 4, 12, 88, 48, P.rockVoid);
-
-            const drawBottleRow = (y: number) => {
-                for (let i = 0; i < 5; i++) {
-                    const bx = 8 + i * 17;
-                    r(ctx, bx, y, 14, 10, P.woodDark);
-                    r(ctx, bx + 1, y + 1, 12, 8, P.wood);
-                    // Bottle lying on side
-                    r(ctx, bx + 2, y + 3, 10, 4, P.wine);
-                    r(ctx, bx + 1, y + 4, 2, 2, P.green);
-                    r(ctx, bx + 10, y + 4, 2, 2, P.cream);
-                }
-            };
-
-            drawBottleRow(16);
-            drawBottleRow(34);
-
-            // Stone arch at top
-            r(ctx, 0, 0, 96, 12, P.rockLight);
-            r(ctx, 4, 0, 88, 10, P.rock);
-            r(ctx, 20, 2, 56, 6, P.rockVoid);
-            r(ctx, 0, 0, 96, 2, P.rockHi);
-            r(ctx, 0, 62, 96, 2, P.outline);
+            drawWineRack(ctx);
         }
     },
 
@@ -1049,9 +802,9 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
 
     attic_floor_post: {
         nativeWidth: 32,
-        nativeHeight: 224,
-        draw(ctx, w = 32, h = 224) {
-            drawAtticFloorPost(ctx, w, h);
+        nativeHeight: 128,
+        draw(ctx, w = 32, h = 128) {
+            drawAtticPost(ctx, w, h);
         }
     },
 
@@ -1199,44 +952,17 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
 
     old_shelf: {
         nativeWidth: 32,
-        nativeHeight: 48,
+        nativeHeight: 64,
         draw(ctx) {
-            r(ctx, 2, 0, 28, 48, P.woodDark);
-            r(ctx, 4, 2, 24, 44, P.wood);
-            for (let y = 6; y < 44; y += 12) {
-                r(ctx, 4, y, 24, 2, P.woodLight);
-            }
-            // Chipped edges and dust
-            r(ctx, 2, 10, 3, 4, P.shadow);
-            r(ctx, 26, 30, 4, 3, P.shadow);
-            r(ctx, 6, 8, 8, 6, P.cream);
-            r(ctx, 7, 9, 6, 4, P.highlight);
-            r(ctx, 18, 10, 4, 8, P.water);
-            r(ctx, 19, 9, 2, 2, P.waterLight);
-            r(ctx, 8, 22, 10, 5, P.woodDark);
-            r(ctx, 9, 23, 8, 3, P.cream);
-            r(ctx, 20, 34, 6, 6, P.woodLight);
-            r(ctx, 21, 35, 4, 4, P.woodDark);
-            r(ctx, 2, 0, 2, 48, P.outline);
-            r(ctx, 28, 0, 2, 48, P.outline);
+            drawOldShelf(ctx);
         }
     },
 
     locked_cabinet: {
         nativeWidth: 32,
-        nativeHeight: 48,
+        nativeHeight: 32,
         draw(ctx) {
-            r(ctx, 4, 2, 24, 44, P.ironDark);
-            r(ctx, 6, 4, 20, 40, P.iron);
-            r(ctx, 6, 14, 20, 2, P.ironDark);
-            r(ctx, 6, 26, 20, 2, P.ironDark);
-            r(ctx, 13, 20, 6, 8, P.shadow);
-            r(ctx, 14, 22, 4, 4, P.black);
-            r(ctx, 15, 24, 2, 2, P.gold);
-            r(ctx, 8, 8, 6, 4, P.ironDark);
-            r(ctx, 18, 30, 8, 6, P.ironDark);
-            r(ctx, 4, 2, 2, 44, P.outline);
-            r(ctx, 26, 2, 2, 44, P.outline);
+            drawLockedCabinet(ctx);
         }
     },
 
@@ -1285,36 +1011,10 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     reading_table: {
-        nativeWidth: 64,
+        nativeWidth: 48,
         nativeHeight: 32,
         draw(ctx) {
-            drawWoodTabletop(ctx, 4, 12, 56, 10);
-            drawTableLegs(ctx, [10, 50], 22, 30);
-
-            // Green banker's lamp
-            r(ctx, 8, 2, 10, 12, P.green);
-            r(ctx, 10, 0, 6, 4, P.gold);
-            r(ctx, 11, 4, 4, 8, P.greenLight);
-            r(ctx, 12, 10, 2, 2, P.gold);
-
-            // Open book
-            r(ctx, 22, 4, 22, 10, P.cream);
-            r(ctx, 23, 5, 9, 8, P.white);
-            r(ctx, 34, 5, 9, 8, P.white);
-            r(ctx, 32, 5, 2, 8, P.woodDark);
-            r(ctx, 24, 7, 6, 1, P.woodDark);
-            r(ctx, 24, 9, 5, 1, P.woodDark);
-            r(ctx, 35, 7, 6, 1, P.woodDark);
-
-            // Scattered pages
-            r(ctx, 46, 6, 8, 6, P.cream);
-            r(ctx, 47, 7, 6, 4, P.white);
-            r(ctx, 48, 8, 4, 1, P.woodDark);
-
-            // Book stack
-            r(ctx, 52, 8, 6, 5, P.red);
-            r(ctx, 54, 5, 5, 6, P.blue);
-            r(ctx, 56, 7, 4, 4, P.green);
+            drawReadingTable(ctx);
         }
     },
 
@@ -1434,63 +1134,7 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 64,
         nativeHeight: 160,
         draw(ctx) {
-            r(ctx, 8, 0, 48, 156, P.woodDark);
-            r(ctx, 10, 2, 44, 152, P.wood);
-            r(ctx, 12, 4, 40, 4, P.woodHi);
-            r(ctx, 12, 150, 40, 4, P.woodDark);
-
-            // Hood pediment
-            r(ctx, 6, 0, 52, 14, P.woodDark);
-            r(ctx, 10, 2, 44, 10, P.wood);
-            r(ctx, 28, 0, 8, 6, P.gold);
-
-            // Face bezel
-            r(ctx, 14, 18, 36, 40, P.goldDark);
-            r(ctx, 16, 20, 32, 36, P.cream);
-            r(ctx, 18, 22, 28, 32, P.white);
-
-            // Hour markers
-            for (let i = 0; i < 12; i++) {
-                const angle = (i * Math.PI) / 6 - Math.PI / 2;
-                const cx = 32 + Math.cos(angle) * 11;
-                const cy = 38 + Math.sin(angle) * 11;
-                r(ctx, Math.floor(cx) - 1, Math.floor(cy) - 1, 2, 2, P.woodDark);
-            }
-
-            // Hands stopped at eleven
-            r(ctx, 31, 24, 2, 12, P.black);
-            r(ctx, 24, 37, 10, 2, P.black);
-
-            // Broken glazed door
-            r(ctx, 12, 16, 40, 44, P.gold);
-            r(ctx, 14, 18, 36, 40, P.waterLight);
-            r(ctx, 16, 20, 32, 36, P.highlight);
-            r(ctx, 22, 28, 14, 16, P.woodDark);
-            r(ctx, 18, 24, 6, 8, P.waterHi);
-            r(ctx, 36, 34, 8, 6, P.waterHi);
-            r(ctx, 28, 42, 10, 4, P.white);
-            r(ctx, 20, 48, 4, 3, P.waterLight);
-            r(ctx, 40, 22, 3, 5, P.highlight);
-
-            // Waist moulding
-            r(ctx, 10, 62, 44, 6, P.woodDark);
-            r(ctx, 12, 64, 40, 2, P.woodHi);
-
-            // Pendulum chamber with broken glass
-            r(ctx, 14, 72, 36, 52, P.woodDark);
-            r(ctx, 16, 74, 32, 48, P.shadow);
-            r(ctx, 20, 78, 24, 40, P.waterLight);
-            r(ctx, 26, 88, 12, 20, P.highlight);
-            r(ctx, 22, 100, 8, 4, P.white);
-            r(ctx, 34, 92, 5, 6, P.waterHi);
-            r(ctx, 30, 78, 8, 30, P.silverDark);
-            r(ctx, 31, 104, 6, 14, P.gold);
-            r(ctx, 32, 118, 4, 4, P.goldDark);
-
-            // Base plinth
-            r(ctx, 6, 148, 52, 10, P.woodDark);
-            r(ctx, 8, 150, 48, 6, P.wood);
-            r(ctx, 2, 12, 4, 136, P.shadow);
+            drawHallClock(ctx);
         }
     },
 
@@ -1498,21 +1142,7 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 96,
         nativeHeight: 64,
         draw(ctx) {
-            const shard = (x: number, y: number, w: number, h: number, c: string) => {
-                r(ctx, x, y, w, h, c);
-                r(ctx, x, y, w, 1, P.white);
-                r(ctx, x + w - 1, y, 1, h, P.waterLight);
-            };
-            shard(8, 20, 10, 6, P.waterLight);
-            shard(22, 28, 8, 5, P.highlight);
-            shard(34, 18, 12, 7, P.waterHi);
-            shard(50, 32, 9, 4, P.waterLight);
-            shard(62, 22, 7, 8, P.highlight);
-            shard(74, 30, 11, 5, P.waterHi);
-            shard(18, 38, 6, 4, P.white);
-            shard(44, 40, 8, 3, P.waterLight);
-            shard(58, 42, 5, 5, P.highlight);
-            r(ctx, 6, 48, 84, 2, P.shadow);
+            drawClockGlassShards(ctx);
         }
     },
 
@@ -1621,21 +1251,9 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
 
     attic_old_chest: {
         nativeWidth: 48,
-        nativeHeight: 40,
+        nativeHeight: 32,
         draw(ctx) {
-            r(ctx, 4, 12, 40, 24, P.woodDark);
-            r(ctx, 6, 14, 36, 20, P.wood);
-            r(ctx, 6, 14, 36, 4, P.woodLight);
-            r(ctx, 4, 30, 40, 6, P.woodDark);
-            r(ctx, 8, 18, 32, 2, P.woodLight);
-            r(ctx, 8, 24, 32, 2, P.woodLight);
-            r(ctx, 20, 20, 8, 6, P.ironDark);
-            r(ctx, 21, 21, 6, 4, P.iron);
-            r(ctx, 23, 22, 2, 2, P.brick);
-            r(ctx, 2, 10, 44, 4, P.woodDark);
-            r(ctx, 4, 8, 40, 4, P.wood);
-            r(ctx, 2, 34, 4, 4, P.woodDark);
-            r(ctx, 42, 34, 4, 4, P.woodDark);
+            drawAtticOldChest(ctx);
         }
     }
 };

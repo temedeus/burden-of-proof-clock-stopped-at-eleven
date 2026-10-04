@@ -1,5 +1,6 @@
 import { P } from "./palette";
 import { grid, r } from "./pixel";
+import { drawBookshelf } from "./furnitureInterior";
 import type { ProceduralSpriteDef } from "./types";
 import { isAtticWindowBroken, atticWindowPairForColumn } from "../../world/atticWindows";
 import { stableWindowPairForColumn } from "../../world/stableWindows";
@@ -1885,22 +1886,9 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
 
     bookshelf: {
         nativeWidth: 32,
-        nativeHeight: 48,
+        nativeHeight: 64,
         draw(ctx) {
-            r(ctx, 2, 0, 28, 48, P.woodDark);
-            r(ctx, 4, 2, 24, 44, P.wood);
-            for (let y = 6; y < 44; y += 12) {
-                r(ctx, 4, y, 24, 2, P.woodLight);
-            }
-            const bookColors = [P.red, P.blue, P.green, P.gold, P.redLight];
-            for (let shelf = 0; shelf < 3; shelf++) {
-                const by = 8 + shelf * 12;
-                for (let i = 0; i < 5; i++) {
-                    r(ctx, 6 + i * 4, by, 3, 8, bookColors[i % bookColors.length]);
-                }
-            }
-            r(ctx, 2, 0, 2, 48, P.outline);
-            r(ctx, 28, 0, 2, 48, P.outline);
+            drawBookshelf(ctx);
         }
     }
 };

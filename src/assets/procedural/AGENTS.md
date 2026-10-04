@@ -47,12 +47,17 @@ For sprites needing animation, wall-side detection, or draw-time state.
 |--------|----------|
 | `pond.ts` | Garden pond (baked via `POND_SPRITES` in `registry.ts`) |
 | `stuffed_moose.ts` | Study moose trophy (32×48 pixel template, baked via `furniture.ts`) |
+| `furnitureInterior.ts` | Redrawn interior pieces (shelves, tables, carpet, cabinet, chest, hall clock, barrel, rack) |
+| `furnitureOutdoor.ts` | Redrawn garden/courtyard pieces (oak, bush, pond, stable) |
+| `furnitureKit.ts` | Shared helpers: wood/stone/iron ramps, panels, tabletops, legs, book rows, floor shadows, `line`, `ellipse` |
 
 ## Conventions
 
 - Match existing palette colors from `palette.ts`.
 - Use `bakeSprite()` and `ProceduralSpriteDef` for registry sprites.
 - Keep sprite dimensions consistent with tile grid (see existing definitions).
+- **Integer, uniform scale only:** native size × 1 (tile detail) or × 2 (character detail) must equal the draw box from the furniture JSON (`drawWidth`/`drawHeight`, or footprint). Never let a sprite stretch non-uniformly or by a fraction — it drops/duplicates pixel rows. Custom-draw modules (`fireplace.ts`, `fountain.ts`, `kitchen_stove.ts`) follow the same rule via their native constants.
+- Use the crisp helpers (`rrCrisp`, `discCrisp`, `triCrisp`, kit `ellipse`/`line`) rather than canvas paths, which anti-alias.
 - After adding a new sprite name, run `pnpm validate`.
 
 ## Do not

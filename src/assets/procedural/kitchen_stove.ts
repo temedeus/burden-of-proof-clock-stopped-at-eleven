@@ -1,8 +1,11 @@
 import { P } from "./palette";
 import { r } from "./pixel";
 
-const NATIVE_W = 56;
-const NATIVE_H = 40;
+/** Art is authored in a 56x40 frame, centred in a 64x48 native box drawn at 2x (4x3 tiles). */
+const NATIVE_W = 64;
+const NATIVE_H = 48;
+const ART_OFFSET_X = 4;
+const ART_OFFSET_Y = 8;
 
 /** Stable 0..1 phase from tile position (varies pan timing per stove). */
 export function kitchenStoveAnimPhase(tileX: number, tileY: number): number {
@@ -146,6 +149,7 @@ export function drawKitchenStoveAnimated(
     ctx.save();
     ctx.translate(dx, dy);
     ctx.scale(dw / NATIVE_W, dh / NATIVE_H);
+    ctx.translate(ART_OFFSET_X, ART_OFFSET_Y);
     drawStoveAnimated(ctx, animTime, phase);
     ctx.restore();
     ctx.imageSmoothingEnabled = prev;

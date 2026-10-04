@@ -19,6 +19,7 @@ import {
     tabletop,
     WOOD
 } from "./furnitureKit";
+import { drawRug } from "./furnitureBedBath";
 
 // ---------------------------------------------------------------------------
 // Shelving (1x)
@@ -274,98 +275,18 @@ export function drawKitchenTable(ctx: CanvasRenderingContext2D): void {
 // Carpet (2x)
 // ---------------------------------------------------------------------------
 
-/** 144x96 @2x — Persian-style rug with medallion, border and fringed ends. */
+/** 144x96 @2x — Persian-style rug under the dining table. */
 export function drawCarpet(ctx: CanvasRenderingContext2D): void {
-    const W = 144;
-    const H = 96;
-    const fringe = "#d8ccb0";
-    const border = "#3a1a2a";
-    const borderMid = "#7a2a3a";
-    const field = P.carpetPlum;
-    const fieldLight = P.carpetPlumLight;
-    const gold = P.gold;
-    const goldDark = P.goldDark;
-    const cream = "#d8c8a8";
-
-    // Fringe on the short ends
-    for (let y = 4; y < H - 4; y += 2) {
-        hline(ctx, 0, y, 4, fringe);
-        hline(ctx, W - 4, y, 4, fringe);
-    }
-    const x0 = 4;
-    const x1 = W - 4;
-    r(ctx, x0, 2, x1 - x0, H - 4, border);
-    // Outer guard stripe
-    r(ctx, x0 + 2, 4, x1 - x0 - 4, H - 8, gold);
-    r(ctx, x0 + 3, 5, x1 - x0 - 6, H - 10, borderMid);
-    // Border motifs (repeating diamonds)
-    const bx0 = x0 + 3;
-    const by0 = 5;
-    const bw = x1 - x0 - 6;
-    const bh = H - 10;
-    for (let x = bx0 + 4; x < bx0 + bw - 4; x += 8) {
-        for (const y of [by0 + 4, by0 + bh - 5]) {
-            p(ctx, x, y - 1, cream);
-            hline(ctx, x - 1, y, 3, gold);
-            p(ctx, x, y + 1, cream);
-        }
-    }
-    for (let y = by0 + 8; y < by0 + bh - 6; y += 8) {
-        for (const x of [bx0 + 4, bx0 + bw - 5]) {
-            p(ctx, x, y - 1, cream);
-            hline(ctx, x - 1, y, 3, gold);
-            p(ctx, x, y + 1, cream);
-        }
-    }
-    // Inner guard + field
-    const fx = bx0 + 9;
-    const fy = by0 + 9;
-    const fw = bw - 18;
-    const fh = bh - 18;
-    r(ctx, fx - 1, fy - 1, fw + 2, fh + 2, goldDark);
-    r(ctx, fx, fy, fw, fh, field);
-    // Field lattice
-    for (let y = fy + 3; y < fy + fh - 2; y += 6) {
-        for (let x = fx + 3 + ((y - fy) % 12 === 3 ? 0 : 3); x < fx + fw - 2; x += 6) {
-            p(ctx, x, y, fieldLight);
-        }
-    }
-    // Central medallion (lozenge) with pendants
-    const cx = W / 2;
-    const cy = H / 2;
-    for (let dy = -14; dy <= 14; dy++) {
-        const half = Math.round(30 * (1 - Math.abs(dy) / 15));
-        if (half <= 0) continue;
-        hline(ctx, cx - half, cy + dy, half * 2, Math.abs(dy) % 4 === 0 ? goldDark : borderMid);
-    }
-    for (let dy = -9; dy <= 9; dy++) {
-        const half = Math.round(18 * (1 - Math.abs(dy) / 10));
-        if (half <= 0) continue;
-        hline(ctx, cx - half, cy + dy, half * 2, fieldLight);
-    }
-    for (let dy = -4; dy <= 4; dy++) {
-        const half = Math.round(8 * (1 - Math.abs(dy) / 5));
-        if (half <= 0) continue;
-        hline(ctx, cx - half, cy + dy, half * 2, gold);
-    }
-    r(ctx, cx - 1, cy - 1, 2, 2, border);
-    // Pendants toward the ends
-    for (const sx of [-1, 1]) {
-        const px = cx + sx * 38;
-        r(ctx, px - 2, cy - 2, 4, 4, gold);
-        p(ctx, px - sx * 3, cy, goldDark);
-    }
-    // Corner spandrels
-    for (const [sx, sy] of [[fx, fy], [fx + fw, fy], [fx, fy + fh], [fx + fw, fy + fh]] as const) {
-        const dx = sx === fx ? 1 : -1;
-        const dy = sy === fy ? 1 : -1;
-        for (let i = 0; i < 8; i++) {
-            hline(ctx, dx > 0 ? sx : sx - (8 - i), sy + dy * i - (dy < 0 ? 1 : 0), 8 - i, borderMid);
-        }
-        p(ctx, sx + dx * 2, sy + dy * 2 - (dy < 0 ? 1 : 0), gold);
-    }
-    // Light wear across the walking line
-    hline(ctx, fx + 6, cy + 18, fw - 12, "rgba(255,255,255,0.06)");
+    drawRug(ctx, 144, 96, {
+        field: P.carpetPlum,
+        fieldLight: P.carpetPlumLight,
+        border: "#3a1a2a",
+        borderMid: "#7a2a3a",
+        accent: P.gold,
+        accentDark: P.goldDark,
+        cream: "#d8c8a8",
+        fringe: "#d8ccb0"
+    });
 }
 
 // ---------------------------------------------------------------------------

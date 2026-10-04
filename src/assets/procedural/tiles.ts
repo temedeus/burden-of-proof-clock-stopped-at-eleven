@@ -1306,17 +1306,28 @@ function drawManorNorthWallFace(
     r(ctx, 8 + variant * 2, 12, 2, 1, plasterHi);
     r(ctx, 20, 20 - variant, 3, 1, plasterHi);
 
-    // Faint rose wash confined to the upper tile of the thick wall
+    // Rose damask wallpaper: deep rose ground, fleur motifs on a half-drop repeat (seamless at 16px)
     if (accent === "rose") {
-        for (const [rx, ry, rw, rh] of [
-            [2, 5, 8, 3],
-            [12, 9, 10, 2],
-            [4, 15, 6, 2],
-            [18, 18, 7, 3],
-            [8, 24, 12, 2]
-        ] as [number, number, number, number][]) {
-            r(ctx, rx, ry, rw, rh, P.roseWallWash);
-        }
+        const ground = "#7a2e34";
+        const groundStripe = "#84363c";
+        const motif = "#a4505a";
+        const motifHi = "#c27078";
+        r(ctx, 0, 3, 32, 25, ground);
+        for (let x = 0; x < 32; x += 8) r(ctx, x + 3, 3, 2, 25, groundStripe);
+        const fleur = (fx: number, fy: number) => {
+            r(ctx, fx, fy, 1, 1, motifHi);
+            r(ctx, fx - 1, fy + 1, 3, 1, motif);
+            r(ctx, fx - 2, fy + 2, 1, 1, motif);
+            r(ctx, fx, fy + 2, 1, 1, motif);
+            r(ctx, fx + 2, fy + 2, 1, 1, motif);
+            r(ctx, fx, fy + 3, 1, 1, motif);
+            r(ctx, fx - 1, fy + 4, 1, 1, motif);
+            r(ctx, fx + 1, fy + 4, 1, 1, motif);
+        };
+        for (const [fx, fy] of [[4, 5], [20, 5], [12, 15], [28, 15]] as const) fleur(fx, fy);
+        // Dado border under the paper
+        r(ctx, 0, 26, 32, 2, "#5a1e24");
+        for (let x = 1; x < 32; x += 4) r(ctx, x, 26, 2, 1, P.goldDark);
     }
 
     // Chair rail
@@ -1341,9 +1352,11 @@ function drawManorNorthWallFace(
     r(ctx, 0, 61, 32, 2, P.wood);
     r(ctx, 0, 61, 32, 1, P.woodHi);
 
-    // Soft vertical edge shadow so adjacent columns read as one surface
-    r(ctx, 0, 3, 1, 25, plasterShade);
-    r(ctx, 31, 3, 1, 25, plasterShade);
+    // Soft vertical edge shadow so adjacent columns read as one surface (plaster only; paper is seamless)
+    if (accent !== "rose") {
+        r(ctx, 0, 3, 1, 25, plasterShade);
+        r(ctx, 31, 3, 1, 25, plasterShade);
+    }
 }
 
 export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
@@ -1608,18 +1621,30 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
     }),
 
     ceramic: tile32((ctx) => {
+        // Victorian white tiles with slate diamond insets at the grout crossings (seamless)
         const tile = 8;
+        r(ctx, 0, 0, 32, 32, P.ceramicLight);
         for (let row = 0; row < 4; row++) {
             for (let col = 0; col < 4; col++) {
                 const x = col * tile;
                 const y = row * tile;
-                r(ctx, x, y, tile, tile, (row + col) % 2 === 0 ? P.ceramicLight : P.ceramic);
+                r(ctx, x + 1, y + 1, tile - 1, tile - 1, (row * 3 + col * 5) % 7 === 0 ? P.ceramic : P.ceramicLight);
+                r(ctx, x + 1, y + tile - 1, tile - 1, 1, P.ceramic);
+                r(ctx, x + tile - 1, y + 1, 1, tile - 1, P.ceramic);
+                r(ctx, x + 2, y + 2, 2, 1, "#ffffff");
                 r(ctx, x, y, tile, 1, P.grout);
                 r(ctx, x, y, 1, tile, P.grout);
             }
         }
-        r(ctx, 0, 31, 32, 1, P.grout);
-        r(ctx, 31, 0, 1, 32, P.grout);
+        const slate = "#4e5a66";
+        const slateHi = "#6e7a86";
+        for (let gy = 0; gy < 32; gy += tile * 2) {
+            for (let gx = 0; gx < 32; gx += tile * 2) {
+                for (const [dx, dy, c] of [[0, -1, slateHi], [-1, 0, slate], [0, 0, slate], [1, 0, slate], [0, 1, slate]] as const) {
+                    r(ctx, (gx + dx + 32) % 32, (gy + dy + 32) % 32, 1, 1, c);
+                }
+            }
+        }
     }),
 
     floor_marble: tile32((ctx) => {

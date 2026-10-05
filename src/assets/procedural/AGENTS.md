@@ -37,7 +37,7 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | `attic_mouse.ts` | Attic mice (via `AtticMiceController`) |
 | `seagull.ts` | Courtyard seagull (via `CourtyardSeagullController`) |
 | `animals.ts` | Horses (animated stable booths) |
-| `ballroom_windows.ts` | Animated ballroom clerestory windows (dancing_room) |
+| `ballroom_windows.ts` | Ballroom clerestory windows (dancing_room): night sky, glazing, drapes, pilasters |
 
 `oil_lamp` is in `sprites.ts` but drawn at runtime, not baked in `registry.ts`.
 
@@ -46,6 +46,7 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | Module | Used for |
 |--------|----------|
 | `pond.ts` | Garden pond (baked via `POND_SPRITES` in `registry.ts`) |
+| `armorStand.ts` | Suit of armour with halberd (32×48 mirrored template, baked via `furniture.ts`) |
 | `stuffed_moose.ts` | Study moose trophy (32×48 pixel template, baked via `furniture.ts`) |
 | `furnitureInterior.ts` | Redrawn interior pieces (shelves, tables, carpet, cabinet, chest, hall clock, barrel, rack) |
 | `furnitureBedBath.ts` | Bathroom (tub, toilet, boiler), master bedroom (four-poster, vanity, nightstand), guest + maid beds, and the shared `drawRug` |

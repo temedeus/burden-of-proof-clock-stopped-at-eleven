@@ -9,3 +9,14 @@ describe("stuffed moose template", () => {
         }
     });
 });
+
+import { ARMOR_LEFT_HALF, ARMOR_STAND_H, ARMOR_STAND_W } from "./armorStand";
+
+describe("armor stand template", () => {
+    it("left-half rows are half the sprite width and fit its height", () => {
+        expect(ARMOR_LEFT_HALF.length).toBeLessThanOrEqual(ARMOR_STAND_H);
+        for (const [i, row] of ARMOR_LEFT_HALF.entries()) {
+            expect(row.length, `row ${i}`).toBe(ARMOR_STAND_W / 2);
+        }
+    });
+});

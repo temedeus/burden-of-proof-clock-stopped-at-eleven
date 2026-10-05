@@ -1,67 +1,122 @@
 import { P } from "./palette";
-import { r } from "./pixel";
+import { discCrisp, hline, p, r, vline } from "./pixel";
+import { seeded } from "./furnitureKit";
 import { TILE_SIZE } from "../../world/constants";
 
 const WINDOW_COUNT = 6;
-const FRAME = 4;
-const MULLION = 5;
+/** Pilaster width between windows; window widths are whole pixels. */
+const PILASTER = 22;
 
-function drawBarrelArchTop(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    w: number,
-    archH: number,
-    color: string
-): void {
-    const cx = x + w / 2;
-    const rx = w / 2;
-    for (let row = 0; row < archH; row++) {
-        const t = row / Math.max(1, archH - 1);
-        const span = rx * Math.sqrt(Math.max(0, 1 - (1 - t) * (1 - t)));
-        const left = Math.ceil(cx - span);
-        const right = Math.floor(cx + span);
-        if (right >= left) {
-            r(ctx, left, y + row, right - left + 1, 1, color);
+const SKY = { top: "#0c1430", mid: "#1a2a52", low: "#2e4470", horizon: "#4a5e86" };
+const GLAZING = "#c8b878";
+const GILT = { d: P.goldDark, m: P.gold, h: "#ecd27a" };
+const PLASTER = { o: "#8a8070", d: "#b8ae9c", m: P.paleWall, l: P.cream };
+const VELVET = { o: "#2a060a", d: "#4a0c14", m: "#6e1620", l: "#922a32" };
+
+/** Half-width of a semicircular-ish arch at `row` rows below its crown. */
+function archHalf(row: number, archH: number, halfW: number): number {
+    const t = Math.min(1, (row + 0.5) / archH);
+    return Math.round(halfW * Math.sqrt(1 - (1 - t) * (1 - t)));
+}
+
+function drawPilaster(ctx: CanvasRenderingContext2D, x: number, w: number, top: number, bottom: number): void {
+    r(ctx, x, top, w, bottom - top, PLASTER.m);
+    vline(ctx, x, top, bottom - top, PLASTER.o);
+    vline(ctx, x + w - 1, top, bottom - top, PLASTER.d);
+    // Fluting
+    for (let fx = x + 4; fx < x + w - 3; fx += 4) {
+        vline(ctx, fx, top + 10, bottom - top - 16, PLASTER.d);
+        vline(ctx, fx + 1, top + 10, bottom - top - 16, PLASTER.l);
+    }
+    // Gilt capital + base
+    r(ctx, x - 1, top + 4, w + 2, 5, GILT.d);
+    hline(ctx, x - 1, top + 4, w + 2, GILT.h);
+    hline(ctx, x, top + 6, w, GILT.m);
+    r(ctx, x - 1, bottom - 5, w + 2, 5, PLASTER.d);
+    hline(ctx, x - 1, bottom - 5, w + 2, PLASTER.l);
+}
+
+function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, index: number): void {
+    const half = w / 2;
+    const cx = x + half;
+    const archH = Math.round(half * 0.7);
+    // Gilt frame silhouette, then the glass
+    for (let row = 0; row < h; row++) {
+        const hw = row < archH ? archHalf(row, archH, half) : half;
+        hline(ctx, Math.round(cx - hw), y + row, hw * 2, GILT.d);
+    }
+    const gx = x + 4;
+    const gw = w - 8;
+    const gh = h - 8;
+    const gHalf = gw / 2;
+    const gArch = Math.round(gHalf * 0.7);
+    for (let row = 0; row < gh; row++) {
+        const hw = row < gArch ? archHalf(row, gArch, gHalf) : gHalf;
+        const t = row / gh;
+        const sky = t < 0.35 ? SKY.top : t < 0.65 ? SKY.mid : t < 0.88 ? SKY.low : SKY.horizon;
+        hline(ctx, Math.round(cx - hw), y + 4 + row, hw * 2, sky);
+    }
+    // Stars and (in one window) the moon
+    const rand = seeded(index * 17 + 3);
+    for (let i = 0; i < 9; i++) {
+        const sx = Math.round(gx + 3 + rand() * (gw - 6));
+        const sy = Math.round(y + 4 + gArch * 0.6 + rand() * (gh * 0.55));
+        p(ctx, sx, sy, rand() < 0.3 ? "#ffffff" : "#a8b8d8");
+    }
+    if (index === 1) {
+        discCrisp(ctx, gx + Math.round(gw * 0.68), y + 4 + gArch + 6, 5, "#e8e4c8");
+        discCrisp(ctx, gx + Math.round(gw * 0.68) + 2, y + 4 + gArch + 5, 4, SKY.mid);
+    }
+    // Distant treeline silhouette at the bottom
+    for (let i = 0; i < gw; i++) {
+        const hgt = 2 + Math.round(Math.abs(Math.sin((i + index * 13) * 0.45)) * 3);
+        vline(ctx, gx + i, y + 4 + gh - hgt, hgt, "#0a1418");
+    }
+    // Glazing bars: mullions + transoms, radiating bars in the fanlight
+    const springY = y + 4 + gArch;
+    for (const k of [1, 2, 3]) vline(ctx, Math.round(gx + (gw * k) / 4), springY, gh - gArch, GLAZING);
+    for (let yy = springY + 10; yy < y + 4 + gh - 2; yy += 10) hline(ctx, gx, yy, gw, GLAZING);
+    hline(ctx, gx, springY, gw, GILT.m);
+    for (const a of [-0.9, -0.45, 0, 0.45, 0.9]) {
+        for (let k = 3; k < gArch; k++) {
+            p(ctx, Math.round(cx + Math.sin(a) * k * 1.4), springY - Math.round(Math.cos(a) * k), GLAZING);
         }
     }
+    // Reflection streak
+    for (let i = 0; i < 10; i++) p(ctx, gx + 4 + i, springY + 14 - i, "rgba(200,220,255,0.35)");
+    // Frame highlight on the arch + stone sill
+    for (let row = 0; row < archH; row++) {
+        const hw = archHalf(row, archH, half);
+        p(ctx, Math.round(cx - hw), y + row, GILT.h);
+    }
+    r(ctx, x - 2, y + h - 3, w + 4, 4, PLASTER.d);
+    hline(ctx, x - 2, y + h - 3, w + 4, PLASTER.l);
+
+    // Velvet drapes tied back at each side
+    const tieY = y + Math.round(h * 0.62);
+    for (const side of [-1, 1]) {
+        for (let yy = y + 6; yy < y + h - 2; yy++) {
+            const pinch = Math.abs(yy - tieY) < 3 ? 2 : 0;
+            const flare = yy > tieY ? Math.min(3, Math.floor((yy - tieY) / 3)) : 0;
+            const dw = 9 - pinch + flare;
+            const x0 = side < 0 ? x - 2 : x + w + 2 - dw;
+            hline(ctx, x0, yy, dw, VELVET.m);
+            for (let f = 1; f < dw; f += 3) p(ctx, x0 + f, yy, (f + yy) % 2 ? VELVET.l : VELVET.d);
+            p(ctx, side < 0 ? x0 + dw - 1 : x0, yy, VELVET.o);
+        }
+        const tx = side < 0 ? x - 2 : x + w - 6;
+        hline(ctx, tx, tieY, 8, GILT.m);
+        p(ctx, side < 0 ? tx + 7 : tx, tieY + 1, GILT.d);
+        p(ctx, side < 0 ? tx + 7 : tx, tieY + 2, GILT.m);
+    }
+    // Pelmet with gold fringe
+    r(ctx, x - 3, y + 2, w + 6, 5, VELVET.o);
+    r(ctx, x - 2, y + 2, w + 4, 4, VELVET.m);
+    hline(ctx, x - 2, y + 2, w + 4, VELVET.l);
+    for (let fx = x - 2; fx < x + w + 2; fx += 2) p(ctx, fx, y + 6, GILT.m);
 }
 
-function drawArchedWindow(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    w: number,
-    h: number
-): void {
-    const archH = Math.floor(h * 0.42);
-    const bodyTop = y + archH - 2;
-    const bodyH = h - archH + 2;
-
-    r(ctx, x, bodyTop, w, bodyH, P.paleWallTrim);
-    r(ctx, x + 1, bodyTop + 1, w - 2, bodyH - 2, P.paleWallGold);
-
-    drawBarrelArchTop(ctx, x, y, w, archH, P.paleWallTrim);
-    drawBarrelArchTop(ctx, x + 1, y + 1, w - 2, Math.max(2, archH - 2), P.paleWallGold);
-
-    const glassX = x + FRAME;
-    const glassW = w - FRAME * 2;
-    const glassY = y + Math.floor(archH * 0.35);
-    const glassH = bodyTop + bodyH - FRAME - glassY;
-
-    r(ctx, glassX, glassY, glassW, glassH, "#5a6a78");
-    r(ctx, glassX + 2, glassY + 2, glassW - 4, Math.max(2, Math.floor(glassH * 0.25)), "#7a8a98");
-    r(ctx, glassX + Math.floor(glassW * 0.15), glassY + 4, 2, glassH - 8, "#9aaab0");
-    r(ctx, glassX + Math.floor(glassW * 0.55), glassY + 6, 1, glassH - 12, "#9aaab0");
-
-    drawBarrelArchTop(ctx, glassX, glassY - Math.floor(archH * 0.35), glassW, archH, "#5a6a78");
-    drawBarrelArchTop(ctx, glassX + 2, glassY - Math.floor(archH * 0.35) + 2, glassW - 4, Math.max(2, archH - 4), "#7a8a98");
-
-    r(ctx, x + Math.floor(w / 2) - 1, glassY, 2, glassH, P.paleWallTrim);
-    r(ctx, x, bodyTop + bodyH - FRAME, w, FRAME, P.paleWallGold);
-}
-
-/** Six large arched clerestory windows above the ballroom north wall. */
+/** Six tall arched windows with drapes along the ballroom's north wall. */
 export function drawBallroomClerestoryWindows(
     ctx: CanvasRenderingContext2D,
     roomWidth: number,
@@ -69,17 +124,23 @@ export function drawBallroomClerestoryWindows(
 ): void {
     const left = TILE_SIZE;
     const right = roomWidth * TILE_SIZE - TILE_SIZE;
-    const bandTop = 0;
     const bandBottom = northWallRow * TILE_SIZE;
     const innerW = right - left;
 
-    r(ctx, left, bandTop, innerW, bandBottom, P.black);
+    // Pale panelled wall behind
+    r(ctx, left, 0, innerW, bandBottom, PLASTER.m);
+    hline(ctx, left, 0, innerW, PLASTER.o);
+    hline(ctx, left, 1, innerW, GILT.d);
 
-    const winW = (innerW - MULLION * (WINDOW_COUNT - 1)) / WINDOW_COUNT;
-    const winH = bandBottom + 6;
+    const winW = Math.floor((innerW - PILASTER * (WINDOW_COUNT + 1)) / WINDOW_COUNT);
+    const used = winW * WINDOW_COUNT + PILASTER * (WINDOW_COUNT + 1);
+    const x0 = left + Math.floor((innerW - used) / 2);
+    const winH = bandBottom + 4;
 
+    for (let i = 0; i <= WINDOW_COUNT; i++) {
+        drawPilaster(ctx, x0 + i * (winW + PILASTER), PILASTER, 0, bandBottom + 6);
+    }
     for (let i = 0; i < WINDOW_COUNT; i++) {
-        const x = left + i * (winW + MULLION);
-        drawArchedWindow(ctx, x, bandTop + 2, winW, winH);
+        drawWindow(ctx, x0 + PILASTER + i * (winW + PILASTER), 2, winW, winH, i);
     }
 }

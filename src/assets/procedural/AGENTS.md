@@ -46,6 +46,7 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | Module | Used for |
 |--------|----------|
 | `pond.ts` | Garden pond (baked via `POND_SPRITES` in `registry.ts`) |
+| `ballroom.ts` | Ballroom marble floor/wall tiles, dance-floor medallion, ceiling beam + chandeliers (overhead), potted palms, harp, gilt chairs |
 | `armorStand.ts` | Suit of armour with halberd (32×48 mirrored template, baked via `furniture.ts`) |
 | `stuffed_moose.ts` | Study moose trophy (32×48 pixel template, baked via `furniture.ts`) |
 | `furnitureInterior.ts` | Redrawn interior pieces (shelves, tables, carpet, cabinet, chest, hall clock, barrel, rack) |

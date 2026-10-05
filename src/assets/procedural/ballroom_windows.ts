@@ -124,7 +124,27 @@ function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, w: numb
     for (let fx = x - 2; fx < x + w + 2; fx += 2) p(ctx, fx, y + 6, GILT.m);
 }
 
-/** Six tall arched windows with drapes along the ballroom's north wall. */
+/** Panelled dado with gilt mouldings and a skirting board along the bottom of the face. */
+function drawDado(ctx: CanvasRenderingContext2D, left: number, width: number, top: number, bottom: number): void {
+    r(ctx, left, top, width, bottom - top, PLASTER.m);
+    // Chair rail
+    r(ctx, left, top, width, 3, PLASTER.d);
+    hline(ctx, left, top, width, PLASTER.l);
+    hline(ctx, left, top + 2, width, GILT.d);
+    // Raised panels
+    for (let x = left + 4; x < left + width - 20; x += 24) {
+        r(ctx, x, top + 5, 20, bottom - top - 11, PLASTER.d);
+        r(ctx, x + 1, top + 6, 18, bottom - top - 13, PLASTER.l);
+        hline(ctx, x + 1, top + 6, 18, "#fbf8f2");
+        r(ctx, x + 2, top + 7, 16, 1, GILT.m);
+    }
+    // Skirting
+    r(ctx, left, bottom - 5, width, 5, "#a89c88");
+    hline(ctx, left, bottom - 5, width, PLASTER.l);
+    hline(ctx, left, bottom - 1, width, PLASTER.o);
+}
+
+/** Tall arched windows with drapes above a panelled dado along the ballroom's north wall. */
 export function drawBallroomClerestoryWindows(
     ctx: CanvasRenderingContext2D,
     roomWidth: number,
@@ -132,28 +152,34 @@ export function drawBallroomClerestoryWindows(
 ): void {
     const left = TILE_SIZE;
     const right = roomWidth * TILE_SIZE - TILE_SIZE;
-    const bandBottom = northWallRow * TILE_SIZE;
+    // The face covers the clerestory rows plus the wall row beneath them
+    const faceBottom = (northWallRow + 1) * TILE_SIZE;
+    const dadoH = 22;
+    const dadoTop = faceBottom - dadoH;
     const innerW = right - left;
 
-    // Pale panelled wall behind
-    r(ctx, left, 0, innerW, bandBottom, PLASTER.m);
+    // Pale wall behind with a gilt cornice
+    r(ctx, left, 0, innerW, faceBottom, PLASTER.m);
     hline(ctx, left, 0, innerW, PLASTER.o);
     hline(ctx, left, 1, innerW, GILT.d);
+    hline(ctx, left, 2, innerW, GILT.h);
+    drawDado(ctx, left, innerW, dadoTop, faceBottom);
 
     const winW = Math.floor((innerW - PILASTER * (WINDOW_COUNT + 1)) / WINDOW_COUNT);
     const used = winW * WINDOW_COUNT + PILASTER * (WINDOW_COUNT + 1);
     const x0 = left + Math.floor((innerW - used) / 2);
-    const winH = bandBottom + 4;
+    const winTop = 4;
+    const winH = dadoTop - winTop;
 
     for (let i = 0; i <= WINDOW_COUNT; i++) {
-        drawPilaster(ctx, x0 + i * (winW + PILASTER), PILASTER, 0, bandBottom + 6);
+        drawPilaster(ctx, x0 + i * (winW + PILASTER), PILASTER, 3, dadoTop);
     }
     for (let i = 0; i < WINDOW_COUNT; i++) {
-        drawWindow(ctx, x0 + PILASTER + i * (winW + PILASTER), 2, winW, winH, i);
+        drawWindow(ctx, x0 + PILASTER + i * (winW + PILASTER), winTop, winW, winH, i);
     }
 
     // Daylight falling through the windows onto the floor, fading with distance
-    const shaftTop = bandBottom + 6;
+    const shaftTop = faceBottom;
     const shaftLen = TILE_SIZE * 4;
     for (let i = 0; i < WINDOW_COUNT; i++) {
         const wx = x0 + PILASTER + i * (winW + PILASTER) + 10;

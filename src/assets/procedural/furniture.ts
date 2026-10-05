@@ -30,6 +30,7 @@ import {
     drawToilet,
     drawWaterBoiler
 } from "./furnitureBedBath";
+import { drawGiltChair } from "./ballroom";
 import { ARMOR_STAND_H, ARMOR_STAND_W, drawArmorStand } from "./armorStand";
 import { drawStuffedMoose, STUFFED_MOOSE_H, STUFFED_MOOSE_W } from "./stuffed_moose";
 import type { ProceduralSpriteDef } from "./types";
@@ -354,27 +355,10 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     fancy_chair: {
-        nativeWidth: 64,
-        nativeHeight: 96,
+        nativeWidth: 32,
+        nativeHeight: 48,
         draw(ctx) {
-            // Gilded legs
-            r(ctx, 14, 70, 4, 20, P.goldDark);
-            r(ctx, 46, 70, 4, 20, P.goldDark);
-            r(ctx, 15, 86, 2, 2, P.gold);
-            r(ctx, 47, 86, 2, 2, P.gold);
-
-            // Seat
-            r(ctx, 12, 58, 40, 12, P.carpetRed);
-            r(ctx, 14, 60, 36, 8, P.carpetRedLight);
-            r(ctx, 18, 62, 28, 4, P.carpetPlumLight);
-
-            // Backrest frame and velvet panel
-            r(ctx, 10, 24, 6, 36, P.gold);
-            r(ctx, 48, 24, 6, 36, P.gold);
-            r(ctx, 12, 20, 40, 6, P.gold);
-            r(ctx, 14, 28, 36, 30, P.carpetPlum);
-            r(ctx, 18, 32, 28, 22, P.carpetPlumLight);
-            r(ctx, 26, 14, 12, 8, P.goldDark);
+            drawGiltChair(ctx);
         }
     },
 

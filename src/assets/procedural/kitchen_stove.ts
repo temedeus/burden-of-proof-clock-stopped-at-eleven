@@ -1,11 +1,9 @@
 import { P } from "./palette";
 import { r } from "./pixel";
 
-/** Art is authored in a 56x40 frame, centred in a 64x48 native box drawn at 2x (4x3 tiles). */
+/** Native size; drawn at 2x into the 4x3-tile stove box. */
 const NATIVE_W = 64;
 const NATIVE_H = 48;
-const ART_OFFSET_X = 4;
-const ART_OFFSET_Y = 8;
 
 /** Stable 0..1 phase from tile position (varies pan timing per stove). */
 export function kitchenStoveAnimPhase(tileX: number, tileY: number): number {
@@ -17,44 +15,84 @@ function hash01(n: number): number {
     return x - Math.floor(x);
 }
 
-/** Iron range body (no pans / steam). */
-function drawStoveBody(ctx: CanvasRenderingContext2D): void {
-    // Cast-iron back plate
-    r(ctx, 4, 2, 48, 14, P.shadow);
-    r(ctx, 6, 4, 44, 10, P.outline);
-    r(ctx, 8, 6, 40, 6, P.black);
+const IRON = { o: "#0c0c0e", d: "#1c1c20", m: "#2c2c32", l: "#44444c", h: "#6a6a74" };
+const STEEL = { d: "#6a7078", m: "#9aa2aa", h: "#d0d6dc" };
+const BRASS = { d: P.goldDark, m: P.gold, h: "#ecd27a" };
 
-    // Warm ember glow under the cooktop
-    r(ctx, 10, 12, 14, 3, P.fireRed);
-    r(ctx, 32, 12, 14, 3, P.fireRed);
-    r(ctx, 12, 13, 10, 1, P.fireOrange);
-    r(ctx, 34, 13, 10, 1, P.fireOrange);
+/** Victorian cast-iron range: plate rack, hob with hotplates, two ovens and a firebox. */
+function drawStoveBody(ctx: CanvasRenderingContext2D, animTime: number, phase: number): void {
+    // Floor shadow
+    r(ctx, 3, 45, 58, 2, "rgba(0,0,0,0.3)");
+    r(ctx, 6, 47, 52, 1, "rgba(0,0,0,0.3)");
 
-    // Cooktop
-    r(ctx, 2, 14, 52, 8, P.outline);
-    r(ctx, 4, 15, 48, 6, P.shadow);
-    r(ctx, 6, 16, 20, 4, P.black);
-    r(ctx, 30, 16, 20, 4, P.black);
+    // Back plate / warming shelf with hanging utensils
+    r(ctx, 6, 0, 52, 13, IRON.o);
+    r(ctx, 7, 1, 50, 11, IRON.d);
+    r(ctx, 7, 1, 50, 2, IRON.l);
+    r(ctx, 7, 3, 50, 1, IRON.m);
+    // Copper pans and a ladle hanging from the rail
+    r(ctx, 12, 5, 6, 5, "#8a4422");
+    r(ctx, 13, 5, 4, 1, "#d08a58");
+    r(ctx, 14, 4, 2, 1, IRON.h);
+    r(ctx, 22, 4, 1, 6, STEEL.m);
+    r(ctx, 21, 9, 3, 2, STEEL.m);
+    r(ctx, 44, 5, 8, 5, "#8a4422");
+    r(ctx, 45, 5, 6, 1, "#d08a58");
+    r(ctx, 47, 4, 2, 1, IRON.h);
+    r(ctx, 36, 4, 1, 5, STEEL.d);
+    r(ctx, 35, 8, 3, 1, STEEL.m);
 
-    // Burner rings
-    r(ctx, 10, 16, 12, 4, P.outline);
-    r(ctx, 12, 17, 8, 2, P.black);
-    r(ctx, 34, 16, 12, 4, P.outline);
-    r(ctx, 36, 17, 8, 2, P.black);
+    // Hob top (seen from above) with a polished steel front rail
+    r(ctx, 3, 13, 58, 9, IRON.o);
+    r(ctx, 4, 14, 56, 7, IRON.m);
+    r(ctx, 4, 14, 56, 1, IRON.l);
+    r(ctx, 3, 21, 58, 2, STEEL.m);
+    r(ctx, 3, 21, 58, 1, STEEL.h);
+    // Hotplates with a breathing ember glow
+    const glow = 0.55 + 0.45 * Math.sin(animTime * 3 + phase * 6.28);
+    for (const cx of [16, 32, 48]) {
+        r(ctx, cx - 6, 15, 12, 5, IRON.o);
+        r(ctx, cx - 5, 16, 10, 3, IRON.d);
+        r(ctx, cx - 3, 17, 6, 1, glow > 0.5 ? P.fireRed : "#5a1a10");
+    }
 
-    // Oven body
-    r(ctx, 6, 22, 44, 16, P.shadow);
-    r(ctx, 8, 24, 40, 12, P.outline);
-    r(ctx, 10, 26, 36, 8, P.black);
-    r(ctx, 12, 28, 14, 4, P.shadow);
-    r(ctx, 30, 28, 14, 4, P.shadow);
-    // Handle
-    r(ctx, 24, 30, 8, 2, P.stoneHi);
-    r(ctx, 26, 29, 4, 1, P.cream);
+    // Front: left oven, central firebox, right oven
+    r(ctx, 4, 23, 56, 20, IRON.o);
+    r(ctx, 5, 23, 54, 19, IRON.d);
+    for (const ox of [6, 40]) {
+        r(ctx, ox, 25, 18, 15, IRON.o);
+        r(ctx, ox + 1, 25, 16, 14, IRON.m);
+        r(ctx, ox + 1, 25, 16, 1, IRON.h);
+        r(ctx, ox + 3, 28, 12, 8, IRON.d);
+        r(ctx, ox + 3, 28, 12, 1, IRON.l);
+        // Brass door bar + temperature dial
+        r(ctx, ox + 3, 37, 12, 1, BRASS.m);
+        r(ctx, ox + 8, 26, 2, 1, BRASS.d);
+        r(ctx, ox + 8, 31, 2, 2, BRASS.m);
+    }
+    // Firebox with glowing coals behind a grille
+    r(ctx, 25, 25, 14, 15, IRON.o);
+    r(ctx, 26, 26, 12, 7, "#1a0806");
+    const flick = Math.floor(animTime * 8 + phase * 10) % 3;
+    r(ctx, 27, 29, 10, 3, P.fireRed);
+    r(ctx, 28 + flick, 29, 4, 2, P.fireOrange);
+    r(ctx, 30 - flick, 30, 3, 1, P.fireYellow);
+    for (let x = 27; x < 38; x += 2) r(ctx, x, 26, 1, 7, IRON.l);
+    // Ash pit door
+    r(ctx, 26, 34, 12, 5, IRON.m);
+    r(ctx, 26, 34, 12, 1, IRON.h);
+    r(ctx, 31, 36, 2, 1, BRASS.m);
 
-    // Feet
-    r(ctx, 8, 37, 4, 3, P.black);
-    r(ctx, 44, 37, 4, 3, P.black);
+    // Brass towel rail with a tea towel
+    r(ctx, 4, 41, 56, 1, BRASS.m);
+    r(ctx, 4, 41, 56, 1, BRASS.h);
+    r(ctx, 12, 41, 7, 4, "#e8dcc8");
+    r(ctx, 12, 43, 7, 1, "#a83a32");
+
+    // Plinth + feet
+    r(ctx, 4, 42, 56, 2, IRON.o);
+    r(ctx, 5, 44, 4, 2, IRON.o);
+    r(ctx, 55, 44, 4, 2, IRON.o);
 }
 
 function drawPan(
@@ -64,22 +102,30 @@ function drawPan(
     flip: number,
     tint: string
 ): void {
-    const lift = Math.floor(flip * 5);
-    const tilt = Math.floor(flip * 3);
+    const lift = Math.floor(flip * 6);
     const y = cy - lift;
-    const x = cx + (tilt % 2 === 0 ? tilt : -tilt);
-
-    // Pan body
-    r(ctx, x - 5, y, 11, 3, P.outline);
-    r(ctx, x - 4, y + 1, 9, 2, tint);
-    r(ctx, x - 3, y + 1, 7, 1, P.black);
-    // Handle
-    r(ctx, x + 5, y + 1, 6, 1, P.woodDark);
-    r(ctx, x + 10, y, 2, 3, P.wood);
-    // Food blob when not mid-flip
-    if (flip < 0.45) {
-        r(ctx, x - 2, y, 4, 1, P.fireOrange);
+    // Iron frying pan seen from above-front
+    r(ctx, cx - 5, y, 11, 4, IRON.o);
+    r(ctx, cx - 4, y, 9, 3, tint);
+    r(ctx, cx - 3, y + 1, 7, 1, IRON.d);
+    r(ctx, cx + 6, y + 1, 6, 1, "#5a3a1e");
+    r(ctx, cx + 11, y, 2, 2, "#7a5230");
+    // Food: tossed when flipping
+    if (flip < 0.35) {
+        r(ctx, cx - 2, y + 1, 4, 1, "#d8a040");
+    } else {
+        r(ctx, cx - 1, y - 3 - Math.floor(flip * 3), 3, 1, "#d8a040");
     }
+}
+
+/** Stock pot with a rattling lid on the right hotplate. */
+function drawPot(ctx: CanvasRenderingContext2D, cx: number, cy: number, animTime: number, phase: number): void {
+    const rattle = Math.sin(animTime * 18 + phase * 9) > 0.7 ? 1 : 0;
+    r(ctx, cx - 6, cy - 6, 12, 8, "#8a4422");
+    r(ctx, cx - 5, cy - 6, 3, 8, "#d08a58");
+    r(ctx, cx - 6, cy + 1, 12, 1, "#4a2010");
+    r(ctx, cx - 7, cy - 7 - rattle, 14, 2, STEEL.m);
+    r(ctx, cx - 1, cy - 9 - rattle, 2, 2, STEEL.h);
 }
 
 /**
@@ -123,15 +169,16 @@ function drawSteam(
 }
 
 function drawStoveAnimated(ctx: CanvasRenderingContext2D, animTime: number, phase: number): void {
-    drawStoveBody(ctx);
+    drawStoveBody(ctx, animTime, phase);
 
     const flipL = panFlipProgress(animTime, phase, 0);
-    const flipR = panFlipProgress(animTime, phase, 1);
-    drawPan(ctx, 16, 15, flipL, P.shadow);
-    drawPan(ctx, 40, 15, flipR, P.outline);
+    const flipM = panFlipProgress(animTime, phase, 1);
+    drawPan(ctx, 15, 15, flipL, IRON.l);
+    drawPan(ctx, 31, 15, flipM, IRON.m);
+    drawPot(ctx, 48, 18, animTime, phase);
 
-    drawSteam(ctx, animTime, phase, 14, 12);
-    drawSteam(ctx, animTime, phase + 0.37, 38, 11);
+    drawSteam(ctx, animTime, phase, 47, 8);
+    drawSteam(ctx, animTime, phase + 0.37, 16, 12);
 }
 
 /** Full kitchen stove with flipping pans and steam (game runtime). */
@@ -149,7 +196,6 @@ export function drawKitchenStoveAnimated(
     ctx.save();
     ctx.translate(dx, dy);
     ctx.scale(dw / NATIVE_W, dh / NATIVE_H);
-    ctx.translate(ART_OFFSET_X, ART_OFFSET_Y);
     drawStoveAnimated(ctx, animTime, phase);
     ctx.restore();
     ctx.imageSmoothingEnabled = prev;

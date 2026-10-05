@@ -37,7 +37,7 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | `attic_mouse.ts` | Attic mice (via `AtticMiceController`) |
 | `seagull.ts` | Courtyard seagull (via `CourtyardSeagullController`) |
 | `animals.ts` | Horses (animated stable booths) |
-| `ballroom_windows.ts` | Ballroom clerestory windows (dancing_room): night sky, glazing, drapes, pilasters |
+| `ballroom_windows.ts` | Ballroom clerestory windows (dancing_room): daytime sky, glazing, drapes, pilasters, light shafts |
 
 `oil_lamp` is in `sprites.ts` but drawn at runtime, not baked in `registry.ts`.
 

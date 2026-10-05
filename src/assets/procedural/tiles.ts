@@ -688,66 +688,6 @@ type RockWallTone = {
     f: string;
     g: string;
 };
-type RockWallCrack = [number, number, number, number, string];
-type RockWallStreak = [number, number, number, number, string];
-
-function rockWallCrackSets(tones: RockWallTone): RockWallCrack[][] {
-    return [
-        [
-            [10, 0, 1, 32, tones.v],
-            [22, 0, 1, 32, tones.s],
-            [5, 8, 1, 14, tones.v],
-            [27, 12, 1, 12, tones.s]
-        ],
-        [
-            [8, 0, 1, 28, tones.v],
-            [19, 2, 1, 30, tones.s],
-            [3, 10, 1, 16, tones.v],
-            [25, 6, 1, 18, tones.f]
-        ],
-        [
-            [12, 0, 1, 32, tones.s],
-            [6, 0, 1, 24, tones.v],
-            [23, 4, 1, 20, tones.v],
-            [15, 14, 1, 18, tones.s]
-        ],
-        [
-            [9, 0, 1, 30, tones.v],
-            [21, 0, 1, 32, tones.s],
-            [4, 16, 1, 12, tones.v],
-            [28, 8, 1, 14, tones.f]
-        ]
-    ];
-}
-
-function rockWallStreakSets(tones: RockWallTone): RockWallStreak[][] {
-    return [
-        [
-            [14, 4, 2, 10, tones.g],
-            [18, 20, 1, 8, tones.f],
-            [3, 22, 3, 1, tones.h],
-            [24, 6, 2, 1, tones.h]
-        ],
-        [
-            [11, 6, 2, 12, tones.g],
-            [20, 18, 1, 9, tones.f],
-            [5, 14, 3, 1, tones.h],
-            [26, 10, 2, 1, tones.s]
-        ],
-        [
-            [16, 3, 1, 14, tones.g],
-            [7, 20, 2, 1, tones.h],
-            [22, 24, 1, 6, tones.f],
-            [2, 8, 2, 1, tones.s]
-        ],
-        [
-            [13, 8, 2, 8, tones.g],
-            [6, 4, 1, 10, tones.f],
-            [23, 16, 3, 1, tones.h],
-            [17, 26, 2, 1, tones.s]
-        ]
-    ];
-}
 
 function rockWallFleckSets(tones: RockWallTone): [number, number, string][][] {
     return [
@@ -774,149 +714,51 @@ function rockWallFleckSets(tones: RockWallTone): [number, number, string][][] {
     ];
 }
 
+/**
+ * Top-down masonry for side/bottom walls. Seamless across tiles: 8px courses
+ * alternate between a joint at the tile edge and a stone straddling it, so
+ * neighbouring tiles (any variant) join into one continuous wall.
+ */
 function drawRockWallVariant(
     ctx: CanvasRenderingContext2D,
     variant: 0 | 1 | 2 | 3,
     tones: RockWallTone = ROCK_WALL
 ): void {
-    r(ctx, 0, 0, 32, 32, tones.v);
-
-    const layouts: string[][][] = [
-        [
-            [
-                "vvvvvvvvvvvvvvvv",
-                "vddhhlllldddmmvv",
-                "vdhllllllllddmmv",
-                "vdhllflllllldmmv",
-                "vdhllllllllddmmv",
-                "vddllllllldddmmv",
-                "vvddhhlllddddmmv",
-                "vvvdddddhhdddmmv",
-                "vvvdddhhlllddmmv",
-                "vvddhllllllddmmv",
-                "vdhllflllllldmmv",
-                "vdhllllllllddmmv",
-                "vddllllllldddmmv",
-                "vvddhhlllddddmmv",
-                "vvvdddddhhdddmmv",
-                "vvvvvvvvvvvvvvvv"
-            ]
-        ],
-        [
-            [
-                "vvvvvvvvvvvvvvvv",
-                "vvddhhlllldddmmv",
-                "vvvdhllllllddmmv",
-                "vvvdhllflllldmmv",
-                "vvvdhllllllddmmv",
-                "vvvddllllldddmmv",
-                "vvvdddhhlllddmmv",
-                "vvvddhlllllddmmv",
-                "vvvdhllflllldmmv",
-                "vvvdhllllllddmmv",
-                "vvvddllllldddmmv",
-                "vvvdddhhlllddmmv",
-                "vvvddhlllllddmmv",
-                "vvvdhllllllddmmv",
-                "vvvddhhllldddmmv",
-                "vvvvvvvvvvvvvvvv"
-            ],
-            [
-                "vvvv",
-                "dhlv",
-                "dhlv",
-                "dhlv",
-                "dddv"
-            ]
-        ],
-        [
-            [
-                "vvvvvvvvvvvvvvvv",
-                "vddhhlllldddmmvv",
-                "vdhllllllllddmmv",
-                "vdhllflllllldmmv",
-                "vdhllllllllddmmv",
-                "vddllllllldddmmv",
-                "vvddhhlllddddmmv",
-                "vvvdddddhhdddmmv",
-                "vvvdddhhlllddmmv",
-                "vvddhllllllddmmv",
-                "vdhllflllllldmmv",
-                "vdhllllllllddmmv",
-                "vddllllllldddmmv",
-                "vvddhhlllddddmmv",
-                "vvvdddddhhdddmmv",
-                "vvvvvvvvvvvvvvvv"
-            ],
-            [
-                "dddd",
-                "hlll",
-                "hlll",
-                "hlll",
-                "dddd"
-            ]
-        ],
-        [
-            [
-                "vvvvvvvvvvvvvvvv",
-                "vvvddhhllldddmmv",
-                "vvvdhllllllddmmv",
-                "vvvdhllflllldmmv",
-                "vvvdhllllllddmmv",
-                "vvvddllllldddmmv",
-                "vvvdddhhlllddmmv",
-                "vvvddhlllllddmmv",
-                "vvvdhllflllldmmv",
-                "vvvdhllllllddmmv",
-                "vvvddllllldddmmv",
-                "vvvdddhhlllddmmv",
-                "vvvddhlllllddmmv",
-                "vvvdhllllllddmmv",
-                "vvvddhhllldddmmv",
-                "vvvvvvvvvvvvvvvv"
-            ],
-            [
-                "vvdd",
-                "dhll",
-                "dhll",
-                "vvdd"
-            ]
-        ]
+    // Interior joint positions per course (edge joint at x=0 on even courses only)
+    const joints: number[][][] = [
+        [[0, 13], [16, 5], [0, 20], [16, 27]],
+        [[0, 18], [16, 9], [0, 11], [16, 24]],
+        [[0, 22], [16, 4], [0, 15], [16, 28]],
+        [[0, 9], [16, 25], [0, 19], [16, 7]]
     ];
-
-    const offsets: [number, number][][] = [
-        [[0, 0]],
-        [
-            [1, 0],
-            [24, 20]
-        ],
-        [
-            [0, 1],
-            [20, 22]
-        ],
-        [
-            [2, 0],
-            [22, 18]
-        ]
-    ];
-
-    const cracks = rockWallCrackSets(tones);
-    const streaks = rockWallStreakSets(tones);
-    const flecks = rockWallFleckSets(tones);
-
-    for (let i = 0; i < layouts[variant].length; i++) {
-        const [ox, oy] = offsets[variant][i];
-        grid(ctx, ox, oy, 2, layouts[variant][i], tones);
+    const bases = [tones.m, tones.d, tones.g, tones.m, tones.l];
+    for (let course = 0; course < 4; course++) {
+        const y = course * 8;
+        const cuts = [...joints[variant][course]].sort((a, b) => a - b);
+        const bounds = [...cuts, 32];
+        // Stones between consecutive joints (the first may start at x<0 conceptually)
+        let x0 = 0;
+        for (let i = 0; i < bounds.length; i++) {
+            const x1 = bounds[i];
+            if (x1 > x0) {
+                const base = bases[(variant * 3 + course * 2 + i) % bases.length];
+                r(ctx, x0, y, x1 - x0, 8, base);
+                r(ctx, x0, y, x1 - x0, 1, tones.h);
+                r(ctx, x0, y + 1, x1 - x0, 1, tones.l);
+                r(ctx, x0, y + 6, x1 - x0, 1, tones.s);
+            }
+            x0 = x1;
+        }
+        // Mortar: bed joint under the course + vertical joints
+        r(ctx, 0, y + 7, 32, 1, tones.v);
+        for (const j of cuts) {
+            r(ctx, j, y, 1, 7, tones.v);
+            if (j + 1 < 32) r(ctx, j + 1, y + 1, 1, 5, tones.h);
+        }
     }
-    for (const [x, y, w, h, color] of cracks[variant]) {
-        r(ctx, x, y, w, h, color);
-    }
-    for (const [x, y, w, h, color] of streaks[variant]) {
-        r(ctx, x, y, w, h, color);
-    }
-    for (const [fx, fy, color] of flecks[variant]) {
-        r(ctx, fx, fy, 1, 1, color);
-    }
+    // Sparse flecks / wear
+    const flecks = rockWallFleckSets(tones)[variant];
+    for (const [fx, fy, color] of flecks) r(ctx, fx, fy, 1, 1, color);
 }
 
 export const ROCK_WALL_SPRITES = ["wall_rock", "wall_rock_b", "wall_rock_c", "wall_rock_d"] as const;

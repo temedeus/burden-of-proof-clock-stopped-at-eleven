@@ -54,6 +54,91 @@ export function renderTileMap(ctx: CanvasRenderingContext2D, map: TileMap): void
             drawTile(ctx, map, tile, x, y);
         }
     }
+    drawWallEdges(ctx, map);
+}
+
+const SOLID_WALLS = new Set<number>([
+    TILE_WALL,
+    TILE_WOOD_WALL,
+    TILE_ROCK_WALL,
+    TILE_PALE_ROCK_WALL,
+    TILE_MANOR_WALL,
+    TILE_ATTIC_WALL,
+    TILE_PALE_WALL
+]);
+
+const NO_EDGE_TILES = new Set<number>([
+    TILE_DOOR,
+    TILE_INVISIBLE_WALL,
+    TILE_FENCE,
+    TILE_FENCE_POST,
+    TILE_BANISTER,
+    TILE_BANISTER_POST,
+    TILE_WOOD_FENCE,
+    TILE_WOOD_FENCE_POST,
+    TILE_WOOD_FENCE_V,
+    TILE_GATE_WALL
+]);
+
+/** Shadow alpha per pixel row/column stepping away from a wall, by wall side. */
+const EDGE_SHADOW: Record<"north" | "west" | "east" | "south", number[]> = {
+    north: [0.34, 0.24, 0.15, 0.08, 0.03],
+    west: [0.28, 0.18, 0.1, 0.04],
+    east: [0.16, 0.09, 0.04],
+    south: [0.14, 0.07]
+};
+
+/**
+ * Where walls meet the floor: a soft contact shadow on the floor (strongest
+ * under the north wall, light from the upper left) and a lit lip on the wall's
+ * inner edge so wall tops read as solid masonry rather than flat tiles.
+ */
+function drawWallEdges(ctx: CanvasRenderingContext2D, map: TileMap): void {
+    const T = TILE_SIZE;
+    const at = (x: number, y: number) =>
+        x < 0 || y < 0 || x >= map.width || y >= map.height ? -1 : map.tiles[y * map.width + x];
+    const lip = "rgba(255,240,220,0.14)";
+    const lipDark = "rgba(0,0,0,0.25)";
+    for (let y = 0; y < map.height; y++) {
+        for (let x = 0; x < map.width; x++) {
+            const tile = at(x, y);
+            if (SOLID_WALLS.has(tile) || NO_EDGE_TILES.has(tile)) continue;
+            const px = x * T;
+            const py = y * T;
+            if (SOLID_WALLS.has(at(x, y - 1))) {
+                EDGE_SHADOW.north.forEach((a, i) => {
+                    ctx.fillStyle = `rgba(0,0,0,${a})`;
+                    ctx.fillRect(px, py + i, T, 1);
+                });
+            }
+            if (SOLID_WALLS.has(at(x - 1, y))) {
+                EDGE_SHADOW.west.forEach((a, i) => {
+                    ctx.fillStyle = `rgba(0,0,0,${a})`;
+                    ctx.fillRect(px + i, py, 1, T);
+                });
+                ctx.fillStyle = lip;
+                ctx.fillRect(px - 2, py, 1, T);
+                ctx.fillStyle = lipDark;
+                ctx.fillRect(px - 1, py, 1, T);
+            }
+            if (SOLID_WALLS.has(at(x + 1, y))) {
+                EDGE_SHADOW.east.forEach((a, i) => {
+                    ctx.fillStyle = `rgba(0,0,0,${a})`;
+                    ctx.fillRect(px + T - 1 - i, py, 1, T);
+                });
+                ctx.fillStyle = lip;
+                ctx.fillRect(px + T, py, 1, T);
+            }
+            if (SOLID_WALLS.has(at(x, y + 1))) {
+                EDGE_SHADOW.south.forEach((a, i) => {
+                    ctx.fillStyle = `rgba(0,0,0,${a})`;
+                    ctx.fillRect(px, py + T - 1 - i, T, 1);
+                });
+                ctx.fillStyle = lip;
+                ctx.fillRect(px, py + T, T, 1);
+            }
+        }
+    }
 }
 
 function underlaySpriteName(map: TileMap, x: number, y: number): string {

@@ -7,7 +7,8 @@ const WINDOW_COUNT = 6;
 /** Pilaster width between windows; window widths are whole pixels. */
 const PILASTER = 22;
 
-const SKY = { top: "#0c1430", mid: "#1a2a52", low: "#2e4470", horizon: "#4a5e86" };
+// Daytime: the story plays out in daylight
+const SKY = { top: "#4a86c4", mid: "#6aa2d6", low: "#94c0e4", horizon: "#c4dcee" };
 const GLAZING = "#c8b878";
 const GILT = { d: P.goldDark, m: P.gold, h: "#ecd27a" };
 const PLASTER = { o: "#8a8070", d: "#b8ae9c", m: P.paleWall, l: P.cream };
@@ -56,21 +57,28 @@ function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, w: numb
         const sky = t < 0.35 ? SKY.top : t < 0.65 ? SKY.mid : t < 0.88 ? SKY.low : SKY.horizon;
         hline(ctx, Math.round(cx - hw), y + 4 + row, hw * 2, sky);
     }
-    // Stars and (in one window) the moon
+    // Clouds drifting across the sky, and the sun in one window
     const rand = seeded(index * 17 + 3);
-    for (let i = 0; i < 9; i++) {
-        const sx = Math.round(gx + 3 + rand() * (gw - 6));
-        const sy = Math.round(y + 4 + gArch * 0.6 + rand() * (gh * 0.55));
-        p(ctx, sx, sy, rand() < 0.3 ? "#ffffff" : "#a8b8d8");
+    for (let i = 0; i < 3; i++) {
+        const cxl = Math.round(gx + 6 + rand() * (gw - 16));
+        const cyl = Math.round(y + 4 + gArch * 0.7 + rand() * (gh * 0.45));
+        const len = 6 + Math.floor(rand() * 8);
+        hline(ctx, cxl, cyl, len, "#ffffff");
+        hline(ctx, cxl + 2, cyl - 1, len - 4, "#ffffff");
+        hline(ctx, cxl - 1, cyl + 1, len + 2, "#dce8f2");
     }
     if (index === 1) {
-        discCrisp(ctx, gx + Math.round(gw * 0.68), y + 4 + gArch + 6, 5, "#e8e4c8");
-        discCrisp(ctx, gx + Math.round(gw * 0.68) + 2, y + 4 + gArch + 5, 4, SKY.mid);
+        const sx = gx + Math.round(gw * 0.7);
+        const sy = y + 4 + gArch + 4;
+        discCrisp(ctx, sx, sy, 6, "#f4ecc0");
+        discCrisp(ctx, sx, sy, 4, "#fff8dc");
+        discCrisp(ctx, sx, sy, 2, "#ffffff");
     }
-    // Distant treeline silhouette at the bottom
+    // Sunlit treeline at the bottom
     for (let i = 0; i < gw; i++) {
-        const hgt = 2 + Math.round(Math.abs(Math.sin((i + index * 13) * 0.45)) * 3);
-        vline(ctx, gx + i, y + 4 + gh - hgt, hgt, "#0a1418");
+        const hgt = 3 + Math.round(Math.abs(Math.sin((i + index * 13) * 0.45)) * 3);
+        vline(ctx, gx + i, y + 4 + gh - hgt, hgt, "#2e5a2a");
+        p(ctx, gx + i, y + 4 + gh - hgt, i % 3 === 0 ? "#6aa04a" : "#4a7a36");
     }
     // Glazing bars: mullions + transoms, radiating bars in the fanlight
     const springY = y + 4 + gArch;
@@ -83,7 +91,7 @@ function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, w: numb
         }
     }
     // Reflection streak
-    for (let i = 0; i < 10; i++) p(ctx, gx + 4 + i, springY + 14 - i, "rgba(200,220,255,0.35)");
+    for (let i = 0; i < 10; i++) p(ctx, gx + 4 + i, springY + 14 - i, "rgba(255,255,255,0.45)");
     // Frame highlight on the arch + stone sill
     for (let row = 0; row < archH; row++) {
         const hw = archHalf(row, archH, half);
@@ -142,5 +150,18 @@ export function drawBallroomClerestoryWindows(
     }
     for (let i = 0; i < WINDOW_COUNT; i++) {
         drawWindow(ctx, x0 + PILASTER + i * (winW + PILASTER), 2, winW, winH, i);
+    }
+
+    // Daylight falling through the windows onto the floor, fading with distance
+    const shaftTop = bandBottom + 6;
+    const shaftLen = TILE_SIZE * 4;
+    for (let i = 0; i < WINDOW_COUNT; i++) {
+        const wx = x0 + PILASTER + i * (winW + PILASTER) + 10;
+        const sw = winW - 20;
+        for (let dy = 0; dy < shaftLen; dy++) {
+            const a = 0.22 * (1 - dy / shaftLen);
+            ctx.fillStyle = `rgba(255,244,214,${a.toFixed(3)})`;
+            ctx.fillRect(wx + Math.floor(dy / 6), shaftTop + dy, sw, 1);
+        }
     }
 }

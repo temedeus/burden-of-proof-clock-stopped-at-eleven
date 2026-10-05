@@ -448,3 +448,213 @@ export function drawBedsideTable(ctx: CanvasRenderingContext2D): void {
     p(ctx, 26, 10, "#8a9098");
     p(ctx, 24, 10, shade("#8a9098", 0.2));
 }
+
+// ---------------------------------------------------------------------------
+// Guest + maid beds (2x)
+// ---------------------------------------------------------------------------
+
+const WALNUT = { o: "#1e140c", d: "#3e2a18", m: "#5a3e24", l: "#7a5634", h: "#9a7046" };
+const SAGE = { o: "#14241c", d: "#22382a", m: "#2e4e3a", l: "#42684e", h: "#5e8a66" };
+
+/** Turned bedpost with a round knob. */
+function bedPost(ctx: CanvasRenderingContext2D, x: number, top: number, bottom: number, wood: typeof WALNUT, knob: string): void {
+    r(ctx, x, top + 2, 4, bottom - top - 2, wood.o);
+    r(ctx, x + 1, top + 2, 2, bottom - top - 3, wood.m);
+    vline(ctx, x + 1, top + 2, bottom - top - 3, wood.l);
+    for (let y = top + 7; y < bottom - 3; y += 9) hline(ctx, x, y, 4, wood.d);
+    discCrisp(ctx, x + 2, top + 1, 2, knob);
+    p(ctx, x + 1, top, shade(knob, 0.35));
+}
+
+/** 96x96 @2x — walnut double bed for the guest rooms. */
+export function drawGuestBed(ctx: CanvasRenderingContext2D): void {
+    const Wd = WALNUT;
+    const W = 96;
+    floorShadow(ctx, 6, 91, W - 12, 3);
+
+    // Headboard: arched crest between two posts
+    bedPost(ctx, 6, 2, 40, Wd, Wd.l);
+    bedPost(ctx, W - 10, 2, 40, Wd, Wd.l);
+    for (let y = 6; y <= 30; y++) {
+        const t = Math.max(0, (14 - y) / 8);
+        const inset = Math.round(30 * t * t);
+        r(ctx, 10 + inset, y, W - 20 - inset * 2, 1, Wd.m);
+        p(ctx, 10 + inset, y, Wd.o);
+        p(ctx, W - 11 - inset, y, Wd.o);
+        if (y < 14) p(ctx, 11 + inset, y, Wd.l);
+    }
+    recess(ctx, 16, 14, 28, 13, Wd);
+    recess(ctx, 52, 14, 28, 13, Wd);
+    discCrisp(ctx, W / 2, 9, 2, Wd.h);
+
+    // Bed body with the coverlet hanging over the sides
+    r(ctx, 8, 28, W - 16, 52, SAGE.o);
+    r(ctx, 9, 29, W - 18, 50, SAGE.d);
+    r(ctx, 12, 28, W - 24, 46, "#efe8da");
+    // Pillows
+    for (const x of [14, 50]) {
+        r(ctx, x, 30, 32, 12, "#c8bca8");
+        r(ctx, x + 1, 30, 30, 11, P.white);
+        hline(ctx, x + 2, 31, 26, "#ffffff");
+        hline(ctx, x + 1, 39, 30, "#dcd2c0");
+        p(ctx, x + 15, 35, "#dcd2c0");
+    }
+    // Turned-down sheet
+    r(ctx, 12, 43, W - 24, 5, P.white);
+    hline(ctx, 12, 47, W - 24, "#c8bca8");
+    // Quilted sage coverlet with a cream border
+    r(ctx, 12, 48, W - 24, 26, SAGE.m);
+    hline(ctx, 12, 48, W - 24, SAGE.h);
+    for (let y = 52; y < 72; y += 5) {
+        for (let x = 16 + ((y / 5) % 2) * 5; x < W - 14; x += 10) {
+            p(ctx, x, y, SAGE.l);
+            p(ctx, x - 1, y + 1, SAGE.d);
+            p(ctx, x + 1, y + 1, SAGE.d);
+        }
+    }
+    r(ctx, 14, 50, W - 28, 1, "#d8ccb0");
+    r(ctx, 14, 71, W - 28, 1, "#d8ccb0");
+    r(ctx, 15, 51, 14, 2, SAGE.l);
+    r(ctx, W - 20, 52, 5, 18, SAGE.d);
+    // Drop over the foot with folds
+    r(ctx, 9, 74, W - 18, 6, SAGE.d);
+    for (let x = 12; x < W - 12; x += 7) vline(ctx, x, 75, 5, SAGE.o);
+    hline(ctx, 9, 79, W - 18, "#d8ccb0");
+
+    // Footboard between short posts
+    panel(ctx, 8, 78, W - 16, 10, Wd);
+    recess(ctx, 14, 81, W - 28, 4, Wd);
+    bedPost(ctx, 5, 70, 92, Wd, Wd.l);
+    bedPost(ctx, W - 9, 70, 92, Wd, Wd.l);
+}
+
+/** 64x64 @2x — the maid's narrow iron bed with a thin, worn mattress. */
+export function drawMaidBed(ctx: CanvasRenderingContext2D): void {
+    const iron = { o: "#0e0e10", d: "#1e1e22", m: "#2e2e34", l: "#4a4a52" };
+    const wool = { o: "#2a2a2a", d: "#4a4844", m: "#62605a", l: "#7a776e", h: "#928e84" };
+    floorShadow(ctx, 12, 60, 40, 3);
+
+    // Iron headboard: rails and spindles, brass knobs
+    for (const x of [12, 49]) {
+        r(ctx, x, 2, 3, 28, iron.o);
+        vline(ctx, x + 1, 3, 26, iron.l);
+        discCrisp(ctx, x + 1, 2, 1, P.goldDark);
+        p(ctx, x + 1, 1, P.gold);
+    }
+    hline(ctx, 14, 5, 36, iron.o);
+    hline(ctx, 14, 6, 36, iron.l);
+    hline(ctx, 14, 16, 36, iron.o);
+    for (let x = 18; x < 48; x += 4) vline(ctx, x, 7, 9, iron.m);
+
+    // Sagging frame + thin mattress
+    r(ctx, 14, 16, 36, 36, iron.o);
+    r(ctx, 15, 17, 34, 34, "#b8ae98");
+    for (let y = 22; y < 50; y += 6) hline(ctx, 16, y, 32, "#a89e88");
+    // Flat pillow, slightly askew
+    r(ctx, 18, 18, 22, 8, "#c8bca8");
+    r(ctx, 19, 18, 20, 7, "#e0d8c8");
+    hline(ctx, 20, 19, 14, "#ece6d8");
+    p(ctx, 22, 22, "#b8ae98");
+    p(ctx, 34, 21, "#b8ae98");
+    // Grey wool blanket, rumpled and turned back at one corner
+    r(ctx, 15, 28, 34, 22, wool.m);
+    hline(ctx, 15, 28, 34, wool.h);
+    hline(ctx, 15, 32, 34, "#7a2a2a");
+    hline(ctx, 15, 46, 34, "#7a2a2a");
+    for (const [x, y, len] of [[18, 36, 9], [28, 39, 12], [20, 43, 6], [36, 34, 8]] as const) {
+        hline(ctx, x, y, len, wool.d);
+        hline(ctx, x + 1, y - 1, len - 2, wool.l);
+    }
+    // Darned patch
+    r(ctx, 38, 40, 6, 5, wool.l);
+    for (let x = 38; x < 44; x += 2) vline(ctx, x, 40, 5, wool.d);
+    // Turned-back corner showing the mattress ticking
+    for (let i = 0; i < 6; i++) hline(ctx, 43 + i, 28 + i, 6 - i, "#b8ae98");
+    line(ctx, 43, 28, 48, 33, wool.d);
+    // Blanket edge hanging over the side
+    r(ctx, 14, 50, 36, 3, wool.d);
+    hline(ctx, 14, 52, 36, wool.o);
+
+    // Iron footboard (lower)
+    for (const x of [12, 49]) {
+        r(ctx, x, 46, 3, 14, iron.o);
+        vline(ctx, x + 1, 47, 12, iron.l);
+        discCrisp(ctx, x + 1, 46, 1, P.goldDark);
+    }
+    hline(ctx, 14, 52, 36, iron.o);
+    hline(ctx, 14, 53, 36, iron.l);
+    for (let x = 18; x < 48; x += 4) vline(ctx, x, 54, 4, iron.m);
+    hline(ctx, 14, 58, 36, iron.o);
+}
+
+/** 48x64 @2x — guest-room washstand dresser with a swing mirror, jug and basin. */
+export function drawGuestVanity(ctx: CanvasRenderingContext2D): void {
+    const Wd = WALNUT;
+    const marble = { o: "#6a645c", d: "#b0a698", m: "#d8d0c6", l: "#e8e2da" };
+    floorShadow(ctx, 4, 61, 40, 3);
+
+    // Swing mirror: arched frame between turned uprights
+    for (const x of [8, 37]) {
+        r(ctx, x, 6, 3, 24, Wd.o);
+        vline(ctx, x + 1, 7, 22, Wd.l);
+        discCrisp(ctx, x + 1, 5, 1, Wd.h);
+        p(ctx, x + 1, 17, BRASS.m);
+    }
+    for (let y = 4; y <= 28; y++) {
+        const t = Math.max(0, (9 - y) / 5);
+        const inset = Math.round(9 * t * t);
+        r(ctx, 12 + inset, y, 24 - inset * 2, 1, Wd.m);
+        p(ctx, 12 + inset, y, Wd.o);
+        p(ctx, 35 - inset, y, Wd.o);
+    }
+    for (let y = 7; y <= 26; y++) {
+        const t = Math.max(0, (11 - y) / 4);
+        const inset = Math.round(7 * t * t);
+        r(ctx, 14 + inset, y, 20 - inset * 2, 1, y < 16 ? "#4a5e6c" : "#3a4a56");
+    }
+    for (let i = 0; i < 6; i++) p(ctx, 17 + i, 10 + i, "#8aa0b0");
+    for (let i = 0; i < 3; i++) p(ctx, 19 + i, 9 + i, "#a8bccb");
+    hline(ctx, 12, 28, 24, Wd.o);
+
+    // Marble top
+    r(ctx, 3, 30, 42, 6, marble.o);
+    r(ctx, 4, 30, 40, 4, marble.m);
+    hline(ctx, 4, 30, 40, marble.l);
+    hline(ctx, 4, 34, 40, marble.d);
+    for (const [x, y] of [[9, 31], [26, 32], [38, 31]] as const) p(ctx, x, y, marble.d);
+
+    // Porcelain basin + jug with a blue band
+    ellipse(ctx, 15, 31, 7, 2.5, "#8a949c");
+    ellipse(ctx, 15, 30.5, 6, 2, "#e8eef2");
+    ellipse(ctx, 15, 31, 4, 1, "#9ac0d8");
+    r(ctx, 12, 21, 6, 9, "#8a949c");
+    r(ctx, 13, 21, 4, 8, "#e8eef2");
+    vline(ctx, 13, 22, 6, P.white);
+    hline(ctx, 12, 25, 6, "#3a5a8a");
+    p(ctx, 18, 23, "#8a949c");
+    p(ctx, 18, 24, "#8a949c");
+    p(ctx, 11, 21, "#e8eef2");
+    // Hairbrush, scent bottle, candle
+    r(ctx, 26, 30, 6, 2, Wd.l);
+    hline(ctx, 26, 30, 6, Wd.h);
+    r(ctx, 32, 30, 3, 1, Wd.d);
+    r(ctx, 35, 27, 2, 3, "#7a4a8a");
+    p(ctx, 35, 26, BRASS.m);
+    vline(ctx, 40, 24, 6, P.cream);
+    p(ctx, 40, 23, P.fireYellow);
+    r(ctx, 39, 29, 3, 1, BRASS.d);
+
+    // Carcass with two drawers
+    panel(ctx, 5, 36, 38, 16, Wd);
+    for (const y of [38, 44]) {
+        recess(ctx, 8, y, 32, 5, Wd);
+        hline(ctx, 21, y + 2, 6, BRASS.d);
+        p(ctx, 22, y + 2, BRASS.h);
+    }
+    // Turned legs + stretcher shelf
+    leg(ctx, 6, 52, 62, 3, Wd);
+    leg(ctx, 39, 52, 62, 3, Wd);
+    hline(ctx, 9, 58, 30, Wd.d);
+    hline(ctx, 9, 57, 30, Wd.l);
+    r(ctx, 26, 55, 6, 2, "#d8ccb0");
+}

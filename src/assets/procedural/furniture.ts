@@ -8,6 +8,7 @@ import {
     drawCarpet,
     drawClockGlassShards,
     drawDiningTable,
+    drawGrandPiano,
     drawHallClock,
     drawKitchenTable,
     drawLockedCabinet,
@@ -20,7 +21,10 @@ import {
 import {
     drawBathtub,
     drawBedsideTable,
+    drawGuestBed,
+    drawGuestVanity,
     drawLordBed,
+    drawMaidBed,
     drawManorCarpet,
     drawManorVanity,
     drawToilet,
@@ -373,36 +377,6 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
 
-    staircase: {
-        nativeWidth: 96,
-        nativeHeight: 64,
-        draw(ctx) {
-            // Top-down — 3×2 tiles, treads flush to sprite bounds (aligns with footprint grid)
-            const stepCount = 6;
-            const sh = 10;
-            const top = 2;
-            const bottom = 62;
-
-            for (let i = 0; i < stepCount; i++) {
-                const t = i / (stepCount - 1);
-                const y = top + Math.round(t * (bottom - top - sh));
-                const inset = Math.round(t * 10);
-                const left = 6 + inset;
-                const w = 84 - inset * 2;
-                r(ctx, left, y, w, sh - 2, P.stoneLight);
-                r(ctx, left, y, w, 1, P.stoneHi);
-                r(ctx, left + 1, y + sh - 3, w - 2, 1, P.stone);
-            }
-
-            r(ctx, 2, top, 4, bottom - top, P.woodDark);
-            r(ctx, 90, top, 4, bottom - top, P.woodDark);
-            r(ctx, 2, top, 4, 2, P.woodHi);
-            r(ctx, 90, top, 4, 2, P.woodHi);
-            r(ctx, 4, bottom - 8, 4, 6, P.wood);
-            r(ctx, 88, bottom - 8, 4, 6, P.wood);
-        }
-    },
-
     cellar_hatch: {
         nativeWidth: 128,
         nativeHeight: 128,
@@ -569,45 +543,10 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     guest_bed: {
-        nativeWidth: 192,
-        nativeHeight: 192,
+        nativeWidth: 96,
+        nativeHeight: 96,
         draw(ctx) {
-            const W = 192;
-            const H = 192;
-
-            r(ctx, 12, 24, W - 24, H - 32, P.shadow);
-
-            const leg = (px: number, py: number) => {
-                r(ctx, px, py, 8, H - py - 20, P.woodDark);
-                r(ctx, px + 1, py + 1, 6, H - py - 22, P.wood);
-            };
-            leg(16, 32);
-            leg(W - 24, 32);
-            leg(16, 108);
-            leg(W - 24, 108);
-
-            r(ctx, 20, 32, W - 40, 4, P.woodDark);
-            r(ctx, 20, H - 36, W - 40, 4, P.woodDark);
-            r(ctx, 20, 32, 4, H - 68, P.wood);
-            r(ctx, W - 24, 32, 4, H - 68, P.wood);
-
-            r(ctx, 24, 36, W - 48, H - 72, P.cream);
-            r(ctx, 26, 38, W - 52, H - 76, P.white);
-            r(ctx, 28, 42, W - 56, H - 84, P.highlight);
-
-            r(ctx, 30, 56, W - 60, H - 100, P.carpetPlumLight);
-            r(ctx, 32, 58, W - 64, H - 104, P.carpetPlum);
-            for (let i = 0; i < 4; i++) {
-                r(ctx, 36 + i * 36, 60, 30, H - 108, P.carpetPlumLight);
-            }
-
-            r(ctx, 36, 38, 44, 18, P.cream);
-            r(ctx, 38, 40, 40, 14, P.white);
-            r(ctx, W - 80, 38, 44, 18, P.cream);
-            r(ctx, W - 78, 40, 40, 14, P.white);
-
-            r(ctx, 18, 28, W - 36, 8, P.wood);
-            r(ctx, 20, 30, W - 40, 4, P.woodHi);
+            drawGuestBed(ctx);
         }
     },
 
@@ -615,22 +554,7 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 48,
         nativeHeight: 64,
         draw(ctx) {
-            drawWoodTabletop(ctx, 6, 28, 36, 8);
-            drawTableLegs(ctx, [10, 32], 36, 60);
-
-            r(ctx, 10, 4, 28, 22, P.woodDark);
-            r(ctx, 12, 6, 24, 18, P.silverDark);
-            r(ctx, 14, 8, 20, 14, P.glass);
-            r(ctx, 16, 10, 16, 10, P.glassHi);
-            r(ctx, 18, 12, 12, 6, P.highlight);
-            r(ctx, 20, 14, 8, 2, P.white);
-
-            r(ctx, 14, 24, 20, 4, P.wood);
-            r(ctx, 16, 22, 4, 6, P.goldDark);
-            r(ctx, 28, 22, 4, 6, P.goldDark);
-
-            r(ctx, 12, 32, 6, 4, P.cream);
-            r(ctx, 30, 33, 5, 3, P.gold);
+            drawGuestVanity(ctx);
         }
     },
 
@@ -643,48 +567,10 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     crummy_bed: {
-        nativeWidth: 128,
-        nativeHeight: 128,
+        nativeWidth: 64,
+        nativeHeight: 64,
         draw(ctx) {
-            const W = 128;
-            const H = 128;
-
-            r(ctx, 10, 20, W - 20, H - 28, P.shadow);
-
-            // Worn iron frame
-            const leg = (px: number, py: number) => {
-                r(ctx, px, py, 6, H - py - 16, P.ironDark);
-                r(ctx, px + 1, py + 1, 4, H - py - 18, P.iron);
-            };
-            leg(12, 24);
-            leg(W - 18, 24);
-            leg(12, 72);
-            leg(W - 18, 72);
-
-            r(ctx, 14, 24, W - 28, 3, P.ironDark);
-            r(ctx, 14, H - 28, W - 28, 3, P.ironDark);
-            r(ctx, 14, 24, 3, H - 52, P.iron);
-            r(ctx, W - 17, 24, 3, H - 52, P.iron);
-
-            // Thin stained mattress
-            r(ctx, 18, 28, W - 36, H - 56, P.woodDark);
-            r(ctx, 20, 30, W - 40, H - 60, P.cream);
-            r(ctx, 22, 32, W - 44, H - 64, P.highlight);
-            r(ctx, 28, 38, 18, 10, P.wood);
-            r(ctx, 54, 50, 22, 8, P.woodDark);
-            r(ctx, 78, 42, 14, 12, P.wood);
-
-            // Lumpy threadbare blanket
-            r(ctx, 22, 44, W - 44, H - 72, P.maidBlack);
-            r(ctx, 24, 46, W - 48, H - 76, P.woodDark);
-            for (let i = 0; i < 4; i++) {
-                r(ctx, 26 + i * 22, 48 + (i % 2) * 4, 18, H - 80, P.maidBlack);
-            }
-
-            // Flat pillow
-            r(ctx, 28, 30, 36, 14, P.cream);
-            r(ctx, 30, 32, 32, 10, P.white);
-            r(ctx, 32, 34, 28, 2, P.highlight);
+            drawMaidBed(ctx);
         }
     },
 
@@ -885,48 +771,10 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     grand_piano: {
-        nativeWidth: 160,
-        nativeHeight: 96,
+        nativeWidth: 80,
+        nativeHeight: 48,
         draw(ctx) {
-            // Curved body
-            r(ctx, 18, 28, 120, 52, P.black);
-            r(ctx, 20, 30, 116, 48, P.woodDark);
-            r(ctx, 24, 34, 108, 40, P.black);
-            r(ctx, 120, 36, 24, 36, P.woodDark);
-            r(ctx, 128, 40, 16, 28, P.black);
-
-            // Open lid
-            r(ctx, 16, 18, 118, 14, P.black);
-            r(ctx, 18, 20, 114, 10, P.woodDark);
-            r(ctx, 20, 22, 110, 6, P.shadow);
-            r(ctx, 24, 16, 100, 4, P.woodDark);
-
-            // Keyboard
-            r(ctx, 28, 48, 72, 10, P.cream);
-            for (let i = 0; i < 18; i++) {
-                const kx = 30 + i * 4;
-                r(ctx, kx, 50, 3, 6, i % 2 ? P.white : P.cream);
-                if (i % 3 !== 2 && i < 17) {
-                    r(ctx, kx + 2, 50, 2, 4, P.black);
-                }
-            }
-
-            // Music stand
-            r(ctx, 52, 34, 24, 12, P.black);
-            r(ctx, 54, 36, 20, 8, P.woodDark);
-            r(ctx, 56, 38, 16, 4, P.cream);
-
-            // Legs
-            r(ctx, 30, 74, 8, 18, P.woodDark);
-            r(ctx, 118, 74, 8, 18, P.woodDark);
-            r(ctx, 136, 70, 6, 22, P.woodDark);
-            r(ctx, 32, 76, 4, 4, P.goldDark);
-            r(ctx, 120, 76, 4, 4, P.goldDark);
-
-            // Bench hint
-            r(ctx, 46, 82, 36, 8, P.woodDark);
-            r(ctx, 48, 84, 32, 4, P.wood);
-            r(ctx, 14, 56, 6, 28, P.shadow);
+            drawGrandPiano(ctx);
         }
     },
 

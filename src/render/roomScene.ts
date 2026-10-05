@@ -8,6 +8,9 @@ import { decorWallDrawBounds, wallMountDrawBounds } from "../assets/procedural/w
 import { resolveDecorDrawRectPx } from "@cse/content-schema";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { drawWineBarrelsAtAnchors } from "./wineBarrelDraw";
+import { staircaseSpriteFor, type StairMaterial } from "../assets/procedural/staircase";
+import { TILE_ATTIC_FLOOR, TILE_DOOR, TILE_PALE_ROCK, TILE_ROCK } from "../world/TileTypes";
+import { drawNorthDoor, drawSideDoorway, drawSouthDoorway, SIDE_OPENING_HEIGHT, southOpeningWidth, type DoorStyle } from "../assets/procedural/doors";
 import { TILE_SIZE } from "../world/constants";
 import { exitSkipsDoorSprite } from "../world/exitDoor";
 import type { Interactable } from "../world/Interactable";
@@ -19,7 +22,7 @@ export type DepthActor = { y: number; height: number; render(ctx: CanvasRenderin
 export function furnitureActorFromInteractable(
     obj: Interactable,
     getAnimTime: () => number,
-    roomSize?: { width: number; height: number }
+    roomSize?: { width: number; height: number; tileAt?: (x: number, y: number) => number }
 ): DepthActor {
     const footprint = obj.footprintTiles && obj.footprintTiles.length > 0 ? obj.footprintTiles : obj.tiles;
     const minX = Math.min(...footprint.map((t) => t.x));
@@ -37,6 +40,24 @@ export function furnitureActorFromInteractable(
         spriteName = "bookshelf";
     } else if (obj.id === "table") {
         spriteName = "table";
+    }
+
+    if (spriteName === "staircase") {
+        // Stairs at the south edge lead down; elsewhere they climb into the north wall.
+        // Material follows the floor on the room side of the stairs.
+        const goesDown = obj.wallAlign === "south";
+        const step = goesDown ? -1 : 1;
+        const edgeY = goesDown ? minY : maxY;
+        let material: StairMaterial = "manor";
+        // Sample the floor in front of the stairs (skipping exit/door tiles)
+        for (const dy of [step, step * 2]) {
+            for (let x = minX; x <= maxX; x++) {
+                const floor = roomSize?.tileAt?.(x, edgeY + dy);
+                if (floor === TILE_ATTIC_FLOOR) material = "attic";
+                else if (floor === TILE_ROCK || floor === TILE_PALE_ROCK) material = "stone";
+            }
+        }
+        spriteName = staircaseSpriteFor(goesDown ? "down" : "up", material);
     }
 
     const isFireplace = spriteName === "fireplace";
@@ -171,34 +192,86 @@ export function furnitureActorFromInteractable(
     };
 }
 
-export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void {
-    for (const exit of room.exits) {
-        if (exitSkipsDoorSprite(exit, room.interactables, room.map.width, room.map.height)) continue;
+/**
+ * Copy an already-drawn tile-space rectangle of the canvas (e.g. an intact wall
+ * column) onto another rectangle. Works under the room's translate/scale.
+ */
+function copyRoomPixels(
+    ctx: CanvasRenderingContext2D,
+    sx: number,
+    sy: number,
+    w: number,
+    h: number,
+    dx: number,
+    dy: number
+): void {
+    const m = ctx.getTransform();
+    const prev = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(ctx.canvas, m.a * sx + m.e, m.d * sy + m.f, w * m.a, h * m.d, dx, dy, w, h);
+    ctx.imageSmoothingEnabled = prev;
+}
 
-        const doorSprite = exit.doorSprite ?? "door";
-        const isTopOrBottom = exit.y === 0 || exit.y === room.map.height - 1;
+function isCarved(room: Room, x: number, y: number): boolean {
+    return room.map.getTile(x, y) === TILE_DOOR;
+}
+
+function drawDoorAt(ctx: CanvasRenderingContext2D, x: number, y: number, draw: () => void): void {
+    ctx.save();
+    ctx.translate(x, y);
+    draw();
+    ctx.restore();
+}
+
+/**
+ * Doors sit in the room's own wall: the carved exit is first refilled with the
+ * neighbouring wall, then a 1x door (north) or open doorway (south/sides) is drawn.
+ */
+export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void {
+    const T = TILE_SIZE;
+    const W = room.map.width;
+    const H = room.map.height;
+    for (const exit of room.exits) {
+        if (exitSkipsDoorSprite(exit, room.interactables, W, H)) continue;
+
+        const style: DoorStyle = exit.doorSprite ?? "door";
+        const isTopOrBottom = exit.y === 0 || exit.y === H - 1;
         if (isTopOrBottom) {
-            const depthTiles =
-                exit.y === room.map.height - 1
-                    ? 1
-                    : Math.max(1, room.northWallThickness);
-            spriteLoader.drawSprite(
-                ctx,
-                doorSprite,
-                (exit.x - 1) * TILE_SIZE,
-                exit.y * TILE_SIZE,
-                TILE_SIZE * 3,
-                TILE_SIZE * depthTiles
+            const isNorth = exit.y !== H - 1;
+            const depth = isNorth ? Math.max(1, room.northWallThickness) : 1;
+            const x0 = (exit.x - 1) * T;
+            const y0 = exit.y * T;
+            // Refill the 3 carved columns with the nearest intact wall column
+            const srcCol = [exit.x - 2, exit.x + 2, exit.x - 3, exit.x + 3].find(
+                (cx) => cx > 0 && cx < W - 1 && !isCarved(room, cx, exit.y)
             );
+            if (srcCol !== undefined) {
+                for (let i = 0; i < 3; i++) copyRoomPixels(ctx, srcCol * T, y0, T, depth * T, x0 + i * T, y0);
+            }
+            if (isNorth) {
+                drawDoorAt(ctx, x0, y0, () => drawNorthDoor(ctx, 3 * T, depth * T, style));
+            } else {
+                // Floor shows through the opening: copy the floor just inside the room
+                const openW = southOpeningWidth(style);
+                const ox = x0 + Math.round((3 * T - openW) / 2);
+                copyRoomPixels(ctx, ox, (exit.y - 1) * T, openW, T, ox, y0);
+                drawDoorAt(ctx, x0, y0, () => drawSouthDoorway(ctx, 3 * T, T, style));
+            }
         } else {
-            spriteLoader.drawSprite(
-                ctx,
-                doorSprite,
-                exit.x * TILE_SIZE - 1,
-                (exit.y - 1) * TILE_SIZE - 1,
-                TILE_SIZE + 2,
-                TILE_SIZE * 3 + 2
+            const side = exit.x === 0 ? "west" : "east";
+            const x0 = exit.x * T;
+            const y0 = (exit.y - 1) * T;
+            const srcRow = [exit.y - 2, exit.y + 2, exit.y - 3, exit.y + 3].find(
+                (ry) => ry > room.northWallThickness && ry < H - 1 && !isCarved(room, exit.x, ry)
             );
+            if (srcRow !== undefined) {
+                for (let i = 0; i < 3; i++) copyRoomPixels(ctx, x0, srcRow * T, T, T, x0, y0 + i * T);
+            }
+            // Floor in the opening, copied from the tile just inside the room
+            const insideX = side === "west" ? exit.x + 1 : exit.x - 1;
+            const oy = y0 + Math.round((3 * T - SIDE_OPENING_HEIGHT) / 2);
+            copyRoomPixels(ctx, insideX * T, oy, T, SIDE_OPENING_HEIGHT, x0, oy);
+            drawDoorAt(ctx, x0, y0, () => drawSideDoorway(ctx, T, 3 * T, side, style));
         }
     }
 }
@@ -240,7 +313,8 @@ export function renderRoomScene(
         if (obj.footstepOnlyDecor) continue;
         const actor = furnitureActorFromInteractable(obj, getAnimTime, {
             width: room.map.width,
-            height: room.map.height
+            height: room.map.height,
+            tileAt: (x, y) => room.map.getTile(x, y)
         });
         if (obj.overheadDecor) {
             overheadActors.push(actor);

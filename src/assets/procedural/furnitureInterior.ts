@@ -656,3 +656,111 @@ export function drawClockGlassShards(ctx: CanvasRenderingContext2D): void {
     hline(ctx, 44, 30, 4, P.goldDark);
     p(ctx, 48, 29, P.gold);
 }
+
+// ---------------------------------------------------------------------------
+// Grand piano (2x)
+// ---------------------------------------------------------------------------
+
+/** 80x48 @2x — lacquered grand piano, lid propped open, with its bench. */
+export function drawGrandPiano(ctx: CanvasRenderingContext2D): void {
+    const lac = { o: "#050406", d: "#121014", m: "#1e1a20", l: "#3a3440", h: "#8a8494" };
+    const plate = { d: "#7a5a24", m: "#b8903a", l: "#d8b860" };
+    // Case outline: straight spine/front, curved bentside to the tail
+    const topEdge = (x: number) => (x <= 50 ? 14 : 14 + Math.round(((x - 50) / 26) ** 2 * 12));
+    const frontEdge = (x: number) => (x <= 44 ? 36 : Math.round(36 - ((x - 44) / 32) * 6));
+    const X0 = 4;
+    const X1 = 76;
+
+    floorShadow(ctx, 6, 44, 70, 3);
+
+    // Legs (behind the case side) with brass casters
+    for (const [x, top] of [[7, 36], [40, 36], [69, 31]] as const) {
+        r(ctx, x, top, 3, 44 - top, lac.o);
+        vline(ctx, x + 1, top, 44 - top - 1, lac.l);
+        hline(ctx, x, 38, 3, lac.m);
+        r(ctx, x, 44, 3, 1, P.goldDark);
+    }
+
+    // Case side (rim depth) below the top surface
+    for (let x = X0; x <= X1; x++) {
+        const yb = frontEdge(x);
+        r(ctx, x, yb, 1, 5, lac.d);
+        p(ctx, x, yb + 1, x % 9 < 4 ? lac.l : lac.m);
+        p(ctx, x, yb + 4, lac.o);
+    }
+    vline(ctx, X0, 14, 27, lac.o);
+
+    // Top surface: rim + interior (gold plate, strings)
+    for (let x = X0; x <= X1; x++) {
+        const yt = topEdge(x);
+        const yb = frontEdge(x);
+        if (yb <= yt) continue;
+        r(ctx, x, yt, 1, yb - yt, lac.m);
+        p(ctx, x, yt, lac.o);
+        p(ctx, x, yb - 1, lac.o);
+        if (x > X0 + 1 && x < X1 - 1 && yb - yt > 5) {
+            r(ctx, x, yt + 2, 1, yb - yt - 4, plate.m);
+        }
+    }
+    // Strings and plate holes
+    for (let y = 17; y < 27; y += 2) {
+        for (let x = 7; x < 74; x++) {
+            if (y > topEdge(x) + 2 && y < frontEdge(x) - 9) p(ctx, x, y, plate.l);
+        }
+    }
+    for (const [x, y] of [[22, 19], [34, 19], [48, 21], [58, 22], [66, 24]] as const) {
+        discCrisp(ctx, x, y, 2, plate.d);
+        p(ctx, x - 1, y - 1, lac.d);
+    }
+    // Dampers / hammer rail across the front of the strings
+    r(ctx, 6, 25, 38, 2, lac.d);
+    hline(ctx, 6, 25, 38, lac.l);
+
+    // Music desk with sheet music
+    r(ctx, 15, 21, 20, 6, lac.o);
+    r(ctx, 16, 22, 18, 4, lac.m);
+    r(ctx, 18, 21, 6, 4, P.cream);
+    r(ctx, 25, 21, 6, 4, "#f2ece0");
+    for (const y of [22, 23]) {
+        hline(ctx, 19, y, 4, "#6a6460");
+        hline(ctx, 26, y, 4, "#6a6460");
+    }
+
+    // Fallboard / name board + keyboard
+    r(ctx, 4, 27, 41, 3, lac.o);
+    hline(ctx, 5, 28, 39, lac.l);
+    p(ctx, 24, 28, P.gold);
+    r(ctx, 4, 30, 2, 6, lac.d);
+    r(ctx, 43, 30, 2, 6, lac.d);
+    r(ctx, 6, 30, 37, 5, "#f2ece0");
+    hline(ctx, 6, 34, 37, "#c8c0b0");
+    for (let x = 7; x < 43; x += 2) vline(ctx, x, 32, 2, "#c8c0b0");
+    // Black keys in groups of 2 and 3
+    const pattern = [1, 1, 0, 1, 1, 1, 0];
+    for (let i = 0, x = 7; x < 42; i++, x += 2) {
+        if (pattern[i % 7]) r(ctx, x, 30, 1, 2, lac.o);
+    }
+
+    // Lid propped open above the strings
+    for (let y = 2; y < 15; y++) {
+        const t = (y - 2) / 13;
+        const left = Math.round(10 - t * 6);
+        const right = Math.round(58 - t * 8);
+        hline(ctx, left, y, right - left, lac.m);
+        p(ctx, left, y, lac.o);
+        p(ctx, right - 1, y, lac.l);
+    }
+    hline(ctx, 10, 2, 48, lac.h);
+    line(ctx, 14, 4, 22, 12, lac.l);
+    line(ctx, 30, 3, 36, 9, lac.l);
+    // Lid prop
+    line(ctx, 47, 18, 53, 4, lac.h);
+
+    // Bench with a tufted seat
+    r(ctx, 15, 38, 20, 4, lac.o);
+    r(ctx, 16, 38, 18, 3, "#6a1c22");
+    hline(ctx, 16, 38, 18, "#8a2c30");
+    for (const x of [19, 25, 31]) p(ctx, x, 39, "#4a1016");
+    r(ctx, 16, 42, 2, 4, lac.o);
+    r(ctx, 32, 42, 2, 4, lac.o);
+}

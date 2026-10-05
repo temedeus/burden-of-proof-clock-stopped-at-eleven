@@ -48,8 +48,10 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | `pond.ts` | Garden pond (baked via `POND_SPRITES` in `registry.ts`) |
 | `stuffed_moose.ts` | Study moose trophy (32×48 pixel template, baked via `furniture.ts`) |
 | `furnitureInterior.ts` | Redrawn interior pieces (shelves, tables, carpet, cabinet, chest, hall clock, barrel, rack) |
-| `furnitureBedBath.ts` | Bathroom (tub, toilet, boiler) + master bedroom (four-poster, vanity, nightstand) and the shared `drawRug` |
+| `furnitureBedBath.ts` | Bathroom (tub, toilet, boiler), master bedroom (four-poster, vanity, nightstand), guest + maid beds, and the shared `drawRug` |
 | `furnitureOutdoor.ts` | Redrawn garden/courtyard pieces (oak, bush, pond, stable) |
+| `staircase.ts` | Staircase variants (manor/attic/stone, up/down); `roomScene.ts` picks one from wall side + floor tile |
+| `doors.ts` | Exit doors drawn at 1x by `drawDoorSprites` (`roomScene.ts`): closed doors on north walls, open doorways on south/side walls; the carved wall is refilled from the neighbouring wall first |
 | `furnitureKit.ts` | Shared helpers: wood/stone/iron ramps, panels, tabletops, legs, book rows, floor shadows, `line`, `ellipse` |
 
 ## Conventions

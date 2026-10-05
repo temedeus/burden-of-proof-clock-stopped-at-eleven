@@ -9,6 +9,7 @@ import { EXTERIOR_SPRITES, COURTYARD_WALL_SPRITES } from "./exterior";
 import { POND_SPRITES } from "./pond";
 import { ANIMAL_SPRITES } from "./animals";
 import { CLUE_ICON_SPRITES } from "./clueIcons";
+import { STAIRCASE_SPRITES } from "./staircase";
 
 const ALL_DEFS: Record<string, ProceduralSpriteDef> = {
     ...TILE_SPRITES,
@@ -19,7 +20,8 @@ const ALL_DEFS: Record<string, ProceduralSpriteDef> = {
     ...COURTYARD_WALL_SPRITES,
     ...POND_SPRITES,
     ...ANIMAL_SPRITES,
-    ...CLUE_ICON_SPRITES
+    ...CLUE_ICON_SPRITES,
+    ...STAIRCASE_SPRITES
 };
 
 export function getSpriteDef(name: string): ProceduralSpriteDef | undefined {

@@ -68,6 +68,8 @@ export interface HumanoidStyle {
     scars?: boolean;
     freckles?: boolean;
     wrinkles?: boolean;
+    /** Head wrap and bandaged right hand (Ytte after the attic scare). */
+    bandaged?: boolean;
     
     // ==========================================================
 }
@@ -1470,6 +1472,38 @@ export function drawHumanoidFrame(
         default:
             drawHumanoidFront(ctx, s, pose);
     }
+    if (s.bandaged) drawBandages(ctx, s, facing, pose);
+}
+
+/** Linen head wrap and right-hand dressing, following the head bob and arm swing. */
+function drawBandages(ctx: CanvasRenderingContext2D, s: HumanoidStyle, facing: CharacterFacing, pose: CharacterPose): void {
+    const o = poseOffsets(pose);
+    const head = makeHead(s, 2 + o.bodyBob);
+    const top = 10 + o.bodyBob;
+    // Wrap around the crown, knot tail at the back of the head
+    r(ctx, head.x - 1, head.y - 1, head.w + 2, 4, P.maidWhite);
+    r(ctx, head.x, head.y - 2, head.w, 1, P.cream);
+    hline(ctx, head.x - 1, head.y + 2, head.w + 2, P.cream);
+    p(ctx, head.x + 2, head.y, P.cream);
+    p(ctx, head.x + 5, head.y + 1, P.cream);
+    if (facing === "right") r(ctx, head.x - 2, head.y + 1, 2, 3, P.maidWhite);
+    if (facing === "up") r(ctx, head.x + 3, head.y + 3, 2, 2, P.cream);
+
+    // Right hand: screen-right from the front, screen-left from behind, near arm in profile
+    let hx: number;
+    let hy: number;
+    if (facing === "right") {
+        hx = 16 + sideWalk(pose).armSwing;
+        hy = top + 10;
+    } else if (facing === "up") {
+        hx = 6;
+        hy = top + 10 + o.rightArmSwing;
+    } else {
+        hx = 23;
+        hy = top + 10 + o.rightArmSwing;
+    }
+    r(ctx, hx, hy - 1, 3, 4, P.maidWhite);
+    hline(ctx, hx, hy + 1, 3, P.cream);
 }
 
 export const PLAYER_CHARACTER_STYLES: Record<string, HumanoidStyle> = {
@@ -1533,6 +1567,8 @@ const WORKER_MAN_STYLE: HumanoidStyle = {
     hair: P.brick,
     pants: P.coatBrown
 };
+
+const WORKER_MAN_BANDAGED_STYLE: HumanoidStyle = { ...WORKER_MAN_STYLE, bandaged: true };
 
 const WORKER_BOY_STYLE: HumanoidStyle = {
     coat: P.green,
@@ -1749,6 +1785,7 @@ export const HUMANOID_STYLES: Record<string, HumanoidStyle> = {
     maid: MAID_STYLE,
     worker_man: WORKER_MAN_STYLE,
     worker_man_grin: WORKER_MAN_GRIN_STYLE(),
+    worker_man_bandaged: WORKER_MAN_BANDAGED_STYLE,
     baroness: BARONESS_STYLE,
     police: POLICE_STYLE,
     police2: POLICE2_STYLE,
@@ -1866,21 +1903,7 @@ export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
     maid: humanoid(MAID_STYLE),
     worker_man: humanoid(WORKER_MAN_STYLE),
     worker_man_grin: humanoid(WORKER_MAN_GRIN_STYLE()),
-    worker_man_bandaged: {
-        nativeWidth: 32,
-        nativeHeight: 40,
-        draw(ctx) {
-            drawHumanoidFrame(ctx, WORKER_MAN_STYLE, "down", "idle");
-            // Head wrap
-            r(ctx, 11, 2, 10, 5, P.maidWhite);
-            r(ctx, 12, 1, 8, 2, P.cream);
-            r(ctx, 13, 6, 6, 1, P.cream);
-            r(ctx, 14, 0, 4, 2, P.maidWhite);
-            // Bandaged right hand
-            r(ctx, 21, 19, 6, 5, P.maidWhite);
-            r(ctx, 22, 20, 4, 3, P.cream);
-        }
-    },
+    worker_man_bandaged: humanoid(WORKER_MAN_BANDAGED_STYLE),
     hooded_figure: {
         nativeWidth: 32,
         nativeHeight: 40,

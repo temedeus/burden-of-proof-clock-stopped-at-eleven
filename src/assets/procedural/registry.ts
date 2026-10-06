@@ -14,6 +14,7 @@ import { BALLROOM_SPRITES } from "./ballroom";
 import { STABLE_SPRITES } from "./stable";
 import { YARD_SPRITES } from "./yard";
 import { GARDEN_PROP_SPRITES } from "./gardenProps";
+import { TUNNEL_SPRITES } from "./tunnel";
 
 const ALL_DEFS: Record<string, ProceduralSpriteDef> = {
     ...TILE_SPRITES,
@@ -29,7 +30,8 @@ const ALL_DEFS: Record<string, ProceduralSpriteDef> = {
     ...BALLROOM_SPRITES,
     ...STABLE_SPRITES,
     ...YARD_SPRITES,
-    ...GARDEN_PROP_SPRITES
+    ...GARDEN_PROP_SPRITES,
+    ...TUNNEL_SPRITES
 };
 
 export function getSpriteDef(name: string): ProceduralSpriteDef | undefined {

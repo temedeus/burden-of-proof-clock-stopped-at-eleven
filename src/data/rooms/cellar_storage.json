@@ -6,10 +6,10 @@
   "wallTile": "rock",
   "furniture": [
     {
-      "furnitureId": "staircase",
-      "x": "center",
-      "y": 1,
-      "anchor": "center"
+      "furnitureId": "cellar_spiral_stair",
+      "x": 11,
+      "y": 0,
+      "anchor": "top-left"
     },
     {
       "furnitureId": "oil_lamp",

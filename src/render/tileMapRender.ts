@@ -56,7 +56,16 @@ export function renderTileMap(ctx: CanvasRenderingContext2D, map: TileMap): void
             drawTile(ctx, map, tile, x, y);
         }
     }
-    drawGroundDetail(ctx, map);
+    // Natural ground is painted over every outdoor cell (including under rails),
+    // so redraw the rails on top of it.
+    if (drawGroundDetail(ctx, map)) {
+        for (let y = 0; y < map.height; y++) {
+            for (let x = 0; x < map.width; x++) {
+                const tile = map.tiles[y * map.width + x];
+                if (RAIL_TILES.has(tile)) drawRailOverlay(ctx, map, tile, x, y);
+            }
+        }
+    }
     drawWallEdges(ctx, map);
 }
 
@@ -180,10 +189,21 @@ function spriteUnderFurniture(map: TileMap, x: number, y: number): string {
     return underlaySpriteName(map, x, y);
 }
 
-function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: number, y: number): void {
+const RAIL_TILES = new Set<number>([
+    TILE_GATE_WALL,
+    TILE_FENCE,
+    TILE_FENCE_POST,
+    TILE_BANISTER,
+    TILE_BANISTER_POST,
+    TILE_WOOD_FENCE,
+    TILE_WOOD_FENCE_POST,
+    TILE_WOOD_FENCE_V
+]);
+
+/** The fence / gate / banister part of a rail tile (drawn over its ground). */
+function drawRailOverlay(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: number, y: number): void {
     const tileX = x * TILE_SIZE;
     const tileY = y * TILE_SIZE;
-
     if (tile === TILE_GATE_WALL) {
         const gateSprite =
             x === 0
@@ -191,8 +211,33 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                 : x === map.width - 1
                   ? gateEastSpriteName(x, y)
                   : gateWestSpriteName(x, y);
-        spriteLoader.drawSprite(ctx, underlaySpriteName(map, x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
         spriteLoader.drawSprite(ctx, gateSprite, tileX, tileY, TILE_SIZE, TILE_SIZE);
+        return;
+    }
+        const railSprite =
+            tile === TILE_FENCE
+                ? "fence"
+                : tile === TILE_FENCE_POST
+                  ? "fence_post"
+                  : tile === TILE_BANISTER
+                    ? "banister"
+                    : tile === TILE_BANISTER_POST
+                      ? "banister_post"
+                      : tile === TILE_WOOD_FENCE
+                        ? "fence_wood"
+                        : tile === TILE_WOOD_FENCE_V
+                          ? "fence_wood_v"
+                          : "fence_wood_post";
+        spriteLoader.drawSprite(ctx, railSprite, tileX, tileY, TILE_SIZE, TILE_SIZE);
+}
+
+function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: number, y: number): void {
+    const tileX = x * TILE_SIZE;
+    const tileY = y * TILE_SIZE;
+
+    if (tile === TILE_GATE_WALL) {
+        spriteLoader.drawSprite(ctx, underlaySpriteName(map, x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
+        drawRailOverlay(ctx, map, tile, x, y);
         return;
     }
 
@@ -211,21 +256,7 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
         tile === TILE_WOOD_FENCE_V
     ) {
         spriteLoader.drawSprite(ctx, underlaySpriteName(map, x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
-        const railSprite =
-            tile === TILE_FENCE
-                ? "fence"
-                : tile === TILE_FENCE_POST
-                  ? "fence_post"
-                  : tile === TILE_BANISTER
-                    ? "banister"
-                    : tile === TILE_BANISTER_POST
-                      ? "banister_post"
-                      : tile === TILE_WOOD_FENCE
-                        ? "fence_wood"
-                        : tile === TILE_WOOD_FENCE_V
-                          ? "fence_wood_v"
-                          : "fence_wood_post";
-        spriteLoader.drawSprite(ctx, railSprite, tileX, tileY, TILE_SIZE, TILE_SIZE);
+        drawRailOverlay(ctx, map, tile, x, y);
         return;
     }
 

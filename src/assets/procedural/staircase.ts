@@ -231,6 +231,144 @@ export function staircaseSpriteFor(direction: StairDirection, material: StairMat
     return direction === "down" ? "staircase_down" : "staircase";
 }
 
+function mixHex(a: string, b: string, k: number): string {
+    const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+    const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+    return `#${pa.map((v, i) => Math.round(v + (pb[i] - v) * k).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * Foot of the courtyard's spiral stair, seen from the cellar (96x96, 3x3 tiles):
+ * a round-headed stone arch in the north wall with daylight falling from above,
+ * and worn wedge steps winding up anticlockwise around a newel, the lowest
+ * ones fanning out onto the cellar floor. Steps brighten as they climb toward
+ * the light. Matches the courtyard's `cellar_hatch`.
+ */
+function drawSpiralStairUp(ctx: CanvasRenderingContext2D): void {
+    const W = 96;
+    const H = 96;
+    const SQ = 0.72;
+    const cx = 48;
+    const cy = 30; // newel centre (at the back, inside the arch)
+    const newelR = 6;
+    const R = 40;
+    const STEP = (Math.PI * 2) / 12;
+    const RISE = 5;
+    const DARK = "#0a0909";
+    const STONE = "#7a746a";
+    const LIT = "#a8a296";
+    const SHADOW = "#3e3a34";
+    const DAY = "#e8e0c8";
+
+    // Arch opening in the wall: jambs and voussoirs of dressed stone
+    const archL = 18;
+    const archR = 78;
+    const archTop = 2;
+    const archBase = 32;
+    const inArch = (x: number, y: number) => {
+        if (x < archL || x >= archR || y >= archBase + 2) return false;
+        const rx = (archR - archL) / 2;
+        const ax = archL + rx;
+        const springY = archTop + 12;
+        if (y >= springY) return true;
+        return Math.hypot((x + 0.5 - ax) / rx, (y + 0.5 - springY) / 12) <= 1;
+    };
+    for (let y = 0; y < archBase + 2; y++) {
+        for (let x = archL - 6; x < archR + 6; x++) {
+            if (inArch(x, y)) continue;
+            const rx = (archR - archL) / 2 + 6;
+            const ax = archL + (archR - archL) / 2;
+            const ring = y < archTop + 12 ? Math.hypot((x + 0.5 - ax) / rx, (y + 0.5 - (archTop + 12)) / 18) <= 1 : x < archL || x >= archR;
+            if (!ring) continue;
+            const ang = Math.atan2(y - (archTop + 12), x - ax);
+            const joint = y < archTop + 12 ? Math.abs(((ang + Math.PI) * 4) % 1) < 0.1 : y % 8 === 0;
+            const lit = x < ax;
+            p(ctx, x, y, joint ? SHADOW : lit ? LIT : STONE);
+        }
+    }
+    // Stairwell interior: dark, with daylight pouring down from the courtyard
+    for (let y = 0; y < archBase + 2; y++) {
+        for (let x = archL; x < archR; x++) {
+            if (!inArch(x, y)) continue;
+            const k = Math.min(1, y / 30);
+            p(ctx, x, y, mixHex("#5a564c", DARK, 0.35 + k * 0.55));
+        }
+    }
+
+    // Steps: highest (back, in the arch) drawn first; each lower step overlaps it
+    const STEPS = 9;
+    const START = Math.PI * 0.42; // lowest step points toward the room, slightly right
+    for (let k = STEPS - 1; k >= 0; k--) {
+        const sy = cy + 26 - k * RISE; // higher steps sit further up the screen
+        const a0 = START + k * STEP;
+        const a1 = a0 + STEP;
+        const light = 0.5 + (k / (STEPS - 1)) * 0.4; // brighter toward the daylight above
+        const tread = mixHex("#2a2724", STONE, light);
+        const nosing = mixHex("#3a3630", LIT, light);
+        const riser = mixHex(DARK, SHADOW, light * 0.8);
+        const outer = R - (k > 5 ? (k - 5) * 4 : 0);
+        for (let y = 0; y < H; y++) {
+            for (let x = 0; x < W; x++) {
+                const dx = x + 0.5 - cx;
+                const dy = (y + 0.5 - sy) / SQ;
+                const rad = Math.hypot(dx, dy);
+                if (rad < newelR || rad > outer) continue;
+                let ang = Math.atan2(dy, dx);
+                while (ang < a0) ang += Math.PI * 2;
+                if (ang > a1) continue;
+                // Upper steps only show inside the arch; lower ones on the floor
+                if (y < archBase + 2 && !inArch(x, y)) continue;
+                const t = (ang - a0) / STEP;
+                let c = tread;
+                if (rad > outer - 2) c = nosing;
+                if (t < 0.14) c = nosing; // leading edge catches the light
+                const worn = Math.abs(rad - (outer + newelR) / 2) < (outer - newelR) * 0.16 && t > 0.3 && t < 0.8;
+                if (worn) c = mixHex(c, DARK, 0.15);
+                if (((x * 5 + y * 11 + k * 7) & 31) === 0) c = riser;
+                p(ctx, x, y, c);
+            }
+        }
+        // Riser: the drop face under this step's front edge
+        for (let i = 0; i < RISE; i++) {
+            for (let rr = newelR; rr <= outer; rr++) {
+                const x = Math.round(cx + Math.cos(a0) * rr);
+                const y = Math.round(sy + Math.sin(a0) * rr * SQ) + 1 + i;
+                if (y >= H || x < 0 || x >= W) continue;
+                if (y < archBase + 2 && !inArch(x, y)) continue;
+                p(ctx, x, y, i === 0 ? riser : mixHex(riser, DARK, 0.3));
+            }
+        }
+    }
+
+    // Newel post rising from the lowest step into the light
+    const newelBase = cy + 26;
+    for (let y = archTop + 8; y < newelBase; y++) {
+        if (!inArch(cx, y) && y < archBase + 2) continue;
+        const k = 1 - (y - archTop) / (newelBase - archTop);
+        for (let x = cx - newelR + 1; x < cx + newelR - 1; x++) {
+            const side = x - cx;
+            const base = side < -2 ? LIT : side > 1 ? SHADOW : STONE;
+            p(ctx, x, y, mixHex(base, DAY, k * 0.25));
+        }
+    }
+    for (let x = cx - newelR + 1; x < cx + newelR - 1; x++) p(ctx, x, newelBase, SHADOW);
+
+    // Shaft of daylight falling through the arch onto the steps
+    for (let y = archTop; y < H - 6; y++) {
+        const k = y / (H - 6);
+        const half = 10 + k * 12;
+        const sx = 44 + k * 6;
+        ctx.fillStyle = `rgba(236,226,196,${(0.16 * (1 - k)).toFixed(3)})`;
+        ctx.fillRect(Math.round(sx - half), y, Math.round(half * 2), 1);
+    }
+    // Dust motes in the light
+    for (const [x, y] of [[40, 14], [52, 22], [46, 34], [56, 44], [42, 52]] as const) p(ctx, x, y, "rgba(240,232,208,0.7)");
+    // Grit and a dead leaf blown down onto the bottom step
+    p(ctx, 62, 78, "#8a5a2a");
+    p(ctx, 63, 78, "#a06a2a");
+    for (const [x, y] of [[30, 84], [70, 72], [56, 88]] as const) p(ctx, x, y, "#5a564c");
+}
+
 export const STAIRCASE_SPRITES: Record<string, ProceduralSpriteDef> = Object.fromEntries(
     Object.entries(STAIRCASE_VARIANTS).map(([name, v]) => [
         name,
@@ -244,3 +382,5 @@ export const STAIRCASE_SPRITES: Record<string, ProceduralSpriteDef> = Object.fro
         }
     ])
 );
+
+STAIRCASE_SPRITES.cellar_spiral_stair = { nativeWidth: 96, nativeHeight: 96, draw: drawSpiralStairUp };

@@ -141,34 +141,29 @@ function drawOilLampGlow(
     const prevSmooth = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = false;
 
+    // Pool of warm light on the floor, offset away from the wall the lamp hangs on
+    const T = Math.max(dw, dh);
     let cx = dx + dw / 2;
     let cy = dy + dh / 2;
-    let gw = dw * 2.2;
-    let gh = dh * 1.6;
-    let gx = cx - gw / 2;
-    let gy = cy - gh / 4;
-
-    if (wallSide === "north") {
-        cy = dy + dh * 0.75;
-        gy = dy + dh * 0.45;
-    } else if (wallSide === "south") {
-        cy = dy + dh * 0.25;
-        gy = dy - dh * 0.2;
-    } else if (wallSide === "west") {
-        cx = dx + dw * 0.65;
-        gx = dx + dw * 0.2;
-    } else if (wallSide === "east") {
-        cx = dx + dw * 0.35;
-        gx = dx - dw * 0.8;
+    if (wallSide === "north") cy = dy + dh + T * 0.6;
+    else if (wallSide === "south") cy = dy - T * 0.4;
+    else if (wallSide === "west") cx = dx + dw + T * 0.7;
+    else if (wallSide === "east") cx = dx - T * 0.7;
+    const R = T * 2.6;
+    // Stepped bands (crisp edges, pixel-art style) fading outward
+    const bands = 5;
+    for (let i = 0; i < bands; i++) {
+        const rr = R * (1 - i / bands);
+        const ry = rr * 0.72;
+        ctx.globalAlpha = (0.028 + i * 0.008) * pulse;
+        ctx.fillStyle = i < 2 ? P.fireOrange : P.fireYellow;
+        for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y += 2) {
+            const k = (y + 1 - cy) / ry;
+            if (Math.abs(k) > 1) continue;
+            const half = Math.round((rr * Math.sqrt(1 - k * k)) / 2) * 2;
+            ctx.fillRect(Math.round(cx - half), y, half * 2, 2);
+        }
     }
-
-    ctx.globalAlpha = 0.1 * pulse;
-    ctx.fillStyle = P.fireYellow;
-    ctx.fillRect(gx, gy, gw, gh);
-
-    ctx.globalAlpha = 0.05 * pulse;
-    ctx.fillStyle = P.fireOrange;
-    ctx.fillRect(gx - dw * 0.3, gy, gw + dw * 0.6, gh + dh * 0.3);
 
     ctx.globalAlpha = prevAlpha;
     ctx.imageSmoothingEnabled = prevSmooth;

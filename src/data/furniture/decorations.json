@@ -406,6 +406,39 @@
     "walkableDecor": true,
     "spriteName": "staircase"
   },
+  "cellar_spiral_stair": {
+    "id": "cellar_spiral_stair",
+    "name": "Spiral stair",
+    "description": "Worn stone steps wind up toward the daylight of the courtyard.",
+    "width": 3,
+    "height": 3,
+    "walkableDecor": true,
+    "spriteName": "cellar_spiral_stair"
+  },
+  "tunnel_earth": {
+    "id": "tunnel_earth",
+    "name": "Earth floor",
+    "description": "Packed earth, trodden smooth down the middle.",
+    "width": 5,
+    "height": 12,
+    "walkableDecor": true,
+    "nonInteractive": true,
+    "spriteName": "tunnel_earth"
+  },
+  "tunnel_timbers": {
+    "id": "tunnel_timbers",
+    "name": "Timber supports",
+    "description": "Old timbers prop up the tunnel roof.",
+    "width": 5,
+    "height": 1,
+    "drawWidth": 5,
+    "drawHeight": 2,
+    "renderAnchor": "bottom",
+    "noCollision": true,
+    "overheadDecor": true,
+    "nonInteractive": true,
+    "spriteName": "tunnel_timbers"
+  },
   "cellar_hatch": {
     "id": "cellar_hatch",
     "name": "Cellar hatch",

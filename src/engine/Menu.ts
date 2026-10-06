@@ -4,6 +4,7 @@ import { spriteLoader } from "../assets/SpriteLoader";
 import { shouldShowTouchControls } from "./platform";
 import { hasSave } from "./SaveGame";
 import { drawMenuBackdrop } from "../render/menuBackdrop";
+import { drawCard, drawFigure, drawHeading, drawPageBackdrop, GILT, INK, INK_MUTED, serif, shadowText } from "../render/menuChrome";
 import type { PlayerSpriteName } from "@cse/content-schema";
 
 export type MenuScreen =
@@ -24,7 +25,6 @@ export type MenuAction =
     | { type: "back" }
     | null;
 
-const MENU_ACCENT = "#8b4513";
 const TEXT_COLOR = "#e8e0d5";
 const HOVER_COLOR = "#c4a574";
 
@@ -48,6 +48,8 @@ const CHARACTER_OPTIONS: CharacterOption[] = [
 
 export class Menu {
     private selectedIndex = 0;
+    /** Pause / game over (and settings opened from pause) draw over the frozen game. */
+    private overGame = false;
     private input: Input;
 
     constructor(
@@ -59,6 +61,8 @@ export class Menu {
     }
 
     setScreen(screen: MenuScreen): void {
+        if (screen === "pause" || screen === "game_over") this.overGame = true;
+        else if (screen !== "settings") this.overGame = false;
         this.screen = screen;
         this.selectedIndex = 0;
     }
@@ -74,7 +78,6 @@ export class Menu {
 
         if (this.screen === "character_select") {
             const layout = this.getCharacterSelectLayout(w, h);
-            const type = this.getMenuTypography(h);
 
             if (layout.continueButton) {
                 const btn = layout.continueButton;
@@ -85,15 +88,7 @@ export class Menu {
 
             for (let i = 0; i < layout.slots.length; i++) {
                 const slot = layout.slots[i];
-                const pad = 12;
-                const labelY = slot.y + slot.h + layout.labelGap;
-                const labelBottom = labelY + type.lineHeight * 0.4;
-                if (
-                    x >= slot.x - pad &&
-                    x <= slot.x + slot.w + pad &&
-                    y >= slot.y - pad &&
-                    y <= labelBottom + pad
-                ) {
+                if (x >= slot.x && x <= slot.x + slot.w && y >= slot.y && y <= slot.y + slot.h) {
                     this.selectedIndex = i;
                     return null;
                 }
@@ -146,7 +141,7 @@ export class Menu {
             this.screen === "main"
                 ? this.mainMenuStartY(h, lineHeight, items.length)
                 : this.screen === "game_over"
-                  ? h * 0.52
+                  ? h * 0.55
                   : this.screen === "new_game_confirm"
                     ? h * 0.55
                     : h * 0.42;
@@ -154,52 +149,26 @@ export class Menu {
     }
 
     private getCharacterSelectLayout(w: number, h: number): {
-        spriteSize: number;
-        centerY: number;
-        labelGap: number;
         slots: { id: CharacterId; x: number; y: number; w: number; h: number }[];
         continueButton: { x: number; y: number; w: number; h: number } | null;
     } {
         const touch = shouldShowTouchControls();
-        const spriteSize = Math.min(Math.round(w * 0.22), Math.round(h * 0.28));
-        const gap = Math.max(32, w * 0.1);
-        const centerY = h * 0.47;
-        const labelGap = Math.round(h * 0.085);
-        const femaleX = w / 2 - gap / 2 - spriteSize;
-        const maleX = w / 2 + gap / 2;
+        const scale = h / 600;
+        const cardW = Math.round(Math.min(210 * scale, w * 0.32));
+        const cardH = Math.round(260 * scale);
+        const gap = Math.round(36 * scale);
+        const top = Math.round(h * 0.27);
+        const left = Math.round(w / 2 - gap / 2 - cardW);
 
         let continueButton: { x: number; y: number; w: number; h: number } | null = null;
         if (touch) {
             const btnW = Math.min(280, Math.round(w * 0.5));
-            const btnH = Math.round(h * 0.09);
-            continueButton = {
-                x: (w - btnW) / 2,
-                y: h * 0.82 - btnH / 2,
-                w: btnW,
-                h: btnH
-            };
+            const btnH = Math.round(h * 0.08);
+            continueButton = { x: (w - btnW) / 2, y: h * 0.86 - btnH / 2, w: btnW, h: btnH };
         }
 
         return {
-            spriteSize,
-            centerY,
-            labelGap,
-            slots: [
-                {
-                    id: "female_detective",
-                    x: femaleX,
-                    y: centerY - spriteSize / 2,
-                    w: spriteSize,
-                    h: spriteSize
-                },
-                {
-                    id: "male_detective",
-                    x: maleX,
-                    y: centerY - spriteSize / 2,
-                    w: spriteSize,
-                    h: spriteSize
-                }
-            ],
+            slots: CHARACTER_OPTIONS.map((c, i) => ({ id: c.id, x: left + i * (cardW + gap), y: top, w: cardW, h: cardH })),
             continueButton
         };
     }
@@ -333,13 +302,17 @@ export class Menu {
             this.drawLogo(ctx, w, h);
             const items = this.getMenuItems();
             const { lineHeight } = this.getMenuTypography(h);
-            this.renderMenuList(ctx, w, h, items, this.mainMenuStartY(h, lineHeight, items.length), true);
+            this.renderMenuList(ctx, w, h, items, this.mainMenuStartY(h, lineHeight, items.length));
             ctx.textAlign = "left";
             return;
         }
 
-        ctx.fillStyle = "rgba(0,0,0,0.85)";
-        ctx.fillRect(0, 0, w, h);
+        if (this.overGame) {
+            ctx.fillStyle = "rgba(0,0,0,0.85)";
+            ctx.fillRect(0, 0, w, h);
+        } else {
+            drawPageBackdrop(ctx, w, h, performance.now() / 1000);
+        }
 
         if (this.screen === "settings") {
             this.renderSettings(ctx, w, h);
@@ -361,12 +334,7 @@ export class Menu {
             return;
         }
 
-        const type = this.getMenuTypography(h);
-        ctx.fillStyle = MENU_ACCENT;
-        ctx.font = type.title;
-        ctx.textAlign = "center";
-        ctx.fillText("Paused", w / 2, h * 0.28);
-
+        drawHeading(ctx, "Paused", w / 2, h * 0.28, h / 600);
         this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.42);
         ctx.textAlign = "left";
     }
@@ -376,8 +344,7 @@ export class Menu {
         w: number,
         h: number,
         items: { id: string; label: string }[],
-        startY: number,
-        shadowed = false
+        startY: number
     ): void {
         const type = this.getMenuTypography(h);
         ctx.textAlign = "center";
@@ -390,13 +357,11 @@ export class Menu {
             const y = startY + i * type.lineHeight;
             const selected = i === this.selectedIndex;
             ctx.font = selected ? type.itemBold : type.item;
-            if (shadowed) {
-                ctx.fillStyle = "rgba(0,0,0,0.85)";
-                ctx.fillText(label, w / 2 + 2, y + 2);
-            }
+            ctx.fillStyle = "rgba(0,0,0,0.85)";
+            ctx.fillText(label, w / 2 + 2, y + 2);
             ctx.fillStyle = selected ? HOVER_COLOR : TEXT_COLOR;
             ctx.fillText(label, w / 2, y);
-            if (selected && shadowed) {
+            if (selected) {
                 // Small diamonds bracket the chosen entry
                 const half = ctx.measureText(label).width / 2 + 18;
                 const d = Math.max(3, Math.round(type.lineHeight / 14));
@@ -415,73 +380,49 @@ export class Menu {
     }
 
     private renderNewGameConfirm(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-        const type = this.getMenuTypography(h);
-        ctx.fillStyle = MENU_ACCENT;
-        ctx.font = type.title;
+        const scale = h / 600;
+        drawHeading(ctx, "Start a New Game?", w / 2, h * 0.28, scale);
         ctx.textAlign = "center";
-        ctx.fillText("Start New Game?", w / 2, h * 0.28);
-        ctx.fillStyle = TEXT_COLOR;
-        ctx.font = type.hint;
-        ctx.fillText("Overwrite saved progress?", w / 2, h * 0.38);
-        ctx.fillText("This will destroy your saved progress.", w / 2, h * 0.44);
+        ctx.font = serif(19 * scale);
+        shadowText(ctx, "Your saved progress will be lost.", w / 2, h * 0.4, INK);
+        ctx.font = serif(17 * scale, true);
+        shadowText(ctx, "This cannot be undone.", w / 2, h * 0.4 + 28 * scale, INK_MUTED);
         this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.55);
         ctx.textAlign = "left";
     }
 
     private renderCharacterSelect(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        const scale = h / 600;
         const type = this.getMenuTypography(h);
         const layout = this.getCharacterSelectLayout(w, h);
         const touch = shouldShowTouchControls();
 
-        ctx.fillStyle = MENU_ACCENT;
-        ctx.font = type.title;
+        drawHeading(ctx, "Choose Your Detective", w / 2, h * 0.13, scale);
         ctx.textAlign = "center";
-        ctx.fillText("Select Character", w / 2, h * 0.16);
-
-        ctx.font = type.hint;
-        ctx.fillStyle = TEXT_COLOR;
+        ctx.font = serif(16 * scale, true);
         const charHint = touch
-            ? "Tap a character, then Continue"
-            : "← → to choose    Enter to confirm    Esc to go back";
-        ctx.fillText(charHint, w / 2, h * 0.24);
+            ? "Tap a detective, then Continue"
+            : "← → to choose  ·  Enter to confirm  ·  Esc to go back";
+        shadowText(ctx, charHint, w / 2, h * 0.21, INK_MUTED, 1);
 
         for (let i = 0; i < CHARACTER_OPTIONS.length; i++) {
             const character = CHARACTER_OPTIONS[i];
             const slot = layout.slots[i];
             const isSelected = i === this.selectedIndex;
-
-            if (isSelected) {
-                const pad = 8;
-                ctx.strokeStyle = HOVER_COLOR;
-                ctx.lineWidth = 3;
-                ctx.strokeRect(slot.x - pad, slot.y - pad, slot.w + pad * 2, slot.h + pad * 2);
-            }
-
-            ctx.save();
-            ctx.globalAlpha = isSelected ? 1 : 0.45;
-            spriteLoader.drawSprite(ctx, character.id, slot.x, slot.y, slot.w, slot.h);
-            ctx.restore();
-
+            drawCard(ctx, slot.x, slot.y, slot.w, slot.h, isSelected);
+            const footY = slot.y + slot.h - 70 * scale;
+            drawFigure(ctx, character.id, slot.x + slot.w / 2, footY, footY - slot.y - 16 * scale, isSelected ? 1 : 0.5);
+            ctx.textAlign = "center";
             ctx.font = isSelected ? type.itemBold : type.item;
-            ctx.fillStyle = isSelected ? HOVER_COLOR : TEXT_COLOR;
-            ctx.fillText(
-                character.label,
-                slot.x + slot.w / 2,
-                slot.y + slot.h + layout.labelGap
-            );
+            shadowText(ctx, character.label, slot.x + slot.w / 2, slot.y + slot.h - 26 * scale, isSelected ? GILT : INK_MUTED);
         }
 
         if (layout.continueButton) {
             const btn = layout.continueButton;
-            ctx.fillStyle = MENU_ACCENT;
-            ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
-            ctx.strokeStyle = HOVER_COLOR;
-            ctx.lineWidth = 2;
-            ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+            drawCard(ctx, btn.x, btn.y, btn.w, btn.h, true);
             ctx.font = type.itemBold;
-            ctx.fillStyle = TEXT_COLOR;
             ctx.textBaseline = "middle";
-            ctx.fillText("Continue", btn.x + btn.w / 2, btn.y + btn.h / 2);
+            shadowText(ctx, "Continue", btn.x + btn.w / 2, btn.y + btn.h / 2, GILT);
             ctx.textBaseline = "alphabetic";
         }
 
@@ -489,24 +430,17 @@ export class Menu {
     }
 
     private renderGameOver(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-        const type = this.getMenuTypography(h);
-        ctx.fillStyle = "#8b0000";
-        ctx.font = type.title;
+        const scale = h / 600;
+        drawHeading(ctx, "Game Over", w / 2, h * 0.33, scale, "#b9786a");
         ctx.textAlign = "center";
-        ctx.fillText("Game Over", w / 2, h * 0.35);
-        ctx.fillStyle = TEXT_COLOR;
-        ctx.font = type.hint;
-        ctx.fillText("The murderer has caught you.", w / 2, h * 0.42);
-        this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.52);
+        ctx.font = serif(19 * scale, true);
+        shadowText(ctx, "The murderer has caught you.", w / 2, h * 0.44, INK);
+        this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.55);
         ctx.textAlign = "left";
     }
 
     private renderSettings(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-        const type = this.getMenuTypography(h);
-        ctx.fillStyle = MENU_ACCENT;
-        ctx.font = type.title;
-        ctx.textAlign = "center";
-        ctx.fillText("Settings", w / 2, h * 0.28);
+        drawHeading(ctx, "Settings", w / 2, h * 0.28, h / 600);
         this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.42);
         ctx.textAlign = "left";
     }

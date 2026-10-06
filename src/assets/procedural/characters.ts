@@ -52,8 +52,8 @@ export interface HumanoidStyle {
     /** Eye color */
     eyeColor?: string;
     
-    /** Expression: normal, happy, angry, surprised, sad, tired, determined */
-    expression?: 'normal' | 'happy' | 'angry' | 'surprised' | 'sad' | 'tired' | 'determined';
+    /** Expression: normal, happy, angry, surprised, sad, tired, determined, grin (sinister) */
+    expression?: 'normal' | 'happy' | 'angry' | 'surprised' | 'sad' | 'tired' | 'determined' | 'grin';
     
     /** Accessories */
     glasses?: string;          // Color of glasses
@@ -110,7 +110,7 @@ export interface BodyProportions {
 /** Expression configuration for facial features */
 export interface ExpressionConfig {
     eyes: {
-        shape: 'normal' | 'happy' | 'angry' | 'surprised' | 'sad' | 'tired' | 'determined';
+        shape: 'normal' | 'happy' | 'angry' | 'surprised' | 'sad' | 'tired' | 'determined' | 'squint';
         width: number;
         height: number;
         yOffset: number;
@@ -121,7 +121,7 @@ export interface ExpressionConfig {
         yOffset: number;
     };
     mouth: {
-        shape: 'line' | 'smile' | 'frown' | 'open' | 'grimace' | 'tight';
+        shape: 'line' | 'smile' | 'frown' | 'open' | 'grimace' | 'tight' | 'grin';
         width: number;
         height: number;
         yOffset: number;
@@ -328,6 +328,13 @@ export function getExpressionConfig(expression?: string): ExpressionConfig {
                 eyebrows: { shape: 'knitted', width: 3, yOffset: -1 },
                 mouth: { shape: 'grimace', width: 4, height: 2, yOffset: 0 }
             };
+
+        case 'grin':
+            return {
+                eyes: { shape: 'squint', width: 2, height: 1, yOffset: 0 },
+                eyebrows: { shape: 'knitted', width: 3, yOffset: -1 },
+                mouth: { shape: 'grin', width: 8, height: 2, yOffset: 0 }
+            };
         
         case 'normal':
         default:
@@ -468,6 +475,12 @@ function drawFaceFront(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: He
                 p(ctx, outer, eyeY, lid);
                 p(ctx, inner, eyeY, pupil);
                 break;
+            case "squint":
+                // Narrowed, glinting eyes under a heavy lid
+                p(ctx, outer, eyeY, lid);
+                p(ctx, inner, eyeY, pupil);
+                p(ctx, outer, eyeY + 1, lid);
+                break;
             default:
                 p(ctx, outer, eyeY, sclera);
                 p(ctx, inner, eyeY, pupil);
@@ -511,6 +524,22 @@ function drawFaceFront(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: He
         case "tight":
             hline(ctx, mx + 1, mouthY, Math.max(1, mw - 2), mouth);
             break;
+        case "grin": {
+            const gx = head.x + 1;
+            const gw = head.w - 2;
+            const dark = shade(tones.skin, -0.55);
+            p(ctx, gx, mouthY - 1, dark);
+            p(ctx, gx + gw - 1, mouthY - 1, dark);
+            p(ctx, gx, mouthY, dark);
+            p(ctx, gx + gw - 1, mouthY, dark);
+            hline(ctx, gx + 1, mouthY, gw - 2, "#efe8d6");
+            for (let x = gx + 2; x < gx + gw - 2; x += 2) p(ctx, x, mouthY, "#c8c0ac");
+            hline(ctx, gx + 1, mouthY + 1, gw - 2, dark);
+            // Cheeks pushed up by the grin
+            p(ctx, gx - 1 + 1, mouthY - 2, tones.shadow);
+            p(ctx, gx + gw - 1, mouthY - 2, tones.shadow);
+            break;
+        }
         default:
             hline(ctx, mx, mouthY, mw, mouth);
     }
@@ -528,6 +557,11 @@ function drawFaceSide(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: Hea
     const mouth = mouthColor(s, tones);
     const mouthX = head.x + head.w - 2;
 
+    if (expr.eyes.shape === "squint") {
+        p(ctx, ex, eyeY, lid);
+        p(ctx, ex + 1, eyeY, pupil);
+        p(ctx, ex, eyeY + 1, lid);
+    } else
     switch (expr.eyes.shape) {
         case "happy":
             hline(ctx, ex, eyeY, 2, lid);
@@ -554,6 +588,14 @@ function drawFaceSide(ctx: CanvasRenderingContext2D, s: HumanoidStyle, head: Hea
             break;
         default:
             hline(ctx, ex, eyeY - 1, 2, brow);
+    }
+    if (expr.mouth.shape === "grin") {
+        const dark = shade(tones.skin, -0.55);
+        p(ctx, mouthX - 2, mouthY - 1, dark);
+        hline(ctx, mouthX - 1, mouthY, 2, "#efe8d6");
+        p(ctx, mouthX - 2, mouthY, dark);
+        hline(ctx, mouthX - 1, mouthY + 1, 2, dark);
+        return;
     }
     switch (expr.mouth.shape) {
         case "smile":
@@ -1482,6 +1524,9 @@ function humanoid(style: HumanoidStyle): ProceduralSpriteDef {
     };
 }
 
+/** Ytte's sinister grin while he drags the detective out (cook clothes, unmasked). */
+const WORKER_MAN_GRIN_STYLE = (): HumanoidStyle => ({ ...WORKER_MAN_STYLE, expression: "grin" });
+
 const WORKER_MAN_STYLE: HumanoidStyle = {
     coat: P.coatGray,
     coatLight: P.coatGrayLight,
@@ -1647,6 +1692,7 @@ export const HUMANOID_STYLES: Record<string, HumanoidStyle> = {
     baron: BARON_STYLE,
     maid: MAID_STYLE,
     worker_man: WORKER_MAN_STYLE,
+    worker_man_grin: WORKER_MAN_GRIN_STYLE(),
     worker_boy: WORKER_BOY_STYLE,
     // Enhanced characters with Phase 4 features
     professor: {
@@ -1773,6 +1819,7 @@ export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
     }),
     maid: humanoid(MAID_STYLE),
     worker_man: humanoid(WORKER_MAN_STYLE),
+    worker_man_grin: humanoid(WORKER_MAN_GRIN_STYLE()),
     worker_man_bandaged: {
         nativeWidth: 32,
         nativeHeight: 40,

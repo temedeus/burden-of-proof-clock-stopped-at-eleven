@@ -35,6 +35,7 @@ import {
 import { scareSounds } from "../audio/ScareSounds";
 import { resolveEventNpcDialog } from "../content/eventNpcDialog";
 import { drawBurningFigure, drawFireSpot, drawScorch } from "../render/fireEffects";
+import { drawDragGrip } from "../render/dragGrip";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
@@ -864,10 +865,12 @@ export class Game {
         this.player.cutsceneFall = 1;
         this.player.facing = "down";
 
-        murderer.setSpriteName("worker_man");
+        // Unmasked, grinning: he only saves the detective because the baroness is watching
+        murderer.setSpriteName("worker_man_grin");
         murderer.setName("Chef Ytte");
         murderer.setShowNameLabel(true);
         murderer.clearStun();
+        murderer.clearCutscenePose();
         murderer.x = this.player.x + this.player.width * 0.55;
         murderer.y = this.player.y - TILE_SIZE * 0.15;
         this.moveNPCToRoom(murderer, dining, murderer.x, murderer.y);
@@ -898,6 +901,11 @@ export class Game {
             door.x,
             door.y
         );
+        // Take hold on the door side of the detective, grinning out at us
+        const lead = this.diningFire.dragYttePosition(this.player.width);
+        murderer.x = lead.x;
+        murderer.y = lead.y;
+        murderer.setFacing("down");
 
         this.currentRoom = dining;
         this.syncRoomAmbience();
@@ -969,6 +977,7 @@ export class Game {
     private finishDiningFireDrag(): void {
         const murderer = this.getMurderer();
         if (murderer) {
+            murderer.clearCutscenePose();
             this.ledgerScare.active = false;
             this.ledgerScare.monologueActive = false;
             this.ledgerScare.complete = true;
@@ -1087,11 +1096,25 @@ export class Game {
             this.player.isMoving = false;
             if (phase === "drag_out") {
                 const p = this.diningFire.dragPlayerPosition();
-                const y = this.diningFire.dragYttePosition(this.player.width);
+                const lead = this.diningFire.dragYttePosition(this.player.width);
+                const strain = this.diningFire.dragStrain();
+                const dir = this.diningFire.dragDirection();
+                const prevX = murderer.x;
+                const prevY = murderer.y;
                 this.player.x = p.x;
                 this.player.y = p.y;
-                murderer.x = y.x;
-                murderer.y = y.y;
+                // Shaking with effort mid-heave
+                const shake = strain > 0.55 ? (Math.floor(this.decorAnimTime * 30) % 2 === 0 ? 1 : -1) : 0;
+                murderer.x = lead.x + shake;
+                murderer.y = lead.y;
+                if (this.diningFire.isDragPulling()) {
+                    murderer.animateWalk(dt, lead.x - prevX, lead.y - prevY);
+                } else {
+                    // Catching his breath, he turns to grin out at us
+                    murderer.setFacing("down");
+                }
+                // Lean back against the dead weight
+                murderer.cutsceneTilt = -(dir.x >= 0 ? 1 : -1) * 0.16 * strain;
             }
         }
 
@@ -1673,6 +1696,31 @@ export class Game {
                       }
                   ]
                 : [];
+        // Ytte's grip on the detective's arm (and huffs of breath) while he hauls him out
+        const dragPhase = this.diningFire.phase;
+        const dragGripActors =
+            this.diningFire.active &&
+            murdererForFire &&
+            (dragPhase === "aftermath_dialog" || dragPhase === "drag_out")
+                ? [
+                      {
+                          // Sorted just after the detective so the hand shows on the arm
+                          y: this.player.y + 1,
+                          height: this.player.height,
+                          render: (c: CanvasRenderingContext2D) =>
+                              drawDragGrip(
+                                  c,
+                                  murdererForFire.getSpriteBox(),
+                                  // Grip at the shoulders: the collapsed body lies head-east from the feet pivot
+                                  this.player.x + this.player.width / 2 + this.player.width * 0.85,
+                                  this.player.y + this.player.height * 1.02,
+                                  this.diningFire.dragDirection(),
+                                  dragPhase === "drag_out" ? this.diningFire.dragPauseT() : 0,
+                                  this.decorAnimTime
+                              )
+                      }
+                  ]
+                : [];
         // Fires spread through the dining room, depth-sorted with the furniture they sit on
         const spreadFireActors =
             this.diningFire.active && this.currentRoom.id === "dining"
@@ -1695,7 +1743,7 @@ export class Game {
 
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
-            extraActors: [this.player, ...spreadFireActors],
+            extraActors: [this.player, ...spreadFireActors, ...dragGripActors],
             extraOverheadActors: [
                 ...atticMice.getActors(() => this.decorAnimTime),
                 ...courtyardSeagull.getActors(),

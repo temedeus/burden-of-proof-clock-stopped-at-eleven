@@ -69,6 +69,12 @@ export interface FireSpot {
     source: string;
 }
 
+/** Drag-out timing: a few laboured heaves, each a pull followed by a pause for breath. */
+export const DRAG_SECONDS = 3.6;
+export const DRAG_HEAVES = 5;
+/** Fraction of each heave spent pulling (the rest is a pause). */
+export const HEAVE_PULL = 0.6;
+
 /** Furniture that catches when the burning figure runs past. */
 export const FLAMMABLE_FURNITURE = ["dining_table", "carpet"] as const;
 /** Distance from a furniture footprint (px) at which it catches. */
@@ -580,9 +586,9 @@ export class DiningFireCutscene {
                 break;
             }
             case "drag_out": {
-                this.dragT = Math.min(1, this.timer / 2.4);
+                this.dragT = Math.min(1, this.timer / DRAG_SECONDS);
                 this.collapseT = 1;
-                this.blackAlpha = this.dragT > 0.7 ? Math.min(1, (this.dragT - 0.7) / 0.3) : 0;
+                this.blackAlpha = this.dragT > 0.82 ? Math.min(1, (this.dragT - 0.82) / 0.18) : 0;
                 if (this.dragT >= 1) {
                     this.phase = "wake_fade";
                     this.timer = 0;
@@ -664,19 +670,62 @@ export class DiningFireCutscene {
         return this.retreatT <= 0.45 ? "right" : "down";
     }
 
+    private heave(): { index: number; local: number } {
+        const x = this.dragT * DRAG_HEAVES;
+        const index = Math.min(DRAG_HEAVES - 1, Math.floor(x));
+        return { index, local: Math.min(1, x - index) };
+    }
+
+    /** Overall drag progress 0..1: moves in heaves, holds still while catching breath. */
+    dragProgress(): number {
+        if (this.dragT >= 1) return 1;
+        const { index, local } = this.heave();
+        const pull = Math.min(1, local / HEAVE_PULL);
+        const eased = pull * pull * (3 - 2 * pull);
+        return (index + eased) / DRAG_HEAVES;
+    }
+
+    /** True during the pulling part of a heave (false while pausing for breath). */
+    isDragPulling(): boolean {
+        return this.dragT < 1 && this.heave().local < HEAVE_PULL;
+    }
+
+    /** 0..1 effort, peaking mid-pull. */
+    dragStrain(): number {
+        if (!this.isDragPulling()) return 0;
+        return Math.sin((this.heave().local / HEAVE_PULL) * Math.PI);
+    }
+
+    /** 0..1 position within the current pause (0 while pulling). */
+    dragPauseT(): number {
+        const { local } = this.heave();
+        return local < HEAVE_PULL ? 0 : (local - HEAVE_PULL) / (1 - HEAVE_PULL);
+    }
+
+    /** Unit direction of travel toward the door. */
+    dragDirection(): { x: number; y: number } {
+        const dx = this.dragTo.x - this.dragFromPlayer.x;
+        const dy = this.dragTo.y - this.dragFromPlayer.y;
+        const len = Math.hypot(dx, dy) || 1;
+        return { x: dx / len, y: dy / len };
+    }
+
     dragPlayerPosition(): { x: number; y: number } {
-        const t = this.dragT;
+        const t = this.dragProgress();
         return {
             x: this.dragFromPlayer.x + (this.dragTo.x - this.dragFromPlayer.x) * t,
             y: this.dragFromPlayer.y + (this.dragTo.y - this.dragFromPlayer.y) * t
         };
     }
 
+    /** Ytte leads on the door side of the detective, hauling him by the arm. */
     dragYttePosition(playerW: number): { x: number; y: number } {
         const player = this.dragPlayerPosition();
+        const dir = this.dragDirection();
+        const lead = TILE_SIZE * 1.1;
         return {
-            x: player.x + playerW * 0.55,
-            y: player.y - TILE_SIZE * 0.15
+            x: player.x + dir.x * lead + playerW * 0.1,
+            y: player.y + dir.y * lead - TILE_SIZE * 0.15
         };
     }
 

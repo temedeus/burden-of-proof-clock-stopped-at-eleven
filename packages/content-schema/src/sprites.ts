@@ -70,6 +70,7 @@ export const VALID_SPRITE_NAMES = [
     "baroness",
     "maid",
     "worker_man",
+    "worker_man_grin",
     "worker_man_bandaged",
     "worker_boy",
     "hooded_figure",

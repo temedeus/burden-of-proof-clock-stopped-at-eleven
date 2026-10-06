@@ -5,7 +5,9 @@ import { Interactable } from "../world/Interactable";
 import { Room } from "../world/Room";
 import { TileMap } from "../world/TileMap";
 import {
+    DRAG_HEAVES,
     DiningFireCutscene,
+    HEAVE_PULL,
     diningHearthLandingPosition,
     diningTablePanicWaypoints,
     diningTableRetreatWaypoints,
@@ -240,5 +242,50 @@ describe("DiningFireCutscene spreading fire", () => {
         expect(scene.fireGrowth(spot)).toBeGreaterThan(0.5);
         scene.reset();
         expect(scene.fires).toHaveLength(0);
+    });
+});
+
+describe("DiningFireCutscene drag-out heaves", () => {
+    function dragging(): DiningFireCutscene {
+        const scene = new DiningFireCutscene();
+        scene.beginDrag(10 * TILE_SIZE, 10 * TILE_SIZE, 11 * TILE_SIZE, 10 * TILE_SIZE, 4 * TILE_SIZE, 15 * TILE_SIZE);
+        return scene;
+    }
+
+    it("moves in heaves: progress holds still while he catches his breath", () => {
+        const scene = dragging();
+        // Middle of the first pause
+        scene.dragT = (HEAVE_PULL + (1 - HEAVE_PULL) / 2) / DRAG_HEAVES;
+        expect(scene.isDragPulling()).toBe(false);
+        expect(scene.dragStrain()).toBe(0);
+        const held = scene.dragProgress();
+        scene.dragT += 0.02;
+        expect(scene.dragProgress()).toBeCloseTo(held, 5);
+        expect(held).toBeCloseTo(1 / DRAG_HEAVES, 5);
+    });
+
+    it("strains hardest mid-pull and progresses monotonically", () => {
+        const scene = dragging();
+        scene.dragT = (HEAVE_PULL / 2) / DRAG_HEAVES;
+        expect(scene.isDragPulling()).toBe(true);
+        expect(scene.dragStrain()).toBeGreaterThan(0.95);
+        let last = -1;
+        for (let t = 0; t <= 1; t += 0.01) {
+            scene.dragT = t;
+            const prog = scene.dragProgress();
+            expect(prog).toBeGreaterThanOrEqual(last - 1e-9);
+            last = prog;
+        }
+        scene.dragT = 1;
+        expect(scene.dragProgress()).toBe(1);
+    });
+
+    it("keeps Ytte on the door side of the detective", () => {
+        const scene = dragging();
+        scene.dragT = 0.3;
+        const player = scene.dragPlayerPosition();
+        const ytte = scene.dragYttePosition(64);
+        const dir = scene.dragDirection();
+        expect((ytte.x - player.x) * dir.x + (ytte.y - player.y) * dir.y).toBeGreaterThan(0);
     });
 });

@@ -37,7 +37,7 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | `attic_mouse.ts` | Attic mice (via `AtticMiceController`) |
 | `seagull.ts` | Courtyard seagull (via `CourtyardSeagullController`) |
 | `animals.ts` | Horses (animated stable booths) |
-| `ballroom_windows.ts` | Ballroom clerestory windows (dancing_room): daytime sky, glazing, drapes, pilasters, light shafts |
+| `ballroom_windows.ts` | Ballroom clerestory windows (dancing_room): daytime sky, glazing, drapes, pilasters with pier mirrors, dado |
 
 `oil_lamp` is in `sprites.ts` but drawn at runtime, not baked in `registry.ts`.
 
@@ -46,7 +46,7 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | Module | Used for |
 |--------|----------|
 | `pond.ts` | Garden pond (baked via `POND_SPRITES` in `registry.ts`) |
-| `ballroom.ts` | Ballroom marble floor/wall tiles, dance-floor medallion, ceiling beam + chandeliers (overhead), potted palms, harp, gilt chairs |
+| `ballroom.ts` | Ballroom: oak parquet floor (4 position variants via `ballroomFloorSpriteName`) + wall tiles, inlaid border, marquetry medallion, daylight/AO lighting layer, chandeliers (overhead), palms, harp, settee, gueridons, side-view chairs |
 | `armorStand.ts` | Suit of armour with halberd (32×48 mirrored template, baked via `furniture.ts`) |
 | `stuffed_moose.ts` | Study moose trophy (32×48 pixel template, baked via `furniture.ts`) |
 | `furnitureInterior.ts` | Redrawn interior pieces (shelves, tables, carpet, cabinet, chest, hall clock, barrel, rack) |

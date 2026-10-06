@@ -14,6 +14,7 @@ import {
 } from "../assets/procedural/tiles";
 import { manorWallSpriteName, gateWestSpriteName, gateEastSpriteName } from "../assets/procedural/exterior";
 import { TILE_TO_SPRITE } from "../assets/SpriteMap";
+import { ballroomFloorSpriteName } from "../assets/procedural/ballroom";
 import { TILE_SIZE } from "../world/constants";
 import {
     TILE_CERAMIC,
@@ -153,7 +154,7 @@ function underlaySpriteName(map: TileMap, x: number, y: number): string {
         if (t === TILE_ROCK) return rockFloorSpriteName(x, y);
         if (t === TILE_PALE_ROCK) return paleRockFloorSpriteName(x, y);
         if (t === TILE_ATTIC_FLOOR) return atticFloorSpriteName(x, y);
-        if (t === TILE_MARBLE) return "floor_marble";
+        if (t === TILE_MARBLE) return ballroomFloorSpriteName(x, y);
         if (t === TILE_FLOOR) return "floor";
     }
     return map.furnitureUnderlay === "grass"
@@ -169,7 +170,7 @@ function underlaySpriteName(map: TileMap, x: number, y: number): string {
               : map.furnitureUnderlay === "attic_wood"
                 ? atticFloorSpriteName(x, y)
                 : map.furnitureUnderlay === "marble"
-                  ? "floor_marble"
+                  ? ballroomFloorSpriteName(x, y)
                   : "floor";
 }
 
@@ -244,7 +245,7 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                     : tile === TILE_ATTIC_FLOOR
                       ? atticFloorSpriteName(x, y)
                       : tile === TILE_MARBLE
-                        ? "floor_marble"
+                        ? ballroomFloorSpriteName(x, y)
                         : tile === TILE_ROCK_WALL
                           ? rockWallSpriteName(x, y)
                           : tile === TILE_PALE_ROCK_WALL

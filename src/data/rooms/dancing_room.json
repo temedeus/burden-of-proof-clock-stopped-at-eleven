@@ -7,21 +7,21 @@
   "northClerestoryRows": 2,
   "furniture": [
     {
-      "furnitureId": "ballroom_medallion",
-      "x": "center",
-      "y": 10,
-      "anchor": "center"
-    },
-    {
-      "furnitureId": "chandelier_shadow",
-      "x": 17,
-      "y": 11,
+      "furnitureId": "ballroom_floor_border",
+      "x": 3,
+      "y": 6,
       "anchor": "top-left"
     },
     {
-      "furnitureId": "chandelier_shadow",
-      "x": 5,
+      "furnitureId": "ballroom_medallion",
+      "x": "center",
       "y": 11,
+      "anchor": "center"
+    },
+    {
+      "furnitureId": "ballroom_lighting",
+      "x": 1,
+      "y": 3,
       "anchor": "top-left"
     },
     {
@@ -37,32 +37,62 @@
       "anchor": "top-left"
     },
     {
-      "furnitureId": "fancy_chair",
-      "x": 22,
-      "y": 6,
+      "furnitureId": "gueridon",
+      "x": 10,
+      "y": 3,
       "anchor": "top-left"
     },
     {
-      "furnitureId": "fancy_chair",
-      "x": 22,
+      "furnitureId": "settee",
+      "x": 11,
+      "y": 3,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "gueridon",
+      "x": 14,
+      "y": 3,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "ballroom_chair_e",
+      "x": 1,
+      "y": 8,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "ballroom_chair_e",
+      "x": 1,
       "y": 10,
       "anchor": "top-left"
     },
     {
-      "furnitureId": "fancy_chair",
-      "x": 22,
-      "y": 13,
+      "furnitureId": "ballroom_chair_e",
+      "x": 1,
+      "y": 12,
       "anchor": "top-left"
     },
     {
-      "furnitureId": "fancy_chair",
-      "x": 2,
-      "y": 10,
+      "furnitureId": "ballroom_chair_w",
+      "x": 23,
+      "y": 7,
       "anchor": "top-left"
     },
     {
-      "furnitureId": "fancy_chair",
-      "x": 2,
+      "furnitureId": "ballroom_chair_w",
+      "x": 23,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "ballroom_chair_w",
+      "x": 23,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "ballroom_chair_w",
+      "x": 23,
       "y": 13,
       "anchor": "top-left"
     },
@@ -85,20 +115,14 @@
       "anchor": "top-left"
     },
     {
-      "furnitureId": "ballroom_ceiling_beam",
-      "x": 1,
+      "furnitureId": "chandelier",
+      "x": 8,
       "y": 7,
       "anchor": "top-left"
     },
     {
       "furnitureId": "chandelier",
-      "x": 6,
-      "y": 7,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "chandelier",
-      "x": 18,
+      "x": 16,
       "y": 7,
       "anchor": "top-left"
     }

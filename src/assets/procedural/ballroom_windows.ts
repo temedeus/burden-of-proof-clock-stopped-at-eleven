@@ -20,14 +20,28 @@ function archHalf(row: number, archH: number, halfW: number): number {
     return Math.round(halfW * Math.sqrt(1 - (1 - t) * (1 - t)));
 }
 
-function drawPilaster(ctx: CanvasRenderingContext2D, x: number, w: number, top: number, bottom: number): void {
+function drawPilaster(ctx: CanvasRenderingContext2D, x: number, w: number, top: number, bottom: number, mirror: boolean): void {
     r(ctx, x, top, w, bottom - top, PLASTER.m);
     vline(ctx, x, top, bottom - top, PLASTER.o);
     vline(ctx, x + w - 1, top, bottom - top, PLASTER.d);
-    // Fluting
-    for (let fx = x + 4; fx < x + w - 3; fx += 4) {
-        vline(ctx, fx, top + 10, bottom - top - 16, PLASTER.d);
-        vline(ctx, fx + 1, top + 10, bottom - top - 16, PLASTER.l);
+    if (mirror) {
+        // Tall pier glass in a gilt frame between the windows
+        const mx = x + 3;
+        const mw = w - 6;
+        const my = top + 11;
+        const mh = bottom - top - 17;
+        r(ctx, mx, my, mw, mh, GILT.d);
+        r(ctx, mx + 1, my + 1, mw - 2, mh - 2, GILT.m);
+        r(ctx, mx + 2, my + 2, mw - 4, mh - 4, "#5a6a74");
+        r(ctx, mx + 2, my + 2, mw - 4, Math.floor((mh - 4) / 2), "#7a8c98");
+        for (let i = 0; i < Math.min(mw - 5, mh - 5); i++) p(ctx, mx + 3 + i, my + mh - 4 - i * 2, "#c8dce6");
+        p(ctx, mx + Math.floor(mw / 2), my - 1, GILT.h);
+    } else {
+        // Fluting on the end pilasters
+        for (let fx = x + 4; fx < x + w - 3; fx += 4) {
+            vline(ctx, fx, top + 10, bottom - top - 16, PLASTER.d);
+            vline(ctx, fx + 1, top + 10, bottom - top - 16, PLASTER.l);
+        }
     }
     // Gilt capital + base
     r(ctx, x - 1, top + 4, w + 2, 5, GILT.d);
@@ -172,22 +186,9 @@ export function drawBallroomClerestoryWindows(
     const winH = dadoTop - winTop;
 
     for (let i = 0; i <= WINDOW_COUNT; i++) {
-        drawPilaster(ctx, x0 + i * (winW + PILASTER), PILASTER, 3, dadoTop);
+        drawPilaster(ctx, x0 + i * (winW + PILASTER), PILASTER, 3, dadoTop, i > 0 && i < WINDOW_COUNT);
     }
     for (let i = 0; i < WINDOW_COUNT; i++) {
         drawWindow(ctx, x0 + PILASTER + i * (winW + PILASTER), winTop, winW, winH, i);
-    }
-
-    // Daylight falling through the windows onto the floor, fading with distance
-    const shaftTop = faceBottom;
-    const shaftLen = TILE_SIZE * 4;
-    for (let i = 0; i < WINDOW_COUNT; i++) {
-        const wx = x0 + PILASTER + i * (winW + PILASTER) + 10;
-        const sw = winW - 20;
-        for (let dy = 0; dy < shaftLen; dy++) {
-            const a = 0.22 * (1 - dy / shaftLen);
-            ctx.fillStyle = `rgba(255,244,214,${a.toFixed(3)})`;
-            ctx.fillRect(wx + Math.floor(dy / 6), shaftTop + dy, sw, 1);
-        }
     }
 }

@@ -15,6 +15,8 @@ import { huntTension } from "./audio/HuntTension";
 import type { PlayerSpriteName } from "@cse/content-schema";
 import type { Difficulty } from "./systems/MurdererChaseController";
 import type { GameSaveV1 } from "./engine/SaveGame";
+import { DEFAULT_PLAYER_SPRITE } from "@cse/content-schema";
+import { DEV_TELEPORT_MOMENTS, isDevTeleportEnabled } from "./engine/devTeleport";
 
 validateContentAtStartup();
 
@@ -22,9 +24,11 @@ const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 ctx.imageSmoothingEnabled = false;
 
-type AppScreen = "main_menu" | "playing" | "pause_menu" | "settings" | "game_over" | "intro";
+type AppScreen = "main_menu" | "playing" | "pause_menu" | "settings" | "game_over" | "intro" | "dev_teleport";
 
-let appScreen: AppScreen = "main_menu";
+const devTeleport = isDevTeleportEnabled();
+let appScreen: AppScreen = devTeleport ? "dev_teleport" : "main_menu";
+let devTeleportIndex = 0;
 let game: Game | null = null;
 const sharedInput = new Input();
 const menu = new Menu(canvas, "main", sharedInput);
@@ -155,9 +159,81 @@ function continueFromSave(save: GameSaveV1): void {
     updateTouchControlsVisibility();
 }
 
+/** Stage a key scene from the dev teleport list (never writes saves). */
+function startDevTeleport(index: number): void {
+    const moment = DEV_TELEPORT_MOMENTS[index];
+    if (!moment) return;
+    resetSessionWorldState();
+    game = new Game(ctx, createGameOptions({ playerSprite: DEFAULT_PLAYER_SPRITE }));
+    if (!game.stageDevMoment(moment)) {
+        console.warn(`[devTeleport] Could not place the player at "${moment.id}"`);
+    }
+    appScreen = "playing";
+    updateTouchControlsVisibility();
+}
+
+function updateDevTeleport(): void {
+    const n = DEV_TELEPORT_MOMENTS.length;
+    if (sharedInput.wasPressed("arrowup") || sharedInput.wasPressed("w")) devTeleportIndex = (devTeleportIndex + n - 1) % n;
+    if (sharedInput.wasPressed("arrowdown") || sharedInput.wasPressed("s")) devTeleportIndex = (devTeleportIndex + 1) % n;
+    if (sharedInput.wasPressed("enter") || sharedInput.wasPressed(" ")) {
+        unlockAudio();
+        startDevTeleport(devTeleportIndex);
+        return;
+    }
+    if (sharedInput.wasPressed("escape")) {
+        appScreen = "main_menu";
+        menu.setScreen("main");
+    }
+}
+
+function renderDevTeleport(c: CanvasRenderingContext2D): void {
+    const w = c.canvas.width;
+    const h = c.canvas.height;
+    c.fillStyle = "#14100c";
+    c.fillRect(0, 0, w, h);
+    c.textAlign = "left";
+    c.fillStyle = "#e8c860";
+    c.font = "bold 22px monospace";
+    c.fillText("DEV TELEPORT", 48, 64);
+    c.fillStyle = "#a89c88";
+    c.font = "14px monospace";
+    c.fillText("Stages the story just before a key scene. Staged runs never save.", 48, 90);
+    DEV_TELEPORT_MOMENTS.forEach((m, i) => {
+        const y = 140 + i * 56;
+        const selected = i === devTeleportIndex;
+        if (selected) {
+            c.fillStyle = "rgba(232,200,96,0.14)";
+            c.fillRect(36, y - 24, w - 72, 50);
+        }
+        c.fillStyle = selected ? "#ffffff" : "#d8ccb0";
+        c.font = "bold 18px monospace";
+        c.fillText(`${selected ? "▶" : " "} ${i + 1}. ${m.label}`, 48, y);
+        c.fillStyle = "#8a8070";
+        c.font = "14px monospace";
+        c.fillText(`   ${m.roomId} — then: ${m.action}`, 48, y + 18);
+    });
+    c.fillStyle = "#6a6050";
+    c.font = "13px monospace";
+    c.fillText("↑/↓ choose · Enter jump · Esc main menu · 1–5 jump directly", 48, h - 32);
+}
+
 // Preload sprites so character select and game can draw them immediately
 spriteLoader.load().then(() => {
     loop.start((dt) => {
+        if (appScreen === "dev_teleport") {
+            for (let i = 0; i < DEV_TELEPORT_MOMENTS.length; i++) {
+                if (sharedInput.wasPressed(String(i + 1))) {
+                    unlockAudio();
+                    startDevTeleport(i);
+                    return;
+                }
+            }
+            updateDevTeleport();
+            if (appScreen === "dev_teleport") renderDevTeleport(ctx);
+            return;
+        }
+
         if (appScreen === "intro" && introScreen) {
             introScreen.update();
             if (introScreen) introScreen.render(ctx);
@@ -225,7 +301,7 @@ function handleMenuAction(action: MenuAction): void {
             game?.saveCheckpoint();
             huntTension.stop();
             game = null;
-            appScreen = "main_menu";
+            appScreen = devTeleport ? "dev_teleport" : "main_menu";
             menu.setScreen("main");
             updateTouchControlsVisibility();
             break;

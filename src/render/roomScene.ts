@@ -279,6 +279,8 @@ export function drawDoorSprites(ctx: CanvasRenderingContext2D, room: Room): void
 export interface RenderRoomSceneOptions {
     getAnimTime?: () => number;
     extraActors?: DepthActor[];
+    /** Floor-level decals (scorch marks, stains) drawn over rugs, under furniture and people. */
+    floorDecals?: (ctx: CanvasRenderingContext2D) => void;
     /** Drawn after overhead decor (roof beams, cobwebs), above the player. */
     extraOverheadActors?: DepthActor[];
     clearColor?: string;
@@ -329,6 +331,8 @@ export function renderRoomScene(
         .slice()
         .sort((a, b) => a.y + a.height - (b.y + b.height))
         .forEach((a) => a.render(ctx));
+
+    options.floorDecals?.(ctx);
 
     const floorNpcActors: DepthActor[] = [];
     const standingNpcActors: DepthActor[] = [];

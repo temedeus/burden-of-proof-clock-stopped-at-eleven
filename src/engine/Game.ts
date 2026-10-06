@@ -1,5 +1,7 @@
 import { Room } from "../world/Room";
 import { createRoomFromConfig } from "../world/Rooms";
+import type { DevTeleportMoment } from "./devTeleport";
+import type { Facing } from "../entities/Player";
 import { renderRoomScene } from "../render/roomScene";
 import { spawnRoomNpcs, resolveNpcPlacementTile } from "../world/npcSpawn";
 import { Input } from "./Input";
@@ -142,6 +144,8 @@ export class Game {
     private atticScare: AtticScareChase;
     private ledgerScare: AtticScareChase;
     private diningFire = new DiningFireCutscene();
+    /** Set by dev teleport: this session never writes saves. */
+    private devStaged = false;
     private atticWindow = new AtticWindowCutscene();
     private murdererStruggle: MurdererStruggle;
     /** Chef Ytte is removed from the map after the dining scare until the attic scare ends. */
@@ -297,16 +301,81 @@ export class Game {
 
     /** Persist progress if not mid-cutscene / struggle / victory. */
     autosave(): void {
-        if (!this.canAutosave()) return;
+        if (this.devStaged || !this.canAutosave()) return;
         const snap = this.snapshotSave();
         if (snap) saveGame(snap);
     }
 
     /** Force-write current snapshot when quitting from a durable state. */
     saveCheckpoint(): void {
-        if (!this.canAutosave()) return;
+        if (this.devStaged || !this.canAutosave()) return;
         const snap = this.snapshotSave();
         if (snap) saveGame(snap);
+    }
+
+    /**
+     * Dev teleport: stage the story state just before a key scene and put the
+     * player beside its trigger (left for you to activate). Never autosaves.
+     */
+    stageDevMoment(moment: DevTeleportMoment): boolean {
+        const base = this.snapshotSave();
+        if (!base || !this.rooms[moment.roomId]) return false;
+        this.devStaged = true;
+        const f = moment.flags;
+        this.applySave({
+            ...base,
+            roomId: moment.roomId,
+            discoveredClueIds: [...moment.clues],
+            studySecretRevealed: !!f.studySecretRevealed,
+            cellarSecretRevealed: !!f.cellarSecretRevealed,
+            diningFireResolved: !!f.diningFireResolved,
+            atticScareComplete: !!f.atticScareComplete,
+            ledgerScareComplete: !!f.ledgerScareComplete,
+            confrontationComplete: false,
+            accusedMurderer: false,
+            cookHiddenAfterDiningScare: !!f.cookHiddenAfterDiningScare,
+            brokenAtticWindowIds: [],
+            player: { x: 0, y: 0, facing: "down" }
+        });
+        return this.placePlayerAtTrigger(moment);
+    }
+
+    private placePlayerAtTrigger(moment: DevTeleportMoment): boolean {
+        const room = this.currentRoom;
+        const { confirmId, clueId } = moment.trigger;
+        const target = room.interactables.find(
+            (obj) =>
+                (confirmId && obj.confirmId === confirmId) ||
+                (clueId &&
+                    (obj.clues?.includes(clueId) || obj.collectibleClues?.some((c) => c.clueId === clueId)))
+        );
+        if (!target) return false;
+        const tiles = target.interactionTiles?.length ? target.interactionTiles : target.tiles;
+        if (!tiles.length) return false;
+        const cx = tiles.reduce((a, t) => a + t.x, 0) / tiles.length;
+        const cy = tiles.reduce((a, t) => a + t.y, 0) / tiles.length;
+        let best: { x: number; y: number; facing: Facing; d: number } | null = null;
+        const facings: Facing[] = ["up", "down", "left", "right"];
+        for (let ty = Math.floor(cy) - 5; ty <= Math.ceil(cy) + 5; ty++) {
+            for (let tx = Math.floor(cx) - 5; tx <= Math.ceil(cx) + 5; tx++) {
+                const x = tx * TILE_SIZE;
+                const y = ty * TILE_SIZE;
+                if (this.player.wouldCollideAt(x, y, room.map, room.npcs)) continue;
+                for (const facing of facings) {
+                    this.player.x = x;
+                    this.player.y = y;
+                    this.player.facing = facing;
+                    if (!this.interaction.wouldTarget(this.player, target)) continue;
+                    const d = Math.hypot(tx + 1 - cx, ty + 1 - cy) + (facing === "up" ? 0 : 0.01);
+                    if (!best || d < best.d) best = { x, y, facing, d };
+                }
+            }
+        }
+        if (!best) return false;
+        this.player.x = best.x;
+        this.player.y = best.y;
+        this.player.facing = best.facing;
+        return true;
     }
 
     applySave(save: GameSaveV1): void {

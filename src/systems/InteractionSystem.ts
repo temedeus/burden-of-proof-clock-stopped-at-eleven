@@ -1,4 +1,4 @@
-import type { CollectibleClue } from "../world/Interactable";
+import type { CollectibleClue, Interactable } from "../world/Interactable";
 import { Player } from "../entities/Player";
 import { Room } from "../world/Room";
 import { TILE_SIZE } from "../world/constants";
@@ -256,6 +256,29 @@ export class InteractionSystem {
             return DEFAULT_EXHAUSTED_CLUE_HINT;
         }
         return obj.description;
+    }
+
+    /**
+     * True when interacting now would reach `obj` (same facing-tile and adjacency
+     * rules as `interact`, without side effects). Used to stage dev teleports.
+     */
+    wouldTarget(player: Player, obj: Interactable): boolean {
+        if (obj.nonInteractive) return false;
+        const { x, y } = this.getTargetTile(player);
+        const interactTiles = getInteractionTilesForFacing(obj, player.facing);
+        if (!interactTiles.some((t) => t.x === x && t.y === y)) return false;
+        const bounds = tileBounds(interactTiles);
+        if (!bounds) return false;
+        const playerLeftTile = Math.floor(player.x / TILE_SIZE);
+        const playerRightTile = Math.floor((player.x + player.width) / TILE_SIZE);
+        const playerTopTile = Math.floor(player.y / TILE_SIZE);
+        const playerBottomTile = Math.floor((player.y + player.height) / TILE_SIZE);
+        return (
+            playerRightTile >= bounds.minX - 1 &&
+            playerLeftTile <= bounds.maxX + 1 &&
+            playerBottomTile >= bounds.minY - 1 &&
+            playerTopTile <= bounds.maxY + 1
+        );
     }
 
     private getTargetTile(player: Player) {

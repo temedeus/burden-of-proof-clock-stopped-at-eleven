@@ -90,6 +90,42 @@
       "x": 15,
       "y": 5,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "rain_barrel",
+      "x": 14,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "herb_bed",
+      "x": 16,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "herb_bed",
+      "x": 20,
+      "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "woodpile",
+      "x": 1,
+      "y": 14,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "washing_line",
+      "x": 5,
+      "y": 15,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "hay_bales",
+      "x": 16,
+      "y": 13,
+      "anchor": "top-left"
     }
   ],
   "exits": [

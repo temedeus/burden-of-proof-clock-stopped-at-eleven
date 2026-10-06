@@ -35,6 +35,96 @@
       "x": 18,
       "y": 2,
       "anchor": "top-left"
+    },
+    {
+      "furnitureId": "stable_cobbles",
+      "x": 1,
+      "y": 6,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "straw_scatter",
+      "x": 8,
+      "y": 11,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "straw_scatter",
+      "x": 14,
+      "y": 8,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "straw_scatter",
+      "x": 4,
+      "y": 14,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "straw_scatter_b",
+      "x": 17,
+      "y": 10,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "straw_scatter_b",
+      "x": 11,
+      "y": 14,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "straw_scatter_b",
+      "x": 19,
+      "y": 6,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "tack_rack",
+      "x": 21,
+      "y": 2,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "water_trough",
+      "x": 2,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "feed_bin",
+      "x": 21,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "hay_bales",
+      "x": 1,
+      "y": 13,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "hay_bales",
+      "x": 21,
+      "y": 13,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "wheelbarrow",
+      "x": 17,
+      "y": 13,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 9,
+      "y": 0,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "oil_lamp",
+      "x": 13,
+      "y": 0,
+      "anchor": "top-left"
     }
   ],
   "exits": [

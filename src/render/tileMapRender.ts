@@ -46,6 +46,7 @@ import {
     TILE_WOOD_FENCE_V
 } from "../world/TileTypes";
 import type { TileMap } from "../world/TileMap";
+import { drawGroundDetail } from "./groundDetail";
 
 /** Draw tile grid for a room map. */
 export function renderTileMap(ctx: CanvasRenderingContext2D, map: TileMap): void {
@@ -55,6 +56,7 @@ export function renderTileMap(ctx: CanvasRenderingContext2D, map: TileMap): void
             drawTile(ctx, map, tile, x, y);
         }
     }
+    drawGroundDetail(ctx, map);
     drawWallEdges(ctx, map);
 }
 

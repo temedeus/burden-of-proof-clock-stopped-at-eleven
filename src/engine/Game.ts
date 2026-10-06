@@ -45,6 +45,7 @@ import {
     type DiningBurnLayout
 } from "../render/diningBurnDamage";
 import { furnitureActorFromInteractable, type DepthActor } from "../render/roomScene";
+import { BLOOD_CRATE_H, BLOOD_CRATE_W, drawCrateKey } from "../assets/procedural/bloodCrate";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
@@ -320,6 +321,33 @@ export class Game {
         if (this.devStaged || !this.canAutosave()) return;
         const snap = this.snapshotSave();
         if (snap) saveGame(snap);
+    }
+
+    /** The iron key on the stained crate's nail, shown until the player takes it. */
+    private crateKeyActor(): DepthActor[] {
+        const room = this.currentRoom;
+        if (this.clueSystem.hasClue("cellar_evidence")) return [];
+        const crate = room.interactables.find((o) => o.id === "blood_crate");
+        if (!crate) return [];
+        const size = { width: room.map.width, height: room.map.height };
+        const actor = furnitureActorFromInteractable(crate, () => 0, size);
+        const rect = actor.drawRect;
+        const sx = rect.w / BLOOD_CRATE_W;
+        const sy = rect.h / BLOOD_CRATE_H;
+        return [
+            {
+                y: actor.y + actor.height + 0.5,
+                height: 0,
+                render: (c: CanvasRenderingContext2D) => {
+                    const t = this.decorAnimTime;
+                    c.save();
+                    c.translate(rect.x, rect.y);
+                    c.scale(sx, sy);
+                    drawCrateKey(c, 0, 0, Math.sin(t * 1.3) * 0.8, t % 5 < 0.25);
+                    c.restore();
+                }
+            }
+        ];
     }
 
     /**
@@ -1847,11 +1875,12 @@ export class Game {
                 : [];
 
         const burn = this.diningBurnDamage();
+        const crateKey = this.crateKeyActor();
 
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
             floorDecals: burn?.floor,
-            extraActors: [this.player, ...spreadFireActors, ...dragGripActors, ...(burn?.actors ?? [])],
+            extraActors: [this.player, ...spreadFireActors, ...dragGripActors, ...(burn?.actors ?? []), ...crateKey],
             extraOverheadActors: [
                 ...atticMice.getActors(() => this.decorAnimTime),
                 ...courtyardSeagull.getActors(),

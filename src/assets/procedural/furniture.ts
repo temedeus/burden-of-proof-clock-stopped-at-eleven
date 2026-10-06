@@ -33,6 +33,7 @@ import {
 import { drawGiltChair } from "./ballroom";
 import { ARMOR_STAND_H, ARMOR_STAND_W, drawArmorStand } from "./armorStand";
 import { drawStuffedMoose, STUFFED_MOOSE_H, STUFFED_MOOSE_W } from "./stuffed_moose";
+import { BLOOD_CRATE_H, BLOOD_CRATE_W, drawBloodCrate } from "./bloodCrate";
 import type { ProceduralSpriteDef } from "./types";
 
 const COBWEB_COLORS = { l: P.light, c: P.cream, h: P.highlight, m: P.mid };
@@ -610,18 +611,10 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
     },
 
     blood_crate: {
-        nativeWidth: 32,
-        nativeHeight: 32,
+        nativeWidth: BLOOD_CRATE_W,
+        nativeHeight: BLOOD_CRATE_H,
         draw(ctx) {
-            r(ctx, 4, 10, 24, 16, P.woodDark);
-            r(ctx, 6, 12, 20, 12, P.wood);
-            r(ctx, 4, 10, 24, 2, P.woodLight);
-            r(ctx, 4, 20, 24, 2, P.woodLight);
-            r(ctx, 8, 14, 10, 5, P.red);
-            r(ctx, 10, 15, 6, 3, P.brickDark);
-            r(ctx, 2, 26, 28, 4, P.brickDark);
-            r(ctx, 4, 27, 22, 2, P.red);
-            r(ctx, 20, 28, 8, 2, P.brick);
+            drawBloodCrate(ctx);
         }
     },
 

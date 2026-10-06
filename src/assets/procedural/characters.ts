@@ -1686,6 +1686,62 @@ function drawDeadBaronBody(ctx: CanvasRenderingContext2D): void {
     ], pal);
 }
 
+const BARONESS_STYLE: HumanoidStyle = {
+    coat: P.carpetRed,
+    coatLight: P.carpetRedLight,
+    hair: P.gold,
+    accent: P.gold,
+    hairUp: true,
+    dress: {
+        bodice: P.carpetRed,
+        bodiceLight: P.carpetRedLight,
+        skirt: P.carpetRed,
+        skirtLight: P.brick,
+        skirtShadow: P.brickDark,
+        trim: P.gold,
+        collar: P.cream
+    }
+};
+
+const POLICE_STYLE: HumanoidStyle = {
+    coat: P.policeBlue,
+    coatLight: P.blueLight,
+    hair: P.black,
+    hat: P.policeBlue,
+    hatBand: P.policeGold,
+    accent: P.policeGold
+};
+
+const POLICE2_STYLE: HumanoidStyle = {
+    coat: P.policeBlue,
+    coatLight: P.blue,
+    hair: P.highlight,
+    hat: P.policeBlue,
+    hatBand: P.policeGold
+};
+
+const NPC_MALE_STYLE: HumanoidStyle = {
+    coat: P.coatGray,
+    coatLight: P.mid,
+    hair: P.black
+};
+
+const NPC_FEMALE_STYLE: HumanoidStyle = {
+    coat: P.coatBrownLight,
+    coatLight: P.highlight,
+    hair: P.brick,
+    hairUp: true,
+    dress: {
+        bodice: P.coatBrown,
+        bodiceLight: P.coatBrownLight,
+        skirt: P.coatBrown,
+        skirtLight: P.highlight,
+        skirtShadow: P.woodDark,
+        trim: P.cream,
+        collar: P.cream
+    }
+};
+
 /** Humanoid styles that support directional facing (idle NPC poses). */
 export const HUMANOID_STYLES: Record<string, HumanoidStyle> = {
     ...PLAYER_CHARACTER_STYLES,
@@ -1693,6 +1749,11 @@ export const HUMANOID_STYLES: Record<string, HumanoidStyle> = {
     maid: MAID_STYLE,
     worker_man: WORKER_MAN_STYLE,
     worker_man_grin: WORKER_MAN_GRIN_STYLE(),
+    baroness: BARONESS_STYLE,
+    police: POLICE_STYLE,
+    police2: POLICE2_STYLE,
+    npc_male: NPC_MALE_STYLE,
+    npc_female: NPC_FEMALE_STYLE,
     worker_boy: WORKER_BOY_STYLE,
     // Enhanced characters with Phase 4 features
     professor: {
@@ -1801,22 +1862,7 @@ export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
             drawDeadBaronBody(ctx);
         }
     },
-    baroness: humanoid({
-        coat: P.carpetRed,
-        coatLight: P.carpetRedLight,
-        hair: P.gold,
-        accent: P.gold,
-        hairUp: true,
-        dress: {
-            bodice: P.carpetRed,
-            bodiceLight: P.carpetRedLight,
-            skirt: P.carpetRed,
-            skirtLight: P.brick,
-            skirtShadow: P.brickDark,
-            trim: P.gold,
-            collar: P.cream
-        }
-    }),
+    baroness: humanoid(BARONESS_STYLE),
     maid: humanoid(MAID_STYLE),
     worker_man: humanoid(WORKER_MAN_STYLE),
     worker_man_grin: humanoid(WORKER_MAN_GRIN_STYLE()),
@@ -1843,41 +1889,10 @@ export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
         }
     },
     worker_boy: humanoid(WORKER_BOY_STYLE),
-    police: humanoid({
-        coat: P.policeBlue,
-        coatLight: P.blueLight,
-        hair: P.black,
-        hat: P.policeBlue,
-        hatBand: P.policeGold,
-        accent: P.policeGold
-    }),
-    police2: humanoid({
-        coat: P.policeBlue,
-        coatLight: P.blue,
-        hair: P.highlight,
-        hat: P.policeBlue,
-        hatBand: P.policeGold
-    }),
-    npc_male: humanoid({
-        coat: P.coatGray,
-        coatLight: P.mid,
-        hair: P.black
-    }),
-    npc_female: humanoid({
-        coat: P.coatBrownLight,
-        coatLight: P.highlight,
-        hair: P.brick,
-        hairUp: true,
-        dress: {
-            bodice: P.coatBrown,
-            bodiceLight: P.coatBrownLight,
-            skirt: P.coatBrown,
-            skirtLight: P.highlight,
-            skirtShadow: P.woodDark,
-            trim: P.cream,
-            collar: P.cream
-        }
-    }),
+    police: humanoid(POLICE_STYLE),
+    police2: humanoid(POLICE2_STYLE),
+    npc_male: humanoid(NPC_MALE_STYLE),
+    npc_female: humanoid(NPC_FEMALE_STYLE),
     player: humanoid({
         coat: P.coatNavy,
         coatLight: P.coatNavyLight,

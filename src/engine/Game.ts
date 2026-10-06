@@ -1122,6 +1122,7 @@ export class Game {
             const baroness = this.getNPCById("baroness");
             if (baroness) {
                 const pos = this.diningFire.baronessExitPosition();
+                baroness.animateWalk(dt, pos.x - baroness.x, pos.y - baroness.y);
                 baroness.x = pos.x;
                 baroness.y = pos.y;
             }

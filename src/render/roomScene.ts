@@ -19,11 +19,14 @@ import { renderTileMap } from "./tileMapRender";
 
 export type DepthActor = { y: number; height: number; render(ctx: CanvasRenderingContext2D): void };
 
+/** Furniture actor plus the on-screen rectangle its sprite is drawn into. */
+export type FurnitureActor = DepthActor & { drawRect: { x: number; y: number; w: number; h: number } };
+
 export function furnitureActorFromInteractable(
     obj: Interactable,
     getAnimTime: () => number,
     roomSize?: { width: number; height: number; tileAt?: (x: number, y: number) => number }
-): DepthActor {
+): FurnitureActor {
     const footprint = obj.footprintTiles && obj.footprintTiles.length > 0 ? obj.footprintTiles : obj.tiles;
     const minX = Math.min(...footprint.map((t) => t.x));
     const maxX = Math.max(...footprint.map((t) => t.x));
@@ -141,6 +144,7 @@ export function furnitureActorFromInteractable(
             : heightTiles * TILE_SIZE;
 
     return {
+        drawRect: { x: drawX, y: drawY, w: drawW, h: drawH },
         y: sortY,
         height: sortH,
         render: (ctx: CanvasRenderingContext2D) => {

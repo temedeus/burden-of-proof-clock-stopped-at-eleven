@@ -14,6 +14,7 @@ import {
     FIRE_TRAIL_STEP_PX
 } from "../systems/DiningFireCutscene";
 import type { DepthActor } from "./roomScene";
+import { drawFireplaceColdFirebox, FIREPLACE_H, FIREPLACE_W } from "../assets/procedural/fireplace";
 
 const PX = 2;
 
@@ -74,8 +75,18 @@ export function computeDiningBurnLayout(room: Room): DiningBurnLayout {
         const len = Math.hypot(b.x - a.x, b.y - a.y);
         for (let d = FIRE_TRAIL_STEP_PX - carry; d <= len; d += FIRE_TRAIL_STEP_PX) {
             const k = d / len;
-            const seed = floor.length + 1;
-            floor.push({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, r: 12 + hash01(seed) * 8, seed });
+            const seed = floor.length + i * 17 + 1;
+            // Scattered off the exact path; some steps left unburned
+            if (hash01(seed * 1.9) < 0.22) continue;
+            const nx = -(b.y - a.y) / len;
+            const ny = (b.x - a.x) / len;
+            const off = (hash01(seed * 2.3) - 0.5) * 18;
+            floor.push({
+                x: a.x + (b.x - a.x) * k + nx * off,
+                y: a.y + (b.y - a.y) * k + ny * off * 0.5,
+                r: 8 + hash01(seed) * 11,
+                seed
+            });
         }
         carry = (len + carry) % FIRE_TRAIL_STEP_PX;
     }
@@ -133,9 +144,9 @@ function drawChar(ctx: CanvasRenderingContext2D, m: Mark, ring: string, body: st
             }
         }
     };
-    blob(1.15, ring);
-    blob(0.85, body);
-    blob(0.45, core);
+    blob(1.25, ring);
+    blob(0.8, body);
+    blob(0.32, core);
     // Ash flecks and a couple of cracks
     for (let i = 0; i < 5; i++) {
         const a = hash01(m.seed * 11 + i) * Math.PI * 2;
@@ -153,8 +164,9 @@ export function drawDiningFloorDamage(ctx: CanvasRenderingContext2D, layout: Din
         ctx.fillStyle = `rgba(20,16,12,${a.toFixed(3)})`;
         ctx.fillRect(0, y, roomWidthPx, PX);
     }
-    for (const m of layout.floor) drawChar(ctx, m, "rgba(70,40,18,0.35)", "rgba(34,24,16,0.75)", "#120c08");
-    for (const m of layout.rug) drawChar(ctx, m, "rgba(90,40,20,0.45)", "rgba(40,20,14,0.85)", "#140a08");
+    // Singed boards: brown halo, part-charred body, small black core
+    for (const m of layout.floor) drawChar(ctx, m, "rgba(70,40,18,0.22)", "rgba(34,22,14,0.5)", "rgba(14,10,8,0.85)");
+    for (const m of layout.rug) drawChar(ctx, m, "rgba(90,40,20,0.35)", "rgba(40,20,14,0.7)", "#140a08");
 }
 
 /** Burn holes in the tablecloth with singed brown edges (drawn over the table). */
@@ -163,30 +175,63 @@ export function drawTableclothDamage(ctx: CanvasRenderingContext2D, layout: Dini
 }
 
 /**
- * Soot on the chimneypiece: a dark plume above the firebox spreading up the
+ * Cold, ash-filled firebox plus soot on the chimneypiece: a dark plume above the firebox spreading up the
  * breast. (x, y, w, h) is the fireplace's on-screen draw box (96x112 art at 2x).
  */
 export function drawFireplaceSoot(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+    // The fire is out: cold ash in the grate
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(w / FIREPLACE_W, h / FIREPLACE_H);
+    drawFireplaceColdFirebox(ctx);
+    ctx.restore();
     const sx = w / 96;
     const sy = h / 112;
-    const cx = x + 48 * sx;
-    // Lintel and frieze above the firebox
-    const lintelTop = y + 44 * sy;
-    const lintelBottom = y + 56 * sy;
-    for (let yy = lintelTop; yy < lintelBottom; yy += PX) {
-        const k = (yy - lintelTop) / (lintelBottom - lintelTop);
-        ctx.fillStyle = `rgba(16,12,10,${(0.25 + k * 0.4).toFixed(3)})`;
-        ctx.fillRect(Math.round(x + 24 * sx), Math.round(yy), Math.round(48 * sx), PX);
+    const X = (nx: number) => Math.round(x + nx * sx);
+    const Y = (ny: number) => Math.round(y + ny * sy);
+    const band = (nx0: number, nx1: number, ny: number, alpha: number) => {
+        ctx.fillStyle = `rgba(16,12,10,${alpha.toFixed(3)})`;
+        ctx.fillRect(X(nx0), Y(ny), X(nx1) - X(nx0), PX);
+    };
+    // Soot tongues licking up from the opening: per-column streaks over the
+    // frieze and the mantel-shelf front, darkest at the opening's lip
+    const lip = 55;
+    for (let nx = 23; nx < 73; nx += PX / sx) {
+        const c = Math.abs(nx - 48) / 25;
+        const reach = (10 + 14 * (1 - c) ** 0.7) * (0.55 + 0.45 * hash01(Math.floor(nx) * 3.7));
+        for (let ny = lip; ny > lip - reach; ny -= PX / sy) {
+            const k = (lip - ny) / reach;
+            band(nx, nx + PX / sx, ny, (0.92 - 0.3 * c) * (1 - k) ** 0.6);
+        }
     }
-    // Plume rising up the breast and the mirror, narrowing as it goes
-    const plumeBottom = lintelTop;
-    const plumeTop = y + 4 * sy;
-    for (let yy = plumeBottom; yy > plumeTop; yy -= PX) {
-        const k = (plumeBottom - yy) / (plumeBottom - plumeTop);
-        const half = Math.round(((22 - 12 * k) * sx) / PX) * PX;
-        const wob = Math.round(Math.sin(k * 9) * 2 / PX) * PX;
-        ctx.fillStyle = `rgba(18,14,12,${(0.45 * (1 - k) ** 1.3).toFixed(3)})`;
-        ctx.fillRect(Math.round(cx - half + wob), Math.round(yy), half * 2, PX);
+    // Marble pilasters blackened along their inner faces, ragged at the bottom
+    for (let i = 0; i < 6; i++) {
+        const reach = 18 + hash01(i * 5.1 + 2) * 16;
+        for (let ny = 46; ny < 46 + reach; ny += PX / sy) {
+            const a = 0.6 * (1 - (ny - 46) / reach) * (1 - i / 7);
+            band(23 - i, 24 - i, ny, a);
+            band(72 + i, 73 + i, ny, a);
+        }
+    }
+    // Mantel shelf: underside line and a smoky smear across its white front
+    band(14, 82, 44, 0.55);
+    for (let ny = 38; ny < 44; ny += PX / sy) {
+        for (let nx = 20; nx < 76; nx += PX / sx) {
+            const c = Math.abs(nx - 48) / 28;
+            band(nx, nx + PX / sx, ny, 0.55 * (1 - c * c) * (0.75 + 0.25 * hash01(nx * 1.3 + ny)));
+        }
+    }
+    // Plume rising over the mantel shelf and up the breast/mirror
+    for (let ny = 44; ny > 4; ny -= PX / sy) {
+        const k = (44 - ny) / 40;
+        const half = 22 - 12 * k;
+        const wob = Math.sin(k * 9) * 2;
+        band(48 - half + wob, 48 + half + wob, ny, 0.5 * (1 - k) ** 1.2);
+    }
+    // Soot smudges on the hearth slab in front of the opening
+    for (let ny = 97; ny < 104; ny += PX / sy) {
+        band(26, 70, ny, 0.3 * (1 - (ny - 97) / 7));
+        band(34, 62, ny, 0.2 * (1 - (ny - 97) / 7));
     }
 }
 

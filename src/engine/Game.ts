@@ -38,6 +38,13 @@ import { scareSounds } from "../audio/ScareSounds";
 import { resolveEventNpcDialog } from "../content/eventNpcDialog";
 import { drawBurningFigure, drawFireSpot, drawScorch } from "../render/fireEffects";
 import { drawDragGrip } from "../render/dragGrip";
+import {
+    computeDiningBurnLayout,
+    diningBurnActors,
+    drawDiningFloorDamage,
+    type DiningBurnLayout
+} from "../render/diningBurnDamage";
+import { furnitureActorFromInteractable, type DepthActor } from "../render/roomScene";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
@@ -144,6 +151,8 @@ export class Game {
     private atticScare: AtticScareChase;
     private ledgerScare: AtticScareChase;
     private diningFire = new DiningFireCutscene();
+    /** Cached scorch layout for the dining room after the fire (keyed by room object). */
+    private diningBurnCache: { room: Room; layout: DiningBurnLayout } | null = null;
     /** Set by dev teleport: this session never writes saves. */
     private devStaged = false;
     private atticWindow = new AtticWindowCutscene();
@@ -311,6 +320,27 @@ export class Game {
         if (this.devStaged || !this.canAutosave()) return;
         const snap = this.snapshotSave();
         if (snap) saveGame(snap);
+    }
+
+    /**
+     * Permanent fire damage in the dining room once the fire is over: scorch
+     * marks, burned tablecloth and rug, soot on the fireplace and ceiling.
+     */
+    private diningBurnDamage(): { floor: (c: CanvasRenderingContext2D) => void; actors: DepthActor[] } | null {
+        const room = this.currentRoom;
+        if (room.id !== "dining" || !this.diningFireResolved || this.diningFire.active) return null;
+        if (this.diningBurnCache?.room !== room) {
+            this.diningBurnCache = { room, layout: computeDiningBurnLayout(room) };
+        }
+        const layout = this.diningBurnCache.layout;
+        const size = { width: room.map.width, height: room.map.height };
+        const fireplaceRect = layout.fireplace
+            ? furnitureActorFromInteractable(layout.fireplace, () => 0, size).drawRect
+            : null;
+        return {
+            floor: (c) => drawDiningFloorDamage(c, layout, room.map.width * TILE_SIZE),
+            actors: diningBurnActors(layout, fireplaceRect)
+        };
     }
 
     /**
@@ -1054,6 +1084,7 @@ export class Game {
             this.hideCookAfterDiningScare(murderer);
         }
         this.diningFireResolved = true;
+        this.syncRoomAmbience();
     }
 
     private completeDiningFireCutscene(): void {
@@ -1696,7 +1727,11 @@ export class Game {
     }
 
     private syncRoomAmbience(): void {
-        fireplaceAmbience.syncForRoom(this.currentRoom);
+        // The dining fireplace stays cold after the fire
+        fireplaceAmbience.syncForRoom(
+            this.currentRoom,
+            !(this.currentRoom.id === "dining" && this.diningFireResolved)
+        );
         gardenAmbience.syncForRoom(this.currentRoom);
         kitchenAmbience.syncForRoom(this.currentRoom);
         atticMice.syncForRoom(this.currentRoom.id);
@@ -1811,9 +1846,12 @@ export class Game {
                   }))
                 : [];
 
+        const burn = this.diningBurnDamage();
+
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
-            extraActors: [this.player, ...spreadFireActors, ...dragGripActors],
+            floorDecals: burn?.floor,
+            extraActors: [this.player, ...spreadFireActors, ...dragGripActors, ...(burn?.actors ?? [])],
             extraOverheadActors: [
                 ...atticMice.getActors(() => this.decorAnimTime),
                 ...courtyardSeagull.getActors(),

@@ -111,6 +111,50 @@ export function drawFireplaceStone(ctx: CanvasRenderingContext2D): void {
     r(ctx, W - 22, 99, 2, 6, P.goldDark);
 }
 
+/**
+ * Dead fire painted over a lit fireplace (native pixels): repaints the firebox
+ * without flames, then grey ash, burnt-out log stubs and a scorched back wall.
+ */
+export function drawFireplaceColdFirebox(ctx: CanvasRenderingContext2D): void {
+    const fx = 24;
+    const fy = 55;
+    const fw = FIREPLACE_W - 48;
+    const fh = 42;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(fx, fy, fw, fh);
+    ctx.clip();
+    drawFireplaceStone(ctx);
+    ctx.restore();
+
+    // Back wall blackened by the blaze
+    ctx.fillStyle = "rgba(10,6,4,0.55)";
+    ctx.fillRect(fx + 6, fy + 2, fw - 12, fh - 14);
+    ctx.fillStyle = "rgba(10,6,4,0.3)";
+    ctx.fillRect(fx + 6, fy + fh - 12, fw - 12, 6);
+
+    // Low ash mound in the grate, settled dust spreading to the cheeks
+    const gy = fy + fh - 10;
+    const rand = seeded(29);
+    for (let x = fx + 7; x < fx + fw - 7; x++) {
+        const c = Math.abs(x - (fx + fw / 2)) / (fw / 2 - 7);
+        const top = gy + 3 - Math.round((1 - c * c) * 5 + rand() * 1.2);
+        vline(ctx, x, top + 3, fy + fh - top - 3, "#2e2a27");
+        vline(ctx, x, top + 1, 2, "#4a4642");
+        p(ctx, x, top, rand() < 0.35 ? "#8e8980" : "#6a655e");
+        if (rand() < 0.25) p(ctx, x, top + 3 + Math.floor(rand() * 3), "#5a5650");
+    }
+    // Charred log stubs half-buried in the ash
+    for (const [x, w] of [[fx + 11, 9], [fx + 26, 11]] as const) {
+        r(ctx, x, gy - 4, w, 3, "#1c1612");
+        hline(ctx, x, gy - 4, w, "#2e2620");
+        for (let i = 1; i < w - 1; i += 3) p(ctx, x + i, gy - 3, "#48403a");
+    }
+    // Grate front bar and bars poking through the ash
+    hline(ctx, fx + 8, gy + 5, fw - 16, "#1a1a1e");
+    for (let x = fx + 10; x < fx + fw - 10; x += 4) vline(ctx, x, gy + 2, 4, "#22222a");
+}
+
 /** Static (baked) fire for previews/editor. */
 export function drawFireplaceStatic(ctx: CanvasRenderingContext2D): void {
     drawFireplaceStone(ctx);

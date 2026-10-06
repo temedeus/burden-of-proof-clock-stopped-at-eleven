@@ -30,14 +30,14 @@ export class FireplaceAmbience {
         lfoGain: GainNode;
     } | null = null;
 
-    /** Call whenever `currentRoom` changes (or mute toggles). */
-    syncForRoom(room: Room): void {
+    /** Call whenever `currentRoom` changes (or mute toggles). `lit` false silences a dead fire. */
+    syncForRoom(room: Room, lit = true): void {
         if (isMuteSounds()) {
             this.stop();
             return;
         }
 
-        const wants = roomHasFireplace(room);
+        const wants = lit && roomHasFireplace(room);
         if (wants && this.activeRoomId === room.id) return;
         if (!wants) {
             this.stop();

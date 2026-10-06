@@ -3,6 +3,7 @@ import { loadSettings, setMuteSounds } from "./Settings";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { shouldShowTouchControls } from "./platform";
 import { hasSave } from "./SaveGame";
+import { drawMenuBackdrop } from "../render/menuBackdrop";
 import type { PlayerSpriteName } from "@cse/content-schema";
 
 export type MenuScreen =
@@ -142,11 +143,13 @@ export class Menu {
 
         const { lineHeight } = this.getMenuTypography(h);
         const startY =
-            this.screen === "game_over"
-                ? h * 0.52
-                : this.screen === "new_game_confirm"
-                  ? h * 0.55
-                  : h * 0.42;
+            this.screen === "main"
+                ? this.mainMenuStartY(h, lineHeight, items.length)
+                : this.screen === "game_over"
+                  ? h * 0.52
+                  : this.screen === "new_game_confirm"
+                    ? h * 0.55
+                    : h * 0.42;
         return { startY, lineHeight, count: items.length };
     }
 
@@ -318,17 +321,19 @@ export class Menu {
         const h = ctx.canvas.height;
 
         if (this.screen === "main") {
-            this.renderMainMenuBackground(ctx, w, h);
-            ctx.fillStyle = "rgba(0,0,0,0.58)";
-            ctx.fillRect(0, 0, w, h);
+            drawMenuBackdrop(ctx, w, h, performance.now() / 1000);
+            // Darken the grounds so the menu reads over the drive
+            const shade = ctx.createLinearGradient(0, h * 0.66, 0, h);
+            shade.addColorStop(0, "rgba(0,0,0,0)");
+            shade.addColorStop(0.35, "rgba(0,0,0,0.45)");
+            shade.addColorStop(1, "rgba(0,0,0,0.7)");
+            ctx.fillStyle = shade;
+            ctx.fillRect(0, h * 0.66, w, h * 0.34);
 
-            const type = this.getMenuTypography(h);
-            ctx.fillStyle = MENU_ACCENT;
-            ctx.font = type.title;
-            ctx.textAlign = "center";
-            this.drawCurvedTitleText(ctx, "Murder at von Virtanen Manor", w / 2, h * 0.28, w * 0.85);
-
-            this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.42);
+            this.drawLogo(ctx, w, h);
+            const items = this.getMenuItems();
+            const { lineHeight } = this.getMenuTypography(h);
+            this.renderMenuList(ctx, w, h, items, this.mainMenuStartY(h, lineHeight, items.length), true);
             ctx.textAlign = "left";
             return;
         }
@@ -371,7 +376,8 @@ export class Menu {
         w: number,
         h: number,
         items: { id: string; label: string }[],
-        startY: number
+        startY: number,
+        shadowed = false
     ): void {
         const type = this.getMenuTypography(h);
         ctx.textAlign = "center";
@@ -384,8 +390,27 @@ export class Menu {
             const y = startY + i * type.lineHeight;
             const selected = i === this.selectedIndex;
             ctx.font = selected ? type.itemBold : type.item;
+            if (shadowed) {
+                ctx.fillStyle = "rgba(0,0,0,0.85)";
+                ctx.fillText(label, w / 2 + 2, y + 2);
+            }
             ctx.fillStyle = selected ? HOVER_COLOR : TEXT_COLOR;
             ctx.fillText(label, w / 2, y);
+            if (selected && shadowed) {
+                // Small diamonds bracket the chosen entry
+                const half = ctx.measureText(label).width / 2 + 18;
+                const d = Math.max(3, Math.round(type.lineHeight / 14));
+                const cy = y - type.lineHeight * 0.18;
+                for (const x of [w / 2 - half, w / 2 + half]) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, cy - d);
+                    ctx.lineTo(x + d, cy);
+                    ctx.lineTo(x, cy + d);
+                    ctx.lineTo(x - d, cy);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
         }
     }
 
@@ -486,50 +511,89 @@ export class Menu {
         ctx.textAlign = "left";
     }
 
-    /** Draw curved title text: thicker at edges, thinner at center, with vertical curve */
-    private drawCurvedTitleText(ctx: CanvasRenderingContext2D, text: string, centerX: number, centerY: number, maxWidth: number): void {
-        const chars = text.split('');
-        const charCount = chars.length;
-        
-        // Measure width of full unscaled text for centering
-        const baseWidth = ctx.measureText(text).width;
-        const startX = centerX - baseWidth / 2;
-        
-        // Curve parameters: controls the height of the arc
-        const curveHeight = 24;
-        
-        // Draw each character with scaling and vertical offset
-        let x = startX;
-        for (let i = 0; i < charCount; i++) {
-            const progress = i / (charCount - 1); // 0 to 1
-            
-            // Horizontal distance from center (normalized to -1 to +1)
-            const hDist = progress * 2 - 1;
-            // Scale factor: thicker at edges (1.0), narrower in middle (0.7)
-            const scale = 0.7 + 0.3 * Math.abs(hDist);
-            
-            // Vertical curve offset: characters form a gentle arc
-            // Positive curveHeight = concave down (smile shape)
-            // Negative curveHeight = concave up (frown shape)
-            const curveOffset = curveHeight * (Math.pow(hDist, 2) - 0.25);
-            
-            // Get unscaled width of this character
-            const charWidth = ctx.measureText(chars[i]).width;
-            
-            ctx.save();
-            ctx.translate(x, centerY + curveOffset);
-            ctx.scale(scale, 1);
-            ctx.textAlign = 'left';
-            ctx.fillText(chars[i], 0, 0);
-            ctx.restore();
-            
-            // Move to next character position (using unscaled width)
-            x += charWidth;
-        }
+    /** Main-menu list sits low, over the darkened grounds below the manor. */
+    private mainMenuStartY(h: number, lineHeight: number, count: number): number {
+        return h - (count - 1) * lineHeight - h * 0.09;
     }
 
-    /** Full-screen manor background for main menu (spritesheet3: manor_building) */
-    private renderMainMenuBackground(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-        spriteLoader.drawSprite(ctx, "manor_building", 0, 0, w, h);
+    /**
+     * Title logo over the night sky: a small italic "Murder at", the house name in
+     * engraved gilt small caps, a ruled flourish and the tagline.
+     */
+    private drawLogo(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        const scale = h / 600;
+        const cx = w / 2;
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "alphabetic";
+
+        ctx.font = `italic ${Math.round(24 * scale)}px "IM Fell English", "Libre Baskerville", serif`;
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillText("Murder at", cx + 2, h * 0.085 + 2);
+        ctx.fillStyle = "#cdb98e";
+        ctx.fillText("Murder at", cx, h * 0.085);
+
+        const title = "Von Virtanen Manor";
+        let px = Math.round(54 * scale);
+        ctx.font = `${px}px "IM Fell English SC", "IM Fell English", "Libre Baskerville", serif`;
+        const maxW = w * 0.86;
+        const measured = ctx.measureText(title).width;
+        if (measured > maxW) {
+            px = Math.floor((px * maxW) / measured);
+            ctx.font = `${px}px "IM Fell English SC", "IM Fell English", "Libre Baskerville", serif`;
+        }
+        const ty = h * 0.085 + px * 1.02;
+        // Deep drop shadow, warm halo, dark engraved edge, then gilt fill
+        ctx.fillStyle = "rgba(0,0,0,0.85)";
+        ctx.fillText(title, cx + 3, ty + 4);
+        ctx.shadowColor = "rgba(255,180,80,0.35)";
+        ctx.shadowBlur = 14 * scale;
+        ctx.lineJoin = "round";
+        ctx.lineWidth = Math.max(2, 3 * scale);
+        ctx.strokeStyle = "#2a1406";
+        ctx.strokeText(title, cx, ty);
+        ctx.shadowBlur = 0;
+        const gilt = ctx.createLinearGradient(0, ty - px * 0.72, 0, ty + px * 0.05);
+        gilt.addColorStop(0, "#fff0bc");
+        gilt.addColorStop(0.45, "#e2b65c");
+        gilt.addColorStop(0.55, "#b8812e");
+        gilt.addColorStop(1, "#7a4a18");
+        ctx.fillStyle = gilt;
+        ctx.fillText(title, cx, ty);
+
+        // Ruled flourish: tapering rules with a centre lozenge and end pips
+        const fy = Math.round(ty + px * 0.32);
+        const span = Math.min(ctx.measureText(title).width * 0.42, w * 0.36);
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(cx - span + 1, fy + 1, span * 2, Math.max(1, Math.round(scale)));
+        const rule = ctx.createLinearGradient(cx - span, 0, cx + span, 0);
+        rule.addColorStop(0, "rgba(200,160,90,0)");
+        rule.addColorStop(0.5, "#d4aa5c");
+        rule.addColorStop(1, "rgba(200,160,90,0)");
+        ctx.fillStyle = rule;
+        ctx.fillRect(cx - span, fy, span * 2, Math.max(1, Math.round(scale)));
+        const d = 5 * scale;
+        ctx.fillStyle = "#e2b65c";
+        ctx.beginPath();
+        ctx.moveTo(cx, fy - d);
+        ctx.lineTo(cx + d * 1.6, fy);
+        ctx.lineTo(cx, fy + d);
+        ctx.lineTo(cx - d * 1.6, fy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#2a1406";
+        ctx.fillRect(cx - 1, fy - 1, 2, 2);
+        for (const sx of [-1, 1]) {
+            ctx.fillStyle = "#b8812e";
+            ctx.fillRect(Math.round(cx + sx * span * 0.62) - 1, fy - 1, 3, 3);
+        }
+
+        ctx.font = `italic ${Math.round(17 * scale)}px "IM Fell English", "Libre Baskerville", serif`;
+        const tagY = fy + 26 * scale;
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillText("The clock stopped at eleven", cx + 1, tagY + 1);
+        ctx.fillStyle = "#9fa6b8";
+        ctx.fillText("The clock stopped at eleven", cx, tagY);
+        ctx.restore();
     }
 }

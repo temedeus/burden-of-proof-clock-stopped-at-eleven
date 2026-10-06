@@ -10,6 +10,13 @@ import {
     HUMANOID_NATIVE_W
 } from "../assets/procedural/characterAnimation";
 import { getSpriteDef } from "../assets/procedural/registry";
+import type { CharacterPose } from "../assets/procedural/characters";
+import { getHoodedFrame, HOODED_HAND } from "../assets/procedural/hoodedFigure";
+import { drawSword } from "../render/swordDraw";
+
+const WALK_ANIM_FPS = 8;
+/** One sword swing cycle (wind-up, slash, recover). */
+const SWORD_CYCLE_SECONDS = 1.1;
 import type { Facing } from "./Player";
 
 const DEFAULT_CHASE_SPEED = 100;
@@ -27,6 +34,9 @@ export class NPC extends Entity {
   private fleeSpeed = 90;
   private swingingKnife = false;
   private knifeSwingTime = 0;
+  private walkTime = 0;
+  /** performance.now() of the last movement step (walk frames play while recent). */
+  private lastWalkMs = -Infinity;
   private stunnedRemaining = 0;
   private stunDuration = 0;
   /** +1 or -1 — which way they tip when shoved. */
@@ -89,6 +99,25 @@ export class NPC extends Entity {
 
   getFacing(): Facing {
     return this.facing;
+  }
+
+  /** Advance the walk cycle and face the direction of travel (also used by cutscenes). */
+  animateWalk(dt: number, dx: number, dy: number): void {
+    if (Math.abs(dx) + Math.abs(dy) < 0.01) return;
+    this.walkTime += dt;
+    this.lastWalkMs = performance.now();
+    this.facing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
+  }
+
+  /** Advance the sword swing (for scripted scenes that move the NPC directly). */
+  advanceSwordSwing(dt: number): void {
+    if (this.swingingKnife) this.knifeSwingTime += dt;
+  }
+
+  private currentPose(): CharacterPose {
+    if (performance.now() - this.lastWalkMs > 120) return "idle";
+    const frame = Math.floor(this.walkTime * WALK_ANIM_FPS) % 4;
+    return (["walk_a", "walk_b", "walk_c", "walk_d"] as const)[frame];
   }
 
   setSwingingKnife(value: boolean): void {
@@ -190,8 +219,11 @@ export class NPC extends Entity {
     dy /= len;
     const moveX = dx * this.chaseSpeed * dt;
     const moveY = dy * this.chaseSpeed * dt;
+    const startX = this.x;
+    const startY = this.y;
     if (!this.collidesWithMap(this.x + moveX, this.y, map)) this.x += moveX;
     if (!this.collidesWithMap(this.x, this.y + moveY, map)) this.y += moveY;
+    this.animateWalk(dt, this.x - startX, this.y - startY);
   }
 
   /** Move away from a point (e.g. murderer fleeing from police) */
@@ -207,8 +239,11 @@ export class NPC extends Entity {
     dy /= len;
     const moveX = dx * this.fleeSpeed * dt;
     const moveY = dy * this.fleeSpeed * dt;
+    const startX = this.x;
+    const startY = this.y;
     if (!this.collidesWithMap(this.x + moveX, this.y, map)) this.x += moveX;
     if (!this.collidesWithMap(this.x, this.y + moveY, map)) this.y += moveY;
+    this.animateWalk(dt, this.x - startX, this.y - startY);
   }
 
   private collidesWithMap(x: number, y: number, map: TileMap): boolean {
@@ -253,19 +288,27 @@ export class NPC extends Entity {
     return Math.round(nativeH * (this.width / nativeW));
   }
 
+  /** On-screen sprite box (head overhangs the entity box). */
+  getSpriteBox(): { x: number; y: number; w: number; h: number } {
+    const h = this.spriteDrawHeight();
+    return { x: Math.round(this.x), y: Math.round(this.y + this.height - h), w: this.width, h };
+  }
+
   private drawIdleSprite(ctx: CanvasRenderingContext2D, dx: number, dy: number): void {
     const drawHeight = this.spriteDrawHeight();
     const top = Math.round(dy + this.height - drawHeight);
     const left = Math.round(dx);
+    const bakeFacing: CharacterFacing =
+      this.facing === "up" ? "up" : this.facing === "down" ? "down" : "right";
+    const pose = this.currentPose();
     const style = getHumanoidStyle(this.spriteName);
-    if (!style) {
+    let frame: HTMLCanvasElement | null = null;
+    if (this.spriteName === "hooded_figure") frame = getHoodedFrame(bakeFacing, pose);
+    else if (style) frame = getHumanoidFrame(style, bakeFacing, pose);
+    if (!frame) {
       spriteLoader.drawSprite(ctx, this.spriteName, left, top, this.width, drawHeight);
       return;
     }
-
-    const bakeFacing: CharacterFacing =
-      this.facing === "up" ? "up" : this.facing === "down" ? "down" : "right";
-    const frame = getHumanoidFrame(style, bakeFacing, "idle");
 
     ctx.save();
     ctx.imageSmoothingEnabled = false;
@@ -318,11 +361,10 @@ export class NPC extends Entity {
       this.drawIdleSprite(ctx, -this.width / 2, -this.height * 0.85);
       ctx.restore();
     } else {
+      const swordBehind = this.swingingKnife && this.facing === "up";
+      if (swordBehind) this.drawHeldSword(ctx);
       this.drawIdleSprite(ctx, this.x, this.y);
-    }
-
-    if (this.swingingKnife && fall < 0.05) {
-      this.drawSwingingKnife(ctx);
+      if (this.swingingKnife && !swordBehind) this.drawHeldSword(ctx);
     }
 
     if (!this.showNameLabel || fall > 0.2) return;
@@ -335,21 +377,15 @@ export class NPC extends Entity {
     ctx.textAlign = "left"; // Reset alignment
   }
 
-  private drawSwingingKnife(ctx: CanvasRenderingContext2D): void {
-    const swing = Math.sin(this.knifeSwingTime * 14) * 0.9;
-    const pivotX = this.x + this.width * 0.78;
-    const pivotY = this.y + this.height * 0.42;
-    const length = this.width * 0.55;
-
-    ctx.save();
-    ctx.translate(pivotX, pivotY);
-    ctx.rotate(-0.6 + swing);
-    ctx.fillStyle = "#c0c4c8";
-    ctx.fillRect(0, -2, length, 4);
-    ctx.fillStyle = "#8a9098";
-    ctx.fillRect(length - 4, -3, 6, 6);
-    ctx.fillStyle = "#5a4030";
-    ctx.fillRect(-6, -3, 8, 6);
-    ctx.restore();
+  /** Sword in the figure's hand, swinging in a wind-up → slash → recover cycle. */
+  private drawHeldSword(ctx: CanvasRenderingContext2D): void {
+    const box = this.getSpriteBox();
+    const scale = box.w / HUMANOID_NATIVE_W;
+    const bake = this.facing === "up" ? "up" : this.facing === "down" ? "down" : "right";
+    const hand = HOODED_HAND[bake];
+    const mirror = this.facing === "left";
+    const hx = mirror ? HUMANOID_NATIVE_W - hand.x : hand.x;
+    const phase = (this.knifeSwingTime % SWORD_CYCLE_SECONDS) / SWORD_CYCLE_SECONDS;
+    drawSword(ctx, box.x + hx * scale, box.y + hand.y * scale, phase, mirror || this.facing === "up", scale);
   }
 }

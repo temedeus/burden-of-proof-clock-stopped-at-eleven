@@ -1,6 +1,7 @@
 import { P } from "./palette";
 import { grid, r, p, hline, vline, rrCrisp as rr, discCrisp, triCrisp as t, shade } from "./pixel";
 import type { ProceduralSpriteDef } from "./types";
+import { drawHoodedFrame } from "./hoodedFigure";
 
 export type CharacterFacing = "down" | "up" | "right";
 export type CharacterPose = "idle" | "walk_a" | "walk_b" | "walk_c" | "walk_d";
@@ -1524,32 +1525,6 @@ const BARON_STYLE: HumanoidStyle = {
     pants: P.black
 };
 
-/** Faceless black-hooded figure used for the attic scare chase. */
-function drawHoodedFigure(ctx: CanvasRenderingContext2D): void {
-    const cloak = P.black;
-    const cloakHi = P.outline;
-    const voidFace = "#0a0806";
-
-    // Cloak body
-    r(ctx, 9, 12, 14, 18, cloak);
-    r(ctx, 10, 13, 12, 6, cloakHi);
-    r(ctx, 8, 14, 3, 14, cloak);
-    r(ctx, 21, 14, 3, 14, cloak);
-
-    // Hood cowl over head — face swallowed in shadow
-    r(ctx, 10, 2, 12, 12, cloak);
-    r(ctx, 9, 4, 14, 8, cloak);
-    r(ctx, 11, 1, 10, 4, cloakHi);
-    r(ctx, 12, 5, 8, 7, voidFace);
-    r(ctx, 13, 7, 6, 4, P.black);
-
-    // Boots
-    r(ctx, 11, 30, 4, 4, P.shadow);
-    r(ctx, 17, 30, 4, 4, P.shadow);
-    r(ctx, 10, 33, 5, 2, P.outline);
-    r(ctx, 17, 33, 5, 2, P.outline);
-}
-
 /** Irregular two-tone blood pool (union of discs) with glossy highlights and broom streaks. */
 function drawBloodPool(ctx: CanvasRenderingContext2D): void {
     const lobes: [number, number, number][] = [
@@ -1817,7 +1792,7 @@ export const CHARACTER_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeWidth: 32,
         nativeHeight: 40,
         draw(ctx) {
-            drawHoodedFigure(ctx);
+            drawHoodedFrame(ctx, "down", "idle");
         }
     },
     worker_boy: humanoid(WORKER_BOY_STYLE),

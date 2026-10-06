@@ -34,7 +34,7 @@ import {
 } from "../systems/AtticWindowCutscene";
 import { scareSounds } from "../audio/ScareSounds";
 import { resolveEventNpcDialog } from "../content/eventNpcDialog";
-import { drawCharacterFire } from "../assets/procedural/fireplace";
+import { drawBurningFigure, drawFireSpot, drawScorch } from "../render/fireEffects";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
@@ -1049,8 +1049,16 @@ export class Game {
 
         if (murderer && phase === "panic_run" && this.currentRoom.id === "dining") {
             const pos = this.diningFire.panicPosition();
-            murderer.x = pos.x - murderer.width / 2;
-            murderer.y = pos.y - murderer.height / 2;
+            const nx = pos.x - murderer.width / 2;
+            const ny = pos.y - murderer.height / 2;
+            murderer.animateWalk(dt, nx - murderer.x, ny - murderer.y);
+            murderer.x = nx;
+            murderer.y = ny;
+        }
+
+        // The burning figure spreads fire along its path and to furniture it passes
+        if (murderer && (phase === "ignite" || phase === "panic_run") && this.currentRoom.id === "dining") {
+            this.diningFire.spreadFire(murderer.x + murderer.width / 2, murderer.y + murderer.height, this.currentRoom);
         }
 
         if (phase === "player_retreat") {
@@ -1651,32 +1659,43 @@ export class Game {
         ctx.save();
         ctx.translate(offset.x, offset.y);
 
+        const murdererForFire = this.getMurderer();
         const ytteFireActors =
-            this.diningFire.ytteOnFire && this.getMurderer()
+            this.diningFire.ytteOnFire && murdererForFire
                 ? [
-                      (() => {
-                          const murderer = this.getMurderer()!;
-                          return {
-                              y: murderer.y,
-                              height: murderer.height,
-                              render: (c: CanvasRenderingContext2D) => {
-                                  drawCharacterFire(
-                                      c,
-                                      murderer.x,
-                                      murderer.y,
-                                      murderer.width,
-                                      murderer.height,
-                                      this.decorAnimTime
-                                  );
-                              }
-                          };
-                      })()
+                      {
+                          y: murdererForFire.y,
+                          height: murdererForFire.height,
+                          render: (c: CanvasRenderingContext2D) => {
+                              const box = murdererForFire.getSpriteBox();
+                              drawBurningFigure(c, box.x, box.y, box.w, box.h, this.decorAnimTime);
+                          }
+                      }
                   ]
+                : [];
+        // Fires spread through the dining room, depth-sorted with the furniture they sit on
+        const spreadFireActors =
+            this.diningFire.active && this.currentRoom.id === "dining"
+                ? this.diningFire.fires.map((spot) => ({
+                      y: spot.sortY - 1,
+                      height: 1,
+                      render: (c: CanvasRenderingContext2D) => {
+                          const view = {
+                              x: spot.x,
+                              y: spot.y,
+                              size: this.diningFire.fireGrowth(spot),
+                              maxHeight: spot.maxHeight,
+                              seed: spot.seed
+                          };
+                          drawScorch(c, view);
+                          drawFireSpot(c, view, this.decorAnimTime, 1);
+                      }
+                  }))
                 : [];
 
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
-            extraActors: [this.player],
+            extraActors: [this.player, ...spreadFireActors],
             extraOverheadActors: [
                 ...atticMice.getActors(() => this.decorAnimTime),
                 ...courtyardSeagull.getActors(),

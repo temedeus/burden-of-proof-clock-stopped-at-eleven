@@ -55,6 +55,30 @@ export type DiningFirePhase =
     | "wake_thought"
     | "done";
 
+/** A burning patch on the floor or on a piece of furniture. */
+export interface FireSpot {
+    x: number;
+    /** Base of the flames (screen px). */
+    y: number;
+    /** Depth-sort key: furniture fires sort at the furniture's bottom so they draw on top of it. */
+    sortY: number;
+    /** Cutscene fire-time when it caught. */
+    born: number;
+    maxHeight: number;
+    seed: number;
+    source: string;
+}
+
+/** Furniture that catches when the burning figure runs past. */
+export const FLAMMABLE_FURNITURE = ["dining_table", "carpet"] as const;
+/** Distance from a furniture footprint (px) at which it catches. */
+export const IGNITE_RANGE_PX = TILE_SIZE * 2;
+/** Distance between fires dropped along the panic path. */
+export const FIRE_TRAIL_STEP_PX = TILE_SIZE * 1.25;
+export const MAX_FIRE_SPOTS = 40;
+/** Seconds for a new fire to reach full size. */
+export const FIRE_GROW_SECONDS = 1.6;
+
 export interface Rect {
     x: number;
     y: number;
@@ -231,6 +255,12 @@ export class DiningFireCutscene {
     dragT = 0;
     baronessExitT = 0;
     panicWaypoints: { x: number; y: number }[] = [];
+    /** Fires spread by the burning figure (floor trail + furniture). */
+    fires: FireSpot[] = [];
+    /** Clock for fire growth/flicker; runs for the whole cutscene. */
+    fireTime = 0;
+    private lastFireDrop: { x: number; y: number } | null = null;
+    private ignitedFurniture = new Set<string>();
 
     throwFrom = { x: 0, y: 0 };
     throwTo = { x: 0, y: 0 };
@@ -280,6 +310,74 @@ export class DiningFireCutscene {
         this.throwFrom = { x: fromX, y: fromY };
         this.throwTo = { x: toX, y: toY };
         this.waitingForDialogAdvance = false;
+        this.clearFires();
+    }
+
+    private clearFires(): void {
+        this.fires = [];
+        this.fireTime = 0;
+        this.lastFireDrop = null;
+        this.ignitedFurniture.clear();
+    }
+
+    /** 0..1 growth of a fire spot. */
+    fireGrowth(spot: FireSpot): number {
+        return Math.max(0, Math.min(1, (this.fireTime - spot.born) / FIRE_GROW_SECONDS));
+    }
+
+    private addFire(spot: Omit<FireSpot, "born" | "seed">): void {
+        if (this.fires.length >= MAX_FIRE_SPOTS) return;
+        this.fires.push({ ...spot, born: this.fireTime, seed: this.fires.length * 1.37 + 0.5 });
+    }
+
+    /**
+     * Spread fire from the burning figure at (x, feetY): drop burning patches
+     * along its path and ignite flammable furniture it passes close to.
+     */
+    spreadFire(x: number, feetY: number, room: Room): void {
+        if (!this.ytteOnFire) return;
+        const last = this.lastFireDrop;
+        if (!last || Math.hypot(x - last.x, feetY - last.y) >= FIRE_TRAIL_STEP_PX) {
+            const n = this.fires.length;
+            this.addFire({ x, y: feetY, sortY: feetY, maxHeight: 18 + ((n * 7) % 5) * 6, source: "floor" });
+            this.lastFireDrop = { x, y: feetY };
+        }
+        // Furniture only catches once the figure is running about, not on landing at the hearth
+        if (this.phase !== "panic_run") return;
+        for (const obj of room.interactables) {
+            if (!(FLAMMABLE_FURNITURE as readonly string[]).includes(obj.id)) continue;
+            if (this.ignitedFurniture.has(obj.id)) continue;
+            const b = interactableBoundsPx(obj);
+            if (!b) continue;
+            const dx = Math.max(b.x - x, 0, x - (b.x + b.w));
+            const dy = Math.max(b.y - feetY, 0, feetY - (b.y + b.h));
+            if (Math.hypot(dx, dy) > IGNITE_RANGE_PX) continue;
+            this.ignitedFurniture.add(obj.id);
+            this.igniteFurniture(obj.id, b);
+        }
+    }
+
+    private igniteFurniture(id: string, b: Rect): void {
+        if (id === "dining_table") {
+            // Flames run along the tablecloth; sort at the table's bottom so they draw over it
+            // Two staggered rows (far and near edge of the cloth), uneven heights
+            const n = 6;
+            for (let i = 0; i < n; i++) {
+                const near = i % 2 === 0;
+                const x = b.x + (b.w * (i + 0.5)) / n + (near ? 6 : -6);
+                const y = b.y + b.h * (near ? 0.62 : 0.4);
+                this.addFire({ x, y, sortY: b.y + b.h + 1, maxHeight: near ? 30 + ((i * 5) % 3) * 8 : 22 + ((i * 3) % 2) * 10, source: id });
+            }
+            return;
+        }
+        // Rugs: patches around the edges
+        const pts: [number, number][] = [
+            [b.x + b.w * 0.1, b.y + b.h * 0.2],
+            [b.x + b.w * 0.9, b.y + b.h * 0.25],
+            [b.x + b.w * 0.15, b.y + b.h * 0.85],
+            [b.x + b.w * 0.85, b.y + b.h * 0.8]
+        ];
+        for (const [x, y] of pts) this.addFire({ x, y, sortY: y, maxHeight: 24, source: id });
     }
 
     getAftermathLine(): string {
@@ -389,6 +487,7 @@ export class DiningFireCutscene {
         if (!this.active || this.waitingForDialogAdvance) return {};
 
         this.timer += dt;
+        this.fireTime += dt;
         const out: ReturnType<DiningFireCutscene["tick"]> = {};
 
         switch (this.phase) {
@@ -496,6 +595,7 @@ export class DiningFireCutscene {
                 this.blackAlpha = 1;
                 this.smokeAlpha = 0;
                 this.flameIntensity = 0;
+                this.clearFires();
                 this.collapseT = 0;
                 if (this.timer >= 0.7) {
                     this.phase = "wake_setup";
@@ -624,5 +724,22 @@ export class DiningFireCutscene {
         this.panicWaypoints = [];
         this.panicCryOpened = false;
         this.panicCryCleared = false;
+        this.clearFires();
     }
+}
+
+function interactableBoundsPx(obj: Interactable): Rect | null {
+    const tiles = obj.footprintTiles?.length ? obj.footprintTiles : obj.tiles;
+    if (!tiles.length) return null;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const t of tiles) {
+        minX = Math.min(minX, t.x);
+        minY = Math.min(minY, t.y);
+        maxX = Math.max(maxX, t.x);
+        maxY = Math.max(maxY, t.y);
+    }
+    return { x: minX * TILE_SIZE, y: minY * TILE_SIZE, w: (maxX - minX + 1) * TILE_SIZE, h: (maxY - minY + 1) * TILE_SIZE };
 }

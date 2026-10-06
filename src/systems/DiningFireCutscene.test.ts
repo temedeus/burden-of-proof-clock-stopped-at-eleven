@@ -194,3 +194,51 @@ describe("DiningFireCutscene phases", () => {
         expect(cut.phase).toBe("done");
     });
 });
+
+describe("DiningFireCutscene spreading fire", () => {
+    function burningScene(): { scene: DiningFireCutscene; room: Room } {
+        const room = withDiningTable(makeDiningWithFireplace());
+        const scene = new DiningFireCutscene();
+        scene.startThrow(0, 0, 10, 10);
+        // Advance through the throw into "ignite" so the figure is on fire
+        for (let i = 0; i < 40; i++) scene.tick(0.05);
+        return { scene, room };
+    }
+
+    it("drops a trail of fires behind the running figure", () => {
+        const { scene, room } = burningScene();
+        expect(scene.ytteOnFire).toBe(true);
+        for (let x = 2; x < 6; x += 0.25) {
+            scene.spreadFire(x * TILE_SIZE, 5 * TILE_SIZE, room);
+        }
+        const floor = scene.fires.filter((f) => f.source === "floor");
+        expect(floor.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("ignites the dining table once when the figure passes close to it", () => {
+        const { scene, room } = burningScene();
+        scene.spreadFire(12 * TILE_SIZE, 8 * TILE_SIZE, room);
+        scene.spreadFire(12.5 * TILE_SIZE, 8 * TILE_SIZE, room);
+        const table = scene.fires.filter((f) => f.source === "dining_table");
+        expect(table.length).toBe(6);
+        // Furniture fires sort at the table's bottom so they draw over it
+        expect(table.every((f) => f.sortY > 11 * TILE_SIZE)).toBe(true);
+    });
+
+    it("does not ignite furniture that is out of range", () => {
+        const { scene, room } = burningScene();
+        scene.spreadFire(2 * TILE_SIZE, 2 * TILE_SIZE, room);
+        expect(scene.fires.some((f) => f.source === "dining_table")).toBe(false);
+    });
+
+    it("grows fires over time and clears them on reset", () => {
+        const { scene, room } = burningScene();
+        scene.spreadFire(3 * TILE_SIZE, 5 * TILE_SIZE, room);
+        const spot = scene.fires[0];
+        expect(scene.fireGrowth(spot)).toBeLessThan(0.1);
+        scene.tick(1);
+        expect(scene.fireGrowth(spot)).toBeGreaterThan(0.5);
+        scene.reset();
+        expect(scene.fires).toHaveLength(0);
+    });
+});

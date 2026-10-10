@@ -1,4 +1,4 @@
-import { getAudioContext } from "./audioContext";
+import { createCrushedNoise, getAudioContext, getSfxOutput } from "./audioContext";
 
 /**
  * Short procedural "bling" when a clue is discovered.
@@ -11,14 +11,14 @@ export class ClueSounds {
         const t = ctx.currentTime;
         const master = ctx.createGain();
         master.gain.setValueAtTime(0.12, t);
-        master.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
-        master.connect(ctx.destination);
+        master.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+        master.connect(getSfxOutput(ctx));
 
         const notes = [987.77, 1318.51, 1567.98, 1975.53];
 
         notes.forEach((freq, i) => {
             const start = t + i * 0.065;
-            const dur = 0.22;
+            const dur = 0.32;
 
             const osc = ctx.createOscillator();
             osc.type = "sine";
@@ -31,8 +31,8 @@ export class ClueSounds {
             tone.gain.exponentialRampToValueAtTime(0.0001, start + dur);
 
             const shimmer = ctx.createOscillator();
-            shimmer.type = "triangle";
-            shimmer.frequency.value = freq * 2.01;
+            shimmer.type = "sine";
+            shimmer.frequency.value = freq * 2.76; // bell-like inharmonic partial
 
             const shimGain = ctx.createGain();
             shimGain.gain.setValueAtTime(0.08, start);
@@ -51,13 +51,7 @@ export class ClueSounds {
 
         // Soft high sparkle tail
         const tailStart = t + 0.22;
-        const sampleCount = Math.floor(ctx.sampleRate * 0.12);
-        const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
-        const samples = buffer.getChannelData(0);
-        for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * 0.12));
-            samples[i] = (Math.random() * 2 - 1) * env;
-        }
+        const buffer = createCrushedNoise(ctx, 0.12, 0.12, 3, 32);
 
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;

@@ -1,8 +1,17 @@
-import { getAudioContext } from "./audioContext";
+import { getAudioContext, getSfxOutput } from "./audioContext";
 
 const WALK_STEP_FPS = 8;
 /** Audible but still softer than typical SFX */
 const MASTER_GAIN = 0.14;
+
+/** Decaying noise with sample-hold + bit reduction — reads as a low-rate 8-bit sample. */
+function fillCrushedNoise(samples: Float32Array, count: number, decay: number): void {
+    let held = 0;
+    for (let i = 0; i < count; i++) {
+        if (i % 2 === 0) held = Math.round((Math.random() * 2 - 1) * 48) / 48;
+        samples[i] = held * Math.exp(-i / (count * decay));
+    }
+}
 
 export type FootstepSurface =
     | "default"
@@ -20,6 +29,7 @@ export type FootstepSurface =
  */
 export class FootstepSounds {
     private lastFrame = -1;
+    private foot = 0;
 
     /** Call each frame while the player may be walking */
     updateWalkAnim(animTime: number, isMoving: boolean, surface: FootstepSurface = "default"): void {
@@ -62,57 +72,74 @@ export class FootstepSounds {
         }
     }
 
+    /** Indoor floorboard step: heel strike, a short toe-down tap, and a faint room knock. */
     playStep(): void {
         const ctx = getAudioContext();
         if (!ctx) return;
 
         const t = ctx.currentTime;
-        const duration = 0.09;
+        const duration = 0.12;
         const pitchJitter = Math.random() * 40;
+        // alternate feet: left slightly lower and duller than right
+        this.foot = 1 - this.foot;
+        const side = this.foot === 0 ? 0.92 : 1.06;
+        const vol = 0.85 + Math.random() * 0.3;
 
         const master = ctx.createGain();
-        master.gain.setValueAtTime(MASTER_GAIN, t);
+        master.gain.setValueAtTime(MASTER_GAIN * vol, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
-        const sampleCount = Math.floor(ctx.sampleRate * duration);
-        const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
-        const samples = buffer.getChannelData(0);
-        for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * 0.2));
-            samples[i] = (Math.random() * 2 - 1) * env;
-        }
+        // Heel: low body thump
+        const heel = ctx.createOscillator();
+        heel.type = "sine";
+        heel.frequency.setValueAtTime((120 + pitchJitter) * side, t);
+        heel.frequency.exponentialRampToValueAtTime(48, t + 0.08);
+        const heelGain = ctx.createGain();
+        heelGain.gain.setValueAtTime(0.55, t);
+        heelGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.085);
+        heel.connect(heelGain);
+        heelGain.connect(master);
+        heel.start(t);
+        heel.stop(t + 0.09);
 
-        const noise = ctx.createBufferSource();
-        noise.buffer = buffer;
+        // Heel click: crushed noise through a woody bandpass
+        const clickLen = 0.05;
+        const clickCount = Math.floor(ctx.sampleRate * clickLen);
+        const clickBuf = ctx.createBuffer(1, clickCount, ctx.sampleRate);
+        fillCrushedNoise(clickBuf.getChannelData(0), clickCount, 0.14);
+        const click = ctx.createBufferSource();
+        click.buffer = clickBuf;
+        const clickBp = ctx.createBiquadFilter();
+        clickBp.type = "bandpass";
+        clickBp.frequency.value = (900 + pitchJitter * 6) * side;
+        clickBp.Q.value = 1.1;
+        const clickGain = ctx.createGain();
+        clickGain.gain.value = 0.55;
+        click.connect(clickBp);
+        clickBp.connect(clickGain);
+        clickGain.connect(master);
+        click.start(t);
+        click.stop(t + clickLen);
 
-        const filter = ctx.createBiquadFilter();
-        filter.type = "lowpass";
-        filter.frequency.value = 420 + pitchJitter;
-        filter.Q.value = 0.9;
-
-        const noiseGain = ctx.createGain();
-        noiseGain.gain.value = 0.75;
-
-        noise.connect(filter);
-        filter.connect(noiseGain);
-        noiseGain.connect(master);
-        noise.start(t);
-        noise.stop(t + duration);
-
-        const osc = ctx.createOscillator();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(95 + pitchJitter, t);
-        osc.frequency.exponentialRampToValueAtTime(55, t + duration * 0.8);
-
-        const oscGain = ctx.createGain();
-        oscGain.gain.setValueAtTime(0.45, t);
-        oscGain.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.75);
-
-        osc.connect(oscGain);
-        oscGain.connect(master);
-        osc.start(t);
-        osc.stop(t + duration);
+        // Toe-down: softer, lower, a beat later
+        const toeT = t + 0.045;
+        const toeLen = 0.06;
+        const toeCount = Math.floor(ctx.sampleRate * toeLen);
+        const toeBuf = ctx.createBuffer(1, toeCount, ctx.sampleRate);
+        fillCrushedNoise(toeBuf.getChannelData(0), toeCount, 0.25);
+        const toe = ctx.createBufferSource();
+        toe.buffer = toeBuf;
+        const toeLp = ctx.createBiquadFilter();
+        toeLp.type = "lowpass";
+        toeLp.frequency.value = 520 + pitchJitter;
+        const toeGain = ctx.createGain();
+        toeGain.gain.value = 0.32;
+        toe.connect(toeLp);
+        toeLp.connect(toeGain);
+        toeGain.connect(master);
+        toe.start(toeT);
+        toe.stop(toeT + toeLen);
     }
 
     /** Soft leafy rustle — muffled and airy. */
@@ -125,15 +152,12 @@ export class FootstepSounds {
         const master = ctx.createGain();
         master.gain.setValueAtTime(MASTER_GAIN * 0.32, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
         const sampleCount = Math.floor(ctx.sampleRate * duration);
         const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
         const samples = buffer.getChannelData(0);
-        for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * 0.45));
-            samples[i] = (Math.random() * 2 - 1) * env;
-        }
+        fillCrushedNoise(samples, sampleCount, 0.45);
 
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
@@ -171,7 +195,7 @@ export class FootstepSounds {
         const master = ctx.createGain();
         master.gain.setValueAtTime(MASTER_GAIN * 1.05, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
         const bursts = 3 + Math.floor(Math.random() * 2);
         for (let i = 0; i < bursts; i++) {
@@ -180,10 +204,7 @@ export class FootstepSounds {
             const sampleCount = Math.floor(ctx.sampleRate * duration);
             const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
             const samples = buffer.getChannelData(0);
-            for (let s = 0; s < sampleCount; s++) {
-                const env = Math.exp(-s / (sampleCount * 0.18));
-                samples[s] = (Math.random() * 2 - 1) * env;
-            }
+            fillCrushedNoise(samples, sampleCount, 0.18);
             const noise = ctx.createBufferSource();
             noise.buffer = buffer;
             const bp = ctx.createBiquadFilter();
@@ -222,15 +243,12 @@ export class FootstepSounds {
         const master = ctx.createGain();
         master.gain.setValueAtTime(MASTER_GAIN * 0.28, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
         const sampleCount = Math.floor(ctx.sampleRate * duration);
         const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
         const samples = buffer.getChannelData(0);
-        for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * 0.55));
-            samples[i] = (Math.random() * 2 - 1) * env;
-        }
+        fillCrushedNoise(samples, sampleCount, 0.55);
 
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
@@ -270,15 +288,12 @@ export class FootstepSounds {
         const master = ctx.createGain();
         master.gain.setValueAtTime(MASTER_GAIN * 1.05, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
         const sampleCount = Math.floor(ctx.sampleRate * duration);
         const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
         const samples = buffer.getChannelData(0);
-        for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * 0.12));
-            samples[i] = (Math.random() * 2 - 1) * env;
-        }
+        fillCrushedNoise(samples, sampleCount, 0.12);
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
         const hp = ctx.createBiquadFilter();
@@ -321,15 +336,12 @@ export class FootstepSounds {
         const master = ctx.createGain();
         master.gain.setValueAtTime(MASTER_GAIN * 0.95, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
         const sampleCount = Math.floor(ctx.sampleRate * duration);
         const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
         const samples = buffer.getChannelData(0);
-        for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * 0.16));
-            samples[i] = (Math.random() * 2 - 1) * env;
-        }
+        fillCrushedNoise(samples, sampleCount, 0.16);
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
         const bp = ctx.createBiquadFilter();
@@ -368,16 +380,13 @@ export class FootstepSounds {
         const master = ctx.createGain();
         master.gain.setValueAtTime(MASTER_GAIN * 1.05, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
         // Board tap
         const sampleCount = Math.floor(ctx.sampleRate * 0.08);
         const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
         const samples = buffer.getChannelData(0);
-        for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * 0.22));
-            samples[i] = (Math.random() * 2 - 1) * env;
-        }
+        fillCrushedNoise(samples, sampleCount, 0.22);
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
         const lp = ctx.createBiquadFilter();
@@ -429,73 +438,92 @@ export class FootstepSounds {
         squeak.stop(t + 0.15);
     }
 
+    /** Wet squelch: gurgling band sweep, bubble pops and a sucking release as the foot lifts. */
     playSquish(): void {
         const ctx = getAudioContext();
         if (!ctx) return;
 
         const t = ctx.currentTime;
-        const duration = 0.2;
-        const pitchJitter = Math.random() * 25;
+        const duration = 0.26;
+        const jitter = Math.random();
 
         const master = ctx.createGain();
-        master.gain.setValueAtTime(MASTER_GAIN * 0.95, t);
+        master.gain.setValueAtTime(MASTER_GAIN * 1.5, t);
+        master.gain.setValueAtTime(MASTER_GAIN * 1.5, t + 0.18);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
-        const sampleCount = Math.floor(ctx.sampleRate * duration);
-        const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
+        // Squelch body: crushed noise through a resonant band that sweeps down then up
+        const count = Math.floor(ctx.sampleRate * duration);
+        const buffer = ctx.createBuffer(1, count, ctx.sampleRate);
         const samples = buffer.getChannelData(0);
-        for (let i = 0; i < sampleCount; i++) {
-            const env = Math.exp(-i / (sampleCount * 0.35));
-            samples[i] = (Math.random() * 2 - 1) * env;
+        let held = 0;
+        for (let i = 0; i < count; i++) {
+            if (i % 3 === 0) held = Math.round((Math.random() * 2 - 1) * 40) / 40;
+            const p = i / count;
+            samples[i] = held * Math.min(p * 30, 1) * Math.exp(-p * 3.2);
         }
-
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
-
-        const filter = ctx.createBiquadFilter();
-        filter.type = "lowpass";
-        filter.frequency.value = 140 + pitchJitter;
-        filter.Q.value = 0.5;
-
-        const noiseGain = ctx.createGain();
-        noiseGain.gain.value = 0.55;
-
-        noise.connect(filter);
-        filter.connect(noiseGain);
-        noiseGain.connect(master);
+        const bp = ctx.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.Q.value = 4.5;
+        bp.frequency.setValueAtTime(900 + jitter * 200, t);
+        bp.frequency.exponentialRampToValueAtTime(260, t + 0.1);
+        bp.frequency.exponentialRampToValueAtTime(620 + jitter * 150, t + duration);
+        const ng = ctx.createGain();
+        ng.gain.value = 1.1;
+        noise.connect(bp);
+        bp.connect(ng);
+        ng.connect(master);
         noise.start(t);
         noise.stop(t + duration);
 
-        const squelch = ctx.createOscillator();
-        squelch.type = "sine";
-        squelch.frequency.setValueAtTime(95 + pitchJitter, t);
-        squelch.frequency.exponentialRampToValueAtTime(38, t + duration * 0.95);
+        // Low press: the foot sinking in
+        const press = ctx.createOscillator();
+        press.type = "sine";
+        press.frequency.setValueAtTime(110 + jitter * 20, t);
+        press.frequency.exponentialRampToValueAtTime(48, t + 0.12);
+        const pg = ctx.createGain();
+        pg.gain.setValueAtTime(0.4, t);
+        pg.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+        press.connect(pg);
+        pg.connect(master);
+        press.start(t);
+        press.stop(t + 0.15);
 
-        const squelchGain = ctx.createGain();
-        squelchGain.gain.setValueAtTime(0.001, t);
-        squelchGain.gain.linearRampToValueAtTime(0.42, t + 0.012);
-        squelchGain.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.85);
+        // Bubble pops: short rising chirps
+        const pops = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < pops; i++) {
+            const start = t + 0.03 + i * 0.04 + Math.random() * 0.025;
+            const f = 220 + Math.random() * 380;
+            const o = ctx.createOscillator();
+            o.type = "sine";
+            o.frequency.setValueAtTime(f, start);
+            o.frequency.exponentialRampToValueAtTime(f * 2.1, start + 0.035);
+            const g = ctx.createGain();
+            g.gain.setValueAtTime(0.0001, start);
+            g.gain.linearRampToValueAtTime(0.28, start + 0.005);
+            g.gain.exponentialRampToValueAtTime(0.0001, start + 0.045);
+            o.connect(g);
+            g.connect(master);
+            o.start(start);
+            o.stop(start + 0.05);
+        }
 
-        squelch.connect(squelchGain);
-        squelchGain.connect(master);
-        squelch.start(t);
-        squelch.stop(t + duration);
-
-        const wet = ctx.createOscillator();
-        wet.type = "sine";
-        wet.frequency.setValueAtTime(72 + pitchJitter * 0.6, t + 0.018);
-        wet.frequency.exponentialRampToValueAtTime(32, t + duration);
-
-        const wetGain = ctx.createGain();
-        wetGain.gain.setValueAtTime(0.001, t + 0.018);
-        wetGain.gain.linearRampToValueAtTime(0.22, t + 0.03);
-        wetGain.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.9);
-
-        wet.connect(wetGain);
-        wetGain.connect(master);
-        wet.start(t + 0.018);
-        wet.stop(t + duration);
+        // Sucking release as the sole peels away
+        const suck = ctx.createOscillator();
+        suck.type = "triangle";
+        suck.frequency.setValueAtTime(150, t + 0.14);
+        suck.frequency.exponentialRampToValueAtTime(420, t + 0.23);
+        const sg = ctx.createGain();
+        sg.gain.setValueAtTime(0.0001, t + 0.14);
+        sg.gain.linearRampToValueAtTime(0.14, t + 0.17);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+        suck.connect(sg);
+        sg.connect(master);
+        suck.start(t + 0.14);
+        suck.stop(t + 0.26);
     }
 
     playGlassCrackle(): void {
@@ -506,7 +534,7 @@ export class FootstepSounds {
         const master = ctx.createGain();
         master.gain.setValueAtTime(MASTER_GAIN * 1.1, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
         const burstCount = 3 + Math.floor(Math.random() * 3);
         for (let i = 0; i < burstCount; i++) {
@@ -515,10 +543,7 @@ export class FootstepSounds {
             const sampleCount = Math.floor(ctx.sampleRate * duration);
             const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
             const samples = buffer.getChannelData(0);
-            for (let s = 0; s < sampleCount; s++) {
-                const env = Math.exp(-s / (sampleCount * 0.15));
-                samples[s] = (Math.random() * 2 - 1) * env;
-            }
+            fillCrushedNoise(samples, sampleCount, 0.15);
 
             const noise = ctx.createBufferSource();
             noise.buffer = buffer;

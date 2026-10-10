@@ -1,4 +1,4 @@
-import { getAudioContext } from "./audioContext";
+import { createCrushedNoise, getAudioContext, getSfxOutput } from "./audioContext";
 
 export type VoiceGender = "male" | "female";
 
@@ -9,6 +9,16 @@ const VOICE = {
     male: { f0Hz: 95, f0RangeHz: 35, gain: 0.09 },
     female: { f0Hz: 175, f0RangeHz: 55, gain: 0.085 }
 } as const;
+
+/** Approximate F1/F2/F3 (Hz, adult male) for a handful of vowels. */
+const VOWELS: readonly (readonly [number, number, number])[] = [
+    [730, 1090, 2440], // a
+    [530, 1840, 2480], // e
+    [270, 2290, 3010], // i
+    [570, 840, 2410], // o
+    [300, 870, 2240], // u
+    [500, 1500, 2500] // schwa
+];
 
 /** Hard cap so mumble never runs through the whole dialog open state */
 const MAX_TOTAL_MS = 2800;
@@ -89,6 +99,9 @@ export class TalkSounds {
     private active = false;
     private gender: VoiceGender = "male";
     private timeouts: ReturnType<typeof setTimeout>[] = [];
+    private totalSyllables = 1;
+    private isQuestion = false;
+    private contourSeed = 0;
 
     startDialogue(gender: VoiceGender, spokenLine: string): void {
         this.stopDialogue();
@@ -103,6 +116,10 @@ export class TalkSounds {
             this.active = false;
             return;
         }
+
+        this.totalSyllables = gaps.length + 1;
+        this.isQuestion = line.endsWith("?");
+        this.contourSeed = Math.random() * 6;
 
         let elapsed = 0;
         this.playSyllable(0);
@@ -133,105 +150,112 @@ export class TalkSounds {
 
         const profile = VOICE[this.gender];
         const t = ctx.currentTime;
-        const duration = 0.055 + Math.random() * 0.05;
-        const pitchSlide = (index % 5) * 0.04;
-        const f0 = profile.f0Hz + Math.random() * profile.f0RangeHz * (1 + pitchSlide * 0.15);
-        const openVowel = Math.random() > 0.35;
+        const duration = 0.07 + Math.random() * 0.06;
+        const f0 = this.pitchAt(index, profile.f0Hz, profile.f0RangeHz);
+        const vowel = VOWELS[Math.floor(Math.random() * VOWELS.length)];
+        const formantScale = this.gender === "female" ? 1.17 : 1;
 
         const master = ctx.createGain();
         master.gain.setValueAtTime(0.0001, t);
-        master.gain.linearRampToValueAtTime(profile.gain, t + 0.02);
+        master.gain.linearRampToValueAtTime(profile.gain * 2.4, t + 0.018);
+        master.gain.setValueAtTime(profile.gain * 2.4, t + duration * 0.55);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
-        const voiceBus = ctx.createGain();
-        voiceBus.gain.value = openVowel ? 0.65 : 0.2;
-        voiceBus.connect(master);
-
-        if (openVowel) {
-            this.addFormantVoice(ctx, voiceBus, t, duration, f0);
+        // Optional consonant onset (plosive, fricative or nasal hum)
+        const onset = Math.random();
+        let voicedStart = t;
+        if (onset < 0.3) {
+            this.addConsonant(ctx, master, t, "fricative");
+            voicedStart = t + 0.025;
+        } else if (onset < 0.6) {
+            this.addConsonant(ctx, master, t, "plosive");
+            voicedStart = t + 0.018;
         }
-        this.addBreathNoise(ctx, master, t, duration, f0, openVowel ? 0.18 : 0.38);
+
+        const dur = duration - (voicedStart - t);
+        const nasal = onset >= 0.6 && onset < 0.75;
+        this.addVoicedVowel(ctx, master, voicedStart, dur, f0, vowel, formantScale, nasal);
     }
 
-    private addFormantVoice(
-        ctx: AudioContext,
-        dest: GainNode,
-        t: number,
-        duration: number,
-        f0: number
-    ): void {
-        const f1 = f0 * (2.6 + Math.random() * 0.9);
-        const f2End = f0 * (5.5 + Math.random() * 2.5);
-        const f2Start = f2End * (0.88 + Math.random() * 0.12);
-
-        const mix = ctx.createGain();
-        mix.gain.value = 0.45;
-
-        const voiceFilter = ctx.createBiquadFilter();
-        voiceFilter.type = "bandpass";
-        voiceFilter.frequency.value = 700 + f0 * 2.2;
-        voiceFilter.Q.value = 0.55;
-
-        const fund = ctx.createOscillator();
-        fund.type = "sawtooth";
-        fund.frequency.setValueAtTime(f0, t);
-        fund.frequency.linearRampToValueAtTime(f0 * 0.94, t + duration);
-
-        const formant1 = ctx.createOscillator();
-        formant1.type = "sine";
-        formant1.frequency.value = f1;
-
-        const formant2 = ctx.createOscillator();
-        formant2.type = "sine";
-        formant2.frequency.setValueAtTime(f2Start, t);
-        formant2.frequency.linearRampToValueAtTime(f2End, t + duration);
-
-        fund.connect(mix);
-        formant1.connect(mix);
-        formant2.connect(mix);
-        mix.connect(voiceFilter);
-        voiceFilter.connect(dest);
-
-        fund.start(t);
-        fund.stop(t + duration);
-        formant1.start(t);
-        formant1.stop(t + duration);
-        formant2.start(t);
-        formant2.stop(t + duration);
+    /** Per-line intonation: gentle wobble, downward drift (declination), rising tail on questions. */
+    private pitchAt(index: number, base: number, range: number): number {
+        const total = Math.max(1, this.totalSyllables);
+        const progress = index / total;
+        let contour = 1 + 0.09 * Math.sin(index * 0.85 + this.contourSeed) - 0.12 * progress;
+        if (this.isQuestion && progress > 0.7) {
+            contour += ((progress - 0.7) / 0.3) * 0.22;
+        }
+        const stress = index % 3 === 0 ? 1.05 : 1;
+        return (base + range * 0.5 + (Math.random() - 0.5) * range * 0.25) * contour * stress;
     }
 
-    private addBreathNoise(
+    private addVoicedVowel(
         ctx: AudioContext,
         dest: GainNode,
         t: number,
         duration: number,
         f0: number,
-        level: number
+        vowel: readonly [number, number, number],
+        formantScale: number,
+        nasal: boolean
     ): void {
-        const sampleCount = Math.floor(ctx.sampleRate * duration);
-        const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
-        const samples = buffer.getChannelData(0);
-        for (let i = 0; i < sampleCount; i++) {
-            const phase = i / sampleCount;
-            const env = Math.min(phase * 10, 1) * Math.min((1 - phase) * 8, 1);
-            samples[i] = (Math.random() * 2 - 1) * env;
-        }
+        // Glottal-like source: sawtooth with tiny vibrato for a living pitch
+        const source = ctx.createOscillator();
+        source.type = "sawtooth";
+        source.frequency.setValueAtTime(f0 * 1.02, t);
+        source.frequency.linearRampToValueAtTime(f0 * 0.95, t + duration);
 
+        const vibrato = ctx.createOscillator();
+        vibrato.frequency.value = 5.5 + Math.random();
+        const vibratoDepth = ctx.createGain();
+        vibratoDepth.gain.value = f0 * 0.012;
+        vibrato.connect(vibratoDepth);
+        vibratoDepth.connect(source.frequency);
+
+        const bus = ctx.createGain();
+        bus.gain.value = nasal ? 0.5 : 1;
+        bus.connect(dest);
+
+        // Three parallel formant resonators shape the buzz into a vowel
+        const weights = [1.0, 0.55, 0.28];
+        vowel.forEach((hz, i) => {
+            const bp = ctx.createBiquadFilter();
+            bp.type = "bandpass";
+            bp.frequency.value = nasal ? (i === 0 ? 280 : hz * 0.6) * formantScale : hz * formantScale * (0.97 + Math.random() * 0.06);
+            bp.Q.value = 7 + i * 2;
+            const g = ctx.createGain();
+            g.gain.value = weights[i] * 2.2;
+            source.connect(bp);
+            bp.connect(g);
+            g.connect(bus);
+        });
+
+        source.start(t);
+        source.stop(t + duration);
+        vibrato.start(t);
+        vibrato.stop(t + duration);
+    }
+
+    private addConsonant(
+        ctx: AudioContext,
+        dest: GainNode,
+        t: number,
+        kind: "fricative" | "plosive"
+    ): void {
+        const duration = kind === "fricative" ? 0.04 : 0.02;
+        const buffer = createCrushedNoise(ctx, duration, kind === "fricative" ? 0.6 : 0.2, 1, 64);
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
-
         const filter = ctx.createBiquadFilter();
-        filter.type = "bandpass";
-        filter.frequency.value = 1000 + f0 * 3;
-        filter.Q.value = 0.45;
-
-        const noiseGain = ctx.createGain();
-        noiseGain.gain.value = level;
-
+        filter.type = kind === "fricative" ? "highpass" : "bandpass";
+        filter.frequency.value = kind === "fricative" ? 3800 + Math.random() * 1500 : 1200 + Math.random() * 1800;
+        filter.Q.value = 0.8;
+        const g = ctx.createGain();
+        g.gain.value = kind === "fricative" ? 0.55 : 0.9;
         noise.connect(filter);
-        filter.connect(noiseGain);
-        noiseGain.connect(dest);
+        filter.connect(g);
+        g.connect(dest);
         noise.start(t);
         noise.stop(t + duration);
     }

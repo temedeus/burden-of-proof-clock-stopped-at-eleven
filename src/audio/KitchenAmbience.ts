@@ -1,4 +1,4 @@
-import { getAudioContext } from "./audioContext";
+import { getAudioContext, getSfxOutput } from "./audioContext";
 import { isMuteSounds } from "../engine/Settings";
 import type { Room } from "../world/Room";
 
@@ -120,8 +120,8 @@ export class KitchenAmbience {
         loop.loop = true;
         loop.connect(filter);
         filter.connect(bedMaster);
-        bedMaster.connect(ctx.destination);
-        hissMaster.connect(ctx.destination);
+        bedMaster.connect(getSfxOutput(ctx));
+        hissMaster.connect(getSfxOutput(ctx));
         loop.start(t);
         this.sources.push(loop);
 

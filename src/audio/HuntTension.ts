@@ -1,4 +1,4 @@
-import { getAudioContext } from "./audioContext";
+import { getAudioContext, getSfxOutput } from "./audioContext";
 import { isMuteSounds } from "../engine/Settings";
 
 const DRONE_GAIN = 0.028;
@@ -76,7 +76,7 @@ export class HuntTension {
         const master = ctx.createGain();
         master.gain.setValueAtTime(0.0001, t);
         master.gain.linearRampToValueAtTime(1, t + 0.6);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
         this.master = master;
 
         this.startDrones(ctx, master, t);

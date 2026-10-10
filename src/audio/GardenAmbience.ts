@@ -1,4 +1,4 @@
-import { getAudioContext } from "./audioContext";
+import { getAudioContext, getSfxOutput } from "./audioContext";
 import { isMuteSounds } from "../engine/Settings";
 import type { Room } from "../world/Room";
 
@@ -144,8 +144,8 @@ export class GardenAmbience {
         loop.loop = true;
         loop.connect(filter);
         filter.connect(bedMaster);
-        bedMaster.connect(ctx.destination);
-        splashMaster.connect(ctx.destination);
+        bedMaster.connect(getSfxOutput(ctx));
+        splashMaster.connect(getSfxOutput(ctx));
         loop.start(t);
         this.sources.push(loop);
 
@@ -263,7 +263,7 @@ export class GardenAmbience {
         toneFilter.type = "lowpass";
         toneFilter.frequency.value = 2100 + Math.random() * 500;
         toneFilter.Q.value = 0.45;
-        toneFilter.connect(ctx.destination);
+        toneFilter.connect(getSfxOutput(ctx));
 
         for (let i = 0; i < noteCount; i++) {
             const osc = ctx.createOscillator();

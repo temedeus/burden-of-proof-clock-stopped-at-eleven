@@ -1,4 +1,4 @@
-import { getAudioContext } from "./audioContext";
+import { createCrushedNoise, getAudioContext, getSfxOutput } from "./audioContext";
 
 /** Slightly sour chord voicings in Hz (root, third, fifth, optional seventh). */
 const CHORD_VOICINGS: number[][] = [
@@ -30,14 +30,14 @@ export class PianoSounds {
         const t = ctx.currentTime;
         const master = ctx.createGain();
         master.gain.setValueAtTime(0.14, t);
-        master.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
-        master.connect(ctx.destination);
+        master.gain.exponentialRampToValueAtTime(0.0001, t + 2.0);
+        master.connect(getSfxOutput(ctx));
 
         notes.forEach((freq, i) => {
             const start = t + i * 0.018;
             const cents = (Math.random() - 0.5) * 34;
             const f = detune(freq, cents);
-            const dur = 0.55 + Math.random() * 0.35;
+            const dur = 0.9 + Math.random() * 0.5 - i * 0.05;
 
             const osc = ctx.createOscillator();
             osc.type = "triangle";
@@ -56,6 +56,18 @@ export class PianoSounds {
             partialGain.gain.setValueAtTime(0.06, start);
             partialGain.gain.exponentialRampToValueAtTime(0.0001, start + dur * 0.55);
 
+            // Stretched upper partials (string inharmonicity) that die away faster
+            const upper = ctx.createOscillator();
+            upper.type = "sine";
+            upper.frequency.setValueAtTime(f * 3.02, start);
+            const upperGain = ctx.createGain();
+            upperGain.gain.setValueAtTime(0.03, start);
+            upperGain.gain.exponentialRampToValueAtTime(0.0001, start + dur * 0.25);
+            upper.connect(upperGain);
+            upperGain.connect(master);
+            upper.start(start);
+            upper.stop(start + dur * 0.3);
+
             osc.connect(tone);
             partial.connect(partialGain);
             tone.connect(master);
@@ -69,24 +81,19 @@ export class PianoSounds {
 
         // Dull hammer thump
         const thumpStart = t + 0.005;
-        const len = Math.floor(ctx.sampleRate * 0.04);
-        const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < len; i++) {
-            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.08));
-        }
+        const buffer = createCrushedNoise(ctx, 0.05, 0.1, 2, 40);
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
         const filter = ctx.createBiquadFilter();
         filter.type = "lowpass";
         filter.frequency.value = 420;
         const thumpGain = ctx.createGain();
-        thumpGain.gain.value = 0.08;
+        thumpGain.gain.value = 0.14;
         noise.connect(filter);
         filter.connect(thumpGain);
         thumpGain.connect(master);
         noise.start(thumpStart);
-        noise.stop(thumpStart + 0.04);
+        noise.stop(thumpStart + 0.05);
     }
 }
 

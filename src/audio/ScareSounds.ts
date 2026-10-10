@@ -1,4 +1,4 @@
-import { getAudioContext } from "./audioContext";
+import { createCrushedNoise, getAudioContext, getSfxOutput } from "./audioContext";
 
 /**
  * Short scare SFX — pain yell and glass crash (procedural Web Audio).
@@ -14,7 +14,7 @@ export class ScareSounds {
         master.gain.setValueAtTime(0.0001, t);
         master.gain.linearRampToValueAtTime(0.22, t + 0.04);
         master.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
         const osc = ctx.createOscillator();
         osc.type = "sawtooth";
@@ -36,6 +36,15 @@ export class ScareSounds {
         gritGain.gain.setValueAtTime(0.04, t);
         gritGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
 
+        const vibrato = ctx.createOscillator();
+        vibrato.frequency.value = 24;
+        const vibratoDepth = ctx.createGain();
+        vibratoDepth.gain.value = 9;
+        vibrato.connect(vibratoDepth);
+        vibratoDepth.connect(osc.frequency);
+        vibrato.start(t);
+        vibrato.stop(t + 0.55);
+
         osc.connect(filter);
         filter.connect(master);
         grit.connect(gritGain);
@@ -56,15 +65,9 @@ export class ScareSounds {
         const master = ctx.createGain();
         master.gain.setValueAtTime(0.2, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
-        master.connect(ctx.destination);
+        master.connect(getSfxOutput(ctx));
 
-        const len = Math.floor(ctx.sampleRate * 0.35);
-        const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < len; i++) {
-            const env = Math.exp(-i / (len * 0.12));
-            data[i] = (Math.random() * 2 - 1) * env;
-        }
+        const buffer = createCrushedNoise(ctx, 0.35, 0.12, 2, 56);
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
         const hp = ctx.createBiquadFilter();
@@ -80,6 +83,22 @@ export class ScareSounds {
         bp.connect(master);
         noise.start(t);
         noise.stop(t + 0.35);
+
+        // Scattering shards: random tiny tinkles trailing off
+        for (let i = 0; i < 9; i++) {
+            const start = t + 0.12 + i * 0.045 + Math.random() * 0.03;
+            const freq = 2600 + Math.random() * 3800;
+            const osc = ctx.createOscillator();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, start);
+            const g = ctx.createGain();
+            g.gain.setValueAtTime(0.05 * (1 - i / 10), start);
+            g.gain.exponentialRampToValueAtTime(0.0001, start + 0.05);
+            osc.connect(g);
+            g.connect(master);
+            osc.start(start);
+            osc.stop(start + 0.06);
+        }
 
         // Bright glass “pings”
         [2400, 3100, 4200, 5100].forEach((freq, i) => {

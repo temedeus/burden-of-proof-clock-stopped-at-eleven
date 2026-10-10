@@ -6,6 +6,7 @@ import {
     paleRockWallSpriteName,
     paleRockNorthWallSpriteName,
     atticFloorSpriteName,
+    manorFloorSpriteName,
     atticWallSpriteName,
     atticNorthWallSpriteName,
     woodNorthWallSpriteName,
@@ -166,7 +167,7 @@ function underlaySpriteName(map: TileMap, x: number, y: number): string {
         if (t === TILE_PALE_ROCK) return paleRockFloorSpriteName(x, y);
         if (t === TILE_ATTIC_FLOOR) return atticFloorSpriteName(x, y);
         if (t === TILE_MARBLE) return ballroomFloorSpriteName(x, y);
-        if (t === TILE_FLOOR) return "floor";
+        if (t === TILE_FLOOR) return manorFloorSpriteName(x, y);
     }
     return map.furnitureUnderlay === "grass"
         ? "grass"
@@ -182,7 +183,7 @@ function underlaySpriteName(map: TileMap, x: number, y: number): string {
                 ? atticFloorSpriteName(x, y)
                 : map.furnitureUnderlay === "marble"
                   ? ballroomFloorSpriteName(x, y)
-                  : "floor";
+                  : manorFloorSpriteName(x, y);
 }
 
 function spriteUnderFurniture(map: TileMap, x: number, y: number): string {
@@ -293,7 +294,9 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
                                   ? manorWallSpriteName(x, y)
                                   : tile === TILE_FURNITURE
                                     ? spriteUnderFurniture(map, x, y)
-                                    : TILE_TO_SPRITE[tile];
+                                    : tile === TILE_FLOOR
+                                      ? manorFloorSpriteName(x, y)
+                                      : TILE_TO_SPRITE[tile];
 
     if (tile === TILE_WALL) {
         const onSide = x === 0 || x === map.width - 1;
@@ -395,6 +398,6 @@ function drawTile(ctx: CanvasRenderingContext2D, map: TileMap, tile: number, x: 
     if (spriteName) {
         spriteLoader.drawSprite(ctx, spriteName, tileX, tileY, TILE_SIZE, TILE_SIZE);
     } else {
-        spriteLoader.drawSprite(ctx, "floor", tileX, tileY, TILE_SIZE, TILE_SIZE);
+        spriteLoader.drawSprite(ctx, manorFloorSpriteName(x, y), tileX, tileY, TILE_SIZE, TILE_SIZE);
     }
 }

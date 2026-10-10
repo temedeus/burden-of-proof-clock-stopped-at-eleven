@@ -1,5 +1,5 @@
 import { P } from "./palette";
-import { grid, r } from "./pixel";
+import { grid, p, r } from "./pixel";
 import { drawBookshelf } from "./furnitureInterior";
 import { DOOR_SPRITES } from "./doors";
 import { drawBallroomFloorTile, drawBallroomWallTile } from "./ballroom";
@@ -29,6 +29,66 @@ const C = {
 
 function tile32(draw: (ctx: CanvasRenderingContext2D) => void): ProceduralSpriteDef {
     return { nativeWidth: 32, nativeHeight: 32, draw: (ctx) => draw(ctx) };
+}
+
+const MANOR_PLANK_TONES = ["#62412a", "#4a2f1d", "#563823", "#6a4830", "#4e3220"] as const;
+const MANOR_PLANK_SEAM = "#22140a";
+const MANOR_PLANK_BEVEL = "#745337";
+const MANOR_PLANK_GRAIN_DARK = "#3d2515";
+const MANOR_PLANK_GRAIN_LIGHT = "#7a5538";
+
+/** Deterministic 0..1 hash for per-variant plank layout. */
+function floorHash(a: number, b: number, c: number): number {
+    let h = (a * 374761393 + b * 668265263 + c * 2147483647) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/**
+ * Oak floorboards: four rows with staggered butt joints, per-board tone shifts,
+ * grain streaks, bevelled edges and nail heads. Row base tones depend only on the
+ * row so variants stay seamless at tile edges; boards sit inside the tile.
+ */
+function drawManorFloorVariant(ctx: CanvasRenderingContext2D, variant: number): void {
+    const ROW_H = 16;
+    for (let row = 0; row < 2; row++) {
+        const y = row * ROW_H;
+        const base = row % 2 === 0 ? "#573925" : "#4f331f";
+        r(ctx, 0, y, 32, ROW_H - 1, base);
+
+        // One inner board per row, bounded by butt joints
+        const start = 3 + Math.floor(floorHash(variant, row, 1) * 8);
+        const len = 14 + Math.floor(floorHash(variant, row, 2) * 12);
+        const end = Math.min(30, start + len);
+        const tone = MANOR_PLANK_TONES[Math.floor(floorHash(variant, row, 3) * MANOR_PLANK_TONES.length)];
+        r(ctx, start, y, end - start, ROW_H - 1, tone);
+        r(ctx, start, y, 1, ROW_H - 1, MANOR_PLANK_SEAM);
+        r(ctx, end - 1, y, 1, ROW_H - 1, MANOR_PLANK_SEAM);
+        // nails beside each joint
+        p(ctx, start + 2, y + 3, MANOR_PLANK_SEAM);
+        p(ctx, start + 2, y + ROW_H - 5, MANOR_PLANK_SEAM);
+        p(ctx, end - 3, y + 3, MANOR_PLANK_SEAM);
+        p(ctx, end - 3, y + ROW_H - 5, MANOR_PLANK_SEAM);
+
+        // Bevel highlight on the top edge, shadowed seam below
+        r(ctx, 0, y, 32, 1, MANOR_PLANK_BEVEL);
+        r(ctx, 0, y + ROW_H - 2, 32, 1, "rgba(0,0,0,0.14)");
+        r(ctx, 0, y + ROW_H - 1, 32, 1, MANOR_PLANK_SEAM);
+
+        // Long, subtle grain lines running with the board
+        for (let i = 0; i < 4; i++) {
+            const gx = 1 + Math.floor(floorHash(variant, row, 10 + i) * 14);
+            const gy = y + 3 + Math.floor(floorHash(variant, row, 20 + i) * (ROW_H - 7));
+            const gl = 8 + Math.floor(floorHash(variant, row, 30 + i) * 10);
+            r(ctx, gx, gy, gl, 1, i % 2 === 0 ? MANOR_PLANK_GRAIN_DARK : MANOR_PLANK_GRAIN_LIGHT);
+        }
+    }
+}
+
+export const MANOR_FLOOR_SPRITES = ["floor", "floor_b", "floor_c", "floor_d", "floor_e", "floor_f"] as const;
+
+export function manorFloorSpriteName(x: number, y: number): (typeof MANOR_FLOOR_SPRITES)[number] {
+    return MANOR_FLOOR_SPRITES[Math.abs(x * 7 + y * 13 + ((x * y) % 5)) % MANOR_FLOOR_SPRITES.length];
 }
 
 const ROCK_FLOOR = {
@@ -1313,21 +1373,12 @@ export const TILE_SPRITES: Record<string, ProceduralSpriteDef> = {
         draw: (ctx) => drawPaleRockNorthWallFace(ctx, 2)
     },
 
-    floor: tile32((ctx) => {
-        // Horizontal planks — tiles seamlessly; no checkerboard
-        for (let row = 0; row < 4; row++) {
-            const y = row * 8;
-            r(ctx, 0, y, 32, 7, row % 2 === 0 ? P.floorPlank : P.floorPlankAlt);
-            r(ctx, 0, y + 7, 32, 1, P.floorSeam);
-        }
-        // Occasional grain knots (sparse, low contrast)
-        const knots: [number, number][] = [
-            [6, 5], [19, 2], [27, 13], [11, 21], [4, 26], [22, 25]
-        ];
-        for (const [kx, ky] of knots) {
-            r(ctx, kx, ky, 2, 1, P.floorGrain);
-        }
-    }),
+    floor: tile32((ctx) => drawManorFloorVariant(ctx, 0)),
+    floor_b: tile32((ctx) => drawManorFloorVariant(ctx, 1)),
+    floor_c: tile32((ctx) => drawManorFloorVariant(ctx, 2)),
+    floor_d: tile32((ctx) => drawManorFloorVariant(ctx, 3)),
+    floor_e: tile32((ctx) => drawManorFloorVariant(ctx, 4)),
+    floor_f: tile32((ctx) => drawManorFloorVariant(ctx, 5)),
 
     floor_attic: tile32((ctx) => drawAtticWoodFloorVariant(ctx, 0)),
     floor_attic_b: tile32((ctx) => drawAtticWoodFloorVariant(ctx, 1)),

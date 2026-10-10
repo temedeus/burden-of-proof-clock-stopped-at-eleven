@@ -289,6 +289,91 @@ export function drawCarpet(ctx: CanvasRenderingContext2D): void {
     });
 }
 
+/** 80x224 @2x — long crimson runner down the entrance hall (hall only). */
+export function drawHallRunner(ctx: CanvasRenderingContext2D): void {
+    const W = 80;
+    const H = 224;
+    const red = P.carpetRed;
+    const redLight = P.carpetRedLight;
+    const redDark = "#4a0f1c";
+    const navy = "#1a2236";
+    const cream = "#d8c8a8";
+    const rand = seeded(11);
+
+    // Fringe at both short ends
+    for (let x = 6; x < W - 6; x += 2) {
+        vline(ctx, x, 0, 4, "#d8ccb0");
+        vline(ctx, x, H - 4, 4, "#d8ccb0");
+    }
+    // Woven body: border band, gold pinstripes, field
+    r(ctx, 4, 4, W - 8, H - 8, navy);
+    r(ctx, 6, 6, W - 12, H - 12, P.goldDark);
+    r(ctx, 7, 7, W - 14, H - 14, navy);
+    r(ctx, 11, 11, W - 22, H - 22, P.gold);
+    r(ctx, 12, 12, W - 24, H - 24, red);
+
+    // Border motif: little gold diamonds with cream centres between the stripes
+    for (let y = 14; y < H - 12; y += 8) {
+        for (const x of [9, W - 10]) {
+            p(ctx, x, y - 1, P.gold);
+            hline(ctx, x - 1, y, 3, P.gold);
+            p(ctx, x, y + 1, P.gold);
+            p(ctx, x, y, cream);
+        }
+    }
+
+    // Field: fine diagonal weave texture
+    const fx = 12;
+    const fy = 12;
+    const fw = W - 24;
+    const fh = H - 24;
+    for (let y = fy; y < fy + fh; y++) {
+        for (let x = fx; x < fx + fw; x++) {
+            if ((x + y) % 6 === 0) p(ctx, x, y, redDark);
+            else if ((x - y + 600) % 12 === 0) p(ctx, x, y, redLight);
+        }
+    }
+
+    // Repeating central medallions linked by a gold vine
+    const cx = W / 2;
+    const step = 40;
+    for (let cy = fy + 20; cy < fy + fh - 12; cy += step) {
+        for (let dy = -12; dy <= 12; dy++) {
+            const half = Math.round(13 * (1 - Math.abs(dy) / 13));
+            if (half > 0) hline(ctx, cx - half, cy + dy, half * 2, Math.abs(dy) % 5 === 0 ? P.goldDark : navy);
+        }
+        for (let dy = -8; dy <= 8; dy++) {
+            const half = Math.round(8.5 * (1 - Math.abs(dy) / 9));
+            if (half > 0) hline(ctx, cx - half, cy + dy, half * 2, redLight);
+        }
+        for (let dy = -3; dy <= 3; dy++) {
+            const half = 4 - Math.abs(dy);
+            if (half > 0) hline(ctx, cx - half, cy + dy, half * 2, P.gold);
+        }
+        p(ctx, cx, cy, cream);
+        // Side rosettes
+        for (const sx of [-1, 1]) {
+            const px = cx + sx * 20;
+            r(ctx, px - 1, cy - 1, 3, 3, P.gold);
+            p(ctx, px, cy, cream);
+        }
+        // Vine to the next medallion
+        if (cy + step < fy + fh - 12) {
+            vline(ctx, cx, cy + 13, step - 26, P.goldDark);
+            p(ctx, cx - 1, cy + step / 2, P.gold);
+            p(ctx, cx + 1, cy + step / 2, P.gold);
+        }
+    }
+
+    // Wear: lighter trodden patches and faint speckle
+    for (let i = 0; i < 90; i++) {
+        p(ctx, fx + Math.floor(rand() * fw), fy + Math.floor(rand() * fh), "rgba(255,255,255,0.06)");
+    }
+    for (let i = 0; i < 40; i++) {
+        p(ctx, fx + Math.floor(rand() * fw), fy + Math.floor(rand() * fh), "rgba(0,0,0,0.12)");
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Storage (2x)
 // ---------------------------------------------------------------------------

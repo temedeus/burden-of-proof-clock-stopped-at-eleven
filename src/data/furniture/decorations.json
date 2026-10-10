@@ -468,6 +468,19 @@
     "spriteName": "carpet",
     "clues": []
   },
+  "hall_runner": {
+    "id": "hall_runner",
+    "name": "Hall runner",
+    "description": "A long crimson runner, its gold border worn pale down the middle by years of footsteps.",
+    "width": 5,
+    "height": 14,
+    "drawWidth": 5,
+    "drawHeight": 14,
+    "renderAnchor": "center",
+    "walkableDecor": true,
+    "nonInteractive": true,
+    "spriteName": "hall_runner"
+  },
   "manor_carpet": {
     "id": "manor_carpet",
     "name": "Persian rug",

@@ -5,6 +5,12 @@
   "northWallThickness": 2,
   "furniture": [
     {
+      "furnitureId": "hall_runner",
+      "x": "center",
+      "y": 10,
+      "anchor": "center"
+    },
+    {
       "furnitureId": "staircase",
       "x": "center",
       "y": 1,
@@ -24,7 +30,7 @@
     },
     {
       "furnitureId": "baron_blood_pool",
-      "x": 12,
+      "x": 16,
       "y": 11,
       "anchor": "top-left"
     }
@@ -79,7 +85,7 @@
   "npcs": [
     {
       "npcId": "baron",
-      "x": 12,
+      "x": 16,
       "y": 11
     },
     {

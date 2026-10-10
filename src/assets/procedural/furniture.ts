@@ -6,6 +6,7 @@ import {
     drawAtticOldChest,
     drawAtticPost,
     drawCarpet,
+    drawHallRunner,
     drawClockGlassShards,
     drawDiningTable,
     drawGrandPiano,
@@ -410,6 +411,14 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeHeight: 96,
         draw(ctx) {
             drawCarpet(ctx);
+        }
+    },
+
+    hall_runner: {
+        nativeWidth: 80,
+        nativeHeight: 224,
+        draw(ctx) {
+            drawHallRunner(ctx);
         }
     },
 

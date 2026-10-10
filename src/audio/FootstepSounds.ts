@@ -438,92 +438,73 @@ export class FootstepSounds {
         squeak.stop(t + 0.15);
     }
 
-    /** Wet squelch: gurgling band sweep, bubble pops and a sucking release as the foot lifts. */
     playSquish(): void {
         const ctx = getAudioContext();
         if (!ctx) return;
 
         const t = ctx.currentTime;
-        const duration = 0.26;
-        const jitter = Math.random();
+        const duration = 0.2;
+        const pitchJitter = Math.random() * 25;
 
         const master = ctx.createGain();
-        master.gain.setValueAtTime(MASTER_GAIN * 1.5, t);
-        master.gain.setValueAtTime(MASTER_GAIN * 1.5, t + 0.18);
+        master.gain.setValueAtTime(MASTER_GAIN * 0.95, t);
         master.gain.exponentialRampToValueAtTime(0.0001, t + duration);
         master.connect(getSfxOutput(ctx));
 
-        // Squelch body: crushed noise through a resonant band that sweeps down then up
-        const count = Math.floor(ctx.sampleRate * duration);
-        const buffer = ctx.createBuffer(1, count, ctx.sampleRate);
+        const sampleCount = Math.floor(ctx.sampleRate * duration);
+        const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
         const samples = buffer.getChannelData(0);
-        let held = 0;
-        for (let i = 0; i < count; i++) {
-            if (i % 3 === 0) held = Math.round((Math.random() * 2 - 1) * 40) / 40;
-            const p = i / count;
-            samples[i] = held * Math.min(p * 30, 1) * Math.exp(-p * 3.2);
+        for (let i = 0; i < sampleCount; i++) {
+            const env = Math.exp(-i / (sampleCount * 0.35));
+            samples[i] = (Math.random() * 2 - 1) * env;
         }
+
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
-        const bp = ctx.createBiquadFilter();
-        bp.type = "bandpass";
-        bp.Q.value = 4.5;
-        bp.frequency.setValueAtTime(900 + jitter * 200, t);
-        bp.frequency.exponentialRampToValueAtTime(260, t + 0.1);
-        bp.frequency.exponentialRampToValueAtTime(620 + jitter * 150, t + duration);
-        const ng = ctx.createGain();
-        ng.gain.value = 1.1;
-        noise.connect(bp);
-        bp.connect(ng);
-        ng.connect(master);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.value = 140 + pitchJitter;
+        filter.Q.value = 0.5;
+
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.value = 0.55;
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(master);
         noise.start(t);
         noise.stop(t + duration);
 
-        // Low press: the foot sinking in
-        const press = ctx.createOscillator();
-        press.type = "sine";
-        press.frequency.setValueAtTime(110 + jitter * 20, t);
-        press.frequency.exponentialRampToValueAtTime(48, t + 0.12);
-        const pg = ctx.createGain();
-        pg.gain.setValueAtTime(0.4, t);
-        pg.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
-        press.connect(pg);
-        pg.connect(master);
-        press.start(t);
-        press.stop(t + 0.15);
+        const squelch = ctx.createOscillator();
+        squelch.type = "sine";
+        squelch.frequency.setValueAtTime(95 + pitchJitter, t);
+        squelch.frequency.exponentialRampToValueAtTime(38, t + duration * 0.95);
 
-        // Bubble pops: short rising chirps
-        const pops = 2 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < pops; i++) {
-            const start = t + 0.03 + i * 0.04 + Math.random() * 0.025;
-            const f = 220 + Math.random() * 380;
-            const o = ctx.createOscillator();
-            o.type = "sine";
-            o.frequency.setValueAtTime(f, start);
-            o.frequency.exponentialRampToValueAtTime(f * 2.1, start + 0.035);
-            const g = ctx.createGain();
-            g.gain.setValueAtTime(0.0001, start);
-            g.gain.linearRampToValueAtTime(0.28, start + 0.005);
-            g.gain.exponentialRampToValueAtTime(0.0001, start + 0.045);
-            o.connect(g);
-            g.connect(master);
-            o.start(start);
-            o.stop(start + 0.05);
-        }
+        const squelchGain = ctx.createGain();
+        squelchGain.gain.setValueAtTime(0.001, t);
+        squelchGain.gain.linearRampToValueAtTime(0.42, t + 0.012);
+        squelchGain.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.85);
 
-        // Sucking release as the sole peels away
-        const suck = ctx.createOscillator();
-        suck.type = "triangle";
-        suck.frequency.setValueAtTime(150, t + 0.14);
-        suck.frequency.exponentialRampToValueAtTime(420, t + 0.23);
-        const sg = ctx.createGain();
-        sg.gain.setValueAtTime(0.0001, t + 0.14);
-        sg.gain.linearRampToValueAtTime(0.14, t + 0.17);
-        sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
-        suck.connect(sg);
-        sg.connect(master);
-        suck.start(t + 0.14);
-        suck.stop(t + 0.26);
+        squelch.connect(squelchGain);
+        squelchGain.connect(master);
+        squelch.start(t);
+        squelch.stop(t + duration);
+
+        const wet = ctx.createOscillator();
+        wet.type = "sine";
+        wet.frequency.setValueAtTime(72 + pitchJitter * 0.6, t + 0.018);
+        wet.frequency.exponentialRampToValueAtTime(32, t + duration);
+
+        const wetGain = ctx.createGain();
+        wetGain.gain.setValueAtTime(0.001, t + 0.018);
+        wetGain.gain.linearRampToValueAtTime(0.22, t + 0.03);
+        wetGain.gain.exponentialRampToValueAtTime(0.0001, t + duration * 0.9);
+
+        wet.connect(wetGain);
+        wetGain.connect(master);
+        wet.start(t + 0.018);
+        wet.stop(t + duration);
     }
 
     playGlassCrackle(): void {

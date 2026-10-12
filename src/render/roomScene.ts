@@ -7,6 +7,7 @@ import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/an
 import { drawStuffedMooseTilted } from "../assets/procedural/stuffed_moose";
 import { drawArmorCollapse } from "../assets/procedural/armorStand";
 import { getArmorCollapseT } from "../world/armorCollapse";
+import { chandelierKey, getChandelierState, type ChandelierVisual } from "../world/ballroomChandeliers";
 import { decorWallDrawBounds, wallMountDrawBounds } from "../assets/procedural/wall_align";
 import { resolveDecorDrawRectPx } from "@cse/content-schema";
 import { spriteLoader } from "../assets/SpriteLoader";
@@ -191,6 +192,8 @@ export function furnitureActorFromInteractable(
                 );
             } else if (spriteName === "stuffed_moose" && getMooseTilt && getMooseTilt() !== 0) {
                 drawStuffedMooseTilted(ctx, drawX, drawY, drawW, drawH, getMooseTilt());
+            } else if (spriteName === "chandelier" && getChandelierState(chandelierKey(minX, minY))) {
+                drawChandelierEvent(ctx, drawX, drawY, drawW, drawH, getChandelierState(chandelierKey(minX, minY))!);
             } else if (spriteName === "armor_stand" && getArmorCollapseT() !== null) {
                 drawArmorCollapse(ctx, drawX, drawY, drawW, drawH, getArmorCollapseT()!);
             } else if (obj.id === "secret_cellar_barrels") {
@@ -202,6 +205,36 @@ export function furnitureActorFromInteractable(
             }
         }
     };
+}
+
+/** Native row where the chandelier chain snaps; the ceiling rose and stub stay above it. */
+const CHANDELIER_SNAP_ROW = 18;
+const CHANDELIER_NATIVE_H = 64;
+
+/** Trembling / falling chandelier, or just the snapped chain once it has fallen. */
+function drawChandelierEvent(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    state: ChandelierVisual & { broken: boolean }
+): void {
+    const cut = y + Math.round((h * CHANDELIER_SNAP_ROW) / CHANDELIER_NATIVE_H);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, cut - y);
+    ctx.clip();
+    spriteLoader.drawSprite(ctx, "chandelier", x, y, w, h);
+    ctx.restore();
+    if (state.broken) return;
+    ctx.save();
+    ctx.translate(state.jitter, Math.round(state.drop));
+    ctx.beginPath();
+    ctx.rect(x - 4, cut, w + 8, h);
+    ctx.clip();
+    spriteLoader.drawSprite(ctx, "chandelier", x, y, w, h);
+    ctx.restore();
 }
 
 /**
@@ -296,6 +329,8 @@ export interface RenderRoomSceneOptions {
     /** Drawn after overhead decor (roof beams, cobwebs), above the player. */
     extraOverheadActors?: DepthActor[];
     clearColor?: string;
+    /** Drawn over the north wall face (window figures), under furniture and people. */
+    wallOverlay?: (ctx: CanvasRenderingContext2D) => void;
     /** Stuffed-moose head tilt in radians (easter egg); 0 draws the baked sprite. */
     getMooseTilt?: () => number;
     /** When the canvas is translated (e.g. centered small room), skip fill — caller clears screen space first. */
@@ -321,6 +356,7 @@ export function renderRoomScene(
         drawBallroomClerestoryWindows(ctx, room.map.width, room.northClerestoryRows);
     }
     drawDoorSprites(ctx, room);
+    options.wallOverlay?.(ctx);
 
     const rugActors: DepthActor[] = [];
     const furnitureActors: DepthActor[] = [];

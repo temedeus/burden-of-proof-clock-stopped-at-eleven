@@ -1,5 +1,6 @@
 import { resetAtticWindows } from "../world/atticWindows";
 import { resetArmorCollapse } from "../world/armorCollapse";
+import { resetBallroomChandeliers } from "../world/ballroomChandeliers";
 import { huntTension } from "../audio/HuntTension";
 
 /**
@@ -10,5 +11,6 @@ import { huntTension } from "../audio/HuntTension";
 export function resetSessionWorldState(): void {
     resetAtticWindows();
     resetArmorCollapse();
+    resetBallroomChandeliers();
     huntTension.stop();
 }

@@ -36,6 +36,12 @@ export interface GameSaveV1 {
     brokenAtticWindowIds: number[];
     /** Landing suit of armor shaken apart (easter egg). Absent in older saves. */
     armorCollapsed?: boolean;
+    /** Ballroom window jump-scare seen (easter egg). */
+    ballroomWindowScareDone?: boolean;
+    /** Chandelier will fall on the next walk under one. */
+    chandelierTrapArmed?: boolean;
+    /** Anchor tile key (`"x,y"`) of the chandelier that fell, if any. */
+    brokenChandelier?: string | null;
 }
 
 export interface SaveValidationContext {
@@ -95,6 +101,16 @@ function parseSaveShape(raw: unknown): GameSaveV1 | null {
     }
     if (!isFiniteNumber(raw.savedAt)) return null;
     if (raw.armorCollapsed !== undefined && typeof raw.armorCollapsed !== "boolean") return null;
+    for (const key of ["ballroomWindowScareDone", "chandelierTrapArmed"] as const) {
+        if (raw[key] !== undefined && typeof raw[key] !== "boolean") return null;
+    }
+    if (
+        raw.brokenChandelier !== undefined &&
+        raw.brokenChandelier !== null &&
+        typeof raw.brokenChandelier !== "string"
+    ) {
+        return null;
+    }
 
     const boolFields = [
         "studySecretRevealed",
@@ -133,7 +149,10 @@ function parseSaveShape(raw: unknown): GameSaveV1 | null {
         accusedMurderer: raw.accusedMurderer as boolean,
         cookHiddenAfterDiningScare: raw.cookHiddenAfterDiningScare as boolean,
         brokenAtticWindowIds: raw.brokenAtticWindowIds as number[],
-        armorCollapsed: raw.armorCollapsed === true
+        armorCollapsed: raw.armorCollapsed === true,
+        ballroomWindowScareDone: raw.ballroomWindowScareDone === true,
+        chandelierTrapArmed: raw.chandelierTrapArmed === true,
+        brokenChandelier: typeof raw.brokenChandelier === "string" ? raw.brokenChandelier : null
     };
 }
 

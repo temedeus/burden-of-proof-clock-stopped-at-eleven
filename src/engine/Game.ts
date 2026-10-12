@@ -69,6 +69,13 @@ import { clueSounds } from "../audio/ClueSounds";
 import { pianoSounds } from "../audio/PianoSounds";
 import { mooseSounds } from "../audio/MooseSounds";
 import { armorSounds } from "../audio/ArmorSounds";
+import { ballroomSounds } from "../audio/BallroomSounds";
+import {
+    BallroomEasterEggs,
+    CHANDELIER_TREMBLE,
+    WINDOW_LOOK_TEXT
+} from "../systems/BallroomEasterEggs";
+import { getBrokenChandelier } from "../world/ballroomChandeliers";
 import {
     applyArmorCollapsedToRooms,
     isArmorCollapsed,
@@ -115,7 +122,9 @@ type GameState =
     | "struggling"
     | "cutscene"
     | "moose_lick"
-    | "armor_collapse";
+    | "armor_collapse"
+    | "window_scare"
+    | "chandelier_trap";
 
 const POLICE_NPC_IDS = ["police", "police2"];
 
@@ -190,6 +199,8 @@ export class Game {
 
     private state: GameState = "playing";
     private mooseLickPending = false;
+    private ballroomEggs = new BallroomEasterEggs();
+    private ballroomScareDialogOpen = false;
     private mooseLick = new MooseLickGag();
     private mooseRect: { x: number; y: number; w: number; h: number } | null = null;
     private message: string | null = null;
@@ -322,7 +333,10 @@ export class Game {
             accusedMurderer: this.murdererChase.accusedMurderer,
             cookHiddenAfterDiningScare: this.cookHiddenAfterDiningScare != null,
             brokenAtticWindowIds: getBrokenAtticWindowIds(),
-            armorCollapsed: isArmorCollapsed()
+            armorCollapsed: isArmorCollapsed(),
+            ballroomWindowScareDone: this.ballroomEggs.windowScareDone,
+            chandelierTrapArmed: this.ballroomEggs.chandelierArmed,
+            brokenChandelier: getBrokenChandelier()
         };
     }
 
@@ -473,6 +487,11 @@ export class Game {
         setBrokenAtticWindows(save.brokenAtticWindowIds);
         setArmorCollapsed(save.armorCollapsed ?? false);
         if (save.armorCollapsed) applyArmorCollapsedToRooms(this.rooms);
+        this.ballroomEggs.restore(
+            save.ballroomWindowScareDone ?? false,
+            save.chandelierTrapArmed ?? false,
+            save.brokenChandelier ?? null
+        );
 
         const room = this.rooms[save.roomId];
         if (!room) return;
@@ -630,6 +649,11 @@ export class Game {
         this.messagePageIndex = 0;
         this.clueNotification = null;
         this.state = "playing";
+        if (this.ballroomScareDialogOpen) {
+            this.ballroomScareDialogOpen = false;
+            this.ballroomEggs.onScareDialogClosed();
+            this.autosave();
+        }
         if (this.mooseLickPending) {
             this.mooseLickPending = false;
             this.startMooseLick();
@@ -1459,6 +1483,8 @@ export class Game {
         courtyardSeagull.update(dt, this.currentRoom.id);
         this.roomTitleBanner = tickRoomTitleBanner(this.roomTitleBanner, dt);
         this.syncHuntAudio();
+        this.ballroomEggs.trackRoom(this.currentRoom.id);
+        this.ballroomEggs.tickVisuals(dt);
 
         if (this.state === "victory") {
             this.victory.update(dt, () => this.getMurderer(), (id) => this.getNPCById(id));
@@ -1472,6 +1498,34 @@ export class Game {
 
         if (this.state === "armor_collapse") {
             this.updateArmorCollapse(dt);
+            return;
+        }
+
+        if (this.state === "window_scare") {
+            const tick = this.ballroomEggs.updateScare(dt, this.player);
+            if (tick.sting) ballroomSounds.playSting();
+            if (tick.dialog) {
+                this.openDialog(tick.dialog);
+                talkSounds.startDialogue("male", extractSpokenLine(tick.dialog, "Groundskeeper"));
+                this.ballroomScareDialogOpen = true;
+            }
+            return;
+        }
+
+        if (this.state === "chandelier_trap") {
+            const dodge = this.input.wasPressed("e") || this.input.wasPressed(" ");
+            const tick = this.ballroomEggs.updateTrap(
+                dt,
+                this.player,
+                this.currentRoom.map,
+                this.currentRoom.npcs,
+                dodge
+            );
+            if (tick.crash) ballroomSounds.playCrash();
+            if (tick.dialog) {
+                this.openDialog(tick.dialog);
+                this.autosave();
+            }
             return;
         }
 
@@ -1566,6 +1620,23 @@ export class Game {
                     this.npcDialogs,
                     this.content.npcs
                 );
+
+                if (!result) {
+                    const windowEgg = this.ballroomEggs.interactWindow(
+                        this.player,
+                        this.currentRoom,
+                        this.currentRoom.map,
+                        this.currentRoom.npcs
+                    );
+                    if (windowEgg === "scare") {
+                        this.state = "window_scare";
+                        return;
+                    }
+                    if (windowEgg === "look") {
+                        this.openDialog(WINDOW_LOOK_TEXT);
+                        return;
+                    }
+                }
 
                 if (result) {
                     if (result.confirmation) {
@@ -1676,6 +1747,12 @@ export class Game {
             }
 
             this.handleRoomTransition();
+
+            if (this.ballroomEggs.checkTrap(this.player, this.currentRoom)) {
+                ballroomSounds.playTinkle(CHANDELIER_TREMBLE);
+                this.state = "chandelier_trap";
+                return;
+            }
 
             if (this.ledgerScare.active && this.currentRoom.id === "dining") {
                 const map = this.currentRoom.map;
@@ -1978,13 +2055,18 @@ export class Game {
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
             getMooseTilt: () => this.mooseLick.tiltAngle,
-            floorDecals: burn?.floor,
+            wallOverlay: (c) => this.ballroomEggs.renderWindow(c, this.currentRoom),
+            floorDecals: (c) => {
+                burn?.floor?.(c);
+                this.ballroomEggs.drawFloor(c, this.currentRoom);
+            },
             extraActors: [this.player, ...spreadFireActors, ...dragGripActors, ...(burn?.actors ?? []), ...crateKey],
             extraOverheadActors: [
                 ...atticMice.getActors(() => this.decorAnimTime),
                 ...courtyardSeagull.getActors(),
                 ...ytteFireActors,
-                ...this.mooseTongueActors()
+                ...this.mooseTongueActors(),
+                ...this.ballroomEggs.overheadActors(this.player)
             ],
             skipClear: needsCentering
         });
@@ -2038,6 +2120,10 @@ export class Game {
                 this.ledgerScare.redBlinkRemaining
             )
         );
+
+        if (this.state === "chandelier_trap" && this.ballroomEggs.dodgeWindowOpen) {
+            drawActionHint(ctx, shouldShowTouchControls() ? "The chandelier! Tap Interact to dodge!" : "The chandelier! Press E to dodge!");
+        }
 
         if (this.state === "struggling") {
             const nearHearth =

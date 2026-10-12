@@ -547,3 +547,65 @@ export const BALLROOM_SPRITES: Record<string, ProceduralSpriteDef> = {
     settee: { nativeWidth: 48, nativeHeight: 32, draw: drawSettee },
     gueridon: { nativeWidth: 16, nativeHeight: 32, draw: drawGueridon }
 };
+
+// ---------------------------------------------------------------------------
+// Fallen chandelier (easter egg) — wreck on the floor + flying shards
+// ---------------------------------------------------------------------------
+
+const WRECK_CRYSTAL = ["#f4fbff", "#c8e4f0", "#9ccbe0", "#ffffff"];
+
+/** Smashed chandelier lying on the floor, centred on (cx, cy) in screen px, drawn at 2x. */
+export function drawChandelierWreck(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
+    ctx.save();
+    ctx.translate(Math.round(cx), Math.round(cy));
+    ctx.scale(2, 2);
+    // Shadow and crushed gilt rings, squashed flat and bent
+    ellipse(ctx, 0, 2, 22, 5, "rgba(0,0,0,0.25)");
+    for (let i = 0; i < 40; i++) {
+        const a = (i / 40) * Math.PI * 2;
+        const dent = i % 7 === 0 ? 2 : 0;
+        p(ctx, Math.round(Math.cos(a) * (17 - dent)), Math.round(Math.sin(a) * 4), Math.sin(a) > 0 ? GILT.m : GILT.d);
+    }
+    for (let i = 0; i < 26; i++) {
+        const a = (i / 26) * Math.PI * 2 + 0.4;
+        p(ctx, Math.round(5 + Math.cos(a) * 10), Math.round(-1 + Math.sin(a) * 3), i % 2 ? GILT.h : GILT.m);
+    }
+    // Snapped stem lying across the rings
+    line(ctx, -9, -2, 7, 2, GILT.m);
+    line(ctx, -9, -3, 7, 1, GILT.h);
+    discCrisp(ctx, 9, 2, 2, WRECK_CRYSTAL[1]);
+    // Toppled candles
+    for (const [x, y] of [[-14, -1], [12, 3], [-4, 4]] as const) {
+        hline(ctx, x, y, 4, P.cream);
+        p(ctx, x - 1, y, "#8a7a60");
+    }
+    // Crystal drops scattered across the floor
+    const rand = seeded(1187);
+    for (let i = 0; i < 46; i++) {
+        const a = rand() * Math.PI * 2;
+        const d = 4 + rand() * 26;
+        const x = Math.round(Math.cos(a) * d);
+        const y = Math.round(Math.sin(a) * d * 0.4 + 1);
+        p(ctx, x, y, WRECK_CRYSTAL[i % WRECK_CRYSTAL.length]);
+        if (i % 5 === 0) p(ctx, x + 1, y, WRECK_CRYSTAL[(i + 1) % WRECK_CRYSTAL.length]);
+    }
+    ctx.restore();
+}
+
+/** Crystal shards bursting outward from an impact at (cx, cy); `t` seconds since impact. */
+export function drawChandelierShards(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number): void {
+    if (t < 0 || t > 0.8) return;
+    const rand = seeded(907);
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 1 - t / 0.8);
+    for (let i = 0; i < 28; i++) {
+        const a = rand() * Math.PI * 2;
+        const speed = 90 + rand() * 160;
+        const lift = 120 + rand() * 160;
+        const x = cx + Math.cos(a) * speed * t;
+        const y = cy + Math.sin(a) * speed * 0.4 * t - lift * t + 520 * t * t;
+        ctx.fillStyle = WRECK_CRYSTAL[i % WRECK_CRYSTAL.length];
+        ctx.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, 2, 2);
+    }
+    ctx.restore();
+}

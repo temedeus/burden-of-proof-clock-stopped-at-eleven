@@ -179,11 +179,7 @@ export function drawBallroomClerestoryWindows(
     hline(ctx, left, 2, innerW, GILT.h);
     drawDado(ctx, left, innerW, dadoTop, faceBottom);
 
-    const winW = Math.floor((innerW - PILASTER * (WINDOW_COUNT + 1)) / WINDOW_COUNT);
-    const used = winW * WINDOW_COUNT + PILASTER * (WINDOW_COUNT + 1);
-    const x0 = left + Math.floor((innerW - used) / 2);
-    const winTop = 4;
-    const winH = dadoTop - winTop;
+    const { x0, winW, winTop, winH } = windowLayout(roomWidth, northWallRow);
 
     for (let i = 0; i <= WINDOW_COUNT; i++) {
         drawPilaster(ctx, x0 + i * (winW + PILASTER), PILASTER, 3, dadoTop, i > 0 && i < WINDOW_COUNT);
@@ -191,4 +187,36 @@ export function drawBallroomClerestoryWindows(
     for (let i = 0; i < WINDOW_COUNT; i++) {
         drawWindow(ctx, x0 + PILASTER + i * (winW + PILASTER), winTop, winW, winH, i);
     }
+}
+
+function windowLayout(roomWidth: number, northWallRow: number) {
+    const left = TILE_SIZE;
+    const innerW = roomWidth * TILE_SIZE - TILE_SIZE * 2;
+    const dadoTop = (northWallRow + 1) * TILE_SIZE - 22;
+    const winW = Math.floor((innerW - PILASTER * (WINDOW_COUNT + 1)) / WINDOW_COUNT);
+    const used = winW * WINDOW_COUNT + PILASTER * (WINDOW_COUNT + 1);
+    const x0 = left + Math.floor((innerW - used) / 2);
+    const winTop = 4;
+    return { x0, winW, winTop, winH: dadoTop - winTop };
+}
+
+export interface Rect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+/** Screen rects of each clerestory window and its glass (same layout as the drawn wall). */
+export function ballroomWindowRects(roomWidth: number, northWallRow: number): { frame: Rect; glass: Rect }[] {
+    const { x0, winW, winTop, winH } = windowLayout(roomWidth, northWallRow);
+    const out: { frame: Rect; glass: Rect }[] = [];
+    for (let i = 0; i < WINDOW_COUNT; i++) {
+        const x = x0 + PILASTER + i * (winW + PILASTER);
+        out.push({
+            frame: { x, y: winTop, w: winW, h: winH },
+            glass: { x: x + 4, y: winTop + 4, w: winW - 8, h: winH - 8 }
+        });
+    }
+    return out;
 }

@@ -48,6 +48,8 @@ export class Player extends Entity {
     isMoving = false;
     /** 0 upright … 1 fully collapsed (cutscene only). */
     cutsceneFall = 0;
+    /** Scripted hop height in px (sprite lifts, feet box stays put). */
+    hopPx = 0;
     /** Seconds into the post-lick grimace (facing down); null when inactive. */
     mooseLickT: number | null = null;
     private wipeCanvas: HTMLCanvasElement | null = null;
@@ -326,7 +328,7 @@ export class Player extends Entity {
         ctx.drawImage(
             this.wipeCanvas,
             Math.round(this.x),
-            Math.round(this.y + this.height - drawHeight),
+            Math.round(this.y + this.height - drawHeight - this.hopPx),
             this.width,
             drawHeight
         );

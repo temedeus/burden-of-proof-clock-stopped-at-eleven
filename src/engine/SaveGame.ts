@@ -34,6 +34,8 @@ export interface GameSaveV1 {
     accusedMurderer: boolean;
     cookHiddenAfterDiningScare: boolean;
     brokenAtticWindowIds: number[];
+    /** Landing suit of armor shaken apart (easter egg). Absent in older saves. */
+    armorCollapsed?: boolean;
 }
 
 export interface SaveValidationContext {
@@ -92,6 +94,7 @@ function parseSaveShape(raw: unknown): GameSaveV1 | null {
         return null;
     }
     if (!isFiniteNumber(raw.savedAt)) return null;
+    if (raw.armorCollapsed !== undefined && typeof raw.armorCollapsed !== "boolean") return null;
 
     const boolFields = [
         "studySecretRevealed",
@@ -129,7 +132,8 @@ function parseSaveShape(raw: unknown): GameSaveV1 | null {
         confrontationComplete: raw.confrontationComplete as boolean,
         accusedMurderer: raw.accusedMurderer as boolean,
         cookHiddenAfterDiningScare: raw.cookHiddenAfterDiningScare as boolean,
-        brokenAtticWindowIds: raw.brokenAtticWindowIds as number[]
+        brokenAtticWindowIds: raw.brokenAtticWindowIds as number[],
+        armorCollapsed: raw.armorCollapsed === true
     };
 }
 

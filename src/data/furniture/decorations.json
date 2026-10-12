@@ -963,7 +963,7 @@
   "stuffed_moose": {
     "id": "stuffed_moose",
     "name": "Stuffed moose",
-    "description": "A glass-eyed bull moose looms over the room, antlers spread wide above a mahogany plaque.",
+    "description": "A stuffed moose, the Baron's proudest trophy from his northern hunting trip.\n\n...but wait. Something about it seems strange...",
     "width": 2,
     "height": 3,
     "drawWidth": 2,
@@ -971,6 +971,7 @@
     "renderAnchor": "bottom-left",
     "collisionRowsFromBottom": 2,
     "collisionWidth": 2,
+    "interactionSound": "moose_lick",
     "spriteName": "stuffed_moose"
   },
   "armor_stand": {
@@ -984,6 +985,9 @@
     "renderAnchor": "bottom-left",
     "collisionRowsFromBottom": 3,
     "collisionWidth": 2,
+    "interactionType": "confirm",
+    "confirmId": "armor_shake",
+    "confirmPrompt": "The old suit of armor creaks faintly on its plinth. Give it a good shake?",
     "spriteName": "armor_stand"
   },
   "hall_clock": {

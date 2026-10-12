@@ -79,18 +79,21 @@ const ARMOR_COLORS: Record<string, string> = {
     R: "#c03a32"
 };
 
-/** 32x48 @2x — suit of plate armour on a plinth, halberd at its side. */
-export function drawArmorStand(ctx: CanvasRenderingContext2D): void {
+function drawPlinth(ctx: CanvasRenderingContext2D): void {
     floorShadow(ctx, 4, 46, 24, 2);
     // Oak plinth
     panel(ctx, 6, 40, 20, 6, WOOD);
     hline(ctx, 7, 41, 18, WOOD.h);
+}
 
+function drawSuit(ctx: CanvasRenderingContext2D): void {
     grid(ctx, 0, 0, 1, armorRows(), ARMOR_COLORS);
     // Breastplate ridge and rivets
     vline(ctx, 15, 13, 9, ARMOR_COLORS.h);
     for (const [x, y] of [[6, 14], [25, 14], [12, 25], [19, 25]] as const) p(ctx, x, y, P.goldDark);
+}
 
+function drawHalberd(ctx: CanvasRenderingContext2D): void {
     // Halberd held at the right side: shaft, axe blade, spike and langets
     const sx = 28;
     vline(ctx, sx, 7, 38, WOOD.o);
@@ -110,8 +113,131 @@ export function drawArmorStand(ctx: CanvasRenderingContext2D): void {
     // Gauntlet gripping the shaft
     r(ctx, sx - 1, 25, 3, 3, ARMOR_COLORS.m);
     p(ctx, sx - 1, 25, ARMOR_COLORS.l);
+}
+
+/** 32x48 @2x — suit of plate armour on a plinth, halberd at its side. */
+export function drawArmorStand(ctx: CanvasRenderingContext2D): void {
+    drawPlinth(ctx);
+    drawSuit(ctx);
+    drawHalberd(ctx);
     // Brass finial on the plinth corner
-    discCrisp(ctx, sx + 1, 44, 1, P.goldDark);
+    discCrisp(ctx, 29, 44, 1, P.goldDark);
+}
+
+// ============================================================================
+// Collapse easter egg — shake, then the suit falls apart into a heap
+// ============================================================================
+
+/** Seconds of rattling before pieces start to fall. */
+export const ARMOR_SHAKE_END = 0.9;
+
+interface ArmorPiece {
+    layer: "suit" | "halberd";
+    /** Source rect in native sprite pixels. */
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    /** Resting centre (native px, may spill past the sprite box onto the floor). */
+    restX: number;
+    restY: number;
+    /** Quarter turns while falling (+ clockwise). */
+    turns: number;
+    delay: number;
+    flight: number;
+    /** Peak hop height in native px. */
+    arc: number;
+}
+
+/** Draw order back to front; source rects partition the suit so no pixel is drawn twice. */
+const ARMOR_PIECES: ArmorPiece[] = [
+    { layer: "halberd", x: 24, y: 0, w: 8, h: 46, restX: 52, restY: 50, turns: 1, delay: 0.1, flight: 0.55, arc: 2 },
+    { layer: "suit", x: 9, y: 28, w: 7, h: 13, restX: 12, restY: 39, turns: 1, delay: 0.25, flight: 0.3, arc: 3 },
+    { layer: "suit", x: 16, y: 28, w: 7, h: 13, restX: 22, restY: 40, turns: -1, delay: 0.3, flight: 0.3, arc: 3 },
+    { layer: "suit", x: 10, y: 24, w: 12, h: 4, restX: 31, restY: 58, turns: 0, delay: 0.2, flight: 0.45, arc: 6 },
+    { layer: "suit", x: 10, y: 12, w: 12, h: 12, restX: 18, restY: 50, turns: 0, delay: 0.15, flight: 0.45, arc: 5 },
+    { layer: "suit", x: 3, y: 12, w: 7, h: 16, restX: 9, restY: 54, turns: -1, delay: 0.05, flight: 0.45, arc: 6 },
+    { layer: "suit", x: 22, y: 12, w: 7, h: 16, restX: 58, restY: 56, turns: 1, delay: 0.1, flight: 0.5, arc: 8 },
+    { layer: "suit", x: 9, y: 0, w: 14, h: 12, restX: 42, restY: 55, turns: 1, delay: 0, flight: 0.6, arc: 12 }
+];
+
+const BOUNCE_TIME = 0.15;
+
+/** When the collapse has fully settled. */
+export const ARMOR_COLLAPSE_DURATION =
+    ARMOR_SHAKE_END + Math.max(...ARMOR_PIECES.map((pc) => pc.delay + pc.flight)) + BOUNCE_TIME + 0.2;
+
+/** Seconds (from shake start) when each piece hits the floor — one clank each. */
+export const ARMOR_LAND_TIMES = ARMOR_PIECES.map((pc) => ARMOR_SHAKE_END + pc.delay + pc.flight);
+
+let layers: { plinth: HTMLCanvasElement; suit: HTMLCanvasElement; halberd: HTMLCanvasElement } | null = null;
+
+function layer(draw: (ctx: CanvasRenderingContext2D) => void): HTMLCanvasElement {
+    const c = document.createElement("canvas");
+    c.width = ARMOR_STAND_W;
+    c.height = ARMOR_STAND_H;
+    draw(c.getContext("2d")!);
+    return c;
+}
+
+function getLayers() {
+    layers ??= {
+        plinth: layer((ctx) => {
+            drawPlinth(ctx);
+            discCrisp(ctx, 29, 44, 1, P.goldDark);
+        }),
+        suit: layer(drawSuit),
+        halberd: layer(drawHalberd)
+    };
+    return layers;
+}
+
+/** Runtime draw of the shake + collapse at `t` seconds; past the end it is the settled heap. */
+export function drawArmorCollapse(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    t: number
+): void {
+    const sx = w / ARMOR_STAND_W;
+    const sy = h / ARMOR_STAND_H;
+    const L = getLayers();
+    const prevSmoothing = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(L.plinth, x, y, w, h);
+
+    // Rattle: the whole suit jitters harder and harder on its plinth
+    const shaking = t < ARMOR_SHAKE_END;
+    const jitter = shaking ? Math.round(Math.sin(t * 45) * (0.5 + (t / ARMOR_SHAKE_END) * 1.5)) : 0;
+
+    for (const pc of ARMOR_PIECES) {
+        const startX = pc.x + pc.w / 2 + jitter;
+        const startY = pc.y + pc.h / 2;
+        const u = Math.max(0, Math.min(1, (t - ARMOR_SHAKE_END - pc.delay) / pc.flight));
+        const sinceLand = t - ARMOR_SHAKE_END - pc.delay - pc.flight;
+        const bounce = sinceLand > 0 && sinceLand < BOUNCE_TIME ? Math.sin((sinceLand / BOUNCE_TIME) * Math.PI) * 2 : 0;
+        const cx = startX + (pc.restX - startX) * u;
+        const cy = startY + (pc.restY - startY) * u - pc.arc * 4 * u * (1 - u) - bounce;
+        const angle = pc.turns * (Math.PI / 2) * u;
+        ctx.save();
+        ctx.translate(Math.round(x + cx * sx), Math.round(y + cy * sy));
+        if (angle !== 0) ctx.rotate(angle);
+        ctx.drawImage(
+            L[pc.layer],
+            pc.x,
+            pc.y,
+            pc.w,
+            pc.h,
+            Math.round((-pc.w / 2) * sx),
+            Math.round((-pc.h / 2) * sy),
+            pc.w * sx,
+            pc.h * sy
+        );
+        ctx.restore();
+    }
+    ctx.imageSmoothingEnabled = prevSmoothing;
 }
 
 export { ARMOR_LEFT_HALF };

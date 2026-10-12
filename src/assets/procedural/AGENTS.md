@@ -48,8 +48,8 @@ For sprites needing animation, wall-side detection, or draw-time state.
 | `pond.ts` | Garden pond (baked via `POND_SPRITES` in `registry.ts`) |
 | `ballroom.ts` | Ballroom: oak parquet floor (4 position variants via `ballroomFloorSpriteName`) + wall tiles, inlaid border, marquetry medallion, daylight/AO lighting layer, chandeliers (overhead), palms, harp, settee, gueridons, side-view chairs |
 | `hoodedFigure.ts` | Masked murderer (hooded cloak + porcelain mask), 4 facings × walk frames; sword in `src/render/swordDraw.ts`, fire effects in `src/render/fireEffects.ts` |
-| `armorStand.ts` | Suit of armour with halberd (32×48 mirrored template, baked via `furniture.ts`) |
-| `stuffed_moose.ts` | Study moose trophy (32×48 pixel template, baked via `furniture.ts`) |
+| `armorStand.ts` | Suit of armour with halberd (32×48 mirrored template, baked via `furniture.ts`; runtime shake/collapse heap for the easter egg, state in `world/armorCollapse.ts`) |
+| `stuffed_moose.ts` | Study moose trophy (32×48 pixel template, baked via `furniture.ts`; runtime tilted head + tongue for the lick easter egg, `systems/MooseLickGag.ts`) |
 | `furnitureInterior.ts` | Redrawn interior pieces (shelves, tables, carpet, cabinet, chest, hall clock, barrel, rack) |
 | `furnitureBedBath.ts` | Bathroom (tub, toilet, boiler), master bedroom (four-poster, vanity, nightstand), guest + maid beds, and the shared `drawRug` |
 | `furnitureOutdoor.ts` | Redrawn garden/courtyard pieces (oak, bush, pond, stable) |

@@ -7,6 +7,8 @@ import { NPC } from "./NPC";
 import { spriteLoader } from "../assets/SpriteLoader";
 import type { CharacterPose } from "../assets/procedural/characters";
 import { HUMANOID_NATIVE_H, HUMANOID_NATIVE_W } from "../assets/procedural/characterAnimation";
+import { P } from "../assets/procedural/palette";
+import { shade } from "../assets/procedural/pixel";
 import { footstepSounds } from "../audio/FootstepSounds";
 import { resolveFootstepSound } from "../audio/footstepSurface";
 import type { Interactable } from "../world/Interactable";
@@ -18,6 +20,26 @@ export type Facing = "up" | "down" | "left" | "right";
 
 export const WALK_ANIM_FPS = 8;
 
+/** Moose-lick reaction timeline (seconds after turning to camera): grimace, then wipe. */
+const WIPE_START = 0.6;
+const WIPE_END = 2.0;
+export const MOOSE_FACE_DURATION = WIPE_END + 0.4;
+
+/** Native-pixel head row and screen-right arm of each detective's front idle frame (see characters.ts). */
+const WIPE_GEOMETRY: Record<PlayerSpriteName, { headY: number; armX: number; armTop: number; armLen: number }> = {
+    female_detective: { headY: 3, armX: 21, armTop: 12, armLen: 8 },
+    male_detective: { headY: 2, armX: 22, armTop: 11, armLen: 9 }
+};
+
+function hexRgb(color: string): number {
+    return parseInt(color.slice(1, 7), 16);
+}
+
+/** Exact colours of the hanging front arm (sleeve shades + hand) so it can be erased from the frame. */
+const ARM_COLORS = new Set(
+    [P.coatNavy, shade(P.coatNavy, 0.15), shade(P.coatNavy, -0.3), P.skin, shade(P.skin, -0.22)].map(hexRgb)
+);
+
 export class Player extends Entity {
     speed = 180;
     width = TILE_SIZE * 2;
@@ -26,6 +48,9 @@ export class Player extends Entity {
     isMoving = false;
     /** 0 upright … 1 fully collapsed (cutscene only). */
     cutsceneFall = 0;
+    /** Seconds into the post-lick grimace (facing down); null when inactive. */
+    mooseLickT: number | null = null;
+    private wipeCanvas: HTMLCanvasElement | null = null;
     private animTime = 0;
     private spriteName: PlayerSpriteName;
 
@@ -190,7 +215,122 @@ export class Player extends Entity {
             return;
         }
 
+        if (this.mooseLickT !== null) {
+            this.drawMooseLickFrame(ctx, this.mooseLickT);
+            return;
+        }
         this.drawFrame(ctx);
+    }
+
+    /** Native-pixel point on the face (side view, facing right) in world px; `fy` is rows below the head top. */
+    getFacePoint(fy: number): { x: number; y: number } {
+        const scale = this.width / HUMANOID_NATIVE_W;
+        const top = this.y + this.height - HUMANOID_NATIVE_H * scale;
+        return { x: this.x + 19 * scale, y: top + (WIPE_GEOMETRY[this.spriteName].headY + fy) * scale };
+    }
+
+    /**
+     * Front idle frame with a disgusted grimace and drool; during the wipe the hanging
+     * right arm is erased and redrawn raised, hand sweeping across the face.
+     */
+    private drawMooseLickFrame(ctx: CanvasRenderingContext2D, t: number): void {
+        const w = HUMANOID_NATIVE_W;
+        const h = HUMANOID_NATIVE_H;
+        if (!this.wipeCanvas) {
+            this.wipeCanvas = document.createElement("canvas");
+            this.wipeCanvas.width = w;
+            this.wipeCanvas.height = h;
+        }
+        const c = this.wipeCanvas.getContext("2d")!;
+        c.clearRect(0, 0, w, h);
+        spriteLoader.drawCharacterFrame(c, this.spriteName, "down", "idle", 0, 0, w, h);
+
+        const g = WIPE_GEOMETRY[this.spriteName];
+        const hy = g.headY;
+        const px = (x: number, y: number, pw: number, ph: number, color: string) => {
+            c.fillStyle = color;
+            c.fillRect(x, y, pw, ph);
+        };
+        const sleeve = P.coatNavy;
+        const sleeveDark = shade(P.coatNavy, -0.3);
+        const skin = P.skin;
+        const skinShadow = shade(P.skin, -0.22);
+        const drool = "#cfe8c4";
+        const droolHi = "#f2fff0";
+
+        // Disgust face: squeezed eyes, furrowed brows, wobbly frown (head is x 12..20)
+        px(12, hy + 3, 3, 1, "#2a1a1a");
+        px(17, hy + 3, 3, 1, "#2a1a1a");
+        px(12, hy + 2, 3, 1, "#5a3a2a");
+        px(17, hy + 2, 3, 1, "#5a3a2a");
+        px(14, hy + 6, 4, 1, "#7a2a2a");
+        px(13, hy + 7, 1, 1, "#7a2a2a");
+        px(18, hy + 7, 1, 1, "#7a2a2a");
+
+        const wiping = t >= WIPE_START && t < WIPE_END;
+        const wp = wiping ? (t - WIPE_START) / (WIPE_END - WIPE_START) : 0;
+        // Drool smear on the licked cheek, wiped away progressively
+        if (t < WIPE_END) {
+            if (wp < 0.75) px(17, hy + 1, 3, 2, drool);
+            if (wp < 0.75) px(18, hy + 1, 1, 1, droolHi);
+            if (wp < 0.5) px(18, hy + 3, 2, 4, drool);
+            if (wp < 0.25) px(19, hy + 7, 1, 2, drool);
+        }
+
+        if (wiping) {
+            // Erase the hanging arm (sleeve + hand pixels only, never the body)
+            const ax = g.armX;
+            const aw = 5;
+            const ay = g.armTop;
+            const ah = g.armLen + 4;
+            const img = c.getImageData(ax, ay, aw, ah);
+            for (let i = 0; i < img.data.length; i += 4) {
+                const rgb = (img.data[i] << 16) | (img.data[i + 1] << 8) | img.data[i + 2];
+                if (img.data[i + 3] > 0 && ARM_COLORS.has(rgb)) img.data[i + 3] = 0;
+            }
+            c.putImageData(img, ax, ay);
+
+            // Raised arm: shoulder → wrist at the face, hand sweeping across
+            const sweep = Math.sin(wp * Math.PI * 4);
+            const handX = 15 + Math.round(sweep * 3);
+            const handY = hy + 3;
+            const shoulderX = g.armX + 1;
+            const shoulderY = g.armTop + 1;
+            const wristX = handX + 2;
+            const wristY = handY + 3;
+            const steps = Math.max(Math.abs(wristX - shoulderX), Math.abs(wristY - shoulderY), 1);
+            for (let i = 0; i <= steps; i++) {
+                const f = i / steps;
+                const x = Math.round(shoulderX + (wristX - shoulderX) * f);
+                const y = Math.round(shoulderY + (wristY - shoulderY) * f);
+                px(x - 1, y - 1, 3, 3, sleeveDark);
+            }
+            for (let i = 0; i <= steps; i++) {
+                const f = i / steps;
+                const x = Math.round(shoulderX + (wristX - shoulderX) * f);
+                const y = Math.round(shoulderY + (wristY - shoulderY) * f);
+                px(x - 1, y - 1, 2, 2, sleeve);
+            }
+            // Hand palm-in over the face
+            px(handX - 1, handY, 4, 3, skin);
+            px(handX - 1, handY + 2, 4, 1, skinShadow);
+            px(handX + 3, handY + 1, 1, 1, skin);
+            // Flung drool flecks
+            px(handX + (sweep > 0 ? 5 : -3), handY + 1, 1, 1, drool);
+        }
+
+        const scale = this.width / w;
+        const drawHeight = h * scale;
+        const prevSmoothing = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(
+            this.wipeCanvas,
+            Math.round(this.x),
+            Math.round(this.y + this.height - drawHeight),
+            this.width,
+            drawHeight
+        );
+        ctx.imageSmoothingEnabled = prevSmoothing;
     }
 
     /** Uniform integer scale (no aspect squash); feet stay on the entity box bottom, head overhangs above. */

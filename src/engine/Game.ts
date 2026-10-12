@@ -67,6 +67,17 @@ import { atticMice } from "../systems/AtticMiceController";
 import { courtyardSeagull } from "../systems/CourtyardSeagullController";
 import { clueSounds } from "../audio/ClueSounds";
 import { pianoSounds } from "../audio/PianoSounds";
+import { mooseSounds } from "../audio/MooseSounds";
+import { armorSounds } from "../audio/ArmorSounds";
+import {
+    applyArmorCollapsedToRooms,
+    isArmorCollapsed,
+    setArmorCollapsed,
+    startArmorCollapse,
+    tickArmorCollapse
+} from "../world/armorCollapse";
+import { MooseLickGag } from "../systems/MooseLickGag";
+import { drawMooseTongue, stuffedMooseMouth, STUFFED_MOOSE_H, STUFFED_MOOSE_W } from "../assets/procedural/stuffed_moose";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import {
     createRoomTitleBanner,
@@ -102,7 +113,9 @@ type GameState =
     | "inventory"
     | "victory"
     | "struggling"
-    | "cutscene";
+    | "cutscene"
+    | "moose_lick"
+    | "armor_collapse";
 
 const POLICE_NPC_IDS = ["police", "police2"];
 
@@ -176,6 +189,9 @@ export class Game {
     );
 
     private state: GameState = "playing";
+    private mooseLickPending = false;
+    private mooseLick = new MooseLickGag();
+    private mooseRect: { x: number; y: number; w: number; h: number } | null = null;
     private message: string | null = null;
     private messagePages: string[] = [];
     private messagePageIndex = 0;
@@ -305,7 +321,8 @@ export class Game {
             confrontationComplete: this.murdererConfrontation.complete,
             accusedMurderer: this.murdererChase.accusedMurderer,
             cookHiddenAfterDiningScare: this.cookHiddenAfterDiningScare != null,
-            brokenAtticWindowIds: getBrokenAtticWindowIds()
+            brokenAtticWindowIds: getBrokenAtticWindowIds(),
+            armorCollapsed: isArmorCollapsed()
         };
     }
 
@@ -454,6 +471,8 @@ export class Game {
         this.murdererConfrontation.active = false;
 
         setBrokenAtticWindows(save.brokenAtticWindowIds);
+        setArmorCollapsed(save.armorCollapsed ?? false);
+        if (save.armorCollapsed) applyArmorCollapsedToRooms(this.rooms);
 
         const room = this.rooms[save.roomId];
         if (!room) return;
@@ -547,6 +566,58 @@ export class Game {
         this.state = "interacting";
     }
 
+    private updateArmorCollapse(dt: number): void {
+        const tick = tickArmorCollapse(dt);
+        for (let i = 0; i < Math.min(tick.impacts, 2); i++) armorSounds.playClank();
+        if (tick.done) {
+            applyArmorCollapsedToRooms(this.rooms);
+            this.openDialog(
+                "CRASH! The suit of armor comes apart and clatters across the floorboards in pieces.\n\nYou: ...I'm sure it was like that when I got here."
+            );
+            this.autosave();
+        }
+    }
+
+    private startMooseLick(): void {
+        const mooses = this.currentRoom.interactables.filter((o) => o.spriteName === "stuffed_moose");
+        const moose = mooses.find((o) => this.interaction.wouldTarget(this.player, o)) ?? mooses[0];
+        if (!moose) return;
+        const map = this.currentRoom.map;
+        this.mooseRect = furnitureActorFromInteractable(moose, () => 0, {
+            width: map.width,
+            height: map.height,
+            tileAt: (x, y) => map.getTile(x, y)
+        }).drawRect;
+        this.mooseLick.start(this.player, moose, map, this.currentRoom.npcs);
+        this.state = "moose_lick";
+    }
+
+    private updateMooseLick(dt: number): void {
+        const tick = this.mooseLick.update(dt, this.player);
+        if (tick.playLick) mooseSounds.playLick();
+        if (tick.done) {
+            this.mooseRect = null;
+            this.openDialog("You: Ugh. Moose drool. Disgusting.");
+        }
+    }
+
+    /** Tongue from the tilted moose's mouth to the player's face, drawn above the player. */
+    private mooseTongueActors(): DepthActor[] {
+        const rect = this.mooseRect;
+        const ext = this.mooseLick.tongueExtension;
+        if (!rect || ext <= 0) return [];
+        const sx = rect.w / STUFFED_MOOSE_W;
+        const sy = rect.h / STUFFED_MOOSE_H;
+        const mouth = stuffedMooseMouth(this.mooseLick.tiltAngle);
+        const startX = rect.x + mouth.x * sx;
+        const startY = rect.y + mouth.y * sy;
+        // Tongue tip slides up the player's cheek from chin to brow
+        const face = this.player.getFacePoint(7 - 6 * this.mooseLick.slurp);
+        const endX = startX + (face.x - startX) * ext;
+        const endY = startY + (face.y - startY) * ext;
+        return [{ y: 0, height: 0, render: (ctx) => drawMooseTongue(ctx, startX, startY, endX, endY, sx) }];
+    }
+
     private advanceOrCloseDialog(): void {
         if (this.messagePageIndex < this.messagePages.length - 1) {
             this.messagePageIndex += 1;
@@ -559,6 +630,11 @@ export class Game {
         this.messagePageIndex = 0;
         this.clueNotification = null;
         this.state = "playing";
+        if (this.mooseLickPending) {
+            this.mooseLickPending = false;
+            this.startMooseLick();
+            return;
+        }
         if (this.ledgerScare.armed) {
             this.beginRoomScare(this.ledgerScare, "dining");
         } else if (this.atticScare.armed) {
@@ -1389,6 +1465,16 @@ export class Game {
             return;
         }
 
+        if (this.state === "moose_lick") {
+            this.updateMooseLick(dt);
+            return;
+        }
+
+        if (this.state === "armor_collapse") {
+            this.updateArmorCollapse(dt);
+            return;
+        }
+
         if (this.state === "cutscene") {
             this.lockedDoorHintUntil = Math.max(0, this.lockedDoorHintUntil - dt);
             if (this.atticWindow.active) {
@@ -1542,6 +1628,9 @@ export class Game {
                     if (result.interactionSound === "piano") {
                         pianoSounds.playChord();
                     }
+                    if (result.interactionSound === "moose_lick") {
+                        this.mooseLickPending = true;
+                    }
                     if (result.clues.length > 0) {
                         clueSounds.playFound();
                         this.clueNotification = { clueId: result.clues[0] };
@@ -1652,6 +1741,15 @@ export class Game {
                               },
                               hidden_cabinet: () => {
                                   this.grantConfirmClue("smuggling_documents");
+                              },
+                              armor_shake: () => {
+                                  if (isArmorCollapsed()) {
+                                      this.state = "playing";
+                                      return;
+                                  }
+                                  startArmorCollapse();
+                                  armorSounds.playRattle();
+                                  this.state = "armor_collapse";
                               },
                               attic_chest: () => {
                                   this.grantConfirmClue("manor_floor_plans");
@@ -1879,12 +1977,14 @@ export class Game {
 
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
+            getMooseTilt: () => this.mooseLick.tiltAngle,
             floorDecals: burn?.floor,
             extraActors: [this.player, ...spreadFireActors, ...dragGripActors, ...(burn?.actors ?? []), ...crateKey],
             extraOverheadActors: [
                 ...atticMice.getActors(() => this.decorAnimTime),
                 ...courtyardSeagull.getActors(),
-                ...ytteFireActors
+                ...ytteFireActors,
+                ...this.mooseTongueActors()
             ],
             skipClear: needsCentering
         });

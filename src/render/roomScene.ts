@@ -4,6 +4,9 @@ import { drawBallroomClerestoryWindows } from "../assets/procedural/ballroom_win
 import { drawOilLampAnimated, oilLampAnimPhase, oilLampDrawBounds } from "../assets/procedural/oil_lamp";
 import { drawKitchenStoveAnimated, kitchenStoveAnimPhase } from "../assets/procedural/kitchen_stove";
 import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/animals";
+import { drawStuffedMooseTilted } from "../assets/procedural/stuffed_moose";
+import { drawArmorCollapse } from "../assets/procedural/armorStand";
+import { getArmorCollapseT } from "../world/armorCollapse";
 import { decorWallDrawBounds, wallMountDrawBounds } from "../assets/procedural/wall_align";
 import { resolveDecorDrawRectPx } from "@cse/content-schema";
 import { spriteLoader } from "../assets/SpriteLoader";
@@ -25,7 +28,8 @@ export type FurnitureActor = DepthActor & { drawRect: { x: number; y: number; w:
 export function furnitureActorFromInteractable(
     obj: Interactable,
     getAnimTime: () => number,
-    roomSize?: { width: number; height: number; tileAt?: (x: number, y: number) => number }
+    roomSize?: { width: number; height: number; tileAt?: (x: number, y: number) => number },
+    getMooseTilt?: () => number
 ): FurnitureActor {
     const footprint = obj.footprintTiles && obj.footprintTiles.length > 0 ? obj.footprintTiles : obj.tiles;
     const minX = Math.min(...footprint.map((t) => t.x));
@@ -185,6 +189,10 @@ export function furnitureActorFromInteractable(
                     phase,
                     spriteName
                 );
+            } else if (spriteName === "stuffed_moose" && getMooseTilt && getMooseTilt() !== 0) {
+                drawStuffedMooseTilted(ctx, drawX, drawY, drawW, drawH, getMooseTilt());
+            } else if (spriteName === "armor_stand" && getArmorCollapseT() !== null) {
+                drawArmorCollapse(ctx, drawX, drawY, drawW, drawH, getArmorCollapseT()!);
             } else if (obj.id === "secret_cellar_barrels") {
                 const anchorXs: number[] = [];
                 for (let x = minX; x <= maxX; x++) anchorXs.push(x);
@@ -288,6 +296,8 @@ export interface RenderRoomSceneOptions {
     /** Drawn after overhead decor (roof beams, cobwebs), above the player. */
     extraOverheadActors?: DepthActor[];
     clearColor?: string;
+    /** Stuffed-moose head tilt in radians (easter egg); 0 draws the baked sprite. */
+    getMooseTilt?: () => number;
     /** When the canvas is translated (e.g. centered small room), skip fill — caller clears screen space first. */
     skipClear?: boolean;
 }
@@ -321,7 +331,7 @@ export function renderRoomScene(
             width: room.map.width,
             height: room.map.height,
             tileAt: (x, y) => room.map.getTile(x, y)
-        });
+        }, options.getMooseTilt);
         if (obj.overheadDecor) {
             overheadActors.push(actor);
         } else if (obj.walkableDecor) {

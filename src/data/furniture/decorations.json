@@ -181,7 +181,7 @@
   "fireplace": {
     "id": "fireplace",
     "name": "Fireplace",
-    "description": "Cold ashes fill the hearth.",
+    "description": "A warm fire crackles in the hearth.",
     "width": 5,
     "height": 7,
     "drawWidth": 6,

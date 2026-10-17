@@ -125,7 +125,7 @@
       "name": "Burned Ledger Page",
       "description": "A semi-burned ledger page pulled from the ash canister by the dining fireplace. Columns of payments survive, but the payee's name is scorched away — and the final page of the ledger is missing. Von Virtanen kept his private papers in the master bedroom.",
       "requiresClues": ["torn_appointment_note"],
-      "blockedHint": "The ash canister looks ordinary. The library note said von Virtanen was expected in the Dining Room."
+      "blockedHint": "The ash canister looks ordinary."
     },
     {
       "id": "barons_diary",

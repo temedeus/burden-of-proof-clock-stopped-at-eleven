@@ -9,6 +9,7 @@ import { Player, PlayerSpriteName } from "../entities/Player";
 import { DEFAULT_PLAYER_SPRITE } from "@cse/content-schema";
 import { NPC } from "../entities/NPC";
 import { TILE_SIZE, roomViewportOffset } from "../world/constants";
+import { HUMANOID_NATIVE_H, HUMANOID_NATIVE_W } from "../assets/procedural/characterAnimation";
 import { InteractionSystem } from "../systems/InteractionSystem";
 import { ClueSystem } from "../systems/ClueSystem";
 import { RoomTransitionService } from "../systems/RoomTransitionService";
@@ -95,6 +96,7 @@ import {
     drawRoomTitleBanner,
     drawStruggleMeter,
     drawVictoryOverlay,
+    DIALOG_LINES_PER_PAGE,
     paginateDialog,
     tickRoomTitleBanner,
     type RoomTitleBanner
@@ -112,6 +114,8 @@ import {
     setBrokenAtticWindows
 } from "../world/atticWindows";
 import { resetSessionWorldState } from "./resetSessionWorldState";
+import { drawDialogBubble, drawPanicBubble, SPEECH_BUBBLE_TEXT_WIDTH } from "../render/speechBubble";
+import { PLAYER_SPEAKER, splitDialogSpeakers, type DialogSegment } from "../systems/dialogSpeakers";
 
 type GameState =
     | "playing"
@@ -205,6 +209,8 @@ export class Game {
     private mooseRect: { x: number; y: number; w: number; h: number } | null = null;
     private message: string | null = null;
     private messagePages: string[] = [];
+    /** Who says each page (parallel to `messagePages`); speakers get a bubble, narration the box. */
+    private messageSpeakers: DialogSegment[] = [];
     private messagePageIndex = 0;
     private confirmPages: string[] = [];
     private confirmPageIndex = 0;
@@ -579,10 +585,44 @@ export class Game {
     }
 
     private openDialog(text: string): void {
-        this.messagePages = paginateDialog(this.ctx, text);
-        this.messagePageIndex = 0;
-        this.message = this.messagePages[0] ?? null;
+        this.setDialogPages(text);
         this.state = "interacting";
+    }
+
+    /** Paginate dialog per speaker: spoken lines wrap to bubble width, narration to the message box. */
+    private setDialogPages(text: string): void {
+        const segments = splitDialogSpeakers(
+            text,
+            (name) => this.currentRoom.npcs.find((npc) => npc.name === name)?.id ?? null
+        );
+        this.messagePages = [];
+        this.messageSpeakers = [];
+        for (const segment of segments) {
+            const pages = segment.speakerId
+                ? paginateDialog(this.ctx, segment.text, DIALOG_LINES_PER_PAGE, SPEECH_BUBBLE_TEXT_WIDTH)
+                : paginateDialog(this.ctx, segment.text);
+            for (const page of pages) {
+                this.messagePages.push(page);
+                this.messageSpeakers.push(segment);
+            }
+        }
+        if (this.messagePages.length === 0) {
+            this.messagePages = [text];
+            this.messageSpeakers = [{ speakerId: null, speakerName: null, text }];
+        }
+        this.messagePageIndex = 0;
+        this.message = this.messagePages[0];
+    }
+
+    /** Sprite box of whoever speaks the current page, if they are on screen. */
+    private dialogSpeakerBox(speakerId: string): { x: number; y: number; w: number; h: number; labelGap: number } | null {
+        if (speakerId === PLAYER_SPEAKER) {
+            const h = Math.round(HUMANOID_NATIVE_H * (this.player.width / HUMANOID_NATIVE_W));
+            return { x: this.player.x, y: this.player.y + this.player.height - h, w: this.player.width, h, labelGap: 2 };
+        }
+        const npc = this.currentRoom.npcs.find((n) => n.id === speakerId);
+        if (!npc || npc.cutsceneAlpha <= 0.01) return null;
+        return { ...npc.getSpriteBox(), labelGap: npc.getShowNameLabel() ? 20 : 2 };
     }
 
     private updateArmorCollapse(dt: number): void {
@@ -621,6 +661,25 @@ export class Game {
     }
 
     /** Tongue from the tilted moose's mouth to the player's face, drawn above the player. */
+    /** "Eek!" bubbles over bystanders panicking during the murderer chase. */
+    private panicBubbleActors(): DepthActor[] {
+        const roomW = this.currentRoom.map.width * TILE_SIZE;
+        const actors: DepthActor[] = [];
+        for (const npc of this.currentRoom.npcs) {
+            const shout = npc.isPanicking() ? npc.getPanicShout() : null;
+            if (!shout) continue;
+            const box = npc.getSpriteBox();
+            // Clear the name label when it is shown; clamped so the bubble stays inside the room's top edge
+            const tipY = Math.max(30, box.y - (npc.getShowNameLabel() ? 20 : 2));
+            actors.push({
+                y: box.y,
+                height: box.h,
+                render: (c) => drawPanicBubble(c, shout, box.x + box.w / 2, tipY, npc.getPanicTime(), 2, roomW - 2)
+            });
+        }
+        return actors;
+    }
+
     private mooseTongueActors(): DepthActor[] {
         const rect = this.mooseRect;
         const ext = this.mooseLick.tongueExtension;
@@ -1228,9 +1287,7 @@ export class Game {
     }
 
     private openCutsceneDialog(text: string, speakerId: string): void {
-        this.messagePages = paginateDialog(this.ctx, text);
-        this.messagePageIndex = 0;
-        this.message = this.messagePages[0] ?? null;
+        this.setDialogPages(text);
         const npcCfg = this.content.npcs[speakerId];
         talkSounds.startDialogue(
             inferVoiceGender(speakerId, npcCfg?.spriteName),
@@ -1400,9 +1457,7 @@ export class Game {
             this.openCutsceneDialog(this.diningFire.getWakeLine(), "baroness");
         }
         if (tick.openWakeThought) {
-            this.messagePages = paginateDialog(this.ctx, DINING_FIRE_WAKE_THOUGHT);
-            this.messagePageIndex = 0;
-            this.message = this.messagePages[0] ?? null;
+            this.setDialogPages(DINING_FIRE_WAKE_THOUGHT);
         }
         if (tick.finished) {
             this.completeDiningFireCutscene();
@@ -1618,7 +1673,9 @@ export class Game {
                     this.player,
                     this.currentRoom,
                     this.npcDialogs,
-                    this.content.npcs
+                    this.content.npcs,
+                    // While Ytte hunts you nobody stops to chat — only the police can end it
+                    this.murdererChase.accusedMurderer ? (npc) => POLICE_NPC_IDS.includes(npc.id) : undefined
                 );
 
                 if (!result) {
@@ -2071,7 +2128,8 @@ export class Game {
                 ...courtyardSeagull.getActors(),
                 ...ytteFireActors,
                 ...this.mooseTongueActors(),
-                ...this.ballroomEggs.overheadActors(this.player)
+                ...this.ballroomEggs.overheadActors(this.player),
+                ...this.panicBubbleActors()
             ],
             skipClear: needsCentering
         });
@@ -2096,10 +2154,26 @@ export class Game {
         }
 
         if (this.message) {
-            drawMessageBox(ctx, this.message, {
-                pageIndex: this.messagePageIndex,
-                pageCount: this.messagePages.length
-            });
+            const segment = this.messageSpeakers[this.messagePageIndex];
+            const box = segment?.speakerId ? this.dialogSpeakerBox(segment.speakerId) : null;
+            if (box) {
+                drawDialogBubble(ctx, this.message.split("\n"), {
+                    cx: offset.x + box.x + box.w / 2,
+                    aboveY: offset.y + box.y - box.labelGap,
+                    belowY: offset.y + box.y + box.h + 2,
+                    showContinue: this.messagePageIndex < this.messagePages.length - 1,
+                    time: this.decorAnimTime
+                });
+            } else {
+                // Speaker off screen (or narration): classic box, name restored
+                const text = segment?.speakerId && segment.speakerName
+                    ? `${segment.speakerName}: ${this.message}`
+                    : this.message;
+                drawMessageBox(ctx, text, {
+                    pageIndex: this.messagePageIndex,
+                    pageCount: this.messagePages.length
+                });
+            }
         }
 
         if (this.state === "confirming" && this.pendingConfirmation && this.confirmPages.length > 0) {

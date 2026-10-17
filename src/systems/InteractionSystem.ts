@@ -33,7 +33,9 @@ export class InteractionSystem {
         player: Player,
         room: Room,
         npcDialogs?: Record<string, any>,
-        npcConfigs?: Record<string, NPCConfig>
+        npcConfigs?: Record<string, NPCConfig>,
+        /** When set, NPCs it rejects ignore the player (e.g. everyone but police during the chase). */
+        canTalkTo?: (npc: NPC) => boolean
     ): InteractionResult | null {
         const { x, y } = this.getTargetTile(player);
 
@@ -65,6 +67,7 @@ export class InteractionSystem {
             
             // NPC must be adjacent AND the target tile must overlap with NPC (facing direction matters)
             if (horizontalAdjacent && verticalAdjacent && targetOverlapsNPC) {
+                if (canTalkTo && !canTalkTo(npc)) return null;
                 const npcConfig = npcConfigs?.[npc.id];
                 const interactionMode = npcConfig?.interactionMode ?? "dialog";
                 if (npcDialogs && npcDialogs[npc.id]) {

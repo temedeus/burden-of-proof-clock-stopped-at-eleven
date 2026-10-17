@@ -54,10 +54,10 @@ export function wrapDialogText(ctx: CanvasRenderingContext2D, text: string, maxW
 export function paginateDialog(
     ctx: CanvasRenderingContext2D,
     text: string,
-    maxLinesPerPage = DIALOG_LINES_PER_PAGE
+    maxLinesPerPage = DIALOG_LINES_PER_PAGE,
+    maxWidth = getDialogMaxTextWidth(ctx.canvas.width)
 ): string[] {
     ctx.font = "16px \"IM Fell English\", \"Libre Baskerville\", serif";
-    const maxWidth = getDialogMaxTextWidth(ctx.canvas.width);
     const wrapped = wrapDialogText(ctx, text, maxWidth);
     const pages: string[] = [];
 

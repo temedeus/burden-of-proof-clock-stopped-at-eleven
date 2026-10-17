@@ -16,6 +16,7 @@ import { drawSword } from "../render/swordDraw";
 
 const WALK_ANIM_FPS = 8;
 const PANIC_WAVE_FPS = 6;
+const PANIC_SHOUTS = ["Eek!", "Aaah!", "Help!", "Murder!", "Run!", "Heavens!", "Oh no!", "Save us!", "Eeeek!", "Mercy!"];
 /** One sword swing cycle (wind-up, slash, recover). */
 const SWORD_CYCLE_SECONDS = 1.1;
 import type { Facing } from "./Player";
@@ -41,6 +42,10 @@ export class NPC extends Entity {
   /** Waving arms in alarm (bystanders while the murderer is loose). */
   private panicking = false;
   private panicTime = 0;
+  private panicShout: string | null = null;
+  private shoutRemaining = 0;
+  private shoutCooldown = 0;
+  private lastShout: string | null = null;
   private stunnedRemaining = 0;
   private stunDuration = 0;
   /** +1 or -1 — which way they tip when shoved. */
@@ -127,6 +132,19 @@ export class NPC extends Entity {
     this.panicking = value;
     // Random phase so a room full of people doesn't wave in lockstep
     this.panicTime = value ? Math.random() : 0;
+    this.panicShout = null;
+    this.shoutRemaining = 0;
+    // First shout comes almost at once; staggered so not everyone yells together
+    this.shoutCooldown = Math.random() * 0.6;
+  }
+
+  /** Current panic exclamation, or null between shouts. */
+  getPanicShout(): string | null {
+    return this.panicShout;
+  }
+
+  getPanicTime(): number {
+    return this.panicTime;
   }
 
   isPanicking(): boolean {
@@ -134,7 +152,22 @@ export class NPC extends Entity {
   }
 
   tickPanic(dt: number): void {
-    if (this.panicking) this.panicTime += dt;
+    if (!this.panicking) return;
+    this.panicTime += dt;
+    if (this.panicShout) {
+      this.shoutRemaining -= dt;
+      if (this.shoutRemaining <= 0) {
+        this.panicShout = null;
+        this.shoutCooldown = 0.6 + Math.random() * 1.4;
+      }
+      return;
+    }
+    this.shoutCooldown -= dt;
+    if (this.shoutCooldown > 0) return;
+    const choices = PANIC_SHOUTS.filter((w) => w !== this.lastShout);
+    this.panicShout = choices[Math.floor(Math.random() * choices.length)];
+    this.lastShout = this.panicShout;
+    this.shoutRemaining = 1 + Math.random() * 0.5;
   }
 
   /** Facing used for drawing (panicking NPCs turn toward the camera). */

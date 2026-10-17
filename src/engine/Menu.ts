@@ -6,6 +6,7 @@ import { hasSave } from "./SaveGame";
 import { drawMenuBackdrop } from "../render/menuBackdrop";
 import { drawCard, drawFigure, drawHeading, drawPageBackdrop, GILT, INK, INK_MUTED, serif, shadowText } from "../render/menuChrome";
 import type { PlayerSpriteName } from "@cse/content-schema";
+import { drawGameOverScene, GAME_OVER_HEADING_AT, type GameOverSceneInfo } from "../render/gameOverScene";
 
 export type MenuScreen =
     | "main"
@@ -51,6 +52,9 @@ export class Menu {
     /** Pause / game over (and settings opened from pause) draw over the frozen game. */
     private overGame = false;
     private input: Input;
+    /** Who appears in the game over stabbing vignette, and when it started. */
+    private gameOverScene: GameOverSceneInfo | null = null;
+    private gameOverStartMs = 0;
 
     constructor(
         private canvas: HTMLCanvasElement,
@@ -63,8 +67,14 @@ export class Menu {
     setScreen(screen: MenuScreen): void {
         if (screen === "pause" || screen === "game_over") this.overGame = true;
         else if (screen !== "settings") this.overGame = false;
+        if (screen === "game_over" && this.screen !== "game_over") this.gameOverStartMs = performance.now();
         this.screen = screen;
         this.selectedIndex = 0;
+    }
+
+    /** Cast for the game over vignette; call before `setScreen("game_over")`. */
+    setGameOverScene(info: GameOverSceneInfo | null): void {
+        this.gameOverScene = info;
     }
 
     getScreen(): MenuScreen {
@@ -308,7 +318,8 @@ export class Menu {
         }
 
         if (this.overGame) {
-            ctx.fillStyle = "rgba(0,0,0,0.85)";
+            // The vignette animates, so clear fully instead of dimming the frozen game (no ghosting)
+            ctx.fillStyle = this.screen === "game_over" && this.gameOverScene ? "#000" : "rgba(0,0,0,0.85)";
             ctx.fillRect(0, 0, w, h);
         } else {
             drawPageBackdrop(ctx, w, h, performance.now() / 1000);
@@ -431,11 +442,34 @@ export class Menu {
 
     private renderGameOver(ctx: CanvasRenderingContext2D, w: number, h: number): void {
         const scale = h / 600;
-        drawHeading(ctx, "Game Over", w / 2, h * 0.33, scale, "#b9786a");
+        if (!this.gameOverScene) {
+            drawHeading(ctx, "Game Over", w / 2, h * 0.33, scale, "#b9786a");
+            ctx.textAlign = "center";
+            ctx.font = serif(19 * scale, true);
+            shadowText(ctx, "The murderer has caught you.", w / 2, h * 0.44, INK);
+            this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.55);
+            ctx.textAlign = "left";
+            return;
+        }
+
+        const t = (performance.now() - this.gameOverStartMs) / 1000;
+        const px = Math.max(2, Math.round(3 * scale));
+        const flash = drawGameOverScene(ctx, t, w / 2, h * 0.43, px, this.gameOverScene);
+        if (flash > 0) {
+            ctx.fillStyle = `rgba(170, 0, 0, ${flash.toFixed(3)})`;
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        const textAlpha = Math.max(0, Math.min(1, (t - GAME_OVER_HEADING_AT) / 0.6));
+        if (textAlpha <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = textAlpha;
+        drawHeading(ctx, "Game Over", w / 2, h * 0.56, scale, "#b9786a");
         ctx.textAlign = "center";
         ctx.font = serif(19 * scale, true);
-        shadowText(ctx, "The murderer has caught you.", w / 2, h * 0.44, INK);
-        this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.55);
+        shadowText(ctx, "Chef Ytte's knife found you first.", w / 2, h * 0.65, INK);
+        this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.75);
+        ctx.restore();
         ctx.textAlign = "left";
     }
 

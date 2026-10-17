@@ -1,4 +1,5 @@
 import { drawFireAtmosphere } from "./fireEffects";
+import { ARREST_PROMPT_AT, ARREST_TEXT_AT, drawArrestScene } from "./arrestScene";
 
 const ROOM_TITLE_DURATION = 2;
 export const DIALOG_LINES_PER_PAGE = 3;
@@ -185,34 +186,35 @@ export function drawStruggleMeter(
     ctx.textAlign = "left";
 }
 
-export function drawVictoryOverlay(ctx: CanvasRenderingContext2D, victoryTimer: number): void {
+export function drawVictoryOverlay(ctx: CanvasRenderingContext2D, victoryTimer: number, sceneTime: number): void {
     const elapsed = 2 - victoryTimer;
     const fadeAlpha = victoryTimer <= 0 ? 1 : Math.min(1, elapsed / 0.8);
     if (fadeAlpha > 0) {
         ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
+    if (victoryTimer > 0) return;
 
-    const showText = elapsed >= 0.4 || victoryTimer <= 0;
-    if (!showText) return;
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+    const px = Math.max(3, Math.round((5 * h) / 600));
+    drawArrestScene(ctx, sceneTime, w / 2, h * 0.38, px);
 
-    const textAlpha = victoryTimer <= 0 ? 1 : Math.min(1, (elapsed - 0.4) / 0.3);
+    const textAlpha = Math.max(0, Math.min(1, (sceneTime - ARREST_TEXT_AT) / 0.6));
+    if (textAlpha <= 0) return;
     ctx.save();
     ctx.globalAlpha = textAlpha;
     ctx.fillStyle = "#fff";
     ctx.font = "bold 48px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.textAlign = "center";
-    ctx.fillText("Congratulations!", ctx.canvas.width / 2, ctx.canvas.height / 2 - 40);
+    ctx.fillText("Case Closed", w / 2, h * 0.7);
     ctx.font = "24px \"IM Fell English\", \"Libre Baskerville\", serif";
-    ctx.fillText("The murderer is being apprehended.", ctx.canvas.width / 2, ctx.canvas.height / 2 + 10);
-    if (victoryTimer <= 0) {
+    ctx.fillStyle = "rgba(255,255,255,0.88)";
+    ctx.fillText("Chef Ytte is led away in irons. The hall clock may tick again.", w / 2, h * 0.7 + 40);
+    if (sceneTime >= ARREST_PROMPT_AT) {
         ctx.font = "20px \"IM Fell English\", \"Libre Baskerville\", serif";
-        ctx.fillStyle = "rgba(255,255,255,0.9)";
-        ctx.fillText(
-            "Press Enter or Escape to return to main menu",
-            ctx.canvas.width / 2,
-            ctx.canvas.height / 2 + 70
-        );
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
+        ctx.fillText("Press Enter or Escape to return to main menu", w / 2, h * 0.7 + 86);
     }
     ctx.restore();
 }

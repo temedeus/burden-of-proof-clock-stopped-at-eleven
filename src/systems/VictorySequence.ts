@@ -1,10 +1,13 @@
 import { NPC } from "../entities/NPC";
 import { TILE_SIZE } from "../world/constants";
 import type { Room } from "../world/Room";
+import { ARREST_PROMPT_AT } from "../render/arrestScene";
 
 export class VictorySequence {
     active = false;
     timer = 2;
+    /** Seconds into the cuffing close-up, which starts once the screen is black. */
+    sceneTime = 0;
     room: Room | null = null;
     policeId: string | null = null;
     private doorTarget: { x: number; y: number } | null = null;
@@ -44,12 +47,17 @@ export class VictorySequence {
         };
         this.active = true;
         this.timer = 2;
+        this.sceneTime = 0;
         this.room = room;
         this.policeId = police.id;
     }
 
     update(dt: number, getMurderer: () => NPC | null, getPolice: (id: string) => NPC | null): void {
-        if (!this.active || this.timer <= 0) return;
+        if (!this.active) return;
+        if (this.timer <= 0) {
+            this.sceneTime += dt;
+            return;
+        }
 
         this.timer -= dt;
         if (!this.room || !this.policeId || !this.doorTarget) return;
@@ -65,12 +73,13 @@ export class VictorySequence {
     }
 
     isWaitingForInput(): boolean {
-        return this.active && this.timer <= 0;
+        return this.active && this.timer <= 0 && this.sceneTime >= ARREST_PROMPT_AT;
     }
 
     reset(): void {
         this.active = false;
         this.timer = 2;
+        this.sceneTime = 0;
         this.room = null;
         this.policeId = null;
         this.doorTarget = null;

@@ -109,6 +109,7 @@ function createGameOptions(opts: {
             updateTouchControlsVisibility();
         },
         onGameOver: () => {
+            menu.setGameOverScene(game?.getGameOverSceneInfo() ?? null);
             appScreen = "game_over";
             menu.setScreen("game_over");
             updateTouchControlsVisibility();

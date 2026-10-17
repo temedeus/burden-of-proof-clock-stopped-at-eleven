@@ -17,7 +17,7 @@ const GLOVE = { d: "#1e140e", m: "#33241a" };
 const BOOT = "#140e0a";
 const IRON = { d: "#4a5056", l: "#8a9298" };
 
-/** Hand anchor (native px) where the sword grip sits, per facing. */
+/** Hand anchor (native px) where the knife handle sits, per facing. */
 export const HOODED_HAND: Record<"down" | "up" | "right", { x: number; y: number }> = {
     down: { x: 24, y: 23 },
     up: { x: 8, y: 23 },

@@ -45,6 +45,22 @@ export class ArmorSounds {
         noise.stop(t + 0.12);
     }
 
+    /** Iron handcuff snapping shut: a quick ratchet of clicks, then a solid clack. */
+    playCuffClick(): void {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const t = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.14, t);
+        master.connect(getSfxOutput(ctx));
+        for (let i = 0; i < 4; i++) {
+            this.ping(ctx, master, t + i * 0.022, 2600 + i * 180, 0.35, 0.03);
+        }
+        [1, 2.4, 4.1].forEach((ratio, i) => {
+            this.ping(ctx, master, t + 0.1, 520 * ratio, 0.7 / (i + 1), 0.22 - i * 0.05);
+        });
+    }
+
     private ping(ctx: AudioContext, out: AudioNode, start: number, freq: number, level: number, dur: number): void {
         const osc = ctx.createOscillator();
         osc.type = "sine";

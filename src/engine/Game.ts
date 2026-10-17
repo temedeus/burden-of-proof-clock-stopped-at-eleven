@@ -114,6 +114,8 @@ import {
     setBrokenAtticWindows
 } from "../world/atticWindows";
 import { resetSessionWorldState } from "./resetSessionWorldState";
+import type { GameOverSceneInfo } from "../render/gameOverScene";
+import { CUFF_CLICK_TIMES } from "../render/arrestScene";
 import { drawDialogBubble, drawPanicBubble, SPEECH_BUBBLE_TEXT_WIDTH } from "../render/speechBubble";
 import { PLAYER_SPEAKER, splitDialogSpeakers, type DialogSegment } from "../systems/dialogSpeakers";
 
@@ -1497,6 +1499,7 @@ export class Game {
         const police = this.getNPCById(policeId);
         const murderer = this.getMurderer();
         if (!police || !murderer) return;
+        murderer.setSwingingKnife(false);
 
         this.victory.start(
             police,
@@ -1528,6 +1531,14 @@ export class Game {
         }
     }
 
+    /** Cast for the game over stabbing vignette (Ytte as they looked when they caught you). */
+    getGameOverSceneInfo(): GameOverSceneInfo {
+        return {
+            playerSprite: this.player.getSpriteName(),
+            murdererSprite: this.getMurderer()?.getSpriteName() ?? "worker_man_grin"
+        };
+    }
+
     returnToMenuFromVictory(): void {
         this.onVictoryComplete?.();
     }
@@ -1542,7 +1553,11 @@ export class Game {
         this.ballroomEggs.tickVisuals(dt);
 
         if (this.state === "victory") {
+            const sceneBefore = this.victory.sceneTime;
             this.victory.update(dt, () => this.getMurderer(), (id) => this.getNPCById(id));
+            for (const at of CUFF_CLICK_TIMES) {
+                if (sceneBefore < at && this.victory.sceneTime >= at) armorSounds.playCuffClick();
+            }
             return;
         }
 
@@ -2260,7 +2275,7 @@ export class Game {
         }
 
         if (this.victory.active) {
-            drawVictoryOverlay(ctx, this.victory.timer);
+            drawVictoryOverlay(ctx, this.victory.timer, this.victory.sceneTime);
         }
     }
 }

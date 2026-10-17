@@ -83,6 +83,7 @@ export class MurdererChaseController {
     startMurdererChase(murderer: NPC): void {
         murderer.setChasing(true);
         murderer.setChaseSpeed(DIFFICULTY_CONFIG[this.difficulty].murdererChaseSpeed);
+        murderer.setSwingingKnife(true);
     }
 
     npcOverlapsPlayer(player: Player, npc: NPC): boolean {

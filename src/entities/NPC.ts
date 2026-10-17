@@ -11,14 +11,15 @@ import {
 } from "../assets/procedural/characterAnimation";
 import { getSpriteDef } from "../assets/procedural/registry";
 import type { CharacterPose } from "../assets/procedural/characters";
-import { getHoodedFrame, HOODED_HAND } from "../assets/procedural/hoodedFigure";
-import { drawSword } from "../render/swordDraw";
+import { getHoodedFrame } from "../assets/procedural/hoodedFigure";
+import { drawKnife, knifeHandAnchor } from "../render/knifeDraw";
 
 const WALK_ANIM_FPS = 8;
 const PANIC_WAVE_FPS = 6;
 const PANIC_SHOUTS = ["Eek!", "Aaah!", "Help!", "Murder!", "Run!", "Heavens!", "Oh no!", "Save us!", "Eeeek!", "Mercy!"];
-/** One sword swing cycle (wind-up, slash, recover). */
-const SWORD_CYCLE_SECONDS = 1.1;
+/** One knife cycle (raise, stab, recover). */
+const KNIFE_CYCLE_SECONDS = 0.9;
+
 import type { Facing } from "./Player";
 
 const DEFAULT_CHASE_SPEED = 100;
@@ -118,8 +119,8 @@ export class NPC extends Entity {
     this.facing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
   }
 
-  /** Advance the sword swing (for scripted scenes that move the NPC directly). */
-  advanceSwordSwing(dt: number): void {
+  /** Advance the knife swing (for scripted scenes that move the NPC directly). */
+  advanceKnifeSwing(dt: number): void {
     if (this.swingingKnife) this.knifeSwingTime += dt;
   }
 
@@ -423,10 +424,10 @@ export class NPC extends Entity {
       this.drawIdleSprite(ctx, -this.width / 2, -this.height * 0.85);
       ctx.restore();
     } else {
-      const swordBehind = this.swingingKnife && this.facing === "up";
-      if (swordBehind) this.drawHeldSword(ctx);
+      const knifeBehind = this.swingingKnife && this.facing === "up";
+      if (knifeBehind) this.drawHeldKnife(ctx);
       this.drawIdleSprite(ctx, this.x, this.y);
-      if (this.swingingKnife && !swordBehind) this.drawHeldSword(ctx);
+      if (this.swingingKnife && !knifeBehind) this.drawHeldKnife(ctx);
     }
 
     if (!this.showNameLabel || fall > 0.2) return;
@@ -439,15 +440,15 @@ export class NPC extends Entity {
     ctx.textAlign = "left"; // Reset alignment
   }
 
-  /** Sword in the figure's hand, swinging in a wind-up → slash → recover cycle. */
-  private drawHeldSword(ctx: CanvasRenderingContext2D): void {
+  /** Knife in the figure's hand, in a raise → stab → recover cycle. */
+  private drawHeldKnife(ctx: CanvasRenderingContext2D): void {
     const box = this.getSpriteBox();
     const scale = box.w / HUMANOID_NATIVE_W;
     const bake = this.facing === "up" ? "up" : this.facing === "down" ? "down" : "right";
-    const hand = HOODED_HAND[bake];
+    const hand = knifeHandAnchor(this.spriteName, bake);
     const mirror = this.facing === "left";
     const hx = mirror ? HUMANOID_NATIVE_W - hand.x : hand.x;
-    const phase = (this.knifeSwingTime % SWORD_CYCLE_SECONDS) / SWORD_CYCLE_SECONDS;
-    drawSword(ctx, box.x + hx * scale, box.y + hand.y * scale, phase, mirror || this.facing === "up", scale);
+    const phase = (this.knifeSwingTime % KNIFE_CYCLE_SECONDS) / KNIFE_CYCLE_SECONDS;
+    drawKnife(ctx, box.x + hx * scale, box.y + hand.y * scale, phase, mirror || this.facing === "up", scale);
   }
 }

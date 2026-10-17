@@ -148,6 +148,11 @@ export class NPC extends Entity {
     return this.panicTime;
   }
 
+  /** Only people react — not the body or other non-humanoid props. */
+  canPanic(): boolean {
+    return getHumanoidStyle(this.spriteName) !== undefined;
+  }
+
   isPanicking(): boolean {
     return this.panicking;
   }

@@ -1,4 +1,4 @@
-import { Room } from "../world/Room";
+import { Room, type DoorExit } from "../world/Room";
 import { createRoomFromConfig } from "../world/Rooms";
 import type { DevTeleportMoment } from "./devTeleport";
 import type { Facing } from "../entities/Player";
@@ -70,6 +70,7 @@ import { clueSounds } from "../audio/ClueSounds";
 import { pianoSounds } from "../audio/PianoSounds";
 import { mooseSounds } from "../audio/MooseSounds";
 import { armorSounds } from "../audio/ArmorSounds";
+import { doorSounds } from "../audio/DoorSounds";
 import { ballroomSounds } from "../audio/BallroomSounds";
 import {
     BallroomEasterEggs,
@@ -193,6 +194,10 @@ export class Game {
     /** Baroness home pose while temporarily moved into the dining fire aftermath. */
     private baronessCutsceneHome: { roomId: string; x: number; y: number } | null = null;
     private lockedDoorHintUntil = 0;
+    /** Hint for a story-locked door the player is at (e.g. the wine cellar). */
+    private lockedExitHint: string | null = null;
+    /** Edge-trigger for the rattle so it plays once per approach, not every frame. */
+    private atLockedDoor = false;
     private victory = new VictorySequence();
     private studySecret = new StudySecretPuzzle(
         () => this.rooms.study,
@@ -1531,6 +1536,21 @@ export class Game {
         }
     }
 
+    /** A visible door still locked by the story (e.g. wine cellar) that the player is standing at. */
+    private lockedExitNearPlayer(): DoorExit | null {
+        const unlocked = this.getUnlockedIds();
+        const pcx = this.player.x + this.player.width / 2;
+        const pcy = this.player.y + this.player.height / 2;
+        for (const exit of this.currentRoom.exits) {
+            if (!exit.requiresUnlock || exit.skipDoorSprite || exit.interactionOnly) continue;
+            if (isExitUnlocked(exit.requiresUnlock, unlocked)) continue;
+            const dx = pcx - (exit.x + 0.5) * TILE_SIZE;
+            const dy = pcy - (exit.y + 0.5) * TILE_SIZE;
+            if (Math.hypot(dx, dy) < TILE_SIZE * 1.75) return exit;
+        }
+        return null;
+    }
+
     /** Cast for the game over stabbing vignette (Ytte as they looked when they caught you). */
     getGameOverSceneInfo(): GameOverSceneInfo {
         return {
@@ -1806,7 +1826,9 @@ export class Game {
             const murdererId = this.getMurdererNpcId();
             for (const npc of this.currentRoom.npcs) {
                 // Bystanders wave in panic while the murderer hunts you; police keep their composure
-                npc.setPanicking(murdererLoose && npc.id !== murdererId && !POLICE_NPC_IDS.includes(npc.id));
+                npc.setPanicking(
+                    murdererLoose && npc.canPanic() && npc.id !== murdererId && !POLICE_NPC_IDS.includes(npc.id)
+                );
                 npc.tickPanic(dt);
                 if (npc.tickStun(dt)) {
                     this.resumeChaseAfterStun(npc);
@@ -1831,6 +1853,14 @@ export class Game {
                 return;
             }
 
+            let atLockedDoor = false;
+            const lockedExit = this.lockedExitNearPlayer();
+            if (lockedExit) {
+                atLockedDoor = true;
+                this.lockedDoorHintUntil = 0.5;
+                this.lockedExitHint = `The ${this.getRoomDisplayTitle(lockedExit.targetRoom)} door is locked.`;
+            }
+
             if (this.ledgerScare.active && this.currentRoom.id === "dining") {
                 const map = this.currentRoom.map;
                 const nearEdge =
@@ -1838,7 +1868,10 @@ export class Game {
                     this.player.y < TILE_SIZE * 2.5 ||
                     this.player.x + this.player.width > (map.width - 2.5) * TILE_SIZE ||
                     this.player.y + this.player.height > (map.height - 2.5) * TILE_SIZE;
-                if (nearEdge) this.lockedDoorHintUntil = 0.5;
+                if (nearEdge) {
+                    this.lockedDoorHintUntil = 0.5;
+                    atLockedDoor = true;
+                }
             }
 
             if (this.atticScare.active && this.currentRoom.id === "attic") {
@@ -1848,8 +1881,14 @@ export class Game {
                     this.player.y < TILE_SIZE * 2.5 ||
                     this.player.x + this.player.width > (map.width - 2.5) * TILE_SIZE ||
                     this.player.y + this.player.height > (map.height - 2.5) * TILE_SIZE;
-                if (nearEdge) this.lockedDoorHintUntil = 0.5;
+                if (nearEdge) {
+                    this.lockedDoorHintUntil = 0.5;
+                    atLockedDoor = true;
+                }
             }
+
+            if (atLockedDoor && !this.atLockedDoor) doorSounds.playLockedRattle();
+            this.atLockedDoor = atLockedDoor;
         }
 
         const studyReveal = this.studySecret.update(dt);
@@ -2259,6 +2298,12 @@ export class Game {
             } else if (this.lockedDoorHintUntil > 0) {
                 drawActionHint(ctx, "The doors won't budge.");
             }
+        }
+
+        if (this.state === "playing" && this.lockedExitHint && this.lockedDoorHintUntil > 0) {
+            drawActionHint(ctx, this.lockedExitHint);
+        } else if (this.lockedDoorHintUntil <= 0) {
+            this.lockedExitHint = null;
         }
 
         if (

@@ -197,8 +197,9 @@ export function drawVictoryOverlay(ctx: CanvasRenderingContext2D, victoryTimer: 
 
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
-    const px = Math.max(3, Math.round((5 * h) / 600));
-    drawArrestScene(ctx, sceneTime, w / 2, h * 0.38, px);
+    // Big chunky pixels: the hands fill the frame, sleeves fade out in the vignette
+    const px = Math.max(5, Math.round((8 * h) / 600));
+    drawArrestScene(ctx, sceneTime, w / 2, h * 0.36, px);
 
     const textAlpha = Math.max(0, Math.min(1, (sceneTime - ARREST_TEXT_AT) / 0.6));
     if (textAlpha <= 0) return;
@@ -210,7 +211,7 @@ export function drawVictoryOverlay(ctx: CanvasRenderingContext2D, victoryTimer: 
     ctx.fillText("Case Closed", w / 2, h * 0.7);
     ctx.font = "24px \"IM Fell English\", \"Libre Baskerville\", serif";
     ctx.fillStyle = "rgba(255,255,255,0.88)";
-    ctx.fillText("Chef Ytte is led away in irons. The hall clock may tick again.", w / 2, h * 0.7 + 40);
+    ctx.fillText("Chef Ytte is led away in irons.", w / 2, h * 0.7 + 40);
     if (sceneTime >= ARREST_PROMPT_AT) {
         ctx.font = "20px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillStyle = "rgba(255,255,255,0.7)";

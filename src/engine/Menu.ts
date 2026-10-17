@@ -467,7 +467,7 @@ export class Menu {
         drawHeading(ctx, "Game Over", w / 2, h * 0.56, scale, "#b9786a");
         ctx.textAlign = "center";
         ctx.font = serif(19 * scale, true);
-        shadowText(ctx, "Chef Ytte's knife found you first.", w / 2, h * 0.65, INK);
+        shadowText(ctx, "The murderer's knife found you first.", w / 2, h * 0.65, INK);
         this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.75);
         ctx.restore();
         ctx.textAlign = "left";

@@ -31,9 +31,9 @@ type Px = (x: number, y: number, w: number, h: number, color: string) => void;
 /** Ytte's forearm (grey cook's coat), wrist and hand, fingers pointing right. */
 function drawYtteArm(px: Px, ox: number, oy: number, bandaged: boolean): void {
     // Sleeve from off-screen to the rolled cuff
-    px(ox - 120, oy - 1, 104, 7, P.coatGray);
-    px(ox - 120, oy - 1, 104, 1, P.coatGrayLight);
-    px(ox - 120, oy + 5, 104, 1, "#303036");
+    px(ox - 52, oy - 1, 36, 7, P.coatGray);
+    px(ox - 52, oy - 1, 36, 1, P.coatGrayLight);
+    px(ox - 52, oy + 5, 36, 1, "#303036");
     px(ox - 18, oy - 2, 4, 9, P.coatGrayLight);
     px(ox - 18, oy + 6, 4, 1, P.coatGray);
     // Wrist
@@ -76,8 +76,8 @@ function drawCuff(px: Px, x: number, top: number, height: number, open: number, 
 /** The officer's navy sleeve and white glove, reaching in from the right to (gx, gy). */
 function drawOfficerArm(px: Px, gx: number, gy: number, above: boolean): void {
     // Sleeve with brass-buttoned cuff
-    px(gx + 7, gy, 120, 7, P.policeBlue);
-    px(gx + 7, above ? gy : gy + 6, 120, 1, "#2c3c64");
+    px(gx + 7, gy, 36, 7, P.policeBlue);
+    px(gx + 7, above ? gy : gy + 6, 36, 1, "#2c3c64");
     px(gx + 7, gy - 1, 4, 9, "#24345c");
     px(gx + 8, gy + 1, 1, 1, P.policeGold);
     px(gx + 8, gy + 5, 1, 1, P.policeGold);
@@ -102,11 +102,11 @@ export function drawArrestScene(ctx: CanvasRenderingContext2D, t: number, cx: nu
     ctx.globalAlpha = clamp01(t / 0.5);
 
     // Lamplight pooled on the hands
-    const glow = ctx.createRadialGradient(cx, cy, 4, cx, cy, s * 80);
+    const glow = ctx.createRadialGradient(cx, cy, 4, cx, cy, s * 45);
     glow.addColorStop(0, "rgba(150, 100, 50, 0.32)");
     glow.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = glow;
-    ctx.fillRect(cx - s * 90, cy - s * 60, s * 180, s * 120);
+    ctx.fillRect(cx - s * 50, cy - s * 30, s * 100, s * 60);
 
     // Impact shake on each click
     let shake = 0;
@@ -122,7 +122,7 @@ export function drawArrestScene(ctx: CanvasRenderingContext2D, t: number, cx: nu
     const tremble = cuffed ? 0 : Math.round(Math.sin(t * 47) * 0.6);
     // Officer's tug after cuffing pulls everything right, then settles
     const tug = t > 3.0 ? Math.sin(clamp01((t - 3.0) / 0.45) * Math.PI) * 4 : 0;
-    const ytteX = -Math.round((1 - ytteIn) * 80) + Math.round(tug);
+    const ytteX = -Math.round((1 - ytteIn) * 60) + Math.round(tug);
 
     const upperY = -9;
     const lowerY = 3;
@@ -131,7 +131,7 @@ export function drawArrestScene(ctx: CanvasRenderingContext2D, t: number, cx: nu
 
     // Officer's hands carry the open cuffs in from the right, then close them
     const officerIn = easeInOut(clamp01((t - 0.8) / 1.0));
-    const officerX = Math.round((1 - officerIn) * 90) + Math.round(tug);
+    const officerX = Math.round((1 - officerIn) * 60) + Math.round(tug);
     const cuffX = -11 + officerX;
     const openFor = (at: number) => 1 - clamp01((t - (at - 0.12)) / 0.12);
     const flashFor = (at: number) => (t >= at && t < at + 0.12 ? 1 - (t - at) / 0.12 : 0);
@@ -151,7 +151,7 @@ export function drawArrestScene(ctx: CanvasRenderingContext2D, t: number, cx: nu
 
     // Vignette so the sleeves fade into the dark instead of running to the screen edge
     ctx.translate(-shake, 0);
-    const vignette = ctx.createRadialGradient(cx, cy, s * 30, cx, cy, s * 85);
+    const vignette = ctx.createRadialGradient(cx, cy, s * 20, cx, cy, s * 44);
     vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
     vignette.addColorStop(1, "rgba(0, 0, 0, 1)");
     ctx.fillStyle = vignette;

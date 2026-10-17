@@ -15,6 +15,7 @@ import { getHoodedFrame, HOODED_HAND } from "../assets/procedural/hoodedFigure";
 import { drawSword } from "../render/swordDraw";
 
 const WALK_ANIM_FPS = 8;
+const PANIC_WAVE_FPS = 6;
 /** One sword swing cycle (wind-up, slash, recover). */
 const SWORD_CYCLE_SECONDS = 1.1;
 import type { Facing } from "./Player";
@@ -37,6 +38,9 @@ export class NPC extends Entity {
   private walkTime = 0;
   /** performance.now() of the last movement step (walk frames play while recent). */
   private lastWalkMs = -Infinity;
+  /** Waving arms in alarm (bystanders while the murderer is loose). */
+  private panicking = false;
+  private panicTime = 0;
   private stunnedRemaining = 0;
   private stunDuration = 0;
   /** +1 or -1 — which way they tip when shoved. */
@@ -114,7 +118,32 @@ export class NPC extends Entity {
     if (this.swingingKnife) this.knifeSwingTime += dt;
   }
 
+  /**
+   * Wave arms in alarm. Anyone with their back to the camera turns to face it;
+   * their authored facing returns when the panic ends.
+   */
+  setPanicking(value: boolean): void {
+    if (value === this.panicking) return;
+    this.panicking = value;
+    // Random phase so a room full of people doesn't wave in lockstep
+    this.panicTime = value ? Math.random() : 0;
+  }
+
+  isPanicking(): boolean {
+    return this.panicking;
+  }
+
+  tickPanic(dt: number): void {
+    if (this.panicking) this.panicTime += dt;
+  }
+
+  /** Facing used for drawing (panicking NPCs turn toward the camera). */
+  private renderFacing(): Facing {
+    return this.panicking && this.facing === "up" ? "down" : this.facing;
+  }
+
   private currentPose(): CharacterPose {
+    if (this.panicking) return Math.floor(this.panicTime * PANIC_WAVE_FPS) % 2 === 0 ? "panic_a" : "panic_b";
     if (performance.now() - this.lastWalkMs > 120) return "idle";
     const frame = Math.floor(this.walkTime * WALK_ANIM_FPS) % 4;
     return (["walk_a", "walk_b", "walk_c", "walk_d"] as const)[frame];
@@ -298,8 +327,8 @@ export class NPC extends Entity {
     const drawHeight = this.spriteDrawHeight();
     const top = Math.round(dy + this.height - drawHeight);
     const left = Math.round(dx);
-    const bakeFacing: CharacterFacing =
-      this.facing === "up" ? "up" : this.facing === "down" ? "down" : "right";
+    const facing = this.renderFacing();
+    const bakeFacing: CharacterFacing = facing === "up" ? "up" : facing === "down" ? "down" : "right";
     const pose = this.currentPose();
     const style = getHumanoidStyle(this.spriteName);
     let frame: HTMLCanvasElement | null = null;
@@ -313,7 +342,7 @@ export class NPC extends Entity {
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.translate(left, top);
-    if (this.facing === "left") {
+    if (facing === "left") {
       ctx.translate(this.width, 0);
       ctx.scale(-1, 1);
     }

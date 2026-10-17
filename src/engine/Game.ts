@@ -1730,7 +1730,12 @@ export class Game {
 
             const playerCenterX = this.player.x + this.player.width / 2;
             const playerCenterY = this.player.y + this.player.height / 2;
+            const murdererLoose = this.murdererChase.accusedMurderer;
+            const murdererId = this.getMurdererNpcId();
             for (const npc of this.currentRoom.npcs) {
+                // Bystanders wave in panic while the murderer hunts you; police keep their composure
+                npc.setPanicking(murdererLoose && npc.id !== murdererId && !POLICE_NPC_IDS.includes(npc.id));
+                npc.tickPanic(dt);
                 if (npc.tickStun(dt)) {
                     this.resumeChaseAfterStun(npc);
                 }

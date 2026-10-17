@@ -4,7 +4,17 @@ import type { ProceduralSpriteDef } from "./types";
 import { drawHoodedFrame } from "./hoodedFigure";
 
 export type CharacterFacing = "down" | "up" | "right";
-export type CharacterPose = "idle" | "walk_a" | "walk_b" | "walk_c" | "walk_d";
+export type CharacterPose = "idle" | "walk_a" | "walk_b" | "walk_c" | "walk_d" | "panic_a" | "panic_b";
+
+/** Arms-up waving frames (bystanders during the murderer chase). */
+export function isPanicPose(pose: CharacterPose): boolean {
+    return pose === "panic_a" || pose === "panic_b";
+}
+
+/** How far the raised hands lean out from the shoulders on each wave frame. */
+function panicSpread(pose: CharacterPose): number {
+    return pose === "panic_a" ? 2 : -1;
+}
 
 export interface DressStyle {
     bodice: string;
@@ -154,6 +164,8 @@ function poseOffsets(pose: CharacterPose): {
             return { bodyBob: 1, leftFootDy: -1, rightFootDy: 1, leftArmSwing: -1, rightArmSwing: 1 };
         case "walk_d":
             return { bodyBob: 0, leftFootDy: -1, rightFootDy: 0, leftArmSwing: 0, rightArmSwing: 0 };
+        case "panic_b":
+            return { bodyBob: 1, leftFootDy: 0, rightFootDy: 0, leftArmSwing: 0, rightArmSwing: 0 };
         default:
             return { bodyBob: 0, leftFootDy: 0, rightFootDy: 0, leftArmSwing: 0, rightArmSwing: 0 };
     }
@@ -1055,6 +1067,53 @@ function drawFrontArms(
     }
 }
 
+/** Both arms thrown up beside the head; `spread` leans the hands outward (+) or inward (-). */
+function drawRaisedFrontArms(
+    ctx: CanvasRenderingContext2D,
+    leftX: number,
+    rightX: number,
+    top: number,
+    sleeveLen: number,
+    spread: number,
+    sleeve: string,
+    tones: SkinTones
+): void {
+    const lit = shade(sleeve, 0.15);
+    const dark = shade(sleeve, -0.3);
+    const handTop = top - sleeveLen + 1;
+    const arms: [number, boolean][] = [
+        [leftX + 1, true],
+        [rightX, false]
+    ];
+    for (const [shoulderX, isLeft] of arms) {
+        const handX = isLeft ? shoulderX - spread : shoulderX + spread;
+        slantedLimb(ctx, handX, handTop + 3, shoulderX, sleeveLen, sleeve, isLeft ? lit : dark);
+        r(ctx, handX, handTop, 3, 3, tones.skin);
+        hline(ctx, handX, handTop + 2, 3, tones.shadow);
+        p(ctx, isLeft ? handX : handX + 2, handTop, tones.hi);
+    }
+}
+
+/** Front/back arms: hanging and swinging, or raised when panicking. */
+function drawArmsForPose(
+    ctx: CanvasRenderingContext2D,
+    pose: CharacterPose,
+    leftX: number,
+    rightX: number,
+    top: number,
+    sleeveLen: number,
+    swingL: number,
+    swingR: number,
+    sleeve: string,
+    tones: SkinTones
+): void {
+    if (isPanicPose(pose)) {
+        drawRaisedFrontArms(ctx, leftX, rightX, top, sleeveLen, panicSpread(pose), sleeve, tones);
+    } else {
+        drawFrontArms(ctx, leftX, rightX, top, sleeveLen, swingL, swingR, sleeve, tones);
+    }
+}
+
 function drawFrontLegs(
     ctx: CanvasRenderingContext2D,
     pants: string,
@@ -1122,7 +1181,7 @@ function drawHumanoidFront(
     drawGroundShadow(ctx, GROUND_Y + 2, 7);
     drawFrontLegs(ctx, s.pants ?? P.shadow, s.shoes ?? P.shoeBrown, top + 14, o.leftFootDy, o.rightFootDy);
     drawCoatFront(ctx, s, top, false);
-    drawFrontArms(ctx, 6, 22, top + 1, 9, o.leftArmSwing, o.rightArmSwing, s.coat, tones);
+    drawArmsForPose(ctx, pose, 6, 22, top + 1, 9, o.leftArmSwing, o.rightArmSwing, s.coat, tones);
     drawFullHead(ctx, s, head, top, "down");
     drawNecklace(ctx, s, head, top, false);
 }
@@ -1141,7 +1200,7 @@ function drawHumanoidBack(
     // Seen from behind, the character's left leg is on screen-right
     drawFrontLegs(ctx, s.pants ?? P.shadow, s.shoes ?? P.shoeBrown, top + 14, o.rightFootDy, o.leftFootDy);
     drawCoatFront(ctx, s, top, true);
-    drawFrontArms(ctx, 6, 22, top + 1, 9, o.rightArmSwing, o.leftArmSwing, s.coat, tones);
+    drawArmsForPose(ctx, pose, 6, 22, top + 1, 9, o.rightArmSwing, o.leftArmSwing, s.coat, tones);
     drawFullHead(ctx, s, head, top, "up");
 }
 
@@ -1163,6 +1222,8 @@ function sideWalk(pose: CharacterPose): {
             return { bodyBob: 1, nearFootX: 13, farFootX: 18, nearLift: 0, farLift: 0, armSwing: 2 };
         case "walk_d":
             return { bodyBob: 0, nearFootX: 17, farFootX: 15, nearLift: 2, farLift: 0, armSwing: 0 };
+        case "panic_b":
+            return { bodyBob: 1, nearFootX: 16, farFootX: 15, nearLift: 0, farLift: 0, armSwing: 0 };
         default:
             return { bodyBob: 0, nearFootX: 16, farFootX: 15, nearLift: 0, farLift: 0, armSwing: 0 };
     }
@@ -1219,6 +1280,23 @@ function drawSideArm(
     p(ctx, handX, top + sleeveLen + 2, tones.shadow);
 }
 
+/** Near arm thrown up in front of the face (profile panic). */
+function drawRaisedSideArm(
+    ctx: CanvasRenderingContext2D,
+    shoulderX: number,
+    top: number,
+    sleeveLen: number,
+    spread: number,
+    sleeve: string,
+    tones: SkinTones
+): void {
+    const handX = shoulderX + 4 + spread;
+    const handTop = top - sleeveLen + 1;
+    slantedLimb(ctx, handX, handTop + 3, shoulderX, sleeveLen, shade(sleeve, 0.08), shade(sleeve, -0.35));
+    r(ctx, handX, handTop, 3, 3, tones.skin);
+    hline(ctx, handX, handTop + 2, 3, tones.shadow);
+}
+
 function drawHumanoidSide(
     ctx: CanvasRenderingContext2D,
     s: HumanoidStyle,
@@ -1251,7 +1329,8 @@ function drawHumanoidSide(
     drawSideLeg(ctx, 16, top + 14, w.nearFootX, w.nearLift, GROUND_Y, pants, shoe);
     drawFullHead(ctx, s, head, top, "right");
     drawNecklace(ctx, s, head, top, true);
-    drawSideArm(ctx, 16, top + 1, 9, w.armSwing, s.coat, tones);
+    if (isPanicPose(pose)) drawRaisedSideArm(ctx, 16, top + 1, 9, panicSpread(pose), s.coat, tones);
+    else drawSideArm(ctx, 16, top + 1, 9, w.armSwing, s.coat, tones);
 }
 
 // ============================================================================
@@ -1270,6 +1349,8 @@ function dressPoseOffsets(pose: CharacterPose): {
             return { bodyBob: 1, leftArmSwing: 1, rightArmSwing: -1, skirtSway: -1, hemSpread: 1 };
         case "walk_c":
             return { bodyBob: 1, leftArmSwing: -1, rightArmSwing: 1, skirtSway: 1, hemSpread: 1 };
+        case "panic_b":
+            return { bodyBob: 1, leftArmSwing: 0, rightArmSwing: 0, skirtSway: 0, hemSpread: 0 };
         default:
             return { bodyBob: 0, leftArmSwing: 0, rightArmSwing: 0, skirtSway: 0, hemSpread: 0 };
     }
@@ -1362,7 +1443,7 @@ function drawDressFront(
     drawSkirtFront(ctx, d, top + 8, o.skirtSway, o.hemSpread);
     drawBodiceFront(ctx, s, top, false);
     if (d.apron) drawApronFront(ctx, d.apron, top);
-    drawFrontArms(ctx, 7, 21, top + 1, 8, o.leftArmSwing, o.rightArmSwing, d.sleeve ?? d.bodice, tones);
+    drawArmsForPose(ctx, pose, 7, 21, top + 1, 8, o.leftArmSwing, o.rightArmSwing, d.sleeve ?? d.bodice, tones);
     drawFullHead(ctx, s, head, top, "down");
     drawNecklace(ctx, s, head, top, false);
 }
@@ -1387,7 +1468,7 @@ function drawDressBack(
         hline(ctx, 13, top + 7, 6, d.apron);
         r(ctx, 15, top + 8, 2, 3, d.apron);
     }
-    drawFrontArms(ctx, 7, 21, top + 1, 8, o.rightArmSwing, o.leftArmSwing, d.sleeve ?? d.bodice, tones);
+    drawArmsForPose(ctx, pose, 7, 21, top + 1, 8, o.rightArmSwing, o.leftArmSwing, d.sleeve ?? d.bodice, tones);
     drawFullHead(ctx, s, head, top, "up");
 }
 
@@ -1439,7 +1520,8 @@ function drawDressSide(
 
     drawFullHead(ctx, s, head, top, "right");
     drawNecklace(ctx, s, head, top, true);
-    drawSideArm(ctx, 15, top + 1, 8, swing, d.sleeve ?? d.bodice, tones);
+    if (isPanicPose(pose)) drawRaisedSideArm(ctx, 15, top + 1, 8, panicSpread(pose), d.sleeve ?? d.bodice, tones);
+    else drawSideArm(ctx, 15, top + 1, 8, swing, d.sleeve ?? d.bodice, tones);
 }
 
 /** Draw one animation frame (bake facing `right`; mirror for `left` at render time) */
@@ -1490,6 +1572,7 @@ function drawBandages(ctx: CanvasRenderingContext2D, s: HumanoidStyle, facing: C
     if (facing === "up") r(ctx, head.x + 3, head.y + 3, 2, 2, P.cream);
 
     // Right hand: screen-right from the front, screen-left from behind, near arm in profile
+    if (isPanicPose(pose)) return;
     let hx: number;
     let hy: number;
     if (facing === "right") {

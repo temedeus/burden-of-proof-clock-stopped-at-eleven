@@ -68,6 +68,7 @@ import { atticMice } from "../systems/AtticMiceController";
 import { courtyardSeagull } from "../systems/CourtyardSeagullController";
 import { clueSounds } from "../audio/ClueSounds";
 import { pianoSounds } from "../audio/PianoSounds";
+import { harpSounds } from "../audio/HarpSounds";
 import { mooseSounds } from "../audio/MooseSounds";
 import { armorSounds } from "../audio/ArmorSounds";
 import { doorSounds } from "../audio/DoorSounds";
@@ -1845,6 +1846,9 @@ export class Game {
                     this.openDialog(result.description);
                     if (result.interactionSound === "piano") {
                         pianoSounds.playChord();
+                    }
+                    if (result.interactionSound === "harp") {
+                        harpSounds.playGlissando();
                     }
                     if (result.interactionSound === "moose_lick") {
                         this.mooseLickPending = true;

@@ -6,10 +6,11 @@
  * for you to activate. Staged sessions never autosave, so real saves are safe.
  */
 
+import type { SceneId } from "../systems/scriptedScenes";
+
 export interface DevTeleportFlags {
     diningFireResolved?: boolean;
-    ledgerScareComplete?: boolean;
-    atticScareComplete?: boolean;
+    completedScenes?: SceneId[];
     studySecretRevealed?: boolean;
     cellarSecretRevealed?: boolean;
     cookHiddenAfterDiningScare?: boolean;
@@ -59,7 +60,7 @@ export const DEV_TELEPORT_MOMENTS: DevTeleportMoment[] = [
         action: "Open the old chest",
         roomId: "attic",
         clues: BEFORE_ATTIC,
-        flags: { diningFireResolved: true, ledgerScareComplete: true, cookHiddenAfterDiningScare: true },
+        flags: { diningFireResolved: true, completedScenes: ["ledger_scare"], cookHiddenAfterDiningScare: true },
         trigger: { confirmId: "attic_chest" }
     },
     {
@@ -68,7 +69,7 @@ export const DEV_TELEPORT_MOMENTS: DevTeleportMoment[] = [
         action: "Pull the loose book",
         roomId: "study",
         clues: BEFORE_STUDY,
-        flags: { diningFireResolved: true, ledgerScareComplete: true, atticScareComplete: true },
+        flags: { diningFireResolved: true, completedScenes: ["ledger_scare", "attic_scare"] },
         trigger: { confirmId: "study_secret" }
     },
     {
@@ -79,8 +80,7 @@ export const DEV_TELEPORT_MOMENTS: DevTeleportMoment[] = [
         clues: BEFORE_CELLAR,
         flags: {
             diningFireResolved: true,
-            ledgerScareComplete: true,
-            atticScareComplete: true,
+            completedScenes: ["ledger_scare", "attic_scare"],
             studySecretRevealed: true
         },
         trigger: { confirmId: "cellar_secret" }
@@ -93,8 +93,7 @@ export const DEV_TELEPORT_MOMENTS: DevTeleportMoment[] = [
         clues: BEFORE_CELLAR,
         flags: {
             diningFireResolved: true,
-            ledgerScareComplete: true,
-            atticScareComplete: true,
+            completedScenes: ["ledger_scare", "attic_scare"],
             studySecretRevealed: true,
             cellarSecretRevealed: true
         },

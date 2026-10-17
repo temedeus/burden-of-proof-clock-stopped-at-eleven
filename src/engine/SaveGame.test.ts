@@ -45,9 +45,7 @@ function makeValidSave(overrides: Partial<GameSaveV1> = {}): GameSaveV1 {
         studySecretRevealed: false,
         cellarSecretRevealed: false,
         diningFireResolved: false,
-        atticScareComplete: false,
-        ledgerScareComplete: false,
-        confrontationComplete: false,
+        completedScenes: [],
         accusedMurderer: false,
         cookHiddenAfterDiningScare: false,
         brokenAtticWindowIds: [],
@@ -77,6 +75,23 @@ describe("SaveGame", () => {
         expect(loaded?.discoveredClueIds).toEqual(["torn_page"]);
         expect(loaded?.studySecretRevealed).toBe(true);
         expect(loaded?.roomId).toBe(save.roomId);
+    });
+
+    it("migrates per-scene booleans from older saves to completedScenes", () => {
+        const { completedScenes: _, ...legacy } = makeValidSave();
+        const parsed = parseSaveForTests({
+            ...legacy,
+            ledgerScareComplete: true,
+            atticScareComplete: false,
+            confrontationComplete: true
+        });
+        expect(parsed?.completedScenes).toEqual(["ledger_scare", "confrontation"]);
+        expect(parseSaveForTests(legacy)).toBeNull();
+    });
+
+    it("ignores unknown scene ids", () => {
+        const parsed = parseSaveForTests({ ...makeValidSave(), completedScenes: ["attic_scare", "gone_scene"] });
+        expect(parsed?.completedScenes).toEqual(["attic_scare"]);
     });
 
     it("rejects corrupt JSON", () => {

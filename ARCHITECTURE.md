@@ -149,6 +149,8 @@ flowchart LR
 
 **When written:** room transitions, clue finds, puzzle reveals, major event completions, quit-to-menu from a durable state. Skipped mid-cutscene / struggle / victory. Game over keeps the last checkpoint so Continue can resume.
 
+**Scripted scenes:** clue-triggered scenes (dining ledger scare, attic scare, cellar confrontation) are listed in [`src/systems/scriptedScenes.ts`](src/systems/scriptedScenes.ts); the save keeps `completedScenes`. On load, a held trigger clue whose scene never finished is dropped, so dying or quitting mid-scene replays it. A new clue-triggered scene needs an entry there plus its hooks in `Game.scenes`.
+
 **Compatibility (fail closed):** saves carry `version` (format) and `contentRevision` (data). Mismatch, corrupt JSON, unknown story/room → treat as no save (Continue hidden). Bump `SAVE_CONTENT_REVISION` in `SaveGame.ts` when shipping breaking content; see [`src/data/AGENTS.md`](src/data/AGENTS.md).
 
 ## Validation & tests

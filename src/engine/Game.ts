@@ -117,6 +117,7 @@ import {
 import { resetSessionWorldState } from "./resetSessionWorldState";
 import type { GameOverSceneInfo } from "../render/gameOverScene";
 import { CHANDELIER_GAME_OVER_CRASH_AT } from "../render/chandelierGameOverScene";
+import { cluesForRetry, SCRIPTED_SCENES, scenesTriggeredBy, type SceneId } from "../systems/scriptedScenes";
 import { CUFF_CLICK_TIMES } from "../render/arrestScene";
 import { drawDialogBubble, drawPanicBubble, SPEECH_BUBBLE_TEXT_WIDTH } from "../render/speechBubble";
 import { PLAYER_SPEAKER, splitDialogSpeakers, type DialogSegment } from "../systems/dialogSpeakers";
@@ -314,9 +315,54 @@ export class Game {
     }
 
     /** True when mid-cutscene / struggle / victory — do not checkpoint. */
+    /** Runtime hooks for each scripted scene in `SCRIPTED_SCENES`. */
+    private readonly scenes: Record<
+        SceneId,
+        { isComplete(): boolean; isActive(): boolean; setComplete(done: boolean): void; start(): void }
+    > = {
+        ledger_scare: {
+            isComplete: () => this.ledgerScare.complete,
+            isActive: () => this.ledgerScare.active,
+            setComplete: (done) => {
+                this.ledgerScare.complete = done;
+            },
+            start: () => this.ledgerScare.armAfterDialog()
+        },
+        attic_scare: {
+            isComplete: () => this.atticScare.complete,
+            isActive: () => this.atticScare.active,
+            setComplete: (done) => {
+                this.atticScare.complete = done;
+            },
+            start: () => this.atticScare.armAfterDialog()
+        },
+        confrontation: {
+            isComplete: () => this.murdererConfrontation.complete,
+            isActive: () => this.murdererConfrontation.active,
+            setComplete: (done) => {
+                this.murdererConfrontation.complete = done;
+                this.murdererConfrontation.active = false;
+            },
+            start: () => this.startMurdererConfrontation()
+        }
+    };
+
+    private sceneComplete(id: SceneId): boolean {
+        return this.scenes[id].isComplete();
+    }
+
+    /** Start every unfinished scene triggered by these new clues; returns those started. */
+    private triggerScenes(clueIds: readonly string[]): SceneId[] {
+        const started = scenesTriggeredBy(clueIds).filter(
+            (id) => !this.scenes[id].isComplete() && !this.scenes[id].isActive()
+        );
+        for (const id of started) this.scenes[id].start();
+        return started;
+    }
+
     canAutosave(): boolean {
-        // Mid-scare saves would resume outside the scene; keep the save from the clue pickup.
-        if (this.ledgerScare.active || this.atticScare.active) return false;
+        // Mid-scene saves would resume outside the scene; keep the save from the clue pickup.
+        if (SCRIPTED_SCENES.some((s) => this.scenes[s.id].isActive())) return false;
         return (
             this.state === "playing" ||
             this.state === "interacting" ||
@@ -345,9 +391,7 @@ export class Game {
             studySecretRevealed: this.studySecret.revealed,
             cellarSecretRevealed: this.cellarSecret.revealed,
             diningFireResolved: this.diningFireResolved,
-            atticScareComplete: this.atticScare.complete,
-            ledgerScareComplete: this.ledgerScare.complete,
-            confrontationComplete: this.murdererConfrontation.complete,
+            completedScenes: SCRIPTED_SCENES.filter((s) => this.sceneComplete(s.id)).map((s) => s.id),
             accusedMurderer: this.murdererChase.accusedMurderer,
             cookHiddenAfterDiningScare: this.cookHiddenAfterDiningScare != null,
             brokenAtticWindowIds: getBrokenAtticWindowIds(),
@@ -436,9 +480,7 @@ export class Game {
             studySecretRevealed: !!f.studySecretRevealed,
             cellarSecretRevealed: !!f.cellarSecretRevealed,
             diningFireResolved: !!f.diningFireResolved,
-            atticScareComplete: !!f.atticScareComplete,
-            ledgerScareComplete: !!f.ledgerScareComplete,
-            confrontationComplete: false,
+            completedScenes: [...(f.completedScenes ?? [])],
             accusedMurderer: false,
             cookHiddenAfterDiningScare: !!f.cookHiddenAfterDiningScare,
             brokenAtticWindowIds: [],
@@ -486,13 +528,8 @@ export class Game {
     }
 
     applySave(save: GameSaveV1): void {
-        // Died (or quit) during a scare: drop its trigger clue so picking it up replays the scene.
-        const clueIds = save.discoveredClueIds.filter(
-            (id) =>
-                !(id === "burned_ledger_page" && !save.ledgerScareComplete) &&
-                !(id === "manor_floor_plans" && !save.atticScareComplete)
-        );
-        this.clueSystem.restoreClues(clueIds);
+        const completed = new Set(save.completedScenes);
+        this.clueSystem.restoreClues(cluesForRetry(save.discoveredClueIds, completed));
         this.refreshStoryState();
 
         if (save.studySecretRevealed) {
@@ -503,10 +540,7 @@ export class Game {
         }
 
         this.diningFireResolved = save.diningFireResolved;
-        this.atticScare.complete = save.atticScareComplete;
-        this.ledgerScare.complete = save.ledgerScareComplete;
-        this.murdererConfrontation.complete = save.confrontationComplete;
-        this.murdererConfrontation.active = false;
+        for (const { id } of SCRIPTED_SCENES) this.scenes[id].setComplete(completed.has(id));
 
         setBrokenAtticWindows(save.brokenAtticWindowIds);
         setArmorCollapsed(save.armorCollapsed ?? false);
@@ -531,13 +565,13 @@ export class Game {
             save.diningFireResolved &&
             murderer &&
             !save.accusedMurderer &&
-            !save.confrontationComplete
+            !completed.has("confrontation")
         ) {
             // After dining scare Ytte is either hidden or back in kitchen (post attic).
-            if (save.atticScareComplete) {
+            if (completed.has("attic_scare")) {
                 this.placeCookInKitchen(murderer);
             }
-        } else if (save.atticScareComplete && murderer && !save.accusedMurderer) {
+        } else if (completed.has("attic_scare") && murderer && !save.accusedMurderer) {
             this.placeCookInKitchen(murderer);
         }
 
@@ -1820,15 +1854,8 @@ export class Game {
                         this.clueNotification = { clueId: result.clues[0] };
                         this.refreshStoryState();
                         this.autosave();
-                        if (result.clues.includes("murder_weapon")) {
-                            this.startMurdererConfrontation();
-                            return;
-                        }
-                        if (result.clues.includes("burned_ledger_page")) {
-                            if (!this.ledgerScare.complete && !this.ledgerScare.active) {
-                                this.ledgerScare.armAfterDialog();
-                            }
-                        }
+                        // The confrontation opens its own dialog in place of the clue text
+                        if (this.triggerScenes(result.clues).includes("confrontation")) return;
                     }
                     if (result.speakerId && result.speaker) {
                         const npcCfg = this.content.npcs[result.speakerId];
@@ -1967,9 +1994,7 @@ export class Game {
                               },
                               attic_chest: () => {
                                   this.grantConfirmClue("manor_floor_plans");
-                                  if (!this.atticScare.complete && !this.atticScare.active) {
-                                      this.atticScare.armAfterDialog();
-                                  }
+                                  this.triggerScenes(["manor_floor_plans"]);
                               }
                           })
                         : false;

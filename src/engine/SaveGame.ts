@@ -4,6 +4,7 @@ import type { Difficulty } from "../systems/MurdererChaseController";
 import { loadGameContent } from "../content/loadGameContent";
 import { buildClueCatalog } from "../content/clueCatalog";
 import { resolveActiveStory } from "../content/loadStoryContent";
+import { isSceneId, type SceneId } from "../systems/scriptedScenes";
 
 export const SAVE_STORAGE_KEY = "clock-stopped-at-eleven-save";
 
@@ -28,9 +29,8 @@ export interface GameSaveV1 {
     studySecretRevealed: boolean;
     cellarSecretRevealed: boolean;
     diningFireResolved: boolean;
-    atticScareComplete: boolean;
-    ledgerScareComplete: boolean;
-    confrontationComplete: boolean;
+    /** Scripted scenes that have finished (see `scriptedScenes.ts`). */
+    completedScenes: SceneId[];
     accusedMurderer: boolean;
     cookHiddenAfterDiningScare: boolean;
     brokenAtticWindowIds: number[];
@@ -71,6 +71,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === "number" && Number.isFinite(value);
+}
+
+/** Saves before `completedScenes` kept one boolean per scene. */
+const LEGACY_SCENE_FLAGS: Record<string, SceneId> = {
+    ledgerScareComplete: "ledger_scare",
+    atticScareComplete: "attic_scare",
+    confrontationComplete: "confrontation"
+};
+
+function parseCompletedScenes(raw: Record<string, unknown>): SceneId[] | null {
+    if (raw.completedScenes !== undefined) {
+        if (!Array.isArray(raw.completedScenes)) return null;
+        return raw.completedScenes.filter(isSceneId);
+    }
+    const scenes: SceneId[] = [];
+    for (const [flag, id] of Object.entries(LEGACY_SCENE_FLAGS)) {
+        if (typeof raw[flag] !== "boolean") return null;
+        if (raw[flag]) scenes.push(id);
+    }
+    return scenes;
 }
 
 function parseSaveShape(raw: unknown): GameSaveV1 | null {
@@ -116,15 +136,14 @@ function parseSaveShape(raw: unknown): GameSaveV1 | null {
         "studySecretRevealed",
         "cellarSecretRevealed",
         "diningFireResolved",
-        "atticScareComplete",
-        "ledgerScareComplete",
-        "confrontationComplete",
         "accusedMurderer",
         "cookHiddenAfterDiningScare"
     ] as const;
     for (const key of boolFields) {
         if (typeof raw[key] !== "boolean") return null;
     }
+    const completedScenes = parseCompletedScenes(raw);
+    if (!completedScenes) return null;
 
     return {
         version: SAVE_FORMAT_VERSION,
@@ -143,9 +162,7 @@ function parseSaveShape(raw: unknown): GameSaveV1 | null {
         studySecretRevealed: raw.studySecretRevealed as boolean,
         cellarSecretRevealed: raw.cellarSecretRevealed as boolean,
         diningFireResolved: raw.diningFireResolved as boolean,
-        atticScareComplete: raw.atticScareComplete as boolean,
-        ledgerScareComplete: raw.ledgerScareComplete as boolean,
-        confrontationComplete: raw.confrontationComplete as boolean,
+        completedScenes,
         accusedMurderer: raw.accusedMurderer as boolean,
         cookHiddenAfterDiningScare: raw.cookHiddenAfterDiningScare as boolean,
         brokenAtticWindowIds: raw.brokenAtticWindowIds as number[],

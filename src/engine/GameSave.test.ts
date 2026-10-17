@@ -71,9 +71,7 @@ describe("Game.applySave", () => {
             studySecretRevealed: true,
             cellarSecretRevealed: false,
             diningFireResolved: false,
-            atticScareComplete: false,
-            ledgerScareComplete: false,
-            confrontationComplete: false,
+            completedScenes: [],
             accusedMurderer: false,
             cookHiddenAfterDiningScare: false,
             brokenAtticWindowIds: []
@@ -113,9 +111,7 @@ describe("Game.applySave", () => {
             studySecretRevealed: false,
             cellarSecretRevealed: false,
             diningFireResolved: false,
-            atticScareComplete: false,
-            ledgerScareComplete: false,
-            confrontationComplete: false,
+            completedScenes: [],
             accusedMurderer: false,
             cookHiddenAfterDiningScare: false,
             brokenAtticWindowIds: []
@@ -124,10 +120,10 @@ describe("Game.applySave", () => {
         game.applySave(base);
         expect(game.snapshotSave()!.discoveredClueIds).toEqual(["examined_body"]);
 
-        game.applySave({ ...base, diningFireResolved: true, ledgerScareComplete: true });
+        game.applySave({ ...base, diningFireResolved: true, completedScenes: ["ledger_scare"] });
         expect(game.snapshotSave()!.discoveredClueIds.sort()).toEqual(["burned_ledger_page", "examined_body"]);
 
-        game.applySave({ ...base, diningFireResolved: true, ledgerScareComplete: true, atticScareComplete: true });
+        game.applySave({ ...base, diningFireResolved: true, completedScenes: ["ledger_scare", "attic_scare"] });
         expect(game.snapshotSave()!.discoveredClueIds.sort()).toEqual([
             "burned_ledger_page",
             "examined_body",
@@ -158,9 +154,7 @@ describe("Game.applySave", () => {
             studySecretRevealed: false,
             cellarSecretRevealed: false,
             diningFireResolved: false,
-            atticScareComplete: false,
-            ledgerScareComplete: false,
-            confrontationComplete: false,
+            completedScenes: [],
             accusedMurderer: false,
             cookHiddenAfterDiningScare: false,
             brokenAtticWindowIds: []

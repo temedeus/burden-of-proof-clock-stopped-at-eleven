@@ -315,6 +315,8 @@ export class Game {
 
     /** True when mid-cutscene / struggle / victory — do not checkpoint. */
     canAutosave(): boolean {
+        // Mid-scare saves would resume outside the scene; keep the save from the clue pickup.
+        if (this.ledgerScare.active || this.atticScare.active) return false;
         return (
             this.state === "playing" ||
             this.state === "interacting" ||
@@ -484,7 +486,13 @@ export class Game {
     }
 
     applySave(save: GameSaveV1): void {
-        this.clueSystem.restoreClues(save.discoveredClueIds);
+        // Died (or quit) during a scare: drop its trigger clue so picking it up replays the scene.
+        const clueIds = save.discoveredClueIds.filter(
+            (id) =>
+                !(id === "burned_ledger_page" && !save.ledgerScareComplete) &&
+                !(id === "manor_floor_plans" && !save.atticScareComplete)
+        );
+        this.clueSystem.restoreClues(clueIds);
         this.refreshStoryState();
 
         if (save.studySecretRevealed) {

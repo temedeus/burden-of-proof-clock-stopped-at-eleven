@@ -90,6 +90,51 @@ describe("Game.applySave", () => {
         expect(snap!.playerSprite).toBe("male_detective");
     });
 
+    it("drops a scare's trigger clue when the scare never finished, so it can replay", () => {
+        const story = resolveActiveStory();
+        expect(story).not.toBeNull();
+
+        const game = new Game(mockCtx(), {
+            playerSprite: "male_detective",
+            storyId: story!.id,
+            input: mockInput()
+        });
+
+        const base: GameSaveV1 = {
+            version: SAVE_FORMAT_VERSION,
+            contentRevision: SAVE_CONTENT_REVISION,
+            savedAt: Date.now(),
+            storyId: story!.id,
+            difficulty: "medium",
+            playerSprite: "male_detective",
+            roomId: "library",
+            player: { x: 5 * TILE_SIZE, y: 5 * TILE_SIZE, facing: "up" },
+            discoveredClueIds: ["examined_body", "burned_ledger_page", "manor_floor_plans"],
+            studySecretRevealed: false,
+            cellarSecretRevealed: false,
+            diningFireResolved: false,
+            atticScareComplete: false,
+            ledgerScareComplete: false,
+            confrontationComplete: false,
+            accusedMurderer: false,
+            cookHiddenAfterDiningScare: false,
+            brokenAtticWindowIds: []
+        };
+
+        game.applySave(base);
+        expect(game.snapshotSave()!.discoveredClueIds).toEqual(["examined_body"]);
+
+        game.applySave({ ...base, diningFireResolved: true, ledgerScareComplete: true });
+        expect(game.snapshotSave()!.discoveredClueIds.sort()).toEqual(["burned_ledger_page", "examined_body"]);
+
+        game.applySave({ ...base, diningFireResolved: true, ledgerScareComplete: true, atticScareComplete: true });
+        expect(game.snapshotSave()!.discoveredClueIds.sort()).toEqual([
+            "burned_ledger_page",
+            "examined_body",
+            "manor_floor_plans"
+        ]);
+    });
+
     it("snaps player to room center when saved pose is unwalkable", () => {
         const story = resolveActiveStory();
         expect(story).not.toBeNull();

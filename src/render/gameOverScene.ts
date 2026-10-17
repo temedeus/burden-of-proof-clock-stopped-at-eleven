@@ -14,6 +14,8 @@ export interface GameOverSceneInfo {
     playerSprite: PlayerSpriteName;
     /** Ytte's sprite when they caught you (masked or unmasked). */
     murdererSprite: string;
+    /** What killed the detective; picks the vignette. Defaults to Ytte's knife. */
+    cause?: "stabbed" | "chandelier";
 }
 
 /** Seconds until the stab lands — the heading fades in after the fall. */
@@ -41,7 +43,7 @@ function murdererFrame(sprite: string, pose: CharacterPose): HTMLCanvasElement |
 }
 
 /** Blocky blood pool: stacked rows of an ellipse, `size` 0..1. */
-function drawBloodPool(ctx: CanvasRenderingContext2D, cx: number, y: number, s: number, size: number): void {
+export function drawBloodPool(ctx: CanvasRenderingContext2D, cx: number, y: number, s: number, size: number): void {
     if (size <= 0) return;
     const halfW = Math.round(22 * size);
     const rows = Math.max(1, Math.round(4 * size));

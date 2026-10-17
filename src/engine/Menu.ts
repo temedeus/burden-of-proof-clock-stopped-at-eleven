@@ -7,6 +7,7 @@ import { drawMenuBackdrop } from "../render/menuBackdrop";
 import { drawCard, drawFigure, drawHeading, drawPageBackdrop, GILT, INK, INK_MUTED, serif, shadowText } from "../render/menuChrome";
 import type { PlayerSpriteName } from "@cse/content-schema";
 import { drawGameOverScene, GAME_OVER_HEADING_AT, type GameOverSceneInfo } from "../render/gameOverScene";
+import { CHANDELIER_GAME_OVER_HEADING_AT, drawChandelierGameOverScene } from "../render/chandelierGameOverScene";
 
 export type MenuScreen =
     | "main"
@@ -454,20 +455,30 @@ export class Menu {
 
         const t = (performance.now() - this.gameOverStartMs) / 1000;
         const px = Math.max(2, Math.round(3 * scale));
-        const flash = drawGameOverScene(ctx, t, w / 2, h * 0.43, px, this.gameOverScene);
+        const crushed = this.gameOverScene.cause === "chandelier";
+        const flash = crushed
+            ? drawChandelierGameOverScene(ctx, t, w / 2, h * 0.43, px, this.gameOverScene.playerSprite)
+            : drawGameOverScene(ctx, t, w / 2, h * 0.43, px, this.gameOverScene);
         if (flash > 0) {
-            ctx.fillStyle = `rgba(170, 0, 0, ${flash.toFixed(3)})`;
+            ctx.fillStyle = crushed ? `rgba(255, 246, 228, ${flash.toFixed(3)})` : `rgba(170, 0, 0, ${flash.toFixed(3)})`;
             ctx.fillRect(0, 0, w, h);
         }
 
-        const textAlpha = Math.max(0, Math.min(1, (t - GAME_OVER_HEADING_AT) / 0.6));
+        const headingAt = crushed ? CHANDELIER_GAME_OVER_HEADING_AT : GAME_OVER_HEADING_AT;
+        const textAlpha = Math.max(0, Math.min(1, (t - headingAt) / 0.6));
         if (textAlpha <= 0) return;
         ctx.save();
         ctx.globalAlpha = textAlpha;
         drawHeading(ctx, "Game Over", w / 2, h * 0.56, scale, "#b9786a");
         ctx.textAlign = "center";
         ctx.font = serif(19 * scale, true);
-        shadowText(ctx, "The murderer's knife found you first.", w / 2, h * 0.65, INK);
+        shadowText(
+            ctx,
+            crushed ? "Chandeliers don't fall on their own. This one fell on you." : "The murderer's knife found you first.",
+            w / 2,
+            h * 0.65,
+            INK
+        );
         this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.75);
         ctx.restore();
         ctx.textAlign = "left";

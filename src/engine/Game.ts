@@ -116,6 +116,7 @@ import {
 } from "../world/atticWindows";
 import { resetSessionWorldState } from "./resetSessionWorldState";
 import type { GameOverSceneInfo } from "../render/gameOverScene";
+import { CHANDELIER_GAME_OVER_CRASH_AT } from "../render/chandelierGameOverScene";
 import { CUFF_CLICK_TIMES } from "../render/arrestScene";
 import { drawDialogBubble, drawPanicBubble, SPEECH_BUBBLE_TEXT_WIDTH } from "../render/speechBubble";
 import { PLAYER_SPEAKER, splitDialogSpeakers, type DialogSegment } from "../systems/dialogSpeakers";
@@ -226,6 +227,8 @@ export class Game {
     private debugMode = false;
     private onMenuRequest?: () => void;
     private onGameOver?: () => void;
+    /** Which game over vignette to show. */
+    private gameOverCause: NonNullable<GameOverSceneInfo["cause"]> = "stabbed";
     private onVictoryComplete?: () => void;
     private readonly content = loadGameContent();
     private readonly difficulty: Difficulty;
@@ -988,6 +991,7 @@ export class Game {
 
         const result = this.murdererStruggle.tick(dt);
         if (result === "fail") {
+            this.gameOverCause = "stabbed";
             this.onGameOver?.();
             return;
         }
@@ -1551,11 +1555,12 @@ export class Game {
         return null;
     }
 
-    /** Cast for the game over stabbing vignette (Ytte as they looked when they caught you). */
+    /** Cast for the game over vignette (Ytte as they looked when they caught you, or the chandelier). */
     getGameOverSceneInfo(): GameOverSceneInfo {
         return {
             playerSprite: this.player.getSpriteName(),
-            murdererSprite: this.getMurderer()?.getSpriteName() ?? "worker_man_grin"
+            murdererSprite: this.getMurderer()?.getSpriteName() ?? "worker_man_grin",
+            cause: this.gameOverCause
         };
     }
 
@@ -1612,6 +1617,14 @@ export class Game {
                 dodge
             );
             if (tick.crash) ballroomSounds.playCrash();
+            if (tick.fatal) {
+                // No autosave: Continue resumes from before the trap, still armed
+                this.state = "playing";
+                this.gameOverCause = "chandelier";
+                window.setTimeout(() => ballroomSounds.playCrash(), CHANDELIER_GAME_OVER_CRASH_AT * 1000);
+                this.onGameOver?.();
+                return;
+            }
             if (tick.dialog) {
                 this.openDialog(tick.dialog);
                 this.autosave();

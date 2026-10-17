@@ -23,6 +23,7 @@ import {
  *    it is only the groundskeeper tending the flowers.
  * 2. Once the window has been checked, whichever chandelier the detective walks under on the
  *    way back to the doors trembles, gives a brief chance to dodge, then crashes to the floor.
+ *    Failing to dodge is fatal — the game over vignette shows the fall.
  */
 
 export const BALLROOM_ID = "dancing_room";
@@ -32,8 +33,6 @@ export const GROUNDSKEEPER_WINDOW_DIALOG =
 export const WINDOW_LOOK_TEXT = "Neat flower beds below the window, freshly watered. No one in sight now.";
 export const CHANDELIER_DODGED_TEXT =
     "You: That was far too close. Chandeliers don't just fall on their own... do they?";
-export const CHANDELIER_HIT_TEXT =
-    "You: Ow... Glass in my hair, but nothing broken. Except the chandelier.";
 
 // Window scare timeline (s)
 const FADE_IN_END = 0.9;
@@ -98,6 +97,8 @@ export interface ScareTick {
 export interface TrapTick {
     crash?: boolean;
     dialog?: string;
+    /** Didn't dodge: the chain has snapped and the game over vignette takes over. */
+    fatal?: boolean;
 }
 
 export class BallroomEasterEggs {
@@ -314,6 +315,14 @@ export class BallroomEasterEggs {
             else player.isMoving = false;
         }
 
+        if (!tr.dodged && tr.t >= CHANDELIER_TREMBLE) {
+            setChandelierVisual(null);
+            player.isMoving = false;
+            this.trap = null;
+            tick.fatal = true;
+            return tick;
+        }
+
         const impactAt = CHANDELIER_TREMBLE + FALL_TIME;
         if (!tr.crashed) {
             const trembling = tr.t < CHANDELIER_TREMBLE;
@@ -329,15 +338,10 @@ export class BallroomEasterEggs {
             setBrokenChandelier(tr.key);
             tick.crash = true;
         }
-        if (tr.crashed && !tr.dodged) {
-            // Knocked flat by the falling crystal, then back up at the end
-            player.cutsceneFall = clamp01((tr.t - impactAt) / 0.15);
-        }
         if (tr.t >= impactAt + AFTERMATH) {
-            player.cutsceneFall = 0;
             player.hopPx = 0;
             player.isMoving = false;
-            tick.dialog = tr.dodged ? CHANDELIER_DODGED_TEXT : CHANDELIER_HIT_TEXT;
+            tick.dialog = CHANDELIER_DODGED_TEXT;
             this.trap = null;
             this.chandelierArmed = false;
         }

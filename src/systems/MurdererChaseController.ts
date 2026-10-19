@@ -6,11 +6,17 @@ export type Difficulty = "easy" | "medium" | "hard";
 
 export const DIFFICULTY_CONFIG: Record<
     Difficulty,
-    { chaseHeadStart: number; murdererChaseSpeed: number; murdererSpawnsIn: number }
+    {
+        chaseHeadStart: number;
+        murdererChaseSpeed: number;
+        murdererSpawnsIn: number;
+        /** Seconds before the chaser re-routes after you change tile — he briefly loses the scent on easier levels. */
+        chaseRepathSeconds: number;
+    }
 > = {
-    easy: { chaseHeadStart: 2.5, murdererChaseSpeed: 90, murdererSpawnsIn: 2 },
-    medium: { chaseHeadStart: 1.5, murdererChaseSpeed: 112, murdererSpawnsIn: 1.5 },
-    hard: { chaseHeadStart: 0.5, murdererChaseSpeed: 135, murdererSpawnsIn: 1 }
+    easy: { chaseHeadStart: 2.5, murdererChaseSpeed: 90, murdererSpawnsIn: 2, chaseRepathSeconds: 0.5 },
+    medium: { chaseHeadStart: 1.5, murdererChaseSpeed: 112, murdererSpawnsIn: 1.5, chaseRepathSeconds: 0.25 },
+    hard: { chaseHeadStart: 0.5, murdererChaseSpeed: 135, murdererSpawnsIn: 1, chaseRepathSeconds: 0 }
 };
 
 export interface MurdererChaseTickResult {

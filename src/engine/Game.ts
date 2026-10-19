@@ -13,7 +13,8 @@ import { HUMANOID_NATIVE_H, HUMANOID_NATIVE_W } from "../assets/procedural/chara
 import { InteractionSystem } from "../systems/InteractionSystem";
 import { ClueSystem } from "../systems/ClueSystem";
 import { RoomTransitionService } from "../systems/RoomTransitionService";
-import { MurdererChaseController, type Difficulty } from "../systems/MurdererChaseController";
+import { DIFFICULTY_CONFIG, MurdererChaseController, type Difficulty } from "../systems/MurdererChaseController";
+import { ChaseField } from "../world/pathfinding";
 import { MurdererConfrontation } from "../systems/MurdererConfrontation";
 import { AtticScareChase, DEFAULT_LEDGER_SCARE_MONOLOGUE } from "../systems/AtticScareChase";
 import {
@@ -227,6 +228,8 @@ export class Game {
     private ballroomScareDialogOpen = false;
     private mooseLick = new MooseLickGag();
     private panSplash = new KitchenPanSplash();
+    /** Distance field toward the player that chasers route along. */
+    private chaseField: ChaseField;
     private panSplashFallSign = 1;
     private mooseRect: { x: number; y: number; w: number; h: number } | null = null;
     private message: string | null = null;
@@ -269,6 +272,7 @@ export class Game {
         const difficulty = options?.difficulty ?? "medium";
         this.difficulty = difficulty;
         this.murdererChase = new MurdererChaseController(difficulty);
+        this.chaseField = new ChaseField(DIFFICULTY_CONFIG[difficulty].chaseRepathSeconds);
         this.murdererConfrontation = new MurdererConfrontation();
         this.atticScare = new AtticScareChase(difficulty, "attic");
         this.ledgerScare = new AtticScareChase(difficulty, "dining", DEFAULT_LEDGER_SCARE_MONOLOGUE);
@@ -876,6 +880,7 @@ export class Game {
     /** Finale chase persists across rooms; attic scare ends when you leave. Dining scare cannot be escaped. */
     private handleMurdererAfterRoomChange(): void {
         this.panSplash.stop();
+        this.chaseField.reset();
         const murderer = this.getMurderer();
         if (!murderer) return;
 
@@ -1610,9 +1615,17 @@ export class Game {
         const len = Math.hypot(dx, dy) || 1;
         dx /= len;
         dy /= len;
-        const shove = TILE_SIZE * 1.5;
-        murderer.x += dx * shove;
-        murderer.y += dy * shove;
+        // Full shove, or as far as the room allows (never into furniture or walls)
+        const map = this.currentRoom.map;
+        for (let shove = TILE_SIZE * 1.5; shove > 0; shove -= TILE_SIZE / 4) {
+            const x = murderer.x + dx * shove;
+            const y = murderer.y + dy * shove;
+            if (!murderer.wouldCollideAt(x, y, map)) {
+                murderer.x = x;
+                murderer.y = y;
+                break;
+            }
+        }
         return dx >= 0 ? 1 : -1;
     }
 
@@ -1963,6 +1976,10 @@ export class Game {
             const playerCenterY = this.player.y + this.player.height / 2;
             const murdererLoose = this.murdererChase.accusedMurderer;
             const murdererId = this.getMurdererNpcId();
+            if (this.currentRoom.npcs.some((npc) => npc.isChasing())) {
+                const { map } = this.currentRoom;
+                this.chaseField.update(dt, map, this.player.x, this.player.y, this.player.width, this.player.height);
+            }
             for (const npc of this.currentRoom.npcs) {
                 // Bystanders wave in panic while the murderer hunts you; police keep their composure
                 npc.setPanicking(
@@ -1973,7 +1990,7 @@ export class Game {
                     this.resumeChaseAfterStun(npc);
                 }
                 if (npc.isChasing()) {
-                    npc.updateChase(dt, playerCenterX, playerCenterY, this.currentRoom.map);
+                    npc.updateChase(dt, playerCenterX, playerCenterY, this.currentRoom.map, this.chaseField);
                     if (
                         this.murdererStruggle.canCatch() &&
                         this.murdererChase.npcOverlapsPlayer(this.player, npc)

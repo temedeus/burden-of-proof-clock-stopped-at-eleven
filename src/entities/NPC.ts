@@ -2,7 +2,7 @@ import { Entity } from "./Entity";
 import { TILE_SIZE } from "../world/constants";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TileMap } from "../world/TileMap";
-import { TILE_WALL, TILE_WOOD_WALL, TILE_ROCK_WALL, TILE_PALE_ROCK_WALL, TILE_MANOR_WALL, TILE_GATE_WALL, TILE_ATTIC_WALL, TILE_PALE_WALL, TILE_INVISIBLE_WALL, TILE_FURNITURE, TILE_FENCE, TILE_FENCE_POST, TILE_BANISTER, TILE_BANISTER_POST, TILE_WOOD_FENCE, TILE_WOOD_FENCE_POST, TILE_WOOD_FENCE_V } from "../world/TileTypes";
+import { feetBlocked, type ChaseField } from "../world/pathfinding";
 import { getHumanoidStyle, type CharacterFacing } from "../assets/procedural/characters";
 import {
     getHumanoidFrame,
@@ -274,23 +274,31 @@ export class NPC extends Entity {
   }
 
   /** Move toward target; only collides with walls/furniture */
-  updateChase(dt: number, targetX: number, targetY: number, map: TileMap): void {
+  /**
+   * Run toward a target centre. With a `field` (flooded from the target) the
+   * chaser routes around furniture instead of walking straight at it.
+   */
+  updateChase(dt: number, targetX: number, targetY: number, map: TileMap, field?: ChaseField): void {
     if (!this.chasing) return;
     if (this.swingingKnife) this.knifeSwingTime += dt;
+    const waypoint = field?.steer(this.x, this.y);
+    if (waypoint) {
+      targetX = waypoint.x + this.width / 2;
+      targetY = waypoint.y + this.height / 2;
+    }
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
     let dx = targetX - centerX;
     let dy = targetY - centerY;
     const len = Math.sqrt(dx * dx + dy * dy);
     if (len < 1) return;
+    // Don't overshoot a waypoint (keeps him from jittering around path corners)
+    const step = Math.min(this.chaseSpeed * dt, len);
     dx /= len;
     dy /= len;
-    const moveX = dx * this.chaseSpeed * dt;
-    const moveY = dy * this.chaseSpeed * dt;
     const startX = this.x;
     const startY = this.y;
-    if (!this.collidesWithMap(this.x + moveX, this.y, map)) this.x += moveX;
-    if (!this.collidesWithMap(this.x, this.y + moveY, map)) this.y += moveY;
+    this.stepWithCollision(dx * step, dy * step, map);
     this.animateWalk(dt, this.x - startX, this.y - startY);
   }
 
@@ -309,43 +317,31 @@ export class NPC extends Entity {
     const moveY = dy * this.fleeSpeed * dt;
     const startX = this.x;
     const startY = this.y;
-    if (!this.collidesWithMap(this.x + moveX, this.y, map)) this.x += moveX;
-    if (!this.collidesWithMap(this.x, this.y + moveY, map)) this.y += moveY;
+    this.stepWithCollision(moveX, moveY, map);
     this.animateWalk(dt, this.x - startX, this.y - startY);
   }
 
-  private collidesWithMap(x: number, y: number, map: TileMap): boolean {
-    const left = Math.floor(x / TILE_SIZE);
-    const right = Math.ceil((x + this.width) / TILE_SIZE);
-    const top = Math.floor(y / TILE_SIZE);
-    const bottom = Math.ceil((y + this.height) / TILE_SIZE);
-    for (let ty = top; ty < bottom; ty++) {
-      for (let tx = left; tx < right; tx++) {
-        if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) return true;
-        const tile = map.getTile(tx, ty);
-        if (
-            tile === TILE_WALL ||
-            tile === TILE_WOOD_WALL ||
-            tile === TILE_ROCK_WALL ||
-            tile === TILE_PALE_ROCK_WALL ||
-            tile === TILE_MANOR_WALL ||
-            tile === TILE_GATE_WALL ||
-            tile === TILE_ATTIC_WALL ||
-            tile === TILE_PALE_WALL ||
-            tile === TILE_INVISIBLE_WALL ||
-            tile === TILE_FURNITURE ||
-            tile === TILE_FENCE ||
-            tile === TILE_FENCE_POST ||
-            tile === TILE_BANISTER ||
-            tile === TILE_BANISTER_POST ||
-            tile === TILE_WOOD_FENCE ||
-            tile === TILE_WOOD_FENCE_POST ||
-            tile === TILE_WOOD_FENCE_V
-        )
-            return true;
-      }
+  /** Feet-row collision against walls and furniture (same rule as the player). */
+  wouldCollideAt(x: number, y: number, map: TileMap): boolean {
+    return feetBlocked(map, x, y, this.width, this.height);
+  }
+
+  /** Axis-separated step; when already wedged in a wall (e.g. shoved into furniture) walk out freely. */
+  private stepWithCollision(moveX: number, moveY: number, map: TileMap): void {
+    if (this.wouldCollideAt(this.x, this.y, map)) {
+      this.x += moveX;
+      this.y += moveY;
+      return;
     }
-    return false;
+    const startX = this.x;
+    const startY = this.y;
+    if (!this.wouldCollideAt(this.x + moveX, this.y, map)) this.x += moveX;
+    if (!this.wouldCollideAt(this.x, this.y + moveY, map)) this.y += moveY;
+    // Squeezing diagonally past a corner can be clear even when each axis alone is not
+    if (this.x === startX && this.y === startY && !this.wouldCollideAt(startX + moveX, startY + moveY, map)) {
+      this.x += moveX;
+      this.y += moveY;
+    }
   }
 
   /** Sprite height when drawn at uniform scale (head overhangs above the entity box). */

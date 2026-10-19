@@ -7,6 +7,7 @@ import { drawStableBoothAnimated, horseAnimPhase } from "../assets/procedural/an
 import { drawStuffedMooseTilted } from "../assets/procedural/stuffed_moose";
 import { drawArmorCollapse } from "../assets/procedural/armorStand";
 import { getArmorCollapseT } from "../world/armorCollapse";
+import { isStovePotTaken } from "../world/kitchenStovePot";
 import { chandelierKey, getChandelierState, type ChandelierVisual } from "../world/ballroomChandeliers";
 import { decorWallDrawBounds, wallMountDrawBounds } from "../assets/procedural/wall_align";
 import { resolveDecorDrawRectPx } from "@cse/content-schema";
@@ -163,7 +164,8 @@ export function furnitureActorFromInteractable(
                     drawW,
                     drawH,
                     getAnimTime(),
-                    kitchenStoveAnimPhase(minX, minY)
+                    kitchenStoveAnimPhase(minX, minY),
+                    isStovePotTaken(minX, minY)
                 );
             } else if (spriteName === "fountain") {
                 drawFountainAnimated(ctx, drawX, drawY, drawW, drawH, getAnimTime());

@@ -2,8 +2,12 @@ import { P } from "./palette";
 import { r } from "./pixel";
 
 /** Native size; drawn at 2x into the 4x3-tile stove box. */
-const NATIVE_W = 64;
-const NATIVE_H = 48;
+export const KITCHEN_STOVE_NATIVE_W = 64;
+export const KITCHEN_STOVE_NATIVE_H = 48;
+const NATIVE_W = KITCHEN_STOVE_NATIVE_W;
+const NATIVE_H = KITCHEN_STOVE_NATIVE_H;
+/** Stock pot centre on the right hotplate, in native stove pixels. */
+export const STOVE_POT_NATIVE = { x: 48, y: 16 } as const;
 
 /** Stable 0..1 phase from tile position (varies pan timing per stove). */
 export function kitchenStoveAnimPhase(tileX: number, tileY: number): number {
@@ -128,6 +132,46 @@ function drawPot(ctx: CanvasRenderingContext2D, cx: number, cy: number, animTime
     r(ctx, cx - 1, cy - 9 - rattle, 2, 2, STEEL.h);
 }
 
+/** Pot lid left resting on the hotplate after the pot is grabbed. */
+function drawLidOnHob(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
+    r(ctx, cx - 7, cy - 1, 14, 2, STEEL.m);
+    r(ctx, cx - 7, cy - 1, 14, 1, STEEL.h);
+    r(ctx, cx - 1, cy - 2, 2, 1, STEEL.h);
+}
+
+/**
+ * Lidless stock pot of boiling water, centred on (cx, cy) in world pixels.
+ * `tilt` rotates it (radians, positive tips the mouth toward +x); `water` 0 empty … 1 full.
+ */
+export function drawStockPot(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    scale: number,
+    tilt: number,
+    water: number
+): void {
+    const prev = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;
+    ctx.save();
+    ctx.translate(Math.round(cx), Math.round(cy));
+    ctx.rotate(tilt);
+    ctx.scale(scale, scale);
+    // Body (same copper as the pot on the hob), side handles, open rim
+    r(ctx, -6, -4, 12, 8, "#8a4422");
+    r(ctx, -5, -4, 3, 8, "#d08a58");
+    r(ctx, -6, 3, 12, 1, "#4a2010");
+    r(ctx, -8, -3, 2, 2, IRON.m);
+    r(ctx, 6, -3, 2, 2, IRON.m);
+    r(ctx, -6, -5, 12, 1, "#5a2c14");
+    if (water > 0) {
+        r(ctx, -5, -5, 10, 1, water > 0.5 ? "#a8d4ec" : "#6a90a8");
+        r(ctx, -3, -5, 2, 1, "#e8f6ff");
+    }
+    ctx.restore();
+    ctx.imageSmoothingEnabled = prev;
+}
+
 /**
  * Pan flip progress 0..1. Each stove flips on its own 2–3s cadence.
  */
@@ -168,14 +212,23 @@ function drawSteam(
     ctx.globalAlpha = 1;
 }
 
-function drawStoveAnimated(ctx: CanvasRenderingContext2D, animTime: number, phase: number): void {
+function drawStoveAnimated(
+    ctx: CanvasRenderingContext2D,
+    animTime: number,
+    phase: number,
+    potTaken: boolean
+): void {
     drawStoveBody(ctx, animTime, phase);
 
     const flipL = panFlipProgress(animTime, phase, 0);
     const flipM = panFlipProgress(animTime, phase, 1);
     drawPan(ctx, 15, 15, flipL, IRON.l);
     drawPan(ctx, 31, 15, flipM, IRON.m);
-    drawPot(ctx, 48, 18, animTime, phase);
+    if (potTaken) {
+        drawLidOnHob(ctx, 48, 18);
+    } else {
+        drawPot(ctx, 48, 18, animTime, phase);
+    }
 
     drawSteam(ctx, animTime, phase, 47, 8);
     drawSteam(ctx, animTime, phase + 0.37, 16, 12);
@@ -189,14 +242,15 @@ export function drawKitchenStoveAnimated(
     dw: number,
     dh: number,
     animTime: number,
-    phase = 0
+    phase = 0,
+    potTaken = false
 ): void {
     const prev = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = false;
     ctx.save();
     ctx.translate(dx, dy);
     ctx.scale(dw / NATIVE_W, dh / NATIVE_H);
-    drawStoveAnimated(ctx, animTime, phase);
+    drawStoveAnimated(ctx, animTime, phase, potTaken);
     ctx.restore();
     ctx.imageSmoothingEnabled = prev;
 }

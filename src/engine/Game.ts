@@ -46,6 +46,7 @@ import {
     type DiningBurnLayout
 } from "../render/diningBurnDamage";
 import { furnitureActorFromInteractable, type DepthActor } from "../render/roomScene";
+import type { Interactable } from "../world/Interactable";
 import { BLOOD_CRATE_H, BLOOD_CRATE_W, drawCrateKey } from "../assets/procedural/bloodCrate";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { VictorySequence } from "../systems/VictorySequence";
@@ -70,6 +71,7 @@ import { clueSounds } from "../audio/ClueSounds";
 import { pianoSounds } from "../audio/PianoSounds";
 import { harpSounds } from "../audio/HarpSounds";
 import { mooseSounds } from "../audio/MooseSounds";
+import { kitchenSounds } from "../audio/KitchenSounds";
 import { armorSounds } from "../audio/ArmorSounds";
 import { doorSounds } from "../audio/DoorSounds";
 import { ballroomSounds } from "../audio/BallroomSounds";
@@ -87,6 +89,13 @@ import {
     tickArmorCollapse
 } from "../world/armorCollapse";
 import { MooseLickGag } from "../systems/MooseLickGag";
+import {
+    KitchenPanSplash,
+    nearestKitchenStove,
+    PAN_SPLASH_FLIGHT,
+    PAN_SPLASH_STUN_MULTIPLIER,
+    STOVE_STRUGGLE_TITLE
+} from "../systems/KitchenPanSplash";
 import { drawMooseTongue, stuffedMooseMouth, STUFFED_MOOSE_H, STUFFED_MOOSE_W } from "../assets/procedural/stuffed_moose";
 import { extractSpokenLine, inferVoiceGender, talkSounds } from "../audio/TalkSounds";
 import {
@@ -134,7 +143,8 @@ type GameState =
     | "moose_lick"
     | "armor_collapse"
     | "window_scare"
-    | "chandelier_trap";
+    | "chandelier_trap"
+    | "pan_splash";
 
 const POLICE_NPC_IDS = ["police", "police2"];
 
@@ -216,6 +226,8 @@ export class Game {
     private ballroomEggs = new BallroomEasterEggs();
     private ballroomScareDialogOpen = false;
     private mooseLick = new MooseLickGag();
+    private panSplash = new KitchenPanSplash();
+    private panSplashFallSign = 1;
     private mooseRect: { x: number; y: number; w: number; h: number } | null = null;
     private message: string | null = null;
     private messagePages: string[] = [];
@@ -863,6 +875,7 @@ export class Game {
 
     /** Finale chase persists across rooms; attic scare ends when you leave. Dining scare cannot be escaped. */
     private handleMurdererAfterRoomChange(): void {
+        this.panSplash.stop();
         const murderer = this.getMurderer();
         if (!murderer) return;
 
@@ -1096,11 +1109,40 @@ export class Game {
                     return;
                 }
                 const fallSign = this.shoveMurdererAway(murderer);
+                if (this.beginPanSplash(murderer, fallSign)) return;
                 murderer.stun(this.murdererStruggle.stunSeconds, fallSign);
                 this.murdererStruggle.beginCatchCooldown();
             }
             this.state = "playing";
         }
+    }
+
+    /** Shoved-off Ytte staggers while the detective grabs the stove's pot and douses him. */
+    private beginPanSplash(murderer: NPC, fallSign: number): boolean {
+        const stove = this.stoveInReachForPanSplash();
+        if (!stove) return false;
+        const map = this.currentRoom.map;
+        const drawRect = furnitureActorFromInteractable(stove, () => 0, {
+            width: map.width,
+            height: map.height,
+            tileAt: (x, y) => map.getTile(x, y)
+        }).drawRect;
+        this.panSplash.start(this.player, murderer, stove, drawRect, map, this.currentRoom.npcs);
+        this.panSplashFallSign = fallSign;
+        this.state = "pan_splash";
+        return true;
+    }
+
+    private updatePanSplash(dt: number): void {
+        const tick = this.panSplash.update(dt, this.player);
+        if (tick.throwStarted) kitchenSounds.playPanSplash(PAN_SPLASH_FLIGHT);
+        if (!tick.landed) return;
+        const murderer = this.getMurderer();
+        if (murderer) {
+            murderer.stun(this.murdererStruggle.stunSeconds * PAN_SPLASH_STUN_MULTIPLIER, this.panSplashFallSign);
+            this.murdererStruggle.beginCatchCooldown();
+        }
+        this.state = "playing";
     }
 
     private beginAtticWindowCutscene(murderer: NPC): void {
@@ -1551,6 +1593,12 @@ export class Game {
         }
     }
 
+    /** Finale chase only: a stove within reach turns the shove into a boiling-pan splash. */
+    private stoveInReachForPanSplash(): Interactable | null {
+        if (!this.murdererChase.accusedMurderer || this.currentRoom.id !== "kitchen") return null;
+        return nearestKitchenStove(this.player, this.currentRoom);
+    }
+
     /** Shoves the murderer away; returns tip direction for the fall animation. */
     private shoveMurdererAway(murderer: NPC): number {
         const px = this.player.x + this.player.width / 2;
@@ -1646,6 +1694,7 @@ export class Game {
 
     update(dt: number) {
         this.decorAnimTime += dt;
+        if (this.state !== "pan_splash") this.panSplash.update(dt, this.player);
         atticMice.update(dt, this.currentRoom.id);
         courtyardSeagull.update(dt, this.currentRoom.id);
         this.roomTitleBanner = tickRoomTitleBanner(this.roomTitleBanner, dt);
@@ -1758,6 +1807,11 @@ export class Game {
 
         if (this.state === "struggling") {
             this.updateStruggle(dt);
+            return;
+        }
+
+        if (this.state === "pan_splash") {
+            this.updatePanSplash(dt);
             return;
         }
 
@@ -2259,12 +2313,13 @@ export class Game {
                 burn?.floor?.(c);
                 this.ballroomEggs.drawFloor(c, this.currentRoom);
             },
-            extraActors: [this.player, ...spreadFireActors, ...dragGripActors, ...(burn?.actors ?? []), ...crateKey],
+            extraActors: [this.player, ...this.panSplash.worldActors(this.player), ...spreadFireActors, ...dragGripActors, ...(burn?.actors ?? []), ...crateKey],
             extraOverheadActors: [
                 ...atticMice.getActors(() => this.decorAnimTime),
                 ...courtyardSeagull.getActors(),
                 ...ytteFireActors,
                 ...this.mooseTongueActors(),
+                ...this.panSplash.overheadActors(this.currentRoom.map.width * TILE_SIZE),
                 ...this.ballroomEggs.overheadActors(this.player),
                 ...this.panicBubbleActors()
             ],
@@ -2359,7 +2414,13 @@ export class Game {
                 ctx,
                 this.murdererStruggle.progress,
                 shouldShowTouchControls(),
-                nearHearth ? "Into the fire!" : nearWindow ? "Out the window!" : "Push him off!"
+                nearHearth
+                    ? "Into the fire!"
+                    : nearWindow
+                      ? "Out the window!"
+                      : this.stoveInReachForPanSplash()
+                        ? STOVE_STRUGGLE_TITLE
+                        : "Push him off!"
             );
         }
 

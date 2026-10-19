@@ -6,10 +6,10 @@ const STRUGGLE_CONFIG: Record<
     Difficulty,
     { start: number; drainPerSec: number; pressGain: number; stunSeconds: number; catchCooldown: number }
 > = {
-    // ~6–8 taps over a couple seconds to win; idle fail in ~3–4s
-    easy: { start: 0.55, drainPerSec: 0.1, pressGain: 0.16, stunSeconds: 3, catchCooldown: 1 },
-    medium: { start: 0.5, drainPerSec: 0.12, pressGain: 0.14, stunSeconds: 2.5, catchCooldown: 0.85 },
-    hard: { start: 0.42, drainPerSec: 0.14, pressGain: 0.12, stunSeconds: 2, catchCooldown: 0.7 }
+    // ~9–12 quick taps to win; idle fail in ~2–3s
+    easy: { start: 0.55, drainPerSec: 0.2, pressGain: 0.12, stunSeconds: 3, catchCooldown: 1 },
+    medium: { start: 0.5, drainPerSec: 0.24, pressGain: 0.1, stunSeconds: 2.5, catchCooldown: 0.85 },
+    hard: { start: 0.42, drainPerSec: 0.28, pressGain: 0.085, stunSeconds: 2, catchCooldown: 0.7 }
 };
 
 /**

@@ -364,6 +364,8 @@ export class Game {
     canAutosave(): boolean {
         // Mid-scene saves would resume outside the scene; keep the save from the clue pickup.
         if (SCRIPTED_SCENES.some((s) => this.scenes[s.id].isActive())) return false;
+        // Same for the finale chase: Continue replays the confrontation from the weapon pickup.
+        if (this.murdererChase.accusedMurderer) return false;
         return (
             this.state === "playing" ||
             this.state === "interacting" ||
@@ -487,12 +489,12 @@ export class Game {
             brokenAtticWindowIds: [],
             player: { x: 0, y: 0, facing: "down" }
         });
-        return this.placePlayerAtTrigger(moment);
+        return this.placePlayerAtTrigger(moment.trigger);
     }
 
-    private placePlayerAtTrigger(moment: DevTeleportMoment): boolean {
+    private placePlayerAtTrigger(trigger: DevTeleportMoment["trigger"]): boolean {
         const room = this.currentRoom;
-        const { confirmId, clueId } = moment.trigger;
+        const { confirmId, clueId } = trigger;
         const target = room.interactables.find(
             (obj) =>
                 (confirmId && obj.confirmId === confirmId) ||
@@ -529,6 +531,16 @@ export class Game {
     }
 
     applySave(save: GameSaveV1): void {
+        // Older saves could land mid-finale-chase with Ytte on top of the player.
+        // Roll those back to just before picking up the confrontation's trigger clue.
+        const rollBackFinale = save.accusedMurderer;
+        if (rollBackFinale) {
+            save = {
+                ...save,
+                accusedMurderer: false,
+                completedScenes: save.completedScenes.filter((id) => id !== "confrontation")
+            };
+        }
         const completed = new Set(save.completedScenes);
         this.clueSystem.restoreClues(cluesForRetry(save.discoveredClueIds, completed));
         this.refreshStoryState();
@@ -552,10 +564,13 @@ export class Game {
             save.brokenChandelier ?? null
         );
 
-        const room = this.rooms[save.roomId];
+        const confrontationClue = SCRIPTED_SCENES.find((s) => s.id === "confrontation")!.triggerClue;
+        const finaleRoom = rollBackFinale ? this.findRoomWithClue(confrontationClue) : null;
+        const room = finaleRoom ?? this.rooms[save.roomId];
         if (!room) return;
         this.currentRoom = room;
         this.placePlayerFromSave(room, save.player.x, save.player.y, save.player.facing);
+        if (finaleRoom) this.placePlayerAtTrigger({ clueId: confrontationClue });
         this.syncRoomAmbience();
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(room.id));
 
@@ -576,17 +591,6 @@ export class Game {
             this.placeCookInKitchen(murderer);
         }
 
-        if (save.accusedMurderer) {
-            this.murdererChase.accusedMurderer = true;
-            const chaseTarget = this.getMurderer();
-            if (chaseTarget) {
-                // Spawn near the player in the restored room for a fair resume.
-                this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
-                this.murdererChase.spawnMurdererInRoom(chaseTarget, this.currentRoom, this.rooms);
-                this.murdererChase.startMurdererChase(chaseTarget);
-            }
-        }
-
         this.state = "playing";
         this.refreshStoryState();
     }
@@ -601,13 +605,43 @@ export class Game {
         this.player.y = y;
         this.player.facing = facing;
         this.roomTransitions.clampPlayerInsideRoom(this.player, room);
-        if (this.player.wouldCollideAt(this.player.x, this.player.y, room.map, room.npcs)) {
-            const cx = Math.floor(room.map.width / 2);
-            const cy = Math.floor(room.map.height / 2);
-            this.player.x = (cx - 1) * TILE_SIZE;
-            this.player.y = (cy - 1) * TILE_SIZE;
-            this.roomTransitions.clampPlayerInsideRoom(this.player, room);
+        if (!this.player.wouldCollideAt(this.player.x, this.player.y, room.map, room.npcs)) return;
+
+        // Nearest free tile-aligned spot, searched in growing rings around the save position
+        const ox = Math.round(this.player.x / TILE_SIZE);
+        const oy = Math.round(this.player.y / TILE_SIZE);
+        const maxR = Math.max(room.map.width, room.map.height);
+        for (let r = 1; r <= maxR; r++) {
+            let best: { x: number; y: number; d: number } | null = null;
+            for (let ty = oy - r; ty <= oy + r; ty++) {
+                for (let tx = ox - r; tx <= ox + r; tx++) {
+                    if (Math.max(Math.abs(tx - ox), Math.abs(ty - oy)) !== r) continue;
+                    const px = tx * TILE_SIZE;
+                    const py = ty * TILE_SIZE;
+                    if (px < 0 || py < 0) continue;
+                    if (px + this.player.width > room.map.width * TILE_SIZE) continue;
+                    if (py + this.player.height > room.map.height * TILE_SIZE) continue;
+                    if (this.player.wouldCollideAt(px, py, room.map, room.npcs)) continue;
+                    const d = Math.hypot(tx - ox, ty - oy);
+                    if (!best || d < best.d) best = { x: px, y: py, d };
+                }
+            }
+            if (best) {
+                this.player.x = best.x;
+                this.player.y = best.y;
+                return;
+            }
         }
+    }
+
+    private findRoomWithClue(clueId: string): Room | null {
+        return (
+            Object.values(this.rooms).find((room) =>
+                room.interactables.some(
+                    (obj) => obj.clues?.includes(clueId) || obj.collectibleClues?.some((c) => c.clueId === clueId)
+                )
+            ) ?? null
+        );
     }
 
     private getMurdererNpcId(): string {
@@ -1017,7 +1051,6 @@ export class Game {
         talkSounds.stopDialogue();
         this.murdererChase.triggerAccusation();
         this.openDialog("Chef Ytte is after you! Find a police officer before he catches you!");
-        this.autosave();
     }
 
     private beginStruggle(murderer: NPC): void {

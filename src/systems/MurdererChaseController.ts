@@ -8,9 +8,9 @@ export const DIFFICULTY_CONFIG: Record<
     Difficulty,
     { chaseHeadStart: number; murdererChaseSpeed: number; murdererSpawnsIn: number }
 > = {
-    easy: { chaseHeadStart: 2.5, murdererChaseSpeed: 80, murdererSpawnsIn: 2 },
-    medium: { chaseHeadStart: 1.5, murdererChaseSpeed: 100, murdererSpawnsIn: 1.5 },
-    hard: { chaseHeadStart: 0.5, murdererChaseSpeed: 120, murdererSpawnsIn: 1 }
+    easy: { chaseHeadStart: 2.5, murdererChaseSpeed: 90, murdererSpawnsIn: 2 },
+    medium: { chaseHeadStart: 1.5, murdererChaseSpeed: 112, murdererSpawnsIn: 1.5 },
+    hard: { chaseHeadStart: 0.5, murdererChaseSpeed: 135, murdererSpawnsIn: 1 }
 };
 
 export interface MurdererChaseTickResult {

@@ -131,7 +131,7 @@ describe("Game.applySave", () => {
         ]);
     });
 
-    it("snaps player to room center when saved pose is unwalkable", () => {
+    it("moves player to a walkable spot when saved pose is unwalkable", () => {
         const story = resolveActiveStory();
         expect(story).not.toBeNull();
 
@@ -168,4 +168,68 @@ describe("Game.applySave", () => {
         expect(snap!.player.x).not.toBe(-1000);
         expect(snap!.player.y).not.toBe(-1000);
     });
+    it("never leaves the player inside a wall when restoring", () => {
+        const story = resolveActiveStory();
+        const game = new Game(mockCtx(), {
+            playerSprite: "female_detective",
+            storyId: story!.id,
+            input: mockInput()
+        });
+        const internals = game as unknown as {
+            player: { x: number; y: number; wouldCollideAt(x: number, y: number, map: unknown, npcs: unknown): boolean };
+            currentRoom: { map: unknown; npcs: unknown };
+        };
+        // Top-left corner tile is a wall in every room
+        game.applySave(baseSave(story!.id, { player: { x: 0, y: 0, facing: "down" } }));
+        const { player, currentRoom } = internals;
+        expect(player.wouldCollideAt(player.x, player.y, currentRoom.map, currentRoom.npcs)).toBe(false);
+        // Stays close to where the save put them
+        expect(Math.hypot(player.x, player.y)).toBeLessThan(TILE_SIZE * 6);
+    });
+
+    it("rolls a mid-chase save back to just before the murder weapon pickup", () => {
+        const story = resolveActiveStory();
+        const game = new Game(mockCtx(), {
+            playerSprite: "female_detective",
+            storyId: story!.id,
+            input: mockInput()
+        });
+        game.applySave(
+            baseSave(story!.id, {
+                roomId: "hall",
+                discoveredClueIds: ["examined_body", "murder_weapon"],
+                completedScenes: ["ledger_scare", "attic_scare", "confrontation"],
+                diningFireResolved: true,
+                accusedMurderer: true
+            })
+        );
+        const snap = game.snapshotSave()!;
+        expect(snap.accusedMurderer).toBe(false);
+        expect(snap.completedScenes).not.toContain("confrontation");
+        expect(snap.discoveredClueIds).not.toContain("murder_weapon");
+        expect(snap.roomId).not.toBe("hall");
+        expect(game.canAutosave()).toBe(true);
+    });
 });
+
+function baseSave(storyId: string, overrides: Partial<GameSaveV1>): GameSaveV1 {
+    return {
+        version: SAVE_FORMAT_VERSION,
+        contentRevision: SAVE_CONTENT_REVISION,
+        savedAt: Date.now(),
+        storyId,
+        difficulty: "medium",
+        playerSprite: "female_detective",
+        roomId: "hall",
+        player: { x: 0, y: 0, facing: "down" },
+        discoveredClueIds: [],
+        studySecretRevealed: false,
+        cellarSecretRevealed: false,
+        diningFireResolved: false,
+        completedScenes: [],
+        accusedMurderer: false,
+        cookHiddenAfterDiningScare: false,
+        brokenAtticWindowIds: [],
+        ...overrides
+    };
+}

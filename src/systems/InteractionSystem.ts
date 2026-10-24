@@ -37,36 +37,19 @@ export class InteractionSystem {
         /** When set, NPCs it rejects ignore the player (e.g. everyone but police during the chase). */
         canTalkTo?: (npc: NPC) => boolean
     ): InteractionResult | null {
-        const { x, y } = this.getTargetTile(player);
+        const target = this.getTargetPoint(player);
 
-        // Check NPCs first - check if NPC is in the direction player is facing and adjacent
+        // Check NPCs first — the reach point in the facing direction must land on them.
+        // Pixel box, not tiles: NPCs stroll off the tile grid.
+        const slack = TILE_SIZE * 0.25;
         for (const npc of room.npcs) {
-            // Calculate all tiles the NPC occupies
-            const npcLeftTile = Math.floor(npc.x / TILE_SIZE);
-            const npcRightTile = Math.floor((npc.x + npc.width) / TILE_SIZE);
-            const npcTopTile = Math.floor(npc.y / TILE_SIZE);
-            const npcBottomTile = Math.floor((npc.y + npc.height) / TILE_SIZE);
-            
-            // Calculate player's occupied tiles
-            const playerLeftTile = Math.floor(player.x / TILE_SIZE);
-            const playerRightTile = Math.floor((player.x + player.width) / TILE_SIZE);
-            const playerTopTile = Math.floor(player.y / TILE_SIZE);
-            const playerBottomTile = Math.floor((player.y + player.height) / TILE_SIZE);
-            
-            // Check if NPC is adjacent to player (touching or within 1 tile)
-            const horizontalAdjacent = playerRightTile >= npcLeftTile - 1 && playerLeftTile <= npcRightTile + 1;
-            const verticalAdjacent = playerBottomTile >= npcTopTile - 1 && playerTopTile <= npcBottomTile + 1;
-            
-            // Check if target tile (in facing direction) overlaps with NPC
-            const targetOverlapsNPC = (
-                x >= npcLeftTile &&
-                x < npcRightTile &&
-                y >= npcTopTile &&
-                y < npcBottomTile
-            );
-            
-            // NPC must be adjacent AND the target tile must overlap with NPC (facing direction matters)
-            if (horizontalAdjacent && verticalAdjacent && targetOverlapsNPC) {
+            const targetOnNPC =
+                target.x >= npc.x - slack &&
+                target.x <= npc.x + npc.width + slack &&
+                target.y >= npc.y - slack &&
+                target.y <= npc.y + npc.height + slack;
+
+            if (targetOnNPC) {
                 if (canTalkTo && !canTalkTo(npc)) return null;
                 const npcConfig = npcConfigs?.[npc.id];
                 const interactionMode = npcConfig?.interactionMode ?? "dialog";
@@ -117,6 +100,7 @@ export class InteractionSystem {
         }
 
         // Check interactables — target facing-specific interaction tiles
+        const { x, y } = this.getTargetTile(player);
         for (const obj of room.interactables) {
             if (obj.nonInteractive) continue;
             const interactTiles = getInteractionTilesForFacing(obj, player.facing);
@@ -285,6 +269,15 @@ export class InteractionSystem {
     }
 
     private getTargetTile(player: Player) {
+        const target = this.getTargetPoint(player);
+        return {
+            x: Math.floor(target.x / TILE_SIZE),
+            y: Math.floor(target.y / TILE_SIZE)
+        };
+    }
+
+    /** Point just ahead of the player in the facing direction (room pixels). */
+    private getTargetPoint(player: Player) {
         const origin = player.getInteractionPoint();
 
         const reach = TILE_SIZE * 0.6;
@@ -298,12 +291,6 @@ export class InteractionSystem {
             case "right": offsetX = reach; break;
         }
 
-        const targetX = origin.x + offsetX;
-        const targetY = origin.y + offsetY;
-
-        return {
-            x: Math.floor(targetX / TILE_SIZE),
-            y: Math.floor(targetY / TILE_SIZE)
-        };
+        return { x: origin.x + offsetX, y: origin.y + offsetY };
     }
 }

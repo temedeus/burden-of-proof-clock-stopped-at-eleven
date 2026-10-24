@@ -699,6 +699,8 @@ export class Game {
     private openDialog(text: string): void {
         this.setDialogPages(text);
         this.state = "interacting";
+        // Nobody freezes mid-scratch or mid-stride while the dialog is up
+        for (const npc of this.currentRoom.npcs) npc.interruptIdle();
     }
 
     /** Paginate dialog per speaker: spoken lines wrap to bubble width, narration to the message box. */
@@ -2076,12 +2078,28 @@ export class Game {
                 const { map } = this.currentRoom;
                 this.chaseField.update(dt, map, this.player.x, this.player.y, this.player.width, this.player.height);
             }
+            const idleObstacles = [this.player, ...this.currentRoom.npcs];
             for (const npc of this.currentRoom.npcs) {
                 // Bystanders wave in panic while the murderer hunts you; police keep their composure
                 npc.setPanicking(
                     murdererLoose && npc.canPanic() && npc.id !== murdererId && !POLICE_NPC_IDS.includes(npc.id)
                 );
                 npc.tickPanic(dt);
+                // Ytte stays put while a scare or the finale has him on a script
+                const scripted =
+                    npc.id === murdererId && (murdererLoose || this.ledgerScare.active || this.atticScare.active);
+                if (
+                    npc.canIdle() &&
+                    !scripted &&
+                    !npc.isPanicking() &&
+                    !npc.isChasing() &&
+                    !npc.isFleeing() &&
+                    !npc.isStunned()
+                ) {
+                    npc.updateIdle(dt, this.currentRoom.map, idleObstacles);
+                } else {
+                    npc.interruptIdle();
+                }
                 if (npc.tickStun(dt)) {
                     this.resumeChaseAfterStun(npc);
                 }

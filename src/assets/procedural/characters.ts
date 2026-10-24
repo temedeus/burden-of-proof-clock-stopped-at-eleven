@@ -4,11 +4,37 @@ import type { ProceduralSpriteDef } from "./types";
 import { drawHoodedFrame } from "./hoodedFigure";
 
 export type CharacterFacing = "down" | "up" | "right";
-export type CharacterPose = "idle" | "walk_a" | "walk_b" | "walk_c" | "walk_d" | "panic_a" | "panic_b";
+export type CharacterPose =
+    | "idle"
+    | "walk_a"
+    | "walk_b"
+    | "walk_c"
+    | "walk_d"
+    | "panic_a"
+    | "panic_b"
+    | "scratch_head_a"
+    | "scratch_head_b"
+    | "scratch_butt_a"
+    | "scratch_butt_b";
 
 /** Arms-up waving frames (bystanders during the murderer chase). */
 export function isPanicPose(pose: CharacterPose): boolean {
     return pose === "panic_a" || pose === "panic_b";
+}
+
+/** Idle fidget: one hand scratching the head. */
+export function isScratchHeadPose(pose: CharacterPose): boolean {
+    return pose === "scratch_head_a" || pose === "scratch_head_b";
+}
+
+/** Idle fidget: one hand scratching the backside. */
+export function isScratchButtPose(pose: CharacterPose): boolean {
+    return pose === "scratch_butt_a" || pose === "scratch_butt_b";
+}
+
+/** The scratching hand rubs back and forth 1px between the two frames. */
+function scratchJiggle(pose: CharacterPose): number {
+    return pose === "scratch_head_b" || pose === "scratch_butt_b" ? 1 : 0;
 }
 
 /** How far the raised hands lean out from the shoulders on each wave frame. */
@@ -1044,7 +1070,8 @@ function drawFrontArms(
     swingL: number,
     swingR: number,
     sleeve: string,
-    tones: SkinTones
+    tones: SkinTones,
+    skipRight = false
 ): void {
     const lit = shade(sleeve, 0.15);
     const dark = shade(sleeve, -0.3);
@@ -1053,6 +1080,7 @@ function drawFrontArms(
         [rightX, swingR, false]
     ];
     for (const [x, swing, isLeft] of arms) {
+        if (skipRight && !isLeft) continue;
         const len = sleeveLen + swing;
         r(ctx, x, top, 4, len, sleeve);
         // Sloped shoulder
@@ -1094,7 +1122,11 @@ function drawRaisedFrontArms(
     }
 }
 
-/** Front/back arms: hanging and swinging, or raised when panicking. */
+/**
+ * Front/back arms: hanging and swinging, or raised when panicking. Scratch poses
+ * leave the screen-right arm to `drawScratchHeadArm` (drawn over the head) or reach
+ * it round to the backside here — hand visible from behind, tucked away from the front.
+ */
 function drawArmsForPose(
     ctx: CanvasRenderingContext2D,
     pose: CharacterPose,
@@ -1105,13 +1137,54 @@ function drawArmsForPose(
     swingL: number,
     swingR: number,
     sleeve: string,
-    tones: SkinTones
+    tones: SkinTones,
+    back = false
 ): void {
     if (isPanicPose(pose)) {
         drawRaisedFrontArms(ctx, leftX, rightX, top, sleeveLen, panicSpread(pose), sleeve, tones);
-    } else {
-        drawFrontArms(ctx, leftX, rightX, top, sleeveLen, swingL, swingR, sleeve, tones);
+        return;
     }
+    const scratching = isScratchHeadPose(pose) || isScratchButtPose(pose);
+    drawFrontArms(ctx, leftX, rightX, top, sleeveLen, swingL, swingR, sleeve, tones, scratching);
+    if (!isScratchButtPose(pose)) return;
+
+    const dark = shade(sleeve, -0.3);
+    if (back) {
+        // Elbow out, hand rubbing the seat of the trousers
+        const handX = 16 + scratchJiggle(pose);
+        const handY = top + sleeveLen + 2;
+        slantedLimb(ctx, rightX, top, handX + 1, handY - top, sleeve, dark);
+        r(ctx, handX, handY, 3, 3, tones.skin);
+        hline(ctx, handX, handY + 2, 3, tones.shadow);
+    } else {
+        // Arm swung behind the body: only the upper sleeve shows
+        r(ctx, rightX - 1 + scratchJiggle(pose), top, 4, sleeveLen - 3, sleeve);
+        vline(ctx, rightX - 1 + scratchJiggle(pose), top + 1, sleeveLen - 4, dark);
+    }
+}
+
+/** Screen-right hand raised to scratch the side of the head (front/back views); drawn after the head. */
+function drawScratchHeadArm(
+    ctx: CanvasRenderingContext2D,
+    pose: CharacterPose,
+    rightX: number,
+    top: number,
+    head: HeadBox,
+    sleeve: string,
+    tones: SkinTones
+): void {
+    if (!isScratchHeadPose(pose)) return;
+    const dark = shade(sleeve, -0.3);
+    const handX = head.x + head.w - 2;
+    const handY = head.y + 1 + scratchJiggle(pose);
+    const elbowX = rightX + 2;
+    const elbowY = top - 2;
+    // Forearm up from the elbow, upper arm back down to the shoulder
+    slantedLimb(ctx, handX, handY + 2, elbowX, elbowY - handY - 1, sleeve, dark);
+    slantedLimb(ctx, elbowX, elbowY, rightX, 4, sleeve, dark);
+    r(ctx, handX, handY, 3, 3, tones.skin);
+    hline(ctx, handX, handY + 2, 3, tones.shadow);
+    p(ctx, handX + 2, handY, tones.hi);
 }
 
 function drawFrontLegs(
@@ -1184,6 +1257,7 @@ function drawHumanoidFront(
     drawArmsForPose(ctx, pose, 6, 22, top + 1, 9, o.leftArmSwing, o.rightArmSwing, s.coat, tones);
     drawFullHead(ctx, s, head, top, "down");
     drawNecklace(ctx, s, head, top, false);
+    drawScratchHeadArm(ctx, pose, 22, top + 1, head, s.coat, tones);
 }
 
 function drawHumanoidBack(
@@ -1200,8 +1274,9 @@ function drawHumanoidBack(
     // Seen from behind, the character's left leg is on screen-right
     drawFrontLegs(ctx, s.pants ?? P.shadow, s.shoes ?? P.shoeBrown, top + 14, o.rightFootDy, o.leftFootDy);
     drawCoatFront(ctx, s, top, true);
-    drawArmsForPose(ctx, pose, 6, 22, top + 1, 9, o.rightArmSwing, o.leftArmSwing, s.coat, tones);
+    drawArmsForPose(ctx, pose, 6, 22, top + 1, 9, o.rightArmSwing, o.leftArmSwing, s.coat, tones, true);
     drawFullHead(ctx, s, head, top, "up");
+    drawScratchHeadArm(ctx, pose, 22, top + 1, head, s.coat, tones);
 }
 
 /** Side-view stride: foot x per leg (hip at x=16 near / 15 far) and lift in px. */
@@ -1280,6 +1355,49 @@ function drawSideArm(
     p(ctx, handX, top + sleeveLen + 2, tones.shadow);
 }
 
+/** Profile arm for the pose: raised (panic), at the back of the head or behind (scratch), or swinging. */
+function drawSideArmForPose(
+    ctx: CanvasRenderingContext2D,
+    pose: CharacterPose,
+    shoulderX: number,
+    top: number,
+    sleeveLen: number,
+    swing: number,
+    head: HeadBox,
+    backX: number,
+    sleeve: string,
+    tones: SkinTones
+): void {
+    if (isPanicPose(pose)) {
+        drawRaisedSideArm(ctx, shoulderX, top, sleeveLen, panicSpread(pose), sleeve, tones);
+        return;
+    }
+    const lit = shade(sleeve, 0.08);
+    const dark = shade(sleeve, -0.35);
+    const jig = scratchJiggle(pose);
+    if (isScratchHeadPose(pose)) {
+        // Elbow cocked back behind the head, hand rubbing the back of the skull
+        const handX = head.x - 1;
+        const handY = head.y + 2 + jig;
+        const elbowX = backX - 3;
+        const elbowY = top;
+        slantedLimb(ctx, handX, handY + 2, elbowX, elbowY - handY - 1, lit, dark);
+        slantedLimb(ctx, elbowX, elbowY, shoulderX - 1, 4, lit, dark);
+        r(ctx, handX, handY, 3, 3, tones.skin);
+        hline(ctx, handX, handY + 2, 3, tones.shadow);
+        return;
+    }
+    if (isScratchButtPose(pose)) {
+        const handX = backX - 2 + jig;
+        const handY = top + sleeveLen + 1;
+        slantedLimb(ctx, shoulderX, top, handX + 1, handY - top, lit, dark);
+        r(ctx, handX, handY, 3, 3, tones.skin);
+        hline(ctx, handX, handY + 2, 3, tones.shadow);
+        return;
+    }
+    drawSideArm(ctx, shoulderX, top, sleeveLen, swing, sleeve, tones);
+}
+
 /** Near arm thrown up in front of the face (profile panic). */
 function drawRaisedSideArm(
     ctx: CanvasRenderingContext2D,
@@ -1329,8 +1447,7 @@ function drawHumanoidSide(
     drawSideLeg(ctx, 16, top + 14, w.nearFootX, w.nearLift, GROUND_Y, pants, shoe);
     drawFullHead(ctx, s, head, top, "right");
     drawNecklace(ctx, s, head, top, true);
-    if (isPanicPose(pose)) drawRaisedSideArm(ctx, 16, top + 1, 9, panicSpread(pose), s.coat, tones);
-    else drawSideArm(ctx, 16, top + 1, 9, w.armSwing, s.coat, tones);
+    drawSideArmForPose(ctx, pose, 16, top + 1, 9, w.armSwing, head, 13, s.coat, tones);
 }
 
 // ============================================================================
@@ -1446,6 +1563,7 @@ function drawDressFront(
     drawArmsForPose(ctx, pose, 7, 21, top + 1, 8, o.leftArmSwing, o.rightArmSwing, d.sleeve ?? d.bodice, tones);
     drawFullHead(ctx, s, head, top, "down");
     drawNecklace(ctx, s, head, top, false);
+    drawScratchHeadArm(ctx, pose, 21, top + 1, head, d.sleeve ?? d.bodice, tones);
 }
 
 function drawDressBack(
@@ -1468,8 +1586,9 @@ function drawDressBack(
         hline(ctx, 13, top + 7, 6, d.apron);
         r(ctx, 15, top + 8, 2, 3, d.apron);
     }
-    drawArmsForPose(ctx, pose, 7, 21, top + 1, 8, o.rightArmSwing, o.leftArmSwing, d.sleeve ?? d.bodice, tones);
+    drawArmsForPose(ctx, pose, 7, 21, top + 1, 8, o.rightArmSwing, o.leftArmSwing, d.sleeve ?? d.bodice, tones, true);
     drawFullHead(ctx, s, head, top, "up");
+    drawScratchHeadArm(ctx, pose, 21, top + 1, head, d.sleeve ?? d.bodice, tones);
 }
 
 function drawDressSide(
@@ -1520,8 +1639,7 @@ function drawDressSide(
 
     drawFullHead(ctx, s, head, top, "right");
     drawNecklace(ctx, s, head, top, true);
-    if (isPanicPose(pose)) drawRaisedSideArm(ctx, 15, top + 1, 8, panicSpread(pose), d.sleeve ?? d.bodice, tones);
-    else drawSideArm(ctx, 15, top + 1, 8, swing, d.sleeve ?? d.bodice, tones);
+    drawSideArmForPose(ctx, pose, 15, top + 1, 8, swing, head, 12, d.sleeve ?? d.bodice, tones);
 }
 
 /** Draw one animation frame (bake facing `right`; mirror for `left` at render time) */
@@ -1573,6 +1691,8 @@ function drawBandages(ctx: CanvasRenderingContext2D, s: HumanoidStyle, facing: C
 
     // Right hand: screen-right from the front, screen-left from behind, near arm in profile
     if (isPanicPose(pose)) return;
+    // That hand is off scratching (from behind, the dressed hand is the idle one)
+    if ((isScratchHeadPose(pose) || isScratchButtPose(pose)) && facing !== "up") return;
     let hx: number;
     let hy: number;
     if (facing === "right") {

@@ -13,6 +13,7 @@ import { getSpriteDef } from "../assets/procedural/registry";
 import type { CharacterPose } from "../assets/procedural/characters";
 import { getHoodedFrame } from "../assets/procedural/hoodedFigure";
 import { drawKnife, knifeHandAnchor } from "../render/knifeDraw";
+import { NpcIdle, type IdleObstacle } from "./NpcIdle";
 
 const WALK_ANIM_FPS = 8;
 const PANIC_WAVE_FPS = 6;
@@ -43,6 +44,8 @@ export class NPC extends Entity {
   /** Waving arms in alarm (bystanders while the murderer is loose). */
   private panicking = false;
   private heavingOverhead = false;
+  /** Ambient strolling and scratching while nothing else is going on. */
+  private readonly idle = new NpcIdle();
   private panicTime = 0;
   private panicShout: string | null = null;
   private shoutRemaining = 0;
@@ -159,6 +162,21 @@ export class NPC extends Entity {
     this.heavingOverhead = value;
   }
 
+  /** Humanoid, standing NPCs potter about when idle (not bodies or props). */
+  canIdle(): boolean {
+    return !this.walkable && this.canPanic();
+  }
+
+  /** Short strolls near where they stand and the odd scratch. */
+  updateIdle(dt: number, map: TileMap, obstacles: readonly IdleObstacle[]): void {
+    this.idle.update(dt, this, map, obstacles);
+  }
+
+  /** Drop any stroll or scratch in progress (dialog, chase, scare). */
+  interruptIdle(): void {
+    this.idle.interrupt(this);
+  }
+
   isPanicking(): boolean {
     return this.panicking;
   }
@@ -191,6 +209,8 @@ export class NPC extends Entity {
     if (this.panicking) return Math.floor(this.panicTime * PANIC_WAVE_FPS) % 2 === 0 ? "panic_a" : "panic_b";
     // Hands close together overhead, as if gripping something
     if (this.heavingOverhead) return "panic_b";
+    const idlePose = this.idle.pose;
+    if (idlePose) return idlePose;
     if (performance.now() - this.lastWalkMs > 120) return "idle";
     const frame = Math.floor(this.walkTime * WALK_ANIM_FPS) % 4;
     return (["walk_a", "walk_b", "walk_c", "walk_d"] as const)[frame];

@@ -22,6 +22,8 @@ export interface GameOverSceneInfo {
 const APPROACH_END = 0.75;
 const RAISE_END = 1.05;
 const STAB_AT = 1.15;
+/** Seconds into the vignette the knife lands — sync the stab sound to this. */
+export const GAME_OVER_STAB_AT = STAB_AT;
 const FALL_START = 1.4;
 const FALL_END = 1.9;
 /** When the "Game Over" heading should start fading in. */

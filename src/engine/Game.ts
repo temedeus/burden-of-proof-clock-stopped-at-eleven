@@ -131,6 +131,7 @@ import {
 import { resetSessionWorldState } from "./resetSessionWorldState";
 import type { GameOverSceneInfo } from "../render/gameOverScene";
 import { CHANDELIER_GAME_OVER_CRASH_AT } from "../render/chandelierGameOverScene";
+import { GAME_OVER_STAB_AT } from "../render/gameOverScene";
 import { cluesForRetry, SCRIPTED_SCENES, scenesTriggeredBy, type SceneId } from "../systems/scriptedScenes";
 import { CUFF_CLICK_TIMES } from "../render/arrestScene";
 import { drawDialogBubble, drawPanicBubble, SPEECH_BUBBLE_TEXT_WIDTH } from "../render/speechBubble";
@@ -1168,6 +1169,8 @@ export class Game {
         const result = this.murdererStruggle.tick(dt);
         if (result === "fail") {
             this.gameOverCause = "stabbed";
+            // The vignette starts now; the knife lands GAME_OVER_STAB_AT seconds in
+            scareSounds.playStab(GAME_OVER_STAB_AT);
             this.onGameOver?.();
             return;
         }

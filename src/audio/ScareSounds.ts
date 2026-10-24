@@ -117,6 +117,65 @@ export class ScareSounds {
             osc.stop(start + 0.16);
         });
     }
+
+    /**
+     * Knife stab for the game over vignette, `at` seconds from now: a blade swish,
+     * a dull wet thud into the coat and a short squelch.
+     */
+    playStab(at: number): void {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const hit = ctx.currentTime + at;
+        const master = ctx.createGain();
+        master.gain.value = 0.34;
+        master.connect(getSfxOutput(ctx));
+
+        // Swish of the blade coming down, rising into the hit
+        const swishStart = Math.max(ctx.currentTime, hit - 0.12);
+        const swish = ctx.createBufferSource();
+        swish.buffer = createCrushedNoise(ctx, 0.14, 2);
+        const swishFilter = ctx.createBiquadFilter();
+        swishFilter.type = "bandpass";
+        swishFilter.frequency.setValueAtTime(1800, swishStart);
+        swishFilter.frequency.exponentialRampToValueAtTime(4200, hit);
+        swishFilter.Q.value = 1.4;
+        const swishGain = ctx.createGain();
+        swishGain.gain.setValueAtTime(0.0001, swishStart);
+        swishGain.gain.exponentialRampToValueAtTime(0.35, hit - 0.01);
+        swishGain.gain.exponentialRampToValueAtTime(0.0001, hit + 0.02);
+        swish.connect(swishFilter).connect(swishGain).connect(master);
+        swish.start(swishStart);
+
+        // Body thud: low sine punched down in pitch
+        const thud = ctx.createOscillator();
+        thud.type = "sine";
+        thud.frequency.setValueAtTime(140, hit);
+        thud.frequency.exponentialRampToValueAtTime(45, hit + 0.18);
+        const thudGain = ctx.createGain();
+        thudGain.gain.setValueAtTime(0.0001, hit);
+        thudGain.gain.linearRampToValueAtTime(1, hit + 0.005);
+        thudGain.gain.exponentialRampToValueAtTime(0.0001, hit + 0.25);
+        thud.connect(thudGain).connect(master);
+        thud.start(hit);
+        thud.stop(hit + 0.3);
+
+        // Wet squelch: muffled noise with a wobbling lowpass
+        const squelch = ctx.createBufferSource();
+        squelch.buffer = createCrushedNoise(ctx, 0.3, 0.5, 3);
+        const squelchFilter = ctx.createBiquadFilter();
+        squelchFilter.type = "lowpass";
+        squelchFilter.frequency.setValueAtTime(1600, hit);
+        squelchFilter.frequency.exponentialRampToValueAtTime(500, hit + 0.08);
+        squelchFilter.frequency.exponentialRampToValueAtTime(900, hit + 0.14);
+        squelchFilter.frequency.exponentialRampToValueAtTime(300, hit + 0.28);
+        squelchFilter.Q.value = 6;
+        const squelchGain = ctx.createGain();
+        squelchGain.gain.setValueAtTime(0.0001, hit);
+        squelchGain.gain.linearRampToValueAtTime(0.7, hit + 0.01);
+        squelchGain.gain.exponentialRampToValueAtTime(0.0001, hit + 0.3);
+        squelch.connect(squelchFilter).connect(squelchGain).connect(master);
+        squelch.start(hit);
+    }
 }
 
 export const scareSounds = new ScareSounds();

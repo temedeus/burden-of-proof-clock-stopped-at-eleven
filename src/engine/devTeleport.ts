@@ -14,6 +14,8 @@ export interface DevTeleportFlags {
     studySecretRevealed?: boolean;
     cellarSecretRevealed?: boolean;
     cookHiddenAfterDiningScare?: boolean;
+    /** Mid finale chase: confession done, Ytte hunting the detective. */
+    finaleChase?: boolean;
 }
 
 export interface DevTeleportMoment {
@@ -25,7 +27,9 @@ export interface DevTeleportMoment {
     clues: string[];
     flags: DevTeleportFlags;
     /** The object to stand beside: matched by confirm id, or by a clue it holds. */
-    trigger: { confirmId?: string; clueId?: string };
+    trigger?: { confirmId?: string; clueId?: string };
+    /** Instead of a trigger: the detective has just fled in through this room's door (Ytte follows). */
+    enterFrom?: string;
 }
 
 export function isDevTeleportEnabled(search: string = typeof location !== "undefined" ? location.search : ""): boolean {
@@ -98,5 +102,20 @@ export const DEV_TELEPORT_MOMENTS: DevTeleportMoment[] = [
             cellarSecretRevealed: true
         },
         trigger: { clueId: "missing_ledger_page" }
+    },
+    {
+        id: "tunnel_fist_fight",
+        label: "Finale chase: tunnel fist fight",
+        action: "Wait — Ytte follows you into the tunnel",
+        roomId: "secret_tunnel",
+        clues: [...BEFORE_CELLAR, "missing_ledger_page", "murder_weapon"],
+        flags: {
+            diningFireResolved: true,
+            completedScenes: ["ledger_scare", "attic_scare", "confrontation"],
+            studySecretRevealed: true,
+            cellarSecretRevealed: true,
+            finaleChase: true
+        },
+        enterFrom: "cellar_storage"
     }
 ];

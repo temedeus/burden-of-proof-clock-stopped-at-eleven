@@ -27,12 +27,15 @@ describe("dev teleport moments", () => {
                 }
             }
             // The trigger's clue is left for the player to find
-            if (m.trigger.clueId) {
+            if (m.trigger?.clueId) {
                 expect(m.clues).not.toContain(m.trigger.clueId);
                 for (const req of requires.get(m.trigger.clueId) ?? []) {
                     expect(m.clues, `${m.trigger.clueId} needs ${req}`).toContain(req);
                 }
             }
+            // Either stand at a trigger or arrive through a door
+            expect(!!m.trigger !== !!m.enterFrom).toBe(true);
+            if (m.enterFrom) expect(ctx.roomIds.has(m.enterFrom)).toBe(true);
         });
     }
 });

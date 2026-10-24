@@ -51,6 +51,9 @@ import type { Interactable } from "../world/Interactable";
 import { BLOOD_CRATE_H, BLOOD_CRATE_W, drawCrateKey } from "../assets/procedural/bloodCrate";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { DoorBarricade } from "../systems/DoorBarricade";
+import { FIGHT_OUTRO_SECONDS, FistFight } from "../systems/FistFight";
+import { drawFistFightScene } from "../render/fistFightScene";
+import { fightSounds } from "../audio/FightSounds";
 import { carriedDoorBarActor, doorBarActor, doorBarCenter } from "../render/doorBarDraw";
 import { BarDoorAnimation, facingTowardExit } from "../systems/BarDoorAnimation";
 import { VictorySequence } from "../systems/VictorySequence";
@@ -150,9 +153,19 @@ type GameState =
     | "window_scare"
     | "chandelier_trap"
     | "pan_splash"
-    | "barring_door";
+    | "barring_door"
+    | "fist_fight";
 
 const POLICE_NPC_IDS = ["police", "police2"];
+
+/** Ytte goads the detective into a fist fight the first time he corners them in the secret tunnel. */
+const FIST_FIGHT_TAUNT =
+    "Chef Ytte: Running again, Detective? Bok bok bok! Are you a chicken?\n\n" +
+    "Chef Ytte: Tell you what — I'll put the knife away. Bare knuckles. Let's see what you're made of.\n\n" +
+    "You: Nobody calls me a chicken. Put 'em up, Ytte.";
+const FIST_FIGHT_WON_TEXT = "Chef Ytte crumples onto the tunnel floor, out cold. Run — before he comes to!";
+/** How long Ytte stays down after losing the fist fight. */
+const FIST_FIGHT_KO_SECONDS = 6;
 
 const ROOM_DISPLAY_TITLES: Record<string, string> = {
     library: "Library",
@@ -210,6 +223,11 @@ export class Game {
     private doorBarricade: DoorBarricade;
     /** Ytte heaving the bar into place (cellar cutscene). */
     private barDoorAnim = new BarDoorAnimation();
+    /** Secret tunnel brawl during the finale chase — happens once, later catches are the usual struggle. */
+    private fistFight: FistFight;
+    private fistFightPending = false;
+    private fistFightDone = false;
+    private fistFightThudPlayed = false;
     /** Chef Ytte is removed from the map after the dining scare until the attic scare ends. */
     private cookHiddenAfterDiningScare: NPC | null = null;
     /** Set after the dining fireplace cutscene; changes mid-game cook dialog. */
@@ -287,6 +305,7 @@ export class Game {
         this.ledgerScare = new AtticScareChase(difficulty, "dining", DEFAULT_LEDGER_SCARE_MONOLOGUE);
         this.murdererStruggle = new MurdererStruggle(difficulty);
         this.doorBarricade = new DoorBarricade(difficulty);
+        this.fistFight = new FistFight(difficulty);
         this.onMenuRequest = options?.onMenuRequest;
         this.onGameOver = options?.onGameOver;
         this.onVictoryComplete = options?.onVictoryComplete;
@@ -515,10 +534,45 @@ export class Game {
             brokenAtticWindowIds: [],
             player: { x: 0, y: 0, facing: "down" }
         });
-        return this.placePlayerAtTrigger(moment.trigger);
+        // Saves never resume mid-chase, so the hunt is switched on after loading
+        if (f.finaleChase) this.murdererChase.accusedMurderer = true;
+        if (moment.enterFrom) return this.placePlayerEnteringFrom(moment.enterFrom);
+        return moment.trigger ? this.placePlayerAtTrigger(moment.trigger) : false;
     }
 
-    private placePlayerAtTrigger(trigger: DevTeleportMoment["trigger"]): boolean {
+    /** As if the detective just came through the door from `fromRoomId` (a chasing Ytte follows). */
+    private placePlayerEnteringFrom(fromRoomId: string): boolean {
+        const exit = this.rooms[fromRoomId]?.exits.find((e) => e.targetRoom === this.currentRoom.id);
+        if (!exit) return false;
+        this.roomTransitions.placePlayerAfterRoomTransition(
+            this.player,
+            fromRoomId,
+            this.currentRoom,
+            exit.spawnX,
+            exit.spawnY
+        );
+        // Ytte will come through the door the detective entered by
+        this.handleMurdererAfterRoomChange();
+        // A few steps in from the door, so the pursuer arrives behind the detective rather than on top of them
+        const { map } = this.currentRoom;
+        const cx = (map.width * TILE_SIZE) / 2 - this.player.width / 2;
+        const cy = (map.height * TILE_SIZE) / 2 - this.player.height / 2;
+        const len = Math.hypot(cx - this.player.x, cy - this.player.y);
+        if (len > 0) {
+            const stepX = ((cx - this.player.x) / len) * 4;
+            const stepY = ((cy - this.player.y) / len) * 4;
+            for (let i = 0; i < (TILE_SIZE * 3) / 4; i++) {
+                const nx = this.player.x + stepX;
+                const ny = this.player.y + stepY;
+                if (this.player.wouldCollideAt(nx, ny, map, this.currentRoom.npcs)) break;
+                this.player.x = nx;
+                this.player.y = ny;
+            }
+        }
+        return true;
+    }
+
+    private placePlayerAtTrigger(trigger: NonNullable<DevTeleportMoment["trigger"]>): boolean {
         const room = this.currentRoom;
         const { confirmId, clueId } = trigger;
         const target = room.interactables.find(
@@ -1151,6 +1205,74 @@ export class Game {
         const y = handY + (slot.y - handY) * t;
         // Sorted over Ytte's sprite: it is in his hands
         return [carriedDoorBarActor(this.currentRoom, exit, x, y, t, murderer.y + murderer.height + 1)];
+    }
+
+    /** Ytte stops in the tunnel to goad the detective; the fight starts when the taunt is dismissed. */
+    private tauntIntoFistFight(murderer: NPC): void {
+        murderer.setChasing(false);
+        murderer.setSwingingKnife(false);
+        const dx = this.player.x - murderer.x;
+        const dy = this.player.y - murderer.y;
+        murderer.setFacing(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up");
+        this.fistFightPending = true;
+        this.openDialog(FIST_FIGHT_TAUNT);
+        const npcCfg = this.content.npcs[this.getMurdererNpcId()];
+        talkSounds.startDialogue(
+            inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
+            extractSpokenLine(FIST_FIGHT_TAUNT, "Chef Ytte")
+        );
+    }
+
+    private beginFistFight(): void {
+        talkSounds.stopDialogue();
+        this.message = null;
+        this.messagePages = [];
+        this.messagePageIndex = 0;
+        this.fistFightPending = false;
+        this.fistFightThudPlayed = false;
+        this.fistFight.start();
+        this.state = "fist_fight";
+    }
+
+    private updateFistFight(dt: number): void {
+        const fight = this.fistFight;
+        if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
+            const event = fight.press();
+            if (event === "hit_ytte") {
+                if (fight.ducked) fightSounds.playWhoosh();
+                fightSounds.playPunch(fight.result === "won");
+            } else if (event === "blocked") {
+                fightSounds.playBlock();
+            }
+        }
+        for (const event of fight.tick(dt)) {
+            if (event === "hit_player") fightSounds.playPunch(true);
+        }
+        if (fight.result === "ongoing") return;
+
+        if (!this.fistFightThudPlayed && fight.outroTime >= FIGHT_OUTRO_SECONDS * 0.4) {
+            this.fistFightThudPlayed = true;
+            fightSounds.playThud();
+        }
+        if (fight.outroTime < FIGHT_OUTRO_SECONDS) return;
+
+        fight.stop();
+        if (fight.result === "lost") {
+            // Out on the floor — Ytte reaches for the knife after all
+            this.gameOverCause = "stabbed";
+            scareSounds.playStab(GAME_OVER_STAB_AT);
+            this.onGameOver?.();
+            return;
+        }
+
+        this.fistFightDone = true;
+        this.state = "playing";
+        const murderer = this.getMurderer();
+        if (murderer) {
+            murderer.stun(FIST_FIGHT_KO_SECONDS, murderer.x >= this.player.x ? 1 : -1);
+            this.murdererStruggle.beginCatchCooldown();
+        }
+        this.openDialog(FIST_FIGHT_WON_TEXT);
     }
 
     private beginStruggle(murderer: NPC): void {
@@ -1913,6 +2035,11 @@ export class Game {
             return;
         }
 
+        if (this.state === "fist_fight") {
+            this.updateFistFight(dt);
+            return;
+        }
+
         if (this.state === "pan_splash") {
             this.updatePanSplash(dt);
             return;
@@ -1933,6 +2060,10 @@ export class Game {
                 if (murderer) {
                     murderer.clearStun();
                     this.murdererChase.spawnMurdererInRoom(murderer, this.currentRoom, this.rooms);
+                    if (this.currentRoom.id === "secret_tunnel" && !this.fistFightDone && !this.fistFightPending) {
+                        this.tauntIntoFistFight(murderer);
+                        return;
+                    }
                     this.murdererChase.startMurdererChase(murderer);
                 }
             }
@@ -2240,6 +2371,10 @@ export class Game {
                     this.advanceMurdererConfrontation();
                     return;
                 }
+                if (this.fistFightPending) {
+                    this.beginFistFight();
+                    return;
+                }
                 if (this.ledgerScare.monologueActive) {
                     this.advanceRoomScareMonologue(this.ledgerScare);
                     return;
@@ -2349,6 +2484,19 @@ export class Game {
     }
 
     render(ctx: CanvasRenderingContext2D) {
+        if (this.state === "fist_fight") {
+            drawFistFightScene(
+                ctx,
+                this.fistFight,
+                {
+                    playerSprite: this.player.getSpriteName(),
+                    murdererSprite: this.getMurderer()?.getSpriteName() ?? "worker_man_grin"
+                },
+                this.decorAnimTime,
+                shouldShowTouchControls()
+            );
+            return;
+        }
         if (this.state === "inventory") {
             this.inventoryPanel.render(
                 ctx,

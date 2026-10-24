@@ -15,7 +15,10 @@ export type CharacterPose =
     | "scratch_head_a"
     | "scratch_head_b"
     | "scratch_butt_a"
-    | "scratch_butt_b";
+    | "scratch_butt_b"
+    | "fight_guard"
+    | "fight_windup"
+    | "fight_punch";
 
 /** Arms-up waving frames (bystanders during the murderer chase). */
 export function isPanicPose(pose: CharacterPose): boolean {
@@ -30,6 +33,11 @@ export function isScratchHeadPose(pose: CharacterPose): boolean {
 /** Idle fidget: one hand scratching the backside. */
 export function isScratchButtPose(pose: CharacterPose): boolean {
     return pose === "scratch_butt_a" || pose === "scratch_butt_b";
+}
+
+/** Fist fight stances (profile only — the fight is a side-on close-up). */
+export function isFightPose(pose: CharacterPose): boolean {
+    return pose === "fight_guard" || pose === "fight_windup" || pose === "fight_punch";
 }
 
 /** The scratching hand rubs back and forth 1px between the two frames. */
@@ -1387,6 +1395,10 @@ function drawSideArmForPose(
         hline(ctx, handX, handY + 2, 3, tones.shadow);
         return;
     }
+    if (isFightPose(pose)) {
+        drawFightSideArm(ctx, pose, shoulderX, top, lit, dark, tones);
+        return;
+    }
     if (isScratchButtPose(pose)) {
         const handX = backX - 2 + jig;
         const handY = top + sleeveLen + 1;
@@ -1396,6 +1408,48 @@ function drawSideArmForPose(
         return;
     }
     drawSideArm(ctx, shoulderX, top, sleeveLen, swing, sleeve, tones);
+}
+
+/** Profile fist: guard at the chin, drawn back behind the shoulder, or thrown straight out. */
+function drawFightSideArm(
+    ctx: CanvasRenderingContext2D,
+    pose: CharacterPose,
+    shoulderX: number,
+    top: number,
+    lit: string,
+    dark: string,
+    tones: SkinTones
+): void {
+    let fistX: number;
+    let fistY: number;
+    if (pose === "fight_punch") {
+        // Straight jab at shoulder height
+        r(ctx, shoulderX + 1, top, 10, 3, lit);
+        hline(ctx, shoulderX + 1, top + 2, 10, dark);
+        fistX = shoulderX + 11;
+        fistY = top - 1;
+        r(ctx, fistX, fistY, 4, 4, tones.skin);
+        vline(ctx, fistX, fistY, 4, tones.shadow);
+        hline(ctx, fistX, fistY + 3, 4, tones.shadow);
+        p(ctx, fistX + 3, fistY, tones.hi);
+        return;
+    }
+    if (pose === "fight_windup") {
+        // Elbow cocked back, fist behind the shoulder
+        slantedLimb(ctx, shoulderX, top, shoulderX - 3, 5, lit, dark);
+        fistX = shoulderX - 6;
+        fistY = top + 1;
+        slantedLimb(ctx, fistX + 1, fistY + 2, shoulderX - 3, 3, lit, dark);
+    } else {
+        // Guard: elbow tucked, fist up in front of the chin
+        slantedLimb(ctx, shoulderX, top, shoulderX + 2, 6, lit, dark);
+        fistX = shoulderX + 4;
+        fistY = top - 3;
+        slantedLimb(ctx, fistX, fistY + 3, shoulderX + 2, 4, lit, dark);
+    }
+    r(ctx, fistX, fistY, 4, 4, tones.skin);
+    hline(ctx, fistX, fistY + 3, 4, tones.shadow);
+    p(ctx, fistX + 3, fistY, tones.hi);
 }
 
 /** Near arm thrown up in front of the face (profile panic). */
@@ -1692,7 +1746,7 @@ function drawBandages(ctx: CanvasRenderingContext2D, s: HumanoidStyle, facing: C
     // Right hand: screen-right from the front, screen-left from behind, near arm in profile
     if (isPanicPose(pose)) return;
     // That hand is off scratching (from behind, the dressed hand is the idle one)
-    if ((isScratchHeadPose(pose) || isScratchButtPose(pose)) && facing !== "up") return;
+    if ((isScratchHeadPose(pose) || isScratchButtPose(pose) || isFightPose(pose)) && facing !== "up") return;
     let hx: number;
     let hy: number;
     if (facing === "right") {

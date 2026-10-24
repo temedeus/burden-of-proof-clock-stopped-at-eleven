@@ -216,7 +216,7 @@ function renderDevTeleport(c: CanvasRenderingContext2D): void {
     });
     c.fillStyle = "#6a6050";
     c.font = "13px monospace";
-    c.fillText("↑/↓ choose · Enter jump · Esc main menu · 1–5 jump directly", 48, h - 32);
+    c.fillText(`↑/↓ choose · Enter jump · Esc main menu · 1–${DEV_TELEPORT_MOMENTS.length} jump directly`, 48, h - 32);
 }
 
 // Preload sprites so character select and game can draw them immediately

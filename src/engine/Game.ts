@@ -52,6 +52,7 @@ import { BLOOD_CRATE_H, BLOOD_CRATE_W, drawCrateKey } from "../assets/procedural
 import { MurdererStruggle } from "../systems/MurdererStruggle";
 import { DoorBarricade } from "../systems/DoorBarricade";
 import { FIGHT_OUTRO_SECONDS, FistFight } from "../systems/FistFight";
+import { KitchenTableVault, planKitchenVault, VAULT_SHOUT } from "../systems/KitchenTableVault";
 import { drawFistFightScene } from "../render/fistFightScene";
 import { fightSounds } from "../audio/FightSounds";
 import { carriedDoorBarActor, doorBarActor, doorBarCenter } from "../render/doorBarDraw";
@@ -233,6 +234,8 @@ export class Game {
     /** Rooms whose brawl has been fought this chase. */
     private fistFightsDone = new Set<string>();
     private fistFightThudPlayed = false;
+    /** Ytte leaping a kitchen table to cut the detective off in the stove corridor (once per chase). */
+    private kitchenVault = new KitchenTableVault();
     /** Chef Ytte is removed from the map after the dining scare until the attic scare ends. */
     private cookHiddenAfterDiningScare: NPC | null = null;
     /** Set after the dining fireplace cutscene; changes mid-game cook dialog. */
@@ -556,7 +559,12 @@ export class Game {
             exit.spawnX,
             exit.spawnY
         );
-        // Ytte will come through the door the detective entered by
+        // Ytte will come through the door the detective entered by — not already be waiting here
+        const murderer = this.getMurderer();
+        const fromRoom = this.rooms[fromRoomId];
+        if (murderer && fromRoom && this.currentRoom.npcs.includes(murderer)) {
+            this.moveNPCToRoom(murderer, fromRoom, exit.x * TILE_SIZE, exit.y * TILE_SIZE);
+        }
         this.handleMurdererAfterRoomChange();
         // A few steps in from the door, so the pursuer arrives behind the detective rather than on top of them
         const { map } = this.currentRoom;
@@ -952,8 +960,11 @@ export class Game {
     private handleMurdererAfterRoomChange(): void {
         this.panSplash.stop();
         this.chaseField.reset();
+        this.kitchenVault.cancel();
         const murderer = this.getMurderer();
         if (!murderer) return;
+        murderer.renderOffsetX = 0;
+        murderer.renderOffsetY = 0;
 
         if (this.atticScare.active) {
             // After the dining fire he was hidden; leaving the attic returns him to the kitchen.
@@ -1280,6 +1291,67 @@ export class Game {
             this.murdererStruggle.beginCatchCooldown();
         }
         this.openDialog(FIST_FIGHT_WON_TEXT[this.currentRoom.id] ?? FIST_FIGHT_WON_TEXT.secret_tunnel);
+    }
+
+    /** Ytte vaulting a kitchen table to land in the stove corridor ahead of the detective. */
+    private updateKitchenVault(dt: number): void {
+        const vault = this.kitchenVault;
+        const murderer = this.getMurderer();
+        const wasActive = vault.active;
+        const plan = vault.plan;
+        const tick = vault.tick(dt);
+        if (!murderer) return;
+
+        if (wasActive && plan) {
+            const offset = vault.offset();
+            murderer.renderOffsetX = offset.x;
+            murderer.renderOffsetY = offset.y;
+            if (tick.landed) {
+                murderer.x = plan.toX;
+                murderer.y = plan.toY;
+                murderer.renderOffsetX = 0;
+                murderer.renderOffsetY = 0;
+                murderer.setFacing(this.player.x < murderer.x ? "left" : "right");
+                fightSounds.playThud();
+            }
+            if (tick.resume) {
+                this.murdererChase.startMurdererChase(murderer);
+            } else if (
+                !vault.airborne &&
+                this.murdererStruggle.canCatch() &&
+                this.murdererChase.npcOverlapsPlayer(this.player, murderer)
+            ) {
+                // Barring the corridor while he glares — running into him is a catch
+                vault.finish();
+                this.beginStruggle(murderer);
+            }
+            return;
+        }
+
+        if (vault.used || this.currentRoom.id !== "kitchen" || !this.murdererChase.accusedMurderer) return;
+        if (!murderer.isChasing() || murderer.isStunned() || !this.currentRoom.npcs.includes(murderer)) return;
+        const next = planKitchenVault(this.currentRoom, murderer, this.player, this.player.speed);
+        if (!next) return;
+        murderer.setChasing(false);
+        murderer.setFacing("up");
+        vault.start(next);
+        fightSounds.playWhoosh();
+    }
+
+    /** "Going somewhere, Detective?" over Ytte after his table vault. */
+    private vaultShoutActors(): DepthActor[] {
+        const murderer = this.getMurderer();
+        if (this.kitchenVault.shoutRemaining <= 0 || !murderer || !this.currentRoom.npcs.includes(murderer)) return [];
+        const box = murderer.getSpriteBox();
+        const roomW = this.currentRoom.map.width * TILE_SIZE;
+        const tipY = Math.max(30, box.y - 20);
+        return [
+            {
+                y: box.y,
+                height: box.h,
+                render: (c) => drawPanicBubble(c, VAULT_SHOUT, box.x + box.w / 2, tipY, this.decorAnimTime, 2, roomW - 2)
+            }
+        ];
     }
 
     private beginStruggle(murderer: NPC): void {
@@ -1815,7 +1887,8 @@ export class Game {
     /** Finale chase only: a stove within reach turns the shove into a boiling-pan splash. */
     private stoveInReachForPanSplash(): Interactable | null {
         if (!this.murdererChase.accusedMurderer || this.currentRoom.id !== "kitchen") return null;
-        return nearestKitchenStove(this.player, this.currentRoom);
+        // The whole stove corridor counts as beside a stove
+        return nearestKitchenStove(this.player, this.currentRoom, TILE_SIZE * 2.5);
     }
 
     /** Shoves the murderer away; returns tip direction for the fall animation. */
@@ -2075,6 +2148,7 @@ export class Game {
                     this.murdererChase.startMurdererChase(murderer);
                 }
             }
+            this.updateKitchenVault(dt);
 
             const ledgerTick = this.ledgerScare.tick(dt);
             if (ledgerTick.startChase) {
@@ -2627,7 +2701,8 @@ export class Game {
                 ...this.mooseTongueActors(),
                 ...this.panSplash.overheadActors(this.currentRoom.map.width * TILE_SIZE),
                 ...this.ballroomEggs.overheadActors(this.player),
-                ...this.panicBubbleActors()
+                ...this.panicBubbleActors(),
+                ...this.vaultShoutActors()
             ],
             skipClear: needsCentering
         });

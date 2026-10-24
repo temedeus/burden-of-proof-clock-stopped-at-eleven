@@ -326,13 +326,24 @@
     "name": "Kitchen table",
     "description": "A sturdy work surface, flour-dusted at the edges.",
     "width": 3,
-    "height": 2,
+    "height": 3,
     "drawWidth": 8,
     "drawHeight": 4,
     "renderAnchor": "bottom",
-    "collisionRowsFromBottom": 2,
+    "collisionRowsFromBottom": 3,
     "collisionWidth": 8,
     "spriteName": "kitchen_table"
+  },
+  "kitchen_table_vertical": {
+    "id": "kitchen_table_vertical",
+    "name": "Kitchen table",
+    "description": "A long work table set end-on, scored by years of cleavers.",
+    "width": 3,
+    "height": 5,
+    "drawWidth": 3,
+    "drawHeight": 6,
+    "renderAnchor": "bottom",
+    "spriteName": "kitchen_table_vertical"
   },
   "kitchen_stove": {
     "id": "kitchen_stove",

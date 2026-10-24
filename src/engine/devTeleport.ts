@@ -132,5 +132,20 @@ export const DEV_TELEPORT_MOMENTS: DevTeleportMoment[] = [
             finaleChase: true
         },
         enterFrom: "hall"
+    },
+    {
+        id: "kitchen_vault",
+        label: "Finale chase: kitchen table vault",
+        action: "Run west, up the gap and along the stoves",
+        roomId: "kitchen",
+        clues: [...BEFORE_CELLAR, "missing_ledger_page", "murder_weapon"],
+        flags: {
+            diningFireResolved: true,
+            completedScenes: ["ledger_scare", "attic_scare", "confrontation"],
+            studySecretRevealed: true,
+            cellarSecretRevealed: true,
+            finaleChase: true
+        },
+        enterFrom: "courtyard"
     }
 ];

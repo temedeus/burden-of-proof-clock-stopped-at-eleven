@@ -19,21 +19,39 @@
       "anchor": "top-left"
     },
     {
-      "furnitureId": "kitchen_table",
-      "x": 11,
-      "y": 6,
-      "anchor": "top-left"
-    },
-    {
-      "furnitureId": "kitchen_table",
-      "x": 11,
-      "y": 12,
+      "furnitureId": "kitchen_stove",
+      "x": 13,
+      "y": 1,
       "anchor": "top-left"
     },
     {
       "furnitureId": "kitchen_stove",
       "x": 18,
       "y": 1,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "kitchen_table",
+      "x": 7,
+      "y": 6,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "kitchen_table",
+      "x": 15,
+      "y": 6,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "kitchen_table_vertical",
+      "x": 18,
+      "y": 9,
+      "anchor": "top-left"
+    },
+    {
+      "furnitureId": "kitchen_table_vertical",
+      "x": 18,
+      "y": 12,
       "anchor": "top-left"
     }
   ],
@@ -57,18 +75,18 @@
     {
       "npcId": "cook",
       "x": 8,
-      "y": 7
+      "y": 8
     },
     {
       "npcId": "kitchen_helper_a",
       "x": 5,
-      "y": 3,
+      "y": 8,
       "facing": "up"
     },
     {
       "npcId": "kitchen_helper_b",
-      "x": 19,
-      "y": 3,
+      "x": 13,
+      "y": 8,
       "facing": "up"
     }
   ]

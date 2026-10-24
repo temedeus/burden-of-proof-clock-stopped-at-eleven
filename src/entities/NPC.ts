@@ -59,6 +59,9 @@ export class NPC extends Entity {
   cutsceneScale = 1;
   cutsceneAlpha = 1;
   cutsceneTilt = 0;
+  /** Draw-only shift (e.g. mid-leap) — the feet box, collision and depth sort stay put. */
+  renderOffsetX = 0;
+  renderOffsetY = 0;
   facing: Facing = "down";
 
   constructor(
@@ -420,6 +423,17 @@ export class NPC extends Entity {
   }
 
   render(ctx: CanvasRenderingContext2D) {
+    if (this.renderOffsetX !== 0 || this.renderOffsetY !== 0) {
+      ctx.save();
+      ctx.translate(Math.round(this.renderOffsetX), Math.round(this.renderOffsetY));
+      this.renderAtFeet(ctx);
+      ctx.restore();
+      return;
+    }
+    this.renderAtFeet(ctx);
+  }
+
+  private renderAtFeet(ctx: CanvasRenderingContext2D): void {
     const poseActive =
       Math.abs(this.cutsceneScale - 1) > 0.001 ||
       this.cutsceneAlpha < 0.999 ||

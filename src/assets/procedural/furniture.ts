@@ -12,6 +12,7 @@ import {
     drawGrandPiano,
     drawHallClock,
     drawKitchenTable,
+    drawKitchenTableVertical,
     drawLockedCabinet,
     drawOldShelf,
     drawReadingTable,
@@ -361,6 +362,14 @@ export const FURNITURE_SPRITES: Record<string, ProceduralSpriteDef> = {
         nativeHeight: 64,
         draw(ctx) {
             drawKitchenTable(ctx);
+        }
+    },
+
+    kitchen_table_vertical: {
+        nativeWidth: 48,
+        nativeHeight: 96,
+        draw(ctx) {
+            drawKitchenTableVertical(ctx);
         }
     },
 

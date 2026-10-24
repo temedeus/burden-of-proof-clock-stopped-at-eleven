@@ -271,6 +271,55 @@ export function drawKitchenTable(ctx: CanvasRenderingContext2D): void {
     }
 }
 
+/** 48x96 @2x — the same scrubbed pine table turned end-on: long top running away from the viewer. */
+export function drawKitchenTableVertical(ctx: CanvasRenderingContext2D): void {
+    const pine = { o: "#3a2614", d: "#7a5a36", m: "#9a7648", l: "#b8925e", h: "#d0ac78" };
+    floorShadow(ctx, 4, 92, 40, 3);
+    // Near legs only — the far pair hides under the top
+    leg(ctx, 5, 76, 93, 5, pine);
+    leg(ctx, 38, 76, 93, 5, pine);
+    hline(ctx, 10, 88, 28, pine.d);
+    tabletop(ctx, 2, 4, 44, 70, 6, pine, 13);
+    // Knife scores on the scrubbed top
+    const rand = seeded(17);
+    for (let i = 0; i < 12; i++) {
+        const x = 6 + Math.floor(rand() * 34);
+        const y = 8 + Math.floor(rand() * 62);
+        hline(ctx, x, y, 3, pine.m);
+    }
+
+    // Copper stockpot near the far end
+    ellipse(ctx, 17, 15, 9, 5, "#7a3a1a");
+    ellipse(ctx, 17, 14, 8, 4, "#c06a34");
+    ellipse(ctx, 17, 13, 6, 2.5, "#3a2418");
+    hline(ctx, 12, 11, 4, "#e8a060");
+    r(ctx, 7, 13, 2, 2, "#5a2a14");
+    r(ctx, 25, 13, 2, 2, "#5a2a14");
+
+    // Board with a fish and a cleaver
+    r(ctx, 9, 30, 20, 26, "#5a3a20");
+    r(ctx, 10, 30, 18, 25, "#8a6036");
+    hline(ctx, 10, 30, 18, "#a87848");
+    ellipse(ctx, 19, 42, 4, 9, "#8a9aa4");
+    ellipse(ctx, 18, 41, 2, 7, "#b8c8d0");
+    p(ctx, 19, 34, P.black);
+    r(ctx, 17, 51, 4, 3, "#6a7a84");
+    r(ctx, 32, 36, 6, 10, "#a8b0b8");
+    vline(ctx, 32, 36, 10, "#d0d8e0");
+    r(ctx, 33, 46, 4, 6, "#3a2614");
+
+    // Onions and a bunch of herbs by the near edge
+    for (const [x, y] of [[34, 22], [38, 26], [33, 28]] as const) {
+        ellipse(ctx, x, y, 2.5, 2, "#c8a050");
+        p(ctx, x, y - 2, "#6a8a3a");
+    }
+    for (let i = 0; i < 5; i++) vline(ctx, 10 + i * 2, 60 + (i % 2), 6, P.foodGreen);
+    hline(ctx, 9, 66, 12, "#7a5a2a");
+    // Loaf
+    ellipse(ctx, 34, 64, 5, 4, "#a86a30");
+    hline(ctx, 31, 62, 5, "#c88a48");
+}
+
 // ---------------------------------------------------------------------------
 // Carpet (2x)
 // ---------------------------------------------------------------------------

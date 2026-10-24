@@ -20,7 +20,7 @@ function kitchen() {
 
 describe("KitchenPanSplash", () => {
     it("finds every stove in the kitchen", () => {
-        expect(getKitchenStoveBounds(kitchen())).toHaveLength(3);
+        expect(getKitchenStoveBounds(kitchen())).toHaveLength(4);
     });
 
     it("is in reach just below a stove but not across the room", () => {

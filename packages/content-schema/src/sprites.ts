@@ -111,6 +111,7 @@ export const VALID_SPRITE_NAMES = [
     "manor_lord_bed",
     "dining_table",
     "kitchen_table",
+    "kitchen_table_vertical",
     "booze_table",
     "drinking_chair",
     "fancy_chair",

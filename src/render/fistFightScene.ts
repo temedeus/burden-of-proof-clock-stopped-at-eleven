@@ -1,9 +1,18 @@
 /**
  * Fist fight close-up: the detective (left) and Chef Ytte (right) side-on in the
- * secret tunnel, drawn from the in-game 32×40 frames at a chunky integer scale.
+ * secret tunnel or the dining room, drawn from the in-game 32×40 frames at a
+ * chunky integer scale.
  */
 import type { PlayerSpriteName } from "@cse/content-schema";
 import { getHumanoidFrame, HUMANOID_NATIVE_H, HUMANOID_NATIVE_W } from "../assets/procedural/characterAnimation";
+import {
+    drawFireplaceAnimated,
+    drawFireplaceStone,
+    FIREPLACE_H,
+    FIREPLACE_W
+} from "../assets/procedural/fireplace";
+import { drawFireplaceSoot } from "./diningBurnDamage";
+import { seeded } from "../assets/procedural/furnitureKit";
 import {
     getHumanoidStyle,
     PLAYER_CHARACTER_STYLES,
@@ -18,9 +27,15 @@ import {
     type FistFight
 } from "../systems/FistFight";
 
+/** Where the brawl happens — picks the backdrop. */
+export type FistFightSetting = "tunnel" | "dining";
+
 export interface FistFightCast {
     playerSprite: PlayerSpriteName;
     murdererSprite: string;
+    setting?: FistFightSetting;
+    /** Dining room only: whether the hearth is still burning (it's cold after the fire). */
+    fireLit?: boolean;
 }
 
 const FONT_SC = "\"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
@@ -37,6 +52,100 @@ function murdererStyle(sprite: string): HumanoidStyle {
 /** Native px from the frame bottom to the soles: dresses stand on a lower hem line than trousers. */
 function soleLift(style: HumanoidStyle): number {
     return style.dress ? 2 : 6;
+}
+
+/**
+ * Dining room behind the fighters: speckled plaster over dark wainscot panelling,
+ * parquet floor, and the marble fireplace set back on the far wall.
+ */
+function drawDiningRoom(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    groundY: number,
+    s: number,
+    time: number,
+    fireLit: boolean
+): void {
+    const W = ctx.canvas.width;
+    const H = ctx.canvas.height;
+    // The far wall meets the floor a little above the fighters' feet
+    const wallBase = groundY - 6 * s;
+    const wainscotTop = wallBase - 26 * s;
+
+    // Plaster with a fine speckle, like the in-game wall tiles
+    ctx.fillStyle = "#d6cdbd";
+    ctx.fillRect(0, 0, W, wainscotTop);
+    const rand = seeded(41);
+    for (let i = 0; i < (W * wainscotTop) / (s * s * 14); i++) {
+        ctx.fillStyle = rand() < 0.5 ? "#c4baa8" : "#e4ddd0";
+        ctx.fillRect(Math.floor((rand() * W) / s) * s, Math.floor((rand() * wainscotTop) / s) * s, s, s);
+    }
+
+    // Wainscot: dado rail, then raised panels between lighter stiles
+    ctx.fillStyle = "#3a2516";
+    ctx.fillRect(0, wainscotTop, W, wallBase - wainscotTop);
+    ctx.fillStyle = "#7a5636";
+    ctx.fillRect(0, wainscotTop, W, 2 * s);
+    ctx.fillStyle = "#24160c";
+    ctx.fillRect(0, wainscotTop + 2 * s, W, s);
+    const panelW = 9 * s;
+    for (let x = 0; x < W; x += panelW) {
+        ctx.fillStyle = "#4e331f";
+        ctx.fillRect(x + 2 * s, wainscotTop + 5 * s, panelW - 4 * s, wallBase - wainscotTop - 9 * s);
+        ctx.fillStyle = "#5e3f27";
+        ctx.fillRect(x + 2 * s, wainscotTop + 5 * s, panelW - 4 * s, s);
+        ctx.fillStyle = "#2a1a0e";
+        ctx.fillRect(x + 2 * s, wallBase - 5 * s, panelW - 4 * s, s);
+    }
+    ctx.fillStyle = "#2a1a0e";
+    ctx.fillRect(0, wallBase - 2 * s, W, 2 * s);
+
+    // Parquet: staggered dark planks receding to the wall
+    ctx.fillStyle = "#3a281c";
+    ctx.fillRect(0, wallBase, W, H - wallBase);
+    const plankH = 3 * s;
+    for (let row = 0; wallBase + row * plankH < H; row++) {
+        const y = wallBase + row * plankH;
+        ctx.fillStyle = "#2a1c12";
+        ctx.fillRect(0, y, W, Math.max(1, Math.round(s / 2)));
+        const plankW = 16 * s;
+        const offset = (row * 7 * s) % plankW;
+        for (let x = -offset; x < W; x += plankW) {
+            ctx.fillStyle = row % 2 ? "#44301f" : "#3e2b1c";
+            ctx.fillRect(x + s, y + s, plankW - 2 * s, plankH - s);
+            ctx.fillStyle = "#2a1c12";
+            ctx.fillRect(x, y, Math.max(1, Math.round(s / 2)), plankH);
+        }
+    }
+
+    // Fireplace set back behind the fighters, chimney breast running out of frame
+    const fs = s * 0.62;
+    const fw = FIREPLACE_W * fs;
+    const fh = FIREPLACE_H * fs;
+    const fx = Math.round(cx - fw / 2);
+    const fy = Math.round(wallBase + 2 * s - fh);
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    if (fireLit) {
+        drawFireplaceAnimated(ctx, fx, fy, fw, fh, time);
+    } else {
+        // After the fire: cold ash in the grate and soot up the chimneypiece, as in the room
+        ctx.save();
+        ctx.translate(fx, fy);
+        ctx.scale(fs, fs);
+        drawFireplaceStone(ctx);
+        ctx.restore();
+        drawFireplaceSoot(ctx, fx, fy, fw, fh);
+    }
+    ctx.restore();
+
+    // Room light: warm on the hearth when it burns, otherwise a dim evening gloom
+    const glow = ctx.createRadialGradient(cx, groundY - 22 * s, 8 * s, cx, groundY - 22 * s, 100 * s);
+    glow.addColorStop(0, fireLit ? "rgba(255, 150, 60, 0.16)" : "rgba(255, 220, 170, 0.06)");
+    glow.addColorStop(0.6, "rgba(0, 0, 0, 0.3)");
+    glow.addColorStop(1, "rgba(0, 0, 0, 0.85)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
 }
 
 /** Frame with feet centred on (feetX, groundY); `tilt` pivots at the feet. */
@@ -346,7 +455,8 @@ export function drawFistFightScene(
     ctx.imageSmoothingEnabled = false;
     // Camera jolts when the detective takes a hit
     if (ev === "hit_player" && since < 0.25) ctx.translate(Math.round(Math.sin(since * 80) * s * 2 * (1 - since / 0.25)), 0);
-    drawTunnel(ctx, cx, groundY, s, time);
+    if (cast.setting === "dining") drawDiningRoom(ctx, cx, groundY, s, time, cast.fireLit === true);
+    else drawTunnel(ctx, cx, groundY, s, time);
 
     // --- Detective (left, facing right) ---
     let playerPose: CharacterPose = "fight_guard";
@@ -478,6 +588,11 @@ export function drawFistFightScene(
         drawTutorialCard(ctx, fight, time, touchControls);
     } else if (fight.result === "ongoing") {
         ctx.font = `bold 30px ${FONT_SC}`;
+        // Outlined so it reads over the dining room's mirror and plaster
+        ctx.lineJoin = "round";
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(10, 6, 4, 0.85)";
+        ctx.strokeText("Put 'em up!", cx, 56);
         ctx.fillStyle = "#e8e0d5";
         ctx.fillText("Put 'em up!", cx, 56);
         ctx.font = `17px ${FONT}`;

@@ -117,5 +117,20 @@ export const DEV_TELEPORT_MOMENTS: DevTeleportMoment[] = [
             finaleChase: true
         },
         enterFrom: "cellar_storage"
+    },
+    {
+        id: "dining_fist_fight",
+        label: "Finale chase: dining-room fist fight",
+        action: "Wait — Ytte follows you into the dining room",
+        roomId: "dining",
+        clues: [...BEFORE_CELLAR, "missing_ledger_page", "murder_weapon"],
+        flags: {
+            diningFireResolved: true,
+            completedScenes: ["ledger_scare", "attic_scare", "confrontation"],
+            studySecretRevealed: true,
+            cellarSecretRevealed: true,
+            finaleChase: true
+        },
+        enterFrom: "hall"
     }
 ];

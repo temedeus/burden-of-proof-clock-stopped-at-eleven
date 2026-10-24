@@ -163,7 +163,11 @@ const FIST_FIGHT_TAUNT =
     "Chef Ytte: Running again, Detective? Bok bok bok! Are you a chicken?\n\n" +
     "Chef Ytte: Tell you what — I'll put the knife away. Bare knuckles. Let's see what you're made of.\n\n" +
     "You: Nobody calls me a chicken. Put 'em up, Ytte.";
-const FIST_FIGHT_WON_TEXT = "Chef Ytte crumples onto the tunnel floor, out cold. Run — before he comes to!";
+/** Rooms where Ytte stops to goad the detective into a brawl (once each), and how he goes down there. */
+const FIST_FIGHT_WON_TEXT: Record<string, string> = {
+    secret_tunnel: "Chef Ytte crumples onto the tunnel floor, out cold. Run — before he comes to!",
+    dining: "Chef Ytte topples into the dining chairs and lies still, out cold. Run — before he comes to!"
+};
 /** How long Ytte stays down after losing the fist fight. */
 const FIST_FIGHT_KO_SECONDS = 6;
 
@@ -223,10 +227,11 @@ export class Game {
     private doorBarricade: DoorBarricade;
     /** Ytte heaving the bar into place (cellar cutscene). */
     private barDoorAnim = new BarDoorAnimation();
-    /** Secret tunnel brawl during the finale chase — happens once, later catches are the usual struggle. */
+    /** Finale-chase brawl (secret tunnel, dining room) — once per room; later catches are the usual struggle. */
     private fistFight: FistFight;
     private fistFightPending = false;
-    private fistFightDone = false;
+    /** Rooms whose brawl has been fought this chase. */
+    private fistFightsDone = new Set<string>();
     private fistFightThudPlayed = false;
     /** Chef Ytte is removed from the map after the dining scare until the attic scare ends. */
     private cookHiddenAfterDiningScare: NPC | null = null;
@@ -1267,14 +1272,14 @@ export class Game {
             return;
         }
 
-        this.fistFightDone = true;
+        this.fistFightsDone.add(this.currentRoom.id);
         this.state = "playing";
         const murderer = this.getMurderer();
         if (murderer) {
             murderer.stun(FIST_FIGHT_KO_SECONDS, murderer.x >= this.player.x ? 1 : -1);
             this.murdererStruggle.beginCatchCooldown();
         }
-        this.openDialog(FIST_FIGHT_WON_TEXT);
+        this.openDialog(FIST_FIGHT_WON_TEXT[this.currentRoom.id] ?? FIST_FIGHT_WON_TEXT.secret_tunnel);
     }
 
     private beginStruggle(murderer: NPC): void {
@@ -2062,7 +2067,8 @@ export class Game {
                 if (murderer) {
                     murderer.clearStun();
                     this.murdererChase.spawnMurdererInRoom(murderer, this.currentRoom, this.rooms);
-                    if (this.currentRoom.id === "secret_tunnel" && !this.fistFightDone && !this.fistFightPending) {
+                    const brawlRoom = this.currentRoom.id in FIST_FIGHT_WON_TEXT;
+                    if (brawlRoom && !this.fistFightsDone.has(this.currentRoom.id) && !this.fistFightPending) {
                         this.tauntIntoFistFight(murderer);
                         return;
                     }
@@ -2492,7 +2498,9 @@ export class Game {
                 this.fistFight,
                 {
                     playerSprite: this.player.getSpriteName(),
-                    murdererSprite: this.getMurderer()?.getSpriteName() ?? "worker_man_grin"
+                    murdererSprite: this.getMurderer()?.getSpriteName() ?? "worker_man_grin",
+                    setting: this.currentRoom.id === "dining" ? "dining" : "tunnel",
+                    fireLit: !this.diningFireResolved
                 },
                 this.decorAnimTime,
                 shouldShowTouchControls()

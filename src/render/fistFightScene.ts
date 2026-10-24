@@ -13,6 +13,7 @@ import {
 import {
     FIGHT_OUTRO_SECONDS,
     FIGHT_TUTORIAL_LOCK_SECONDS,
+    KO_SLOWMO_SECONDS,
     type Fighter,
     type FistFight
 } from "../systems/FistFight";
@@ -150,6 +151,111 @@ function drawFighterBars(
     ctx.fillStyle = fighter.winded ? "#e86050" : "rgba(232, 224, 213, 0.7)";
     ctx.fillText(fighter.winded ? "Winded!" : "Stamina", alignRight ? x + w : x, sy + 24);
     ctx.textAlign = "left";
+}
+
+const BLOOD = "#7a1010";
+const BLOOD_HI = "#a82020";
+const BLOOD_DARK = "#4e0808";
+const TOOTH = "#ece4d0";
+const TOOTH_SHADE = "#a89c84";
+
+/** Stable 0..1 noise per particle so the spray looks random but replays identically. */
+function hash01(i: number, k: number): number {
+    const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453;
+    return x - Math.floor(x);
+}
+
+/** Ballistic arc from (ox, oy); returns the point at time `t`, or the landing spot once it hits `floorY`. */
+function arc(
+    ox: number,
+    oy: number,
+    vx: number,
+    vy: number,
+    g: number,
+    floorY: number,
+    t: number
+): { x: number; y: number; landed: boolean } {
+    const y = oy + vy * t + 0.5 * g * t * t;
+    if (y < floorY) return { x: ox + vx * t, y, landed: false };
+    const land = (-vy + Math.sqrt(vy * vy + 2 * g * (floorY - oy))) / g;
+    return { x: ox + vx * land, y: floorY, landed: true };
+}
+
+/**
+ * Knockout spray from Ytte's mouth: teeth tumbling end over end and blood droplets,
+ * flung away from the detective's fist and settling on the tunnel floor. `t` is
+ * scene time since the blow (slowed during the slow motion).
+ */
+function drawKnockoutDebris(ctx: CanvasRenderingContext2D, ox: number, oy: number, groundY: number, s: number, t: number): void {
+    const g = 170 * s;
+
+    for (let i = 0; i < 20; i++) {
+        const delay = hash01(i, 1) * 0.06;
+        const tt = t - delay;
+        if (tt <= 0) continue;
+        const vx = (35 + hash01(i, 3) * 85) * s;
+        const vy = -(18 + hash01(i, 4) * 52) * s;
+        const size = hash01(i, 5) > 0.6 ? 2 * s : s;
+        const floorY = groundY + Math.round(hash01(i, 6) * 5) * s;
+        const p = arc(ox, oy, vx, vy, g, floorY, tt);
+        if (p.landed) {
+            // Splat, flattened on the floor
+            ctx.fillStyle = BLOOD_DARK;
+            ctx.fillRect(Math.round(p.x - size * 1.5), Math.round(p.y), Math.round(size * 3), s);
+            ctx.fillStyle = BLOOD;
+            ctx.fillRect(Math.round(p.x - size), Math.round(p.y), Math.round(size * 2), s);
+        } else {
+            ctx.fillStyle = i % 3 === 0 ? BLOOD_HI : BLOOD;
+            // Stretched along the fall once it's dropping fast
+            const falling = vy + g * tt > 30 * s;
+            ctx.fillRect(Math.round(p.x), Math.round(p.y), size, falling ? size * 2 : size);
+        }
+    }
+
+    for (let i = 0; i < 3; i++) {
+        const vx = (45 + hash01(i, 7) * 40) * s;
+        const vy = -(48 + hash01(i, 8) * 22) * s;
+        const floorY = groundY + (1 + i * 2) * s;
+        const p = arc(ox, oy - s, vx, vy, g, floorY, t);
+        const spin = hash01(i, 9) > 0.5 ? 1 : -1;
+        // Tumbles in the air, lies on its side once down
+        const angle = p.landed ? Math.PI / 2 : spin * t * (9 + i * 3);
+        ctx.save();
+        ctx.translate(Math.round(p.x), Math.round(p.y - (p.landed ? s : 0)));
+        ctx.rotate(angle);
+        ctx.fillStyle = TOOTH_SHADE;
+        ctx.fillRect(-s, -1.5 * s, 2 * s, 3 * s);
+        ctx.fillStyle = TOOTH;
+        ctx.fillRect(-s, -1.5 * s, 2 * s, 2 * s);
+        // Bloody root
+        ctx.fillStyle = BLOOD_HI;
+        ctx.fillRect(-s, 0.5 * s, s, s);
+        ctx.restore();
+    }
+}
+
+/** Cinematic slow-motion dressing: letterbox bars slide in and a flash on the blow. */
+function drawSlowMoFrame(ctx: CanvasRenderingContext2D, fight: FistFight): void {
+    const W = ctx.canvas.width;
+    const H = ctx.canvas.height;
+    const flash = clamp01(1 - fight.outroTime / 0.06);
+    if (flash > 0) {
+        ctx.fillStyle = `rgba(255, 250, 235, ${flash * 0.45})`;
+        ctx.fillRect(0, 0, W, H);
+    }
+    // Bars in during the slow motion, back out as time catches up
+    const r = fight.outroRealTime;
+    const inT = easeOut(clamp01(r / 0.25));
+    const outT = clamp01((r - KO_SLOWMO_SECONDS) / 0.35);
+    const bar = Math.round(H * 0.08 * inT * (1 - outT));
+    if (bar > 0) {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, W, bar);
+        ctx.fillRect(0, H - bar, W, bar);
+    }
+    // Cold, desaturated tint while time crawls
+    ctx.fillStyle = `rgba(20, 24, 40, ${0.22 * (1 - outT)})`;
+    ctx.fillRect(0, 0, W, H);
 }
 
 /** Big "!" in the telegraph colours, as drawn over Ytte's head. */
@@ -349,6 +455,11 @@ export function drawFistFightScene(
     }
     if (ev === "hit_player" || ev === "chip_player") {
         drawImpact(ctx, playerFeetX + 4 * s, groundY - h * 0.78, s, since, ev === "chip_player");
+    }
+    if (fight.result === "won") {
+        // Spray leaves his mouth where the knockout punch caught him
+        drawKnockoutDebris(ctx, cx + 5 * s, groundY - h * 0.78, groundY, s, fight.outroTime);
+        drawSlowMoFrame(ctx, fight);
     }
     ctx.restore();
 

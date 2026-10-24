@@ -46,6 +46,10 @@ const RIPOSTE_WINDUP = 0.3;
 export const FIGHT_TUTORIAL_LOCK_SECONDS = 0.6;
 /** Seconds the knockout plays before the fight hands back to the chase / game over. */
 export const FIGHT_OUTRO_SECONDS = 1.6;
+/** Ytte's knockout plays in slow motion for this many real seconds, then eases back to full speed. */
+export const KO_SLOWMO_SECONDS = 1.5;
+const KO_SLOWMO_RATE = 0.22;
+const KO_SLOWMO_EASE_OUT = 0.4;
 
 const CONFIG: Record<
     Difficulty,
@@ -121,8 +125,10 @@ export class FistFight {
     tutorial = false;
     /** Seconds the tutorial card has been up. */
     tutorialTime = 0;
-    /** Seconds since the fight was decided (knockout animation). */
+    /** Seconds since the fight was decided (knockout animation) — in scene time, slowed during slow motion. */
     outroTime = 0;
+    /** Real seconds since the fight was decided. */
+    outroRealTime = 0;
     /** Most recent event and how long ago it happened — drives the reaction animations. */
     lastEvent: FightEvent | null = null;
     sinceEvent = Infinity;
@@ -149,6 +155,7 @@ export class FistFight {
         this.tutorial = true;
         this.tutorialTime = 0;
         this.outroTime = 0;
+        this.outroRealTime = 0;
         this.lastEvent = null;
         this.sinceEvent = Infinity;
         this.sincePunch = Infinity;
@@ -172,6 +179,20 @@ export class FistFight {
     /** Ytte only guards when he isn't throwing a punch and has the breath for it. */
     get ytteGuardUp(): boolean {
         return this.phase === "guard" && !this.ytte.winded;
+    }
+
+    /** Knockout blow on Ytte still playing in slow motion. */
+    get slowMo(): boolean {
+        return this.result === "won" && this.outroRealTime < KO_SLOWMO_SECONDS;
+    }
+
+    /** How fast scene time runs relative to real time (1 = normal). */
+    get timeRate(): number {
+        if (this.result !== "won") return 1;
+        const r = this.outroRealTime;
+        if (r < KO_SLOWMO_SECONDS) return KO_SLOWMO_RATE;
+        const t = Math.min(1, (r - KO_SLOWMO_SECONDS) / KO_SLOWMO_EASE_OUT);
+        return KO_SLOWMO_RATE + (1 - KO_SLOWMO_RATE) * t;
     }
 
     /** Within the last moments of his wind-up — pressing now ducks the swing. */
@@ -208,11 +229,14 @@ export class FistFight {
     tick(dt: number): FightEvent[] {
         if (!this.active) return [];
         const events: FightEvent[] = [];
-        this.sinceEvent += dt;
-        this.sincePunch += dt;
+        // Scene time: the knockout blow plays out in slow motion
+        const sceneDt = dt * this.timeRate;
+        this.sinceEvent += sceneDt;
+        this.sincePunch += sceneDt;
 
         if (this.result !== "ongoing") {
-            this.outroTime += dt;
+            this.outroRealTime += dt;
+            this.outroTime += sceneDt;
             return events;
         }
         if (this.tutorial) {

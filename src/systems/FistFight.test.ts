@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIGHT_TUTORIAL_LOCK_SECONDS, FistFight, YTTE_HEALTH } from "./FistFight";
+import { FIGHT_OUTRO_SECONDS, FIGHT_TUTORIAL_LOCK_SECONDS, FistFight, YTTE_HEALTH } from "./FistFight";
 
 /** Advance in small steps until `until` holds (or give up after `max` seconds). */
 function runUntil(fight: FistFight, until: () => boolean, max = 10): void {
@@ -139,5 +139,33 @@ describe("FistFight", () => {
             fight.tick(0.05);
         }
         expect(fight.result).toBe("lost");
+    });
+
+    it("knocking Ytte out plays in slow motion, then catches up", () => {
+        const fight = new FistFight("medium", () => 0.5);
+        fight.start();
+        fight.tutorial = false;
+        fight.ytte.spend(1);
+        fight.ytte.health = 1;
+        expect(fight.press()).toBe("hit_ytte");
+        expect(fight.result).toBe("won");
+        fight.tick(1);
+        expect(fight.slowMo).toBe(true);
+        expect(fight.outroTime).toBeLessThan(0.3);
+        runUntil(fight, () => fight.outroTime >= FIGHT_OUTRO_SECONDS, 10);
+        expect(fight.outroRealTime).toBeGreaterThan(FIGHT_OUTRO_SECONDS);
+        expect(fight.outroRealTime).toBeLessThan(4);
+    });
+
+    it("the detective's own knockout is not slowed", () => {
+        const fight = new FistFight("medium", () => 0.5);
+        fight.start();
+        fight.tutorial = false;
+        fight.player.spend(1);
+        fight.player.health = 0.5;
+        runUntil(fight, () => fight.result === "lost", 10);
+        expect(fight.result).toBe("lost");
+        fight.tick(1);
+        expect(fight.outroTime).toBeCloseTo(1, 5);
     });
 });

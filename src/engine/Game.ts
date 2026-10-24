@@ -1239,7 +1239,11 @@ export class Game {
         if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
             const event = fight.press();
             if (event === "dodge" || (event && fight.ducked)) fightSounds.playWhoosh();
-            if (event === "hit_ytte") fightSounds.playPunch(fight.result === "won");
+            if (event === "hit_ytte") {
+                fightSounds.playPunch(fight.result === "won");
+                // Knockout blow: the slow-motion "ooaargghhh"
+                if (fight.result === "won") fightSounds.playSlowMoGroan();
+            }
             else if (event === "chip_ytte") fightSounds.playBlock();
         }
         for (const event of fight.tick(dt)) {

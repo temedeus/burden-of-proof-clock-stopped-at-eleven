@@ -205,11 +205,9 @@ export class Game {
     private devStaged = false;
     private atticWindow = new AtticWindowCutscene();
     private murdererStruggle: MurdererStruggle;
-    /** Finale: the bar Ytte drops across the door he followed you through. */
+    /** Finale: the bar Ytte drops across the wine cellar door after his confession. */
     private doorBarricade: DoorBarricade;
-    /** Door the player entered by — Ytte bars it once he spawns in after them. */
-    private pendingBarExit: DoorExit | null = null;
-    /** Ytte heaving the bar into place (cellar cutscene, or on entering a room mid-chase). */
+    /** Ytte heaving the bar into place (cellar cutscene). */
     private barDoorAnim = new BarDoorAnimation();
     /** Chef Ytte is removed from the map after the dining scare until the attic scare ends. */
     private cookHiddenAfterDiningScare: NPC | null = null;
@@ -889,15 +887,11 @@ export class Game {
     }
 
     /** Finale chase persists across rooms; attic scare ends when you leave. Dining scare cannot be escaped. */
-    private handleMurdererAfterRoomChange(fromRoomId: string): void {
+    private handleMurdererAfterRoomChange(): void {
         this.panSplash.stop();
         this.chaseField.reset();
-        this.doorBarricade.clear();
-        this.barDoorAnim.stop();
-        this.pendingBarExit = null;
         const murderer = this.getMurderer();
         if (!murderer) return;
-        murderer.setHeavingOverhead(false);
 
         if (this.atticScare.active) {
             // After the dining fire he was hidden; leaving the attic returns him to the kitchen.
@@ -917,8 +911,6 @@ export class Game {
             murderer.clearStun();
             this.murdererChase.startMurdererChase(murderer);
             this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
-            this.pendingBarExit =
-                this.currentRoom.exits.find((e) => e.targetRoom === fromRoomId && !e.interactionOnly) ?? null;
         }
     }
 
@@ -1936,18 +1928,8 @@ export class Game {
                 if (murderer) {
                     murderer.clearStun();
                     this.murdererChase.spawnMurdererInRoom(murderer, this.currentRoom, this.rooms);
-                    if (this.pendingBarExit) {
-                        // Bars the door behind him before giving chase
-                        this.startBarDoor(murderer, this.pendingBarExit);
-                        this.pendingBarExit = null;
-                    } else {
-                        this.murdererChase.startMurdererChase(murderer);
-                    }
+                    this.murdererChase.startMurdererChase(murderer);
                 }
-            }
-            if (this.barDoorAnim.active && this.tickBarDoor(dt)) {
-                const murderer = this.getMurderer();
-                if (murderer) this.murdererChase.startMurdererChase(murderer);
             }
 
             const ledgerTick = this.ledgerScare.tick(dt);
@@ -2272,7 +2254,7 @@ export class Game {
         );
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(targetRoomId));
 
-        this.handleMurdererAfterRoomChange(fromRoomId);
+        this.handleMurdererAfterRoomChange();
         this.autosave();
     }
 
@@ -2292,7 +2274,6 @@ export class Game {
                     return true;
                 }
                 if (this.doorBarricade.isBlocking(this.currentRoom.id, exit)) return true;
-                if (this.barDoorAnim.exit === exit && this.barDoorAnim.roomId === this.currentRoom.id) return true;
                 if (exit.requiresUnlock && !isExitUnlocked(exit.requiresUnlock, unlocked)) {
                     return true;
                 }
@@ -2313,7 +2294,7 @@ export class Game {
         );
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(transition.targetRoomId));
 
-        this.handleMurdererAfterRoomChange(transition.fromRoomId);
+        this.handleMurdererAfterRoomChange();
         this.autosave();
     }
 

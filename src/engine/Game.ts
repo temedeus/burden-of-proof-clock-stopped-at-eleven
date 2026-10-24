@@ -1238,15 +1238,13 @@ export class Game {
         const fight = this.fistFight;
         if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
             const event = fight.press();
-            if (event === "hit_ytte") {
-                if (fight.ducked) fightSounds.playWhoosh();
-                fightSounds.playPunch(fight.result === "won");
-            } else if (event === "blocked") {
-                fightSounds.playBlock();
-            }
+            if (event === "dodge" || (event && fight.ducked)) fightSounds.playWhoosh();
+            if (event === "hit_ytte") fightSounds.playPunch(fight.result === "won");
+            else if (event === "chip_ytte") fightSounds.playBlock();
         }
         for (const event of fight.tick(dt)) {
             if (event === "hit_player") fightSounds.playPunch(true);
+            else if (event === "chip_player") fightSounds.playBlock();
         }
         if (fight.result === "ongoing") return;
 

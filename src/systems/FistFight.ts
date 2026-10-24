@@ -1,75 +1,137 @@
 import type { Difficulty } from "./MurdererChaseController";
 
-/** Ytte's rhythm: guard up → wind up → swing → guard down while he recovers. */
-export type YttePhase = "guard" | "windup" | "strike" | "open";
+/**
+ * Ytte's rhythm: guard up → wind up → swing → recover (guard down while he punches),
+ * then guard again. Out of stamina he stays winded with his guard dropped.
+ */
+export type YttePhase = "guard" | "windup" | "strike" | "recover";
 
 export type FightEvent =
-    /** Your punch connected (into his open guard, or as a counter after ducking). */
+    /** Your punch connected cleanly (his guard was down or broken). */
     | "hit_ytte"
-    /** His swing connected. */
+    /** Your punch landed on his raised guard — barely hurts. */
+    | "chip_ytte"
+    /** His swing connected cleanly. */
     | "hit_player"
+    /** His swing landed on your guard. */
+    | "chip_player"
     /** You ducked under his swing. */
-    | "dodge"
-    /** You punched into his raised guard. */
-    | "blocked";
+    | "dodge";
 
 export type FightResult = "ongoing" | "won" | "lost";
 
-/** Punches needed to knock Ytte out. */
-export const YTTE_STAMINA = 10;
+/** Ytte's health: about ten clean punches. */
+export const YTTE_HEALTH = 10;
+
+/** Health lost to a clean hit, and to one absorbed by a raised guard. */
+const CLEAN_DAMAGE = 1;
+const GUARDED_DAMAGE = 0.1;
+/** Stamina is 0..1; a punch costs this much. */
+const PLAYER_PUNCH_COST = 0.2;
+const YTTE_PUNCH_COST = 0.25;
+/** Stamina regained per second while not punching (after a short breather). */
+const STAMINA_REGEN = 0.14;
+const REGEN_DELAY = 0.5;
+/** Once winded, stamina must climb back to this before guarding and punching again. */
+const RECOVERED_AT = 0.35;
+/** How long a punch leaves your own guard down (also the gap between punches). */
+const PUNCH_SECONDS = 0.5;
+const STRIKE_SECONDS = 0.16;
+/** Punch into his raised guard and he swats it aside and jabs back this fast — too quick to duck. */
+const RIPOSTE_WINDUP = 0.3;
+/**
+ * The tutorial card ignores presses this long, so the key that closed the taunt
+ * can't dismiss it (or throw a punch) by accident.
+ */
+export const FIGHT_TUTORIAL_LOCK_SECONDS = 0.6;
+/** Seconds the knockout plays before the fight hands back to the chase / game over. */
+export const FIGHT_OUTRO_SECONDS = 1.6;
 
 const CONFIG: Record<
     Difficulty,
     {
-        /** Hits the detective can take. */
-        playerStamina: number;
+        playerHealth: number;
         guardMin: number;
         guardMax: number;
         windup: number;
         /** Press within this many seconds before his swing lands to duck it. */
         duckWindow: number;
-        open: number;
+        recover: number;
     }
 > = {
-    easy: { playerStamina: 6, guardMin: 1.1, guardMax: 1.9, windup: 0.7, duckWindow: 0.38, open: 0.9 },
-    medium: { playerStamina: 5, guardMin: 0.9, guardMax: 1.6, windup: 0.6, duckWindow: 0.3, open: 0.75 },
-    hard: { playerStamina: 4, guardMin: 0.7, guardMax: 1.3, windup: 0.5, duckWindow: 0.24, open: 0.6 }
+    easy: { playerHealth: 6, guardMin: 1.1, guardMax: 1.9, windup: 0.7, duckWindow: 0.38, recover: 0.6 },
+    medium: { playerHealth: 5, guardMin: 0.9, guardMax: 1.6, windup: 0.6, duckWindow: 0.3, recover: 0.5 },
+    hard: { playerHealth: 4, guardMin: 0.7, guardMax: 1.3, windup: 0.5, duckWindow: 0.24, recover: 0.4 }
 };
 
-const STRIKE_SECONDS = 0.16;
-/** Punching into his guard: stamina it costs and how long you're off balance. */
-const BLOCKED_COST = 0.25;
-const STAGGER_SECONDS = 0.45;
-/** Minimum gap between your punches (so mashing into an opening isn't free). */
-const PUNCH_COOLDOWN = 0.28;
-/** Seconds the knockout plays before the fight hands back to the chase / game over. */
-export const FIGHT_OUTRO_SECONDS = 1.6;
+/** Health + stamina for one fighter. */
+export class Fighter {
+    health: number;
+    stamina = 1;
+    /** Drained to zero: guard broken and no punches until stamina recovers. */
+    winded = false;
+    private sinceExertion = Infinity;
+
+    constructor(readonly maxHealth: number) {
+        this.health = maxHealth;
+    }
+
+    get canPunch(): boolean {
+        return !this.winded;
+    }
+
+    spend(cost: number): void {
+        this.stamina = Math.max(0, this.stamina - cost);
+        this.sinceExertion = 0;
+        if (this.stamina <= 0) this.winded = true;
+    }
+
+    /** Take a hit; a raised guard (while not winded) soaks most of it. */
+    takeHit(guardUp: boolean): "clean" | "guarded" {
+        const guarded = guardUp && !this.winded;
+        this.health = Math.max(0, this.health - (guarded ? GUARDED_DAMAGE : CLEAN_DAMAGE));
+        return guarded ? "guarded" : "clean";
+    }
+
+    tick(dt: number): void {
+        this.sinceExertion += dt;
+        const resting = Math.min(dt, this.sinceExertion - REGEN_DELAY);
+        if (resting <= 0) return;
+        this.stamina = Math.min(1, this.stamina + STAMINA_REGEN * resting);
+        if (this.winded && this.stamina >= RECOVERED_AT) this.winded = false;
+    }
+}
 
 /**
- * Timing-based fist fight with Chef Ytte in the secret tunnel. One button:
- * punch when his guard drops, or press as his swing comes in to duck and counter.
+ * Timing-based fist fight with Chef Ytte in the secret tunnel. One button: each
+ * punch costs stamina and drops your guard for a moment; hold back and your guard
+ * is up. Land clean hits while his guard is down (mid-swing, or winded), or press
+ * as his swing comes in to duck it and counter.
  */
 export class FistFight {
     active = false;
-    playerStamina = 0;
-    playerMaxStamina = 0;
-    ytteStamina = YTTE_STAMINA;
+    player = new Fighter(1);
+    ytte = new Fighter(YTTE_HEALTH);
     phase: YttePhase = "guard";
     /** Seconds into the current phase. */
     phaseTime = 0;
     phaseDuration = 0;
     result: FightResult = "ongoing";
+    /** Showing the how-to card; Ytte waits until it's dismissed. */
+    tutorial = false;
+    /** Seconds the tutorial card has been up. */
+    tutorialTime = 0;
     /** Seconds since the fight was decided (knockout animation). */
     outroTime = 0;
     /** Most recent event and how long ago it happened — drives the reaction animations. */
     lastEvent: FightEvent | null = null;
-    sinceEvent = 0;
+    sinceEvent = Infinity;
     /** Seconds since the detective last threw a punch. */
     sincePunch = Infinity;
-    /** Seconds of stagger left after punching into his guard. */
-    stagger = 0;
-    /** Ducked his last swing — the detective stays low for the counter. */
+    /** Ducked his current swing — it will miss, and the detective stays low for the counter. */
     ducked = false;
+    /** Punched early into this wind-up: committed, too late to duck it. */
+    private committed = false;
     private readonly config: (typeof CONFIG)[Difficulty];
 
     constructor(
@@ -81,15 +143,16 @@ export class FistFight {
 
     start(): void {
         this.active = true;
-        this.playerMaxStamina = this.config.playerStamina;
-        this.playerStamina = this.playerMaxStamina;
-        this.ytteStamina = YTTE_STAMINA;
+        this.player = new Fighter(this.config.playerHealth);
+        this.ytte = new Fighter(YTTE_HEALTH);
         this.result = "ongoing";
+        this.tutorial = true;
+        this.tutorialTime = 0;
         this.outroTime = 0;
         this.lastEvent = null;
         this.sinceEvent = Infinity;
         this.sincePunch = Infinity;
-        this.stagger = 0;
+        this.ducked = false;
         this.enter("guard");
     }
 
@@ -97,32 +160,49 @@ export class FistFight {
         this.active = false;
     }
 
+    /** Detective mid-punch: their own guard is down. */
+    get playerPunching(): boolean {
+        return this.sincePunch < PUNCH_SECONDS;
+    }
+
+    get playerGuardUp(): boolean {
+        return !this.playerPunching && !this.player.winded;
+    }
+
+    /** Ytte only guards when he isn't throwing a punch and has the breath for it. */
+    get ytteGuardUp(): boolean {
+        return this.phase === "guard" && !this.ytte.winded;
+    }
+
     /** Within the last moments of his wind-up — pressing now ducks the swing. */
     get duckWindowOpen(): boolean {
-        return this.phase === "windup" && this.phaseDuration - this.phaseTime <= this.config.duckWindow;
+        return (
+            this.phase === "windup" &&
+            !this.ducked &&
+            !this.committed &&
+            this.phaseDuration - this.phaseTime <= this.config.duckWindow
+        );
     }
 
     /** Action pressed. Returns what happened, or null when the press is ignored. */
     press(): FightEvent | null {
         if (!this.active || this.result !== "ongoing") return null;
-        if (this.stagger > 0 || this.sincePunch < PUNCH_COOLDOWN) return null;
-        this.sincePunch = 0;
-
-        switch (this.phase) {
-            case "open":
-                return this.landPunch();
-            case "windup":
-                if (this.duckWindowOpen) {
-                    // Slip under the swing and counter while he's overextended
-                    this.ducked = true;
-                    this.emit("dodge");
-                    this.enter("open");
-                    return this.landPunch();
-                }
-                return this.punchIntoGuard();
-            default:
-                return this.punchIntoGuard();
+        if (this.tutorial) {
+            if (this.tutorialTime >= FIGHT_TUTORIAL_LOCK_SECONDS) this.tutorial = false;
+            return null;
         }
+        if (this.playerPunching) return null;
+
+        if (this.duckWindowOpen) {
+            // Slip under the swing; counter while he's overextended if there's breath for it
+            this.ducked = true;
+            this.emit("dodge");
+            if (!this.player.canPunch) return "dodge";
+            return this.punch();
+        }
+        if (!this.player.canPunch) return null;
+        if (this.phase === "windup") this.committed = true;
+        return this.punch();
     }
 
     tick(dt: number): FightEvent[] {
@@ -130,31 +210,45 @@ export class FistFight {
         const events: FightEvent[] = [];
         this.sinceEvent += dt;
         this.sincePunch += dt;
-        this.stagger = Math.max(0, this.stagger - dt);
 
         if (this.result !== "ongoing") {
             this.outroTime += dt;
             return events;
         }
+        if (this.tutorial) {
+            this.tutorialTime += dt;
+            return events;
+        }
 
+        this.player.tick(dt);
+        this.ytte.tick(dt);
         this.phaseTime += dt;
         if (this.phaseTime < this.phaseDuration) return events;
 
         switch (this.phase) {
             case "guard":
-                this.enter("windup");
+                // Too winded to swing: keep covering up and get his breath back
+                if (this.ytte.canPunch) {
+                    this.ytte.spend(YTTE_PUNCH_COST);
+                    this.enter("windup");
+                } else {
+                    this.enter("guard");
+                }
                 break;
             case "windup":
                 this.enter("strike");
-                this.playerStamina = Math.max(0, this.playerStamina - 1);
-                this.emit("hit_player");
-                events.push("hit_player");
-                if (this.playerStamina <= 0) this.result = "lost";
+                if (!this.ducked) {
+                    const hit = this.player.takeHit(this.playerGuardUp);
+                    const event: FightEvent = hit === "clean" ? "hit_player" : "chip_player";
+                    this.emit(event);
+                    events.push(event);
+                    if (this.player.health <= 0) this.result = "lost";
+                }
                 break;
             case "strike":
-                this.enter("open");
+                this.enter("recover");
                 break;
-            case "open":
+            case "recover":
                 this.ducked = false;
                 this.enter("guard");
                 break;
@@ -162,19 +256,23 @@ export class FistFight {
         return events;
     }
 
-    private landPunch(): FightEvent {
-        this.ytteStamina = Math.max(0, this.ytteStamina - 1);
-        this.emit("hit_ytte");
-        if (this.ytteStamina <= 0) this.result = "won";
-        return "hit_ytte";
+    private punch(): FightEvent {
+        this.sincePunch = 0;
+        this.player.spend(PLAYER_PUNCH_COST);
+        const hit = this.ytte.takeHit(this.ytteGuardUp);
+        const event: FightEvent = hit === "clean" ? "hit_ytte" : "chip_ytte";
+        this.emit(event);
+        if (this.ytte.health <= 0) this.result = "won";
+        else if (event === "chip_ytte" && this.ytte.canPunch) this.riposte();
+        return event;
     }
 
-    private punchIntoGuard(): FightEvent {
-        this.playerStamina = Math.max(0, this.playerStamina - BLOCKED_COST);
-        this.stagger = STAGGER_SECONDS;
-        this.emit("blocked");
-        if (this.playerStamina <= 0) this.result = "lost";
-        return "blocked";
+    /** Swat the punch aside and jab straight back while the detective is still extended. */
+    private riposte(): void {
+        this.ytte.spend(YTTE_PUNCH_COST);
+        this.enter("windup");
+        this.phaseDuration = RIPOSTE_WINDUP;
+        this.committed = true;
     }
 
     private emit(event: FightEvent): void {
@@ -185,14 +283,17 @@ export class FistFight {
     private enter(phase: YttePhase): void {
         this.phase = phase;
         this.phaseTime = 0;
+        if (phase === "windup") this.committed = false;
         const c = this.config;
+        // He presses the attack while the detective is winded
+        const pressing = this.player.winded ? 0.5 : 1;
         this.phaseDuration =
             phase === "guard"
-                ? c.guardMin + this.random() * (c.guardMax - c.guardMin)
+                ? (c.guardMin + this.random() * (c.guardMax - c.guardMin)) * pressing
                 : phase === "windup"
                   ? c.windup
                   : phase === "strike"
                     ? STRIKE_SECONDS
-                    : c.open;
+                    : c.recover;
     }
 }

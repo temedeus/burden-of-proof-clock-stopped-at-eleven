@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FistFight, YTTE_STAMINA } from "./FistFight";
+import { FIGHT_TUTORIAL_LOCK_SECONDS, FistFight, YTTE_HEALTH } from "./FistFight";
 
 /** Advance in small steps until `until` holds (or give up after `max` seconds). */
 function runUntil(fight: FistFight, until: () => boolean, max = 10): void {
@@ -7,63 +7,134 @@ function runUntil(fight: FistFight, until: () => boolean, max = 10): void {
 }
 
 describe("FistFight", () => {
-    it("lands punches while his guard is down", () => {
-        const fight = new FistFight("medium", () => 0);
+    it("waits on the tutorial card until it is dismissed", () => {
+        const fight = new FistFight("medium", () => 0.5);
         fight.start();
-        runUntil(fight, () => fight.phase === "open");
-        expect(fight.press()).toBe("hit_ytte");
-        expect(fight.ytteStamina).toBe(YTTE_STAMINA - 1);
+        // The press that closed the taunt can't skip the card
+        expect(fight.press()).toBeNull();
+        expect(fight.tutorial).toBe(true);
+        fight.tick(5);
+        expect(fight.phase).toBe("guard");
+        expect(fight.ytte.health).toBe(YTTE_HEALTH);
+        expect(fight.tutorialTime).toBeGreaterThanOrEqual(FIGHT_TUTORIAL_LOCK_SECONDS);
+        expect(fight.press()).toBeNull();
+        expect(fight.tutorial).toBe(false);
+        expect(fight.press()).not.toBeNull();
     });
 
-    it("punching into his guard costs stamina and staggers", () => {
-        const fight = new FistFight("medium", () => 0);
+    it("punching into his guard barely hurts him but costs stamina", () => {
+        const fight = new FistFight("medium", () => 0.5);
         fight.start();
-        const before = fight.playerStamina;
-        expect(fight.press()).toBe("blocked");
-        expect(fight.playerStamina).toBeLessThan(before);
-        expect(fight.press()).toBeNull();
+        fight.tutorial = false;
+        expect(fight.ytteGuardUp).toBe(true);
+        expect(fight.press()).toBe("chip_ytte");
+        expect(fight.ytte.health).toBeGreaterThan(YTTE_HEALTH - 0.2);
+        expect(fight.player.stamina).toBeLessThan(1);
+    });
+
+    it("he answers a punch into his guard with a jab too quick to duck", () => {
+        const fight = new FistFight("medium", () => 0.5);
+        fight.start();
+        fight.tutorial = false;
+        fight.press();
+        expect(fight.phase).toBe("windup");
+        expect(fight.duckWindowOpen).toBe(false);
+        runUntil(fight, () => fight.phase === "strike");
+        expect(fight.lastEvent).toBe("hit_player");
+    });
+
+    it("lands clean hits while he swings", () => {
+        const fight = new FistFight("medium", () => 0.5);
+        fight.start();
+        fight.tutorial = false;
+        runUntil(fight, () => fight.phase === "windup");
+        expect(fight.press()).toBe("hit_ytte");
+        expect(fight.ytte.health).toBe(YTTE_HEALTH - 1);
+    });
+
+    it("your guard soaks his swing when you hold back", () => {
+        const fight = new FistFight("medium", () => 0.5);
+        fight.start();
+        fight.tutorial = false;
+        const before = fight.player.health;
+        runUntil(fight, () => fight.phase === "strike");
+        expect(fight.lastEvent).toBe("chip_player");
+        expect(before - fight.player.health).toBeLessThan(0.2);
+    });
+
+    it("his swing lands clean while you're mid-punch", () => {
+        const fight = new FistFight("medium", () => 0.5);
+        fight.start();
+        fight.tutorial = false;
+        // Early in the wind-up: the punch lands, but commits you as his swing comes in
+        runUntil(fight, () => fight.phase === "windup" && fight.phaseDuration - fight.phaseTime < 0.45);
+        expect(fight.press()).toBe("hit_ytte");
+        expect(fight.duckWindowOpen).toBe(false);
+        runUntil(fight, () => fight.phase === "strike");
+        expect(fight.lastEvent).toBe("hit_player");
     });
 
     it("ducking at the last moment dodges the swing and counters", () => {
-        const fight = new FistFight("medium", () => 0);
+        const fight = new FistFight("medium", () => 0.5);
         fight.start();
+        fight.tutorial = false;
         runUntil(fight, () => fight.duckWindowOpen);
-        const before = fight.playerStamina;
+        const before = fight.player.health;
         expect(fight.press()).toBe("hit_ytte");
         expect(fight.ducked).toBe(true);
         runUntil(fight, () => fight.phase === "guard");
-        expect(fight.playerStamina).toBe(before);
+        expect(fight.player.health).toBe(before);
     });
 
-    it("his swing connects when you do nothing", () => {
-        const fight = new FistFight("medium", () => 0);
+    it("running out of stamina breaks your guard until it recovers", () => {
+        const fight = new FistFight("medium", () => 0.5);
         fight.start();
-        const before = fight.playerStamina;
-        runUntil(fight, () => fight.phase === "strike");
-        expect(fight.playerStamina).toBe(before - 1);
+        fight.tutorial = false;
+        fight.player.health = 100;
+        for (let i = 0; i < 10 && !fight.player.winded; i++) {
+            fight.press();
+            fight.tick(0.55);
+        }
+        expect(fight.player.winded).toBe(true);
+        expect(fight.playerGuardUp).toBe(false);
+        expect(fight.press()).toBeNull();
+        runUntil(fight, () => !fight.player.winded, 20);
+        expect(fight.player.stamina).toBeGreaterThan(0.3);
     });
 
-    it("ten clean punches knock him out", () => {
-        const fight = new FistFight("hard", () => 0.5);
+    it("a winded Ytte drops his guard", () => {
+        const fight = new FistFight("medium", () => 0.5);
         fight.start();
-        for (let i = 0; i < YTTE_STAMINA; i++) {
-            runUntil(fight, () => fight.duckWindowOpen);
+        fight.tutorial = false;
+        fight.ytte.spend(1);
+        expect(fight.ytteGuardUp).toBe(false);
+        expect(fight.press()).toBe("hit_ytte");
+    });
+
+    it("Ytte tires himself out swinging, then has to recover", () => {
+        const fight = new FistFight("hard", () => 0);
+        fight.start();
+        fight.tutorial = false;
+        runUntil(fight, () => fight.ytte.winded, 30);
+        expect(fight.ytte.winded).toBe(true);
+    });
+
+    it("ten clean counters knock him out", () => {
+        const fight = new FistFight("easy", () => 0.5);
+        fight.start();
+        fight.tutorial = false;
+        for (let i = 0; i < YTTE_HEALTH && fight.result === "ongoing"; i++) {
+            runUntil(fight, () => fight.duckWindowOpen || fight.result !== "ongoing", 30);
             fight.press();
         }
         expect(fight.result).toBe("won");
     });
 
-    it("standing still gets the detective knocked out", () => {
-        const fight = new FistFight("hard", () => 0.5);
-        fight.start();
-        runUntil(fight, () => fight.result !== "ongoing", 60);
-        expect(fight.result).toBe("lost");
-    });
-
-    it("mashing into his guard wears the detective down", () => {
+    it("mashing leaves the detective winded and beaten", () => {
         const fight = new FistFight("medium", () => 0.5);
         fight.start();
-        for (let t = 0; t < 60 && fight.result === "ongoing"; t += 0.05) {
+        fight.tutorial = false;
+        for (let t = 0; t < 120 && fight.result === "ongoing"; t += 0.05) {
             fight.press();
             fight.tick(0.05);
         }

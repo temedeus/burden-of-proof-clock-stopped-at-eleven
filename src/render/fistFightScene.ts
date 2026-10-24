@@ -10,7 +10,12 @@ import {
     type CharacterPose,
     type HumanoidStyle
 } from "../assets/procedural/characters";
-import { FIGHT_OUTRO_SECONDS, YTTE_STAMINA, type FistFight } from "../systems/FistFight";
+import {
+    FIGHT_OUTRO_SECONDS,
+    FIGHT_TUTORIAL_LOCK_SECONDS,
+    type Fighter,
+    type FistFight
+} from "../systems/FistFight";
 
 export interface FistFightCast {
     playerSprite: PlayerSpriteName;
@@ -84,46 +89,131 @@ function drawTunnel(ctx: CanvasRenderingContext2D, cx: number, groundY: number, 
     ctx.fillRect(0, 0, W, H);
 }
 
-/** Little burst of pixel stars where a punch lands. */
-function drawImpact(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, t: number): void {
+/** Little burst of pixel stars where a punch lands; a guarded one is a small dull knock. */
+function drawImpact(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, t: number, guarded = false): void {
     if (t > 0.22) return;
-    const r = (3 + t * 50) * s;
+    const r = (3 + t * (guarded ? 20 : 50)) * s;
     const fade = 1 - t / 0.22;
-    for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2 + 0.3;
-        ctx.fillStyle = i % 2 ? `rgba(255, 240, 160, ${fade})` : `rgba(255, 255, 255, ${fade})`;
+    const rays = guarded ? 4 : 8;
+    for (let i = 0; i < rays; i++) {
+        const a = (i / rays) * Math.PI * 2 + 0.3;
+        ctx.fillStyle = guarded
+            ? `rgba(190, 180, 160, ${fade})`
+            : i % 2
+              ? `rgba(255, 240, 160, ${fade})`
+              : `rgba(255, 255, 255, ${fade})`;
         ctx.fillRect(Math.round(x + Math.cos(a) * r), Math.round(y + Math.sin(a) * r), s * 2, s * 2);
     }
+    if (guarded) return;
     ctx.fillStyle = `rgba(255, 255, 255, ${fade * 0.9})`;
     ctx.fillRect(Math.round(x - s * 2), Math.round(y - s * 2), s * 4, s * 4);
 }
 
-function drawStaminaBar(
+/** Health (segmented, one notch per clean hit) over a thinner stamina bar. */
+function drawFighterBars(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number,
     w: number,
     label: string,
-    fill: number,
-    segments: number,
-    alignRight: boolean
+    fighter: Fighter,
+    alignRight: boolean,
+    time: number
 ): void {
     const h = 14;
     ctx.font = `bold 18px ${FONT_SC}`;
     ctx.textAlign = alignRight ? "right" : "left";
     ctx.fillStyle = "#e8e0d5";
     ctx.fillText(label, alignRight ? x + w : x, y - 8);
-    ctx.fillStyle = "#1a1510";
-    ctx.fillRect(x, y, w, h);
-    const f = clamp01(fill);
-    ctx.fillStyle = f < 0.3 ? "#8a2828" : f < 0.6 ? "#c85020" : "#48a058";
-    const fw = (w - 4) * f;
-    ctx.fillRect(alignRight ? x + w - 2 - fw : x + 2, y + 2, fw, h - 4);
+
+    const fill = (fy: number, fh: number, f: number, color: string) => {
+        ctx.fillStyle = "#1a1510";
+        ctx.fillRect(x, fy, w, fh);
+        const fw = (w - 4) * clamp01(f);
+        ctx.fillStyle = color;
+        ctx.fillRect(alignRight ? x + w - 2 - fw : x + 2, fy + 2, fw, fh - 4);
+        ctx.strokeStyle = "#c4a574";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, fy, w, fh);
+    };
+
+    const health = fighter.health / fighter.maxHealth;
+    fill(y, h, health, health < 0.3 ? "#8a2828" : health < 0.6 ? "#c85020" : "#48a058");
     ctx.fillStyle = "rgba(0,0,0,0.45)";
-    for (let i = 1; i < segments; i++) ctx.fillRect(Math.round(x + (w * i) / segments), y + 2, 2, h - 4);
+    for (let i = 1; i < fighter.maxHealth; i++) ctx.fillRect(Math.round(x + (w * i) / fighter.maxHealth), y + 2, 2, h - 4);
+
+    // Stamina: amber, flashing red while winded
+    const sy = y + h + 5;
+    const flash = fighter.winded && Math.floor(time * 6) % 2 === 0;
+    fill(sy, 9, fighter.stamina, fighter.winded ? (flash ? "#c83828" : "#7a2418") : "#d8a838");
+    ctx.font = `13px ${FONT}`;
+    ctx.fillStyle = fighter.winded ? "#e86050" : "rgba(232, 224, 213, 0.7)";
+    ctx.fillText(fighter.winded ? "Winded!" : "Stamina", alignRight ? x + w : x, sy + 24);
+    ctx.textAlign = "left";
+}
+
+/** Big "!" in the telegraph colours, as drawn over Ytte's head. */
+function drawBang(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, size: number): void {
+    ctx.font = `bold ${size}px ${FONT_SC}`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = color;
+    ctx.fillText("!", x, y);
+}
+
+/** How-to card before the first exchange: what the red and yellow "!" mean. */
+function drawTutorialCard(ctx: CanvasRenderingContext2D, fight: FistFight, time: number, touchControls: boolean): void {
+    const W = ctx.canvas.width;
+    const H = ctx.canvas.height;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+    ctx.fillRect(0, 0, W, H);
+
+    const cw = Math.min(560, W - 48);
+    const ch = 300;
+    const x = Math.round((W - cw) / 2);
+    const y = Math.round((H - ch) / 2);
+    ctx.fillStyle = "rgba(20, 16, 12, 0.94)";
+    ctx.fillRect(x, y, cw, ch);
     ctx.strokeStyle = "#c4a574";
     ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, w, h);
+    ctx.strokeRect(x, y, cw, ch);
+
+    ctx.textAlign = "center";
+    ctx.font = `bold 28px ${FONT_SC}`;
+    ctx.fillStyle = "#e8c860";
+    ctx.fillText("Bare-knuckle brawl", W / 2, y + 44);
+
+    const key = touchControls ? "Interact" : "E";
+    const rows: { color: string; head: string; body: string }[] = [
+        { color: "#a03028", head: "Red — he's winding up", body: "Ytte is about to strike. Keep your guard up." },
+        {
+            color: "#ffe060",
+            head: `Yellow — strike now!`,
+            body: `Press ${key} to slip his punch and hit back.`
+        }
+    ];
+    rows.forEach((row, i) => {
+        const ry = y + 104 + i * 70;
+        // The yellow one pulses like it does in the fight
+        const pulse = i === 1 ? 1 + Math.round(Math.sin(time * 12)) * 0.08 : 1;
+        drawBang(ctx, x + 56, ry + 18, row.color, Math.round(52 * pulse));
+        ctx.textAlign = "left";
+        ctx.font = `bold 21px ${FONT_SC}`;
+        ctx.fillStyle = row.color;
+        ctx.fillText(row.head, x + 100, ry);
+        ctx.font = `17px ${FONT}`;
+        ctx.fillStyle = "#e8e0d5";
+        ctx.fillText(row.body, x + 100, ry + 24);
+    });
+
+    ctx.textAlign = "center";
+    ctx.font = `15px ${FONT}`;
+    ctx.fillStyle = "rgba(232, 224, 213, 0.7)";
+    ctx.fillText("Punches cost stamina — swing into his guard and he'll hit back.", W / 2, y + ch - 62);
+
+    const ready = fight.tutorialTime >= FIGHT_TUTORIAL_LOCK_SECONDS;
+    ctx.font = `bold 20px ${FONT_SC}`;
+    ctx.fillStyle = ready ? `rgba(232, 200, 96, ${0.7 + Math.sin(time * 5) * 0.3})` : "rgba(232, 200, 96, 0.3)";
+    ctx.fillText(touchControls ? "Tap Interact to fight" : "Press E to fight", W / 2, y + ch - 26);
     ctx.textAlign = "left";
 }
 
@@ -167,19 +257,23 @@ export function drawFistFightScene(
         playerPose = "idle";
         pdx = -easeOut(1 - since / 0.35) * 4 * s;
         ptilt = -0.12 * (1 - since / 0.35);
-    } else if (fight.ducked && fight.phase === "open" && since < 0.4) {
+    } else if (fight.ducked && fight.phase !== "guard" && since < 0.4) {
         // Slipped under the swing: low lunge into the counter
         playerPose = "fight_punch";
         pdy = 2 * s;
         pdx = 3 * s;
         ptilt = 0.12;
-    } else if (fight.sincePunch < 0.18) {
+    } else if (fight.sincePunch < 0.2) {
         playerPose = "fight_punch";
         pdx = 2 * s;
-    } else if (fight.stagger > 0) {
+    } else if (fight.player.winded) {
+        // Out of breath: guard dropped, chest heaving
         playerPose = "idle";
+        pdy = Math.round(Math.abs(Math.sin(time * 10))) * s;
+        ptilt = 0.05;
+    } else if (ev === "chip_player" && since < 0.2) {
+        // Took it on the forearms
         pdx = -s;
-        ptilt = -0.05;
     }
     const playerStyle = PLAYER_CHARACTER_STYLES[cast.playerSprite] ?? PLAYER_CHARACTER_STYLES.female_detective;
     const playerFeetX = cx - 9 * s + pdx;
@@ -214,11 +308,17 @@ export function drawFistFightScene(
     } else if (fight.phase === "strike") {
         yttePose = "fight_punch";
         ydx = -3 * s;
-    } else if (fight.phase === "open") {
-        // Overextended and winded: guard down, chest heaving
+    } else if (fight.phase === "recover") {
+        // Overextended after the swing: guard still down
+        yttePose = "idle";
+        ytilt = -0.05;
+    } else if (fight.ytte.winded) {
+        // Out of breath: guard dropped, chest heaving
         yttePose = "idle";
         ydy = Math.round(Math.abs(Math.sin(time * 10))) * s;
         ytilt = -0.05;
+    } else if (ev === "chip_ytte" && since < 0.2) {
+        ydx = s;
     }
     const ytteFeetX = cx + 9 * s + ydx;
     const ytteStyle = murdererStyle(cast.murdererSprite);
@@ -244,20 +344,27 @@ export function drawFistFightScene(
         ctx.textAlign = "left";
     }
 
-    if (ev === "hit_ytte") drawImpact(ctx, ytteFeetX - 4 * s, groundY - h * 0.78, s, since);
-    if (ev === "hit_player") drawImpact(ctx, playerFeetX + 4 * s, groundY - h * 0.78, s, since);
+    if (ev === "hit_ytte" || ev === "chip_ytte") {
+        drawImpact(ctx, ytteFeetX - 4 * s, groundY - h * 0.78, s, since, ev === "chip_ytte");
+    }
+    if (ev === "hit_player" || ev === "chip_player") {
+        drawImpact(ctx, playerFeetX + 4 * s, groundY - h * 0.78, s, since, ev === "chip_player");
+    }
     ctx.restore();
 
     // --- HUD ---
     const barW = Math.min(280, Math.round(W * 0.32));
-    drawStaminaBar(ctx, 32, 48, barW, "Detective", fight.playerStamina / fight.playerMaxStamina, fight.playerMaxStamina, false);
-    drawStaminaBar(ctx, W - 32 - barW, 48, barW, "Chef Ytte", fight.ytteStamina / YTTE_STAMINA, YTTE_STAMINA, true);
+    drawFighterBars(ctx, 32, 48, barW, "Detective", fight.player, false, time);
+    drawFighterBars(ctx, W - 32 - barW, 48, barW, "Chef Ytte", fight.ytte, true, time);
 
     ctx.textAlign = "center";
     if (fight.result === "won") {
         ctx.font = `bold 40px ${FONT_SC}`;
         ctx.fillStyle = `rgba(232, 200, 96, ${clamp01(fight.outroTime / 0.4)})`;
         ctx.fillText("Knocked out!", cx, H * 0.2);
+    }
+    if (fight.tutorial) {
+        drawTutorialCard(ctx, fight, time, touchControls);
     } else if (fight.result === "ongoing") {
         ctx.font = `bold 30px ${FONT_SC}`;
         ctx.fillStyle = "#e8e0d5";
@@ -265,7 +372,11 @@ export function drawFistFightScene(
         ctx.font = `17px ${FONT}`;
         ctx.fillStyle = "rgba(240, 230, 216, 0.85)";
         const key = touchControls ? "Interact" : "E / Space";
-        ctx.fillText(`${key}: punch when his guard drops — or duck his swing as the "!" flares`, cx, H - 24);
+        ctx.fillText(
+            `Red "!" — guard up · Yellow "!" — strike with ${key} · punches cost stamina`,
+            cx,
+            H - 24
+        );
     }
     ctx.textAlign = "left";
 }

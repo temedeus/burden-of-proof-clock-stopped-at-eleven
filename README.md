@@ -2,7 +2,7 @@
 
 A pixel-art murder mystery set at von Virtanen Manor. Explore rooms, talk to suspects, collect clues, and work out who stopped the clock at eleven.
 
-**Play online:** [temedeus.codeberg.page/burden-of-proof-clock-stopped-at-eleven](https://temedeus.codeberg.page/burden-of-proof-clock-stopped-at-eleven/) · [temedeus.github.io/burden-of-proof-clock-stopped-at-eleven](https://temedeus.github.io/burden-of-proof-clock-stopped-at-eleven/)
+**Play online:** [temedeus.github.io/burden-of-proof-clock-stopped-at-eleven](https://temedeus.github.io/burden-of-proof-clock-stopped-at-eleven/)
 
 ## Quick Start
 
@@ -79,7 +79,7 @@ Validates rooms, NPC placement, furniture references, and case files. See [src/e
 
 ## Deployment
 
-Live build: [https://temedeus.codeberg.page/burden-of-proof-clock-stopped-at-eleven/](https://temedeus.codeberg.page/burden-of-proof-clock-stopped-at-eleven/)
+Live build: [https://temedeus.github.io/burden-of-proof-clock-stopped-at-eleven/](https://temedeus.github.io/burden-of-proof-clock-stopped-at-eleven/)
 
 
 Ship only the game runtime and static data (`src/data/**`). The editor and file backend are development tools — see [src/editor/README.md](src/editor/README.md).

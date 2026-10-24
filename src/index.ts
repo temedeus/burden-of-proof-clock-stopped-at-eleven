@@ -71,6 +71,11 @@ function setupCanvasPointer(): void {
             if (!touchUi && e.pointerType !== "mouse") return;
             if (touchUi && e.pointerType !== "touch" && !isSimulateMobile()) return;
 
+            if (appScreen === "playing" && game?.isWaitingForVictoryInput()) {
+                game.returnToMenuFromVictory();
+                return;
+            }
+
             if (appScreen === "intro") {
                 sharedInput.tapVirtual("enter");
                 return;

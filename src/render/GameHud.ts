@@ -1,4 +1,5 @@
 import { drawFireAtmosphere } from "./fireEffects";
+import { shouldShowTouchControls } from "../engine/platform";
 import { ARREST_PROMPT_AT, ARREST_TEXT_AT, drawArrestScene } from "./arrestScene";
 
 const ROOM_TITLE_DURATION = 2;
@@ -216,7 +217,10 @@ export function drawVictoryOverlay(ctx: CanvasRenderingContext2D, victoryTimer: 
     if (sceneTime >= ARREST_PROMPT_AT) {
         ctx.font = "20px \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.fillStyle = "rgba(255,255,255,0.7)";
-        ctx.fillText("Press Enter or Escape to return to main menu", w / 2, h * 0.7 + 86);
+        const prompt = shouldShowTouchControls()
+            ? "Tap to return to main menu"
+            : "Press Enter or Escape to return to main menu";
+        ctx.fillText(prompt, w / 2, h * 0.7 + 86);
     }
     ctx.restore();
 }

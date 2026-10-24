@@ -107,6 +107,9 @@ export class Menu {
             return null;
         }
 
+        // The vignette's "Back to Menu" only appears once the heading fades in
+        if (this.screen === "game_over" && this.gameOverScene && !this.isGameOverTextVisible()) return null;
+
         const layout = this.getListLayout(h);
         if (!layout) return null;
 
@@ -152,7 +155,9 @@ export class Menu {
             this.screen === "main"
                 ? this.mainMenuStartY(h, lineHeight, items.length)
                 : this.screen === "game_over"
-                  ? h * 0.55
+                  ? this.gameOverScene
+                      ? h * 0.75
+                      : h * 0.55
                   : this.screen === "new_game_confirm"
                     ? h * 0.55
                     : h * 0.42;
@@ -464,8 +469,7 @@ export class Menu {
             ctx.fillRect(0, 0, w, h);
         }
 
-        const headingAt = crushed ? CHANDELIER_GAME_OVER_HEADING_AT : GAME_OVER_HEADING_AT;
-        const textAlpha = Math.max(0, Math.min(1, (t - headingAt) / 0.6));
+        const textAlpha = Math.max(0, Math.min(1, (t - this.gameOverHeadingAt()) / 0.6));
         if (textAlpha <= 0) return;
         ctx.save();
         ctx.globalAlpha = textAlpha;
@@ -482,6 +486,14 @@ export class Menu {
         this.renderMenuList(ctx, w, h, this.getMenuItems(), h * 0.75);
         ctx.restore();
         ctx.textAlign = "left";
+    }
+
+    private gameOverHeadingAt(): number {
+        return this.gameOverScene?.cause === "chandelier" ? CHANDELIER_GAME_OVER_HEADING_AT : GAME_OVER_HEADING_AT;
+    }
+
+    private isGameOverTextVisible(): boolean {
+        return (performance.now() - this.gameOverStartMs) / 1000 > this.gameOverHeadingAt();
     }
 
     private renderSettings(ctx: CanvasRenderingContext2D, w: number, h: number): void {

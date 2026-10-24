@@ -167,7 +167,7 @@ const FIST_FIGHT_TAUNT =
 /** Rooms where Ytte stops to goad the detective into a brawl (once each), and how he goes down there. */
 const FIST_FIGHT_WON_TEXT: Record<string, string> = {
     secret_tunnel: "Chef Ytte crumples onto the tunnel floor, out cold. Run — before he comes to!",
-    dining: "Chef Ytte topples into the dining chairs and lies still, out cold. Run — before he comes to!"
+    dining: "Chef Ytte is knocked out on the floor. Run — now!"
 };
 /** How long Ytte stays down after losing the fist fight. */
 const FIST_FIGHT_KO_SECONDS = 6;

@@ -7,12 +7,12 @@ import type { Facing } from "./Player";
 /** How far (px) an idle NPC strays from where they were standing. */
 export const WANDER_RADIUS = TILE_SIZE * 1.25;
 const WANDER_SPEED = 26;
-const PAUSE_MIN = 3;
-const PAUSE_MAX = 8;
+const PAUSE_MIN = 1.5;
+const PAUSE_MAX = 4.5;
 /** Chance, each time a pause ends, of a scratch instead of a stroll — rare enough to stay calm. */
-const SCRATCH_CHANCE = 0.12;
+const SCRATCH_CHANCE = 0.15;
 /** Chance of a stroll (otherwise they just keep standing a while longer). */
-const WALK_CHANCE = 0.55;
+const WALK_CHANCE = 0.65;
 const SCRATCH_SECONDS = 1.8;
 const SCRATCH_FPS = 5;
 /** Give up a stroll that stops making progress (bumped into someone). */

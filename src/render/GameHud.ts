@@ -150,7 +150,8 @@ export function drawStruggleMeter(
     ctx: CanvasRenderingContext2D,
     progress: number,
     touchControls: boolean,
-    title = "Push him off!"
+    title = "Push him off!",
+    hintOverride?: string
 ): void {
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
@@ -181,7 +182,7 @@ export function drawStruggleMeter(
 
     ctx.fillStyle = "rgba(255,255,255,0.85)";
     ctx.font = "16px \"IM Fell English\", \"Libre Baskerville\", serif";
-    const hint = touchControls ? "Tap Interact repeatedly!" : "Mash E / Space!";
+    const hint = hintOverride ?? (touchControls ? "Tap Interact repeatedly!" : "Mash E / Space!");
     ctx.fillText(hint, w / 2, barY + barH + 22);
     ctx.textAlign = "left";
 }

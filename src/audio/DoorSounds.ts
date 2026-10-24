@@ -19,6 +19,48 @@ export class DoorSounds {
         });
     }
 
+    /** Heavy wooden bar dropped into its iron brackets. */
+    playBarSlam(): void {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const t = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.32, t);
+        master.connect(getSfxOutput(ctx));
+        this.frameThump(ctx, master, t, 1);
+        this.latchClack(ctx, master, t + 0.01, 0.8);
+        this.frameThump(ctx, master, t + 0.09, 0.5);
+        this.latchClack(ctx, master, t + 0.1, 0.45);
+    }
+
+    /** Bar scraped up out of its brackets and dropped aside. */
+    playBarLifted(): void {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const t = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.26, t);
+        master.connect(getSfxOutput(ctx));
+
+        const scrape = ctx.createBufferSource();
+        scrape.buffer = createCrushedNoise(ctx, 0.22, 0.6);
+        const bp = ctx.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.setValueAtTime(600, t);
+        bp.frequency.linearRampToValueAtTime(1100, t + 0.2);
+        bp.Q.value = 1.5;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.7, t + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+        scrape.connect(bp).connect(g).connect(master);
+        scrape.start(t);
+        scrape.stop(t + 0.24);
+
+        this.latchClack(ctx, master, t + 0.2, 0.6);
+        this.frameThump(ctx, master, t + 0.34, 0.9);
+    }
+
     /** Short bright metal tick of the latch hitting the strike plate. */
     private latchClack(ctx: AudioContext, out: AudioNode, start: number, level: number): void {
         const noise = ctx.createBufferSource();

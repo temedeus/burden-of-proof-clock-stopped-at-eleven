@@ -42,6 +42,7 @@ export class NPC extends Entity {
   private lastWalkMs = -Infinity;
   /** Waving arms in alarm (bystanders while the murderer is loose). */
   private panicking = false;
+  private heavingOverhead = false;
   private panicTime = 0;
   private panicShout: string | null = null;
   private shoutRemaining = 0;
@@ -153,6 +154,11 @@ export class NPC extends Entity {
     return getHumanoidStyle(this.spriteName) !== undefined;
   }
 
+  /** Arms raised overhead (Ytte heaving the door bar). */
+  setHeavingOverhead(value: boolean): void {
+    this.heavingOverhead = value;
+  }
+
   isPanicking(): boolean {
     return this.panicking;
   }
@@ -183,6 +189,8 @@ export class NPC extends Entity {
 
   private currentPose(): CharacterPose {
     if (this.panicking) return Math.floor(this.panicTime * PANIC_WAVE_FPS) % 2 === 0 ? "panic_a" : "panic_b";
+    // Hands close together overhead, as if gripping something
+    if (this.heavingOverhead) return "panic_b";
     if (performance.now() - this.lastWalkMs > 120) return "idle";
     const frame = Math.floor(this.walkTime * WALK_ANIM_FPS) % 4;
     return (["walk_a", "walk_b", "walk_c", "walk_d"] as const)[frame];

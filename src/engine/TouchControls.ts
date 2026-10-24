@@ -150,11 +150,13 @@ export class TouchControls {
                 e.preventDefault();
                 btn.setPointerCapture(e.pointerId);
                 btn.classList.add("active");
-                this.input.tapVirtual(key);
+                // Held (not just tapped) so hold-to-act prompts like the finale door bar work
+                this.input.setVirtualDown(key, true);
             };
 
             const onUp = (e: PointerEvent) => {
                 btn.classList.remove("active");
+                this.input.setVirtualDown(key, false);
             };
 
             btn.addEventListener("pointerdown", onDown, { passive: false });

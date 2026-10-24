@@ -50,6 +50,9 @@ import { furnitureActorFromInteractable, type DepthActor } from "../render/roomS
 import type { Interactable } from "../world/Interactable";
 import { BLOOD_CRATE_H, BLOOD_CRATE_W, drawCrateKey } from "../assets/procedural/bloodCrate";
 import { MurdererStruggle } from "../systems/MurdererStruggle";
+import { DoorBarricade } from "../systems/DoorBarricade";
+import { carriedDoorBarActor, doorBarActor, doorBarCenter } from "../render/doorBarDraw";
+import { BarDoorAnimation, facingTowardExit } from "../systems/BarDoorAnimation";
 import { VictorySequence } from "../systems/VictorySequence";
 import { StudySecretPuzzle } from "../puzzles/StudySecretPuzzle";
 import { CellarSecretPuzzle } from "../puzzles/CellarSecretPuzzle";
@@ -145,7 +148,8 @@ type GameState =
     | "armor_collapse"
     | "window_scare"
     | "chandelier_trap"
-    | "pan_splash";
+    | "pan_splash"
+    | "barring_door";
 
 const POLICE_NPC_IDS = ["police", "police2"];
 
@@ -201,6 +205,12 @@ export class Game {
     private devStaged = false;
     private atticWindow = new AtticWindowCutscene();
     private murdererStruggle: MurdererStruggle;
+    /** Finale: the bar Ytte drops across the door he followed you through. */
+    private doorBarricade: DoorBarricade;
+    /** Door the player entered by — Ytte bars it once he spawns in after them. */
+    private pendingBarExit: DoorExit | null = null;
+    /** Ytte heaving the bar into place (cellar cutscene, or on entering a room mid-chase). */
+    private barDoorAnim = new BarDoorAnimation();
     /** Chef Ytte is removed from the map after the dining scare until the attic scare ends. */
     private cookHiddenAfterDiningScare: NPC | null = null;
     /** Set after the dining fireplace cutscene; changes mid-game cook dialog. */
@@ -277,6 +287,7 @@ export class Game {
         this.atticScare = new AtticScareChase(difficulty, "attic");
         this.ledgerScare = new AtticScareChase(difficulty, "dining", DEFAULT_LEDGER_SCARE_MONOLOGUE);
         this.murdererStruggle = new MurdererStruggle(difficulty);
+        this.doorBarricade = new DoorBarricade(difficulty);
         this.onMenuRequest = options?.onMenuRequest;
         this.onGameOver = options?.onGameOver;
         this.onVictoryComplete = options?.onVictoryComplete;
@@ -878,11 +889,15 @@ export class Game {
     }
 
     /** Finale chase persists across rooms; attic scare ends when you leave. Dining scare cannot be escaped. */
-    private handleMurdererAfterRoomChange(): void {
+    private handleMurdererAfterRoomChange(fromRoomId: string): void {
         this.panSplash.stop();
         this.chaseField.reset();
+        this.doorBarricade.clear();
+        this.barDoorAnim.stop();
+        this.pendingBarExit = null;
         const murderer = this.getMurderer();
         if (!murderer) return;
+        murderer.setHeavingOverhead(false);
 
         if (this.atticScare.active) {
             // After the dining fire he was hidden; leaving the attic returns him to the kitchen.
@@ -902,6 +917,8 @@ export class Game {
             murderer.clearStun();
             this.murdererChase.startMurdererChase(murderer);
             this.murdererChase.scheduleSpawnAfterRoomChange(this.player);
+            this.pendingBarExit =
+                this.currentRoom.exits.find((e) => e.targetRoom === fromRoomId && !e.interactionOnly) ?? null;
         }
     }
 
@@ -1067,14 +1084,85 @@ export class Game {
         }
 
         talkSounds.stopDialogue();
+        this.message = null;
+        this.messagePages = [];
+        this.messagePageIndex = 0;
+        const murderer = this.getMurderer();
+        const exit = this.currentRoom.exits.find((e) => !e.interactionOnly);
+        if (!murderer || !exit) {
+            this.beginFinaleChase();
+            return;
+        }
+        // He bars the cellar door before the chase begins
+        this.startBarDoor(murderer, exit);
+        this.state = "barring_door";
+    }
+
+    private beginFinaleChase(): void {
         this.murdererChase.triggerAccusation();
         this.openDialog("Chef Ytte is after you! Find a police officer before he catches you!");
+    }
+
+    private startBarDoor(murderer: NPC, exit: DoorExit): void {
+        murderer.setChasing(false);
+        murderer.setSwingingKnife(false);
+        murderer.setFacing(facingTowardExit(exit, this.currentRoom.map.width, this.currentRoom.map.height));
+        this.barDoorAnim.start(this.currentRoom.id, exit);
+    }
+
+    /** Advance Ytte barring the door; true once he is done and turns on the detective. */
+    private tickBarDoor(dt: number): boolean {
+        const exit = this.barDoorAnim.exit;
+        const roomId = this.barDoorAnim.roomId;
+        const tick = this.barDoorAnim.tick(dt);
+        this.getMurderer()?.setHeavingOverhead(this.barDoorAnim.armsUp);
+        if (tick.slam && exit && roomId) {
+            this.doorBarricade.place(roomId, exit);
+            doorSounds.playBarSlam();
+        }
+        if (!tick.done) return false;
+        this.barDoorAnim.stop();
+        const murderer = this.getMurderer();
+        if (murderer) {
+            murderer.setHeavingOverhead(false);
+            // Turns from the door to glare at the detective
+            const dx = this.player.x - murderer.x;
+            const dy = this.player.y - murderer.y;
+            murderer.setFacing(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up");
+        }
+        return true;
+    }
+
+    private updateBarringDoor(dt: number): void {
+        if (this.tickBarDoor(dt)) {
+            this.state = "playing";
+            this.beginFinaleChase();
+        }
+    }
+
+    /** The plank in Ytte's hands while he heaves it up and slams it across the door. */
+    private carriedBarActors(): DepthActor[] {
+        const exit = this.barDoorAnim.exit;
+        const murderer = this.getMurderer();
+        if (!this.barDoorAnim.carrying || !exit || !murderer || this.barDoorAnim.roomId !== this.currentRoom.id) {
+            return [];
+        }
+        const box = murderer.getSpriteBox();
+        const handX = box.x + box.w / 2;
+        const handY = box.y + box.h * this.barDoorAnim.carryHeight;
+        const slot = doorBarCenter(this.currentRoom, exit);
+        const t = this.barDoorAnim.dropT;
+        const x = handX + (slot.x - handX) * t;
+        const y = handY + (slot.y - handY) * t;
+        // Sorted over Ytte's sprite: it is in his hands
+        return [carriedDoorBarActor(this.currentRoom, exit, x, y, t, murderer.y + murderer.height + 1)];
     }
 
     private beginStruggle(murderer: NPC): void {
         talkSounds.stopDialogue();
         murderer.setChasing(false);
         this.murdererStruggle.start();
+        this.doorBarricade.cancelPry();
         this.state = "struggling";
     }
 
@@ -1823,6 +1911,11 @@ export class Game {
             return;
         }
 
+        if (this.state === "barring_door") {
+            this.updateBarringDoor(dt);
+            return;
+        }
+
         if (this.state === "pan_splash") {
             this.updatePanSplash(dt);
             return;
@@ -1843,8 +1936,18 @@ export class Game {
                 if (murderer) {
                     murderer.clearStun();
                     this.murdererChase.spawnMurdererInRoom(murderer, this.currentRoom, this.rooms);
-                    this.murdererChase.startMurdererChase(murderer);
+                    if (this.pendingBarExit) {
+                        // Bars the door behind him before giving chase
+                        this.startBarDoor(murderer, this.pendingBarExit);
+                        this.pendingBarExit = null;
+                    } else {
+                        this.murdererChase.startMurdererChase(murderer);
+                    }
                 }
+            }
+            if (this.barDoorAnim.active && this.tickBarDoor(dt)) {
+                const murderer = this.getMurderer();
+                if (murderer) this.murdererChase.startMurdererChase(murderer);
             }
 
             const ledgerTick = this.ledgerScare.tick(dt);
@@ -1859,7 +1962,18 @@ export class Game {
                 if (murderer) this.atticScare.beginChase(murderer);
             }
 
-            if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
+            const barInReach = this.doorBarricade.inReach(
+                this.currentRoom.id,
+                this.player.x + this.player.width / 2,
+                this.player.y + this.player.height / 2
+            );
+            const holdingAction = this.input.isDown("e") || this.input.isDown(" ");
+            const pryTick = this.doorBarricade.tick(dt, holdingAction, barInReach);
+            if (pryTick === "removed") doorSounds.playBarLifted();
+
+            const actionPressed = this.input.wasPressed("e") || this.input.wasPressed(" ");
+            // At the barred door the action key pries at the bar instead of interacting
+            if (actionPressed && !barInReach) {
                 const result = this.interaction.interact(
                     this.player,
                     this.currentRoom,
@@ -2017,6 +2131,8 @@ export class Game {
                 this.lockedExitHint = `The ${this.getRoomDisplayTitle(lockedExit.targetRoom)} door is locked.`;
             }
 
+            if (barInReach && pryTick === "idle") atLockedDoor = true;
+
             if (this.ledgerScare.active && this.currentRoom.id === "dining") {
                 const map = this.currentRoom.map;
                 const nearEdge =
@@ -2156,7 +2272,7 @@ export class Game {
         );
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(targetRoomId));
 
-        this.handleMurdererAfterRoomChange();
+        this.handleMurdererAfterRoomChange(fromRoomId);
         this.autosave();
     }
 
@@ -2175,6 +2291,8 @@ export class Game {
                 if (this.atticScare.active && this.currentRoom.id === "attic") {
                     return true;
                 }
+                if (this.doorBarricade.isBlocking(this.currentRoom.id, exit)) return true;
+                if (this.barDoorAnim.exit === exit && this.barDoorAnim.roomId === this.currentRoom.id) return true;
                 if (exit.requiresUnlock && !isExitUnlocked(exit.requiresUnlock, unlocked)) {
                     return true;
                 }
@@ -2195,7 +2313,7 @@ export class Game {
         );
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(transition.targetRoomId));
 
-        this.handleMurdererAfterRoomChange();
+        this.handleMurdererAfterRoomChange(transition.fromRoomId);
         this.autosave();
     }
 
@@ -2321,6 +2439,17 @@ export class Game {
 
         const burn = this.diningBurnDamage();
         const crateKey = this.crateKeyActor();
+        const doorBar =
+            this.doorBarricade.exit && this.doorBarricade.roomId === this.currentRoom.id
+                ? [
+                      doorBarActor(
+                          this.currentRoom,
+                          this.doorBarricade.exit,
+                          Math.max(this.doorBarricade.progress, this.barDoorAnim.slamShake),
+                          this.decorAnimTime
+                      )
+                  ]
+                : [];
 
         renderRoomScene(ctx, this.currentRoom, {
             getAnimTime: () => this.decorAnimTime,
@@ -2330,7 +2459,7 @@ export class Game {
                 burn?.floor?.(c);
                 this.ballroomEggs.drawFloor(c, this.currentRoom);
             },
-            extraActors: [this.player, ...this.panSplash.worldActors(this.player), ...spreadFireActors, ...dragGripActors, ...(burn?.actors ?? []), ...crateKey],
+            extraActors: [this.player, ...this.panSplash.worldActors(this.player), ...spreadFireActors, ...dragGripActors, ...(burn?.actors ?? []), ...crateKey, ...doorBar, ...this.carriedBarActors()],
             extraOverheadActors: [
                 ...atticMice.getActors(() => this.decorAnimTime),
                 ...courtyardSeagull.getActors(),
@@ -2439,6 +2568,32 @@ export class Game {
                         ? STOVE_STRUGGLE_TITLE
                         : "Push him off!"
             );
+        }
+
+        if (
+            this.state === "playing" &&
+            this.doorBarricade.inReach(
+                this.currentRoom.id,
+                this.player.x + this.player.width / 2,
+                this.player.y + this.player.height / 2
+            )
+        ) {
+            if (this.doorBarricade.progress > 0) {
+                drawStruggleMeter(
+                    ctx,
+                    this.doorBarricade.progress,
+                    shouldShowTouchControls(),
+                    "Lift the bar!",
+                    shouldShowTouchControls() ? "Keep holding Interact!" : "Keep holding E / Space!"
+                );
+            } else {
+                drawActionHint(
+                    ctx,
+                    shouldShowTouchControls()
+                        ? "Ytte barred the door! Hold Interact to lift the bar."
+                        : "Ytte barred the door! Hold E to lift the bar."
+                );
+            }
         }
 
         if (

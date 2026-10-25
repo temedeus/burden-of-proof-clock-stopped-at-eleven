@@ -4,6 +4,8 @@ import { Game } from "./engine/Game";
 import { Menu, MenuAction } from "./engine/Menu";
 import { Input } from "./engine/Input";
 import { IntroScreen } from "./engine/IntroScreen";
+import { AiNoticeScreen } from "./engine/AiNoticeScreen";
+import { SoundPromptScreen } from "./engine/SoundPromptScreen";
 import { TouchControls } from "./engine/TouchControls";
 import { clientToCanvas, isSimulateMobile, shouldShowTouchControls } from "./engine/platform";
 import { unlockAudio } from "./audio/audioContext";
@@ -24,16 +26,33 @@ const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 ctx.imageSmoothingEnabled = false;
 
-type AppScreen = "main_menu" | "playing" | "pause_menu" | "settings" | "game_over" | "intro" | "dev_teleport";
+type AppScreen =
+    | "sound_prompt"
+    | "ai_notice"
+    | "main_menu"
+    | "playing"
+    | "pause_menu"
+    | "settings"
+    | "game_over"
+    | "intro"
+    | "dev_teleport";
 
 const devTeleport = isDevTeleportEnabled();
-let appScreen: AppScreen = devTeleport ? "dev_teleport" : "main_menu";
+let appScreen: AppScreen = devTeleport ? "dev_teleport" : "sound_prompt";
 let devTeleportIndex = 0;
 let game: Game | null = null;
 const sharedInput = new Input();
 const menu = new Menu(canvas, "main", sharedInput);
 const touchControls = new TouchControls(sharedInput, document.getElementById("touch-controls")!);
 let introScreen: IntroScreen | null = null;
+const soundPromptScreen = new SoundPromptScreen(sharedInput, () => {
+    appScreen = "main_menu";
+    menu.setScreen("main");
+});
+const aiNoticeScreen = new AiNoticeScreen(sharedInput, () => {
+    appScreen = "main_menu";
+    menu.setScreen("main");
+});
 let pendingStart: { character: PlayerSpriteName } | null = null;
 
 const loop = new Loop();
@@ -76,7 +95,12 @@ function setupCanvasPointer(): void {
                 return;
             }
 
-            if (appScreen === "intro") {
+            if (appScreen === "sound_prompt") {
+                soundPromptScreen.handlePointer(x, y, canvas.width, canvas.height);
+                return;
+            }
+
+            if (appScreen === "intro" || appScreen === "ai_notice") {
                 sharedInput.tapVirtual("enter");
                 return;
             }
@@ -240,6 +264,18 @@ spriteLoader.load().then(() => {
             return;
         }
 
+        if (appScreen === "sound_prompt") {
+            soundPromptScreen.update();
+            if (appScreen === "sound_prompt") soundPromptScreen.render(ctx);
+            return;
+        }
+
+        if (appScreen === "ai_notice") {
+            aiNoticeScreen.update();
+            if (appScreen === "ai_notice") aiNoticeScreen.render(ctx);
+            return;
+        }
+
         if (appScreen === "intro" && introScreen) {
             introScreen.update();
             if (introScreen) introScreen.render(ctx);
@@ -298,6 +334,9 @@ function handleMenuAction(action: MenuAction): void {
             break;
         case "open_settings":
             menu.setScreen("settings");
+            break;
+        case "open_ai_notice":
+            appScreen = "ai_notice";
             break;
         case "resume":
             appScreen = "playing";

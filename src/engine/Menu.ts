@@ -22,6 +22,7 @@ export type MenuAction =
     | { type: "continue" }
     | { type: "confirm_new_game" }
     | { type: "open_settings" }
+    | { type: "open_ai_notice" }
     | { type: "resume" }
     | { type: "quit_to_menu" }
     | { type: "back" }
@@ -107,6 +108,13 @@ export class Menu {
             return null;
         }
 
+        if (this.screen === "main") {
+            const link = this.getAiNoticeLinkRect(w, h);
+            if (x >= link.x && x <= link.x + link.w && y >= link.y && y <= link.y + link.h) {
+                return { type: "open_ai_notice" };
+            }
+        }
+
         // The vignette's "Back to Menu" only appears once the heading fades in
         if (this.screen === "game_over" && this.gameOverScene && !this.isGameOverTextVisible()) return null;
 
@@ -164,6 +172,23 @@ export class Menu {
         return { startY, lineHeight, count: items.length };
     }
 
+    /** Small "About AI use" link tucked into the bottom-right corner of the main menu. */
+    private getAiNoticeLinkRect(w: number, h: number): { x: number; y: number; w: number; h: number; label: string; font: string } {
+        const scale = h / 600;
+        const label = shouldShowTouchControls() ? "About AI use" : "About AI use (I)";
+        const font = serif(15 * scale, true);
+        const ctx = this.canvas.getContext("2d")!;
+        ctx.save();
+        ctx.font = font;
+        const textW = ctx.measureText(label).width;
+        ctx.restore();
+        const pad = Math.round(10 * scale);
+        const boxW = Math.round(textW + pad * 2);
+        const boxH = Math.round(30 * scale);
+        const margin = Math.round(14 * scale);
+        return { x: w - margin - boxW, y: h - margin - boxH, w: boxW, h: boxH, label, font };
+    }
+
     private getCharacterSelectLayout(w: number, h: number): {
         slots: { id: CharacterId; x: number; y: number; w: number; h: number }[];
         continueButton: { x: number; y: number; w: number; h: number } | null;
@@ -209,6 +234,10 @@ export class Menu {
             if (this.screen === "game_over") {
                 return { type: "quit_to_menu" };
             }
+        }
+
+        if (this.screen === "main" && this.input.wasPressed("i")) {
+            return { type: "open_ai_notice" };
         }
 
         const items = this.getMenuItems();
@@ -319,6 +348,7 @@ export class Menu {
             const items = this.getMenuItems();
             const { lineHeight } = this.getMenuTypography(h);
             this.renderMenuList(ctx, w, h, items, this.mainMenuStartY(h, lineHeight, items.length));
+            this.renderAiNoticeLink(ctx, w, h);
             ctx.textAlign = "left";
             return;
         }
@@ -394,6 +424,20 @@ export class Menu {
                 }
             }
         }
+    }
+
+    private renderAiNoticeLink(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+        const link = this.getAiNoticeLinkRect(w, h);
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.font = link.font;
+        const cx = link.x + link.w / 2;
+        const baseY = link.y + link.h * 0.68;
+        shadowText(ctx, link.label, cx, baseY, INK_MUTED, 1);
+        const textW = ctx.measureText(link.label).width;
+        ctx.fillStyle = "rgba(154,146,132,0.5)";
+        ctx.fillRect(Math.round(cx - textW / 2), Math.round(baseY + 3 * (h / 600)), Math.round(textW), 1);
+        ctx.restore();
     }
 
     private renderNewGameConfirm(ctx: CanvasRenderingContext2D, w: number, h: number): void {

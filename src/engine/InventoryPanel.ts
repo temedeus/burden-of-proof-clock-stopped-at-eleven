@@ -1,4 +1,3 @@
-import type { ClueAssignment, FurnitureConfig, NPCConfig } from "@cse/content-schema";
 import { spriteLoader } from "../assets/SpriteLoader";
 import {
     getClueDisplay,
@@ -15,6 +14,7 @@ const PANEL_BORDER = "#666";
 const SELECTED_BORDER = "#ffd700";
 const SLOT_FILL = "#1e1e1e";
 const DETAIL_BG = "#1a1a1a";
+const LEAD_TEXT = "#c9b98a";
 
 export interface InventorySlot {
     clueId: string;
@@ -187,9 +187,8 @@ export class InventoryPanel {
         ctx: CanvasRenderingContext2D,
         clueSystem: ClueSystem,
         catalog: ClueCatalog,
-        _assignments: ClueAssignment[] | undefined,
-        _furnitureById: Record<string, FurnitureConfig>,
-        _npcs: Record<string, NPCConfig>
+        /** "Current lead" lines shown under the title (see `investigationLeads.ts`). */
+        leads: readonly string[] = []
     ): void {
         const clues = getInventoryClueIds(clueSystem.getAllClues(), catalog);
         const layout = computeInventoryLayout(ctx.canvas.width, ctx.canvas.height, clues.length);
@@ -209,6 +208,7 @@ export class InventoryPanel {
         ctx.font = "bold 24px \"IM Fell English SC\", \"IM Fell English\", \"Libre Baskerville\", serif";
         ctx.textAlign = "center";
         ctx.fillText("Inventory", ctx.canvas.width / 2, panelY + 40);
+        this.drawLeads(ctx, leads, panelY, panelWidth);
 
         if (clues.length === 0) {
             ctx.fillStyle = "#888";
@@ -306,6 +306,25 @@ export class InventoryPanel {
         for (let i = 0; i < lines.length; i++) {
             ctx.fillText(lines[i], boxX + 12, boxY + 48 + i * 18);
         }
+    }
+
+    private drawLeads(
+        ctx: CanvasRenderingContext2D,
+        leads: readonly string[],
+        panelY: number,
+        panelWidth: number
+    ): void {
+        if (leads.length === 0) return;
+        ctx.fillStyle = LEAD_TEXT;
+        ctx.font = "italic 14px \"IM Fell English\", \"Libre Baskerville\", serif";
+        ctx.textAlign = "center";
+        const label = leads.length > 1 ? "Current leads" : "Current lead";
+        let text = `${label}: ${leads.join(" · ")}`;
+        // Fall back to the first lead when both do not fit on one line
+        if (leads.length > 1 && ctx.measureText(text).width > panelWidth - 32) {
+            text = `Current lead: ${leads[0]}`;
+        }
+        ctx.fillText(text, ctx.canvas.width / 2, panelY + 64);
     }
 
     private drawFooterHint(ctx: CanvasRenderingContext2D, panelY: number, panelHeight: number): void {

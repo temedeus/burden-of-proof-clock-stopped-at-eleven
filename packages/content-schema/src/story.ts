@@ -65,6 +65,18 @@ export interface NPCDialogOverride {
     conditions?: DialogCondition[];
 }
 
+/** Scripted scenes the game can play; a story starts each one with a clue (`sceneTriggers`). */
+export const SCRIPTED_SCENE_IDS = [
+    /** Hooded attacker in the dining room, ending in the fireplace fire. */
+    "ledger_scare",
+    /** Hooded attacker in the attic, ending at the window. */
+    "attic_scare",
+    /** The culprit's confession, leading into the finale chase. */
+    "confrontation"
+] as const;
+
+export type ScriptedSceneId = (typeof SCRIPTED_SCENE_IDS)[number];
+
 export interface StoryCasePacket {
     title: string;
     victim: StoryVictim;
@@ -78,6 +90,8 @@ export interface StoryCasePacket {
     npcDialogOverrides: NPCDialogOverride[];
     /** Lines shown when the culprit confronts the player after the final clue. */
     culpritConfrontationMonologue?: string[];
+    /** Clue whose pickup starts each scripted scene; scenes left out never play. */
+    sceneTriggers?: Partial<Record<ScriptedSceneId, string>>;
 }
 
 export interface StoryManifestEntry {

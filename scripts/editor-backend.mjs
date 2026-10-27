@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
-import { mkdir, readFile, readdir, rename, rm, writeFile, copyFile } from "node:fs/promises";
-import { join, relative, resolve } from "node:path";
+import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { ACTIVE_STORY_ID } from "../packages/content-schema/src/story.ts";
 import { buildFurnitureCatalog, validateRooms } from "../packages/content-schema/src/index.ts";
 import { isStoryCasePacketValid, validateStoryCasePacket } from "../packages/content-schema/src/validateStory.ts";
@@ -14,7 +14,6 @@ const FURNITURE_DIR = join(ROOT, "src", "data", "furniture");
 const CLUES_FILE = join(ROOT, "src", "data", "clues.json");
 const STORY_DIR = join(ROOT, "src", "data", "story", "generated");
 const STORY_FILES_DIR = join(STORY_DIR, "stories");
-const STORY_ARCHIVE_DIR = join(STORY_FILES_DIR, "archive");
 const STORY_MANIFEST_FILE = join(STORY_DIR, "story_manifest.json");
 const LEGACY_STORY_ID = "default";
 
@@ -123,7 +122,6 @@ function storyValidationContext(rooms, npcs, clues, packet = null) {
 
 async function ensureStoryDirs() {
     await mkdir(STORY_FILES_DIR, { recursive: true });
-    await mkdir(STORY_ARCHIVE_DIR, { recursive: true });
 }
 
 function blankCasePacket(npcIds, defaultRoomId = "hall") {
@@ -181,37 +179,6 @@ async function readActiveStoryPacket() {
     }
 }
 
-async function archiveCurrentActiveStory() {
-    const activePath = storyPath(ACTIVE_STORY_ID);
-    try {
-        await readFile(activePath);
-    } catch {
-        try {
-            await readFile(storyPath(LEGACY_STORY_ID));
-        } catch {
-            return null;
-        }
-    }
-
-    const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
-    const archiveDir = join(STORY_ARCHIVE_DIR, stamp);
-    await mkdir(archiveDir, { recursive: true });
-
-    try {
-        await copyFile(activePath, join(archiveDir, `${ACTIVE_STORY_ID}.json`));
-    } catch {
-        await copyFile(storyPath(LEGACY_STORY_ID), join(archiveDir, `${LEGACY_STORY_ID}.json`));
-    }
-
-    try {
-        await copyFile(STORY_MANIFEST_FILE, join(archiveDir, "story_manifest.json"));
-    } catch {
-        // no manifest yet
-    }
-
-    return relative(ROOT, archiveDir);
-}
-
 async function purgeNonActiveStoryFiles() {
     await ensureStoryDirs();
     const entries = await readdir(STORY_FILES_DIR, { withFileTypes: true });
@@ -253,12 +220,10 @@ async function writeActiveManifest(packet) {
 }
 
 async function saveActiveStory(packet) {
-    const archivedTo = await archiveCurrentActiveStory();
     await ensureStoryDirs();
     await writeFile(storyPath(ACTIVE_STORY_ID), JSON.stringify(packet, null, 2) + "\n", "utf8");
     await purgeNonActiveStoryFiles();
-    const result = await writeActiveManifest(packet);
-    return { ...result, archivedTo };
+    return writeActiveManifest(packet);
 }
 
 const server = createServer(async (req, res) => {
@@ -308,8 +273,7 @@ const server = createServer(async (req, res) => {
                 ok: true,
                 id: ACTIVE_STORY_ID,
                 isValid: result.isValid,
-                issues: result.issues,
-                archivedTo: result.archivedTo
+                issues: result.issues
             });
             return;
         }
@@ -342,8 +306,7 @@ const server = createServer(async (req, res) => {
                 ok: true,
                 id: ACTIVE_STORY_ID,
                 isValid: result.isValid,
-                issues: result.issues,
-                archivedTo: result.archivedTo
+                issues: result.issues
             });
             return;
         }

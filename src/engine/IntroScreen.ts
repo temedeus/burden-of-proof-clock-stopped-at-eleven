@@ -16,26 +16,10 @@ import {
 } from "../render/menuChrome";
 import { shouldShowTouchControls } from "./platform";
 import type { PlayerSpriteName } from "@cse/content-schema";
+import { CUTSCENE_TEXT, type IntroCharacter } from "../content/cutsceneText";
 
-interface CharacterSlide {
-    spriteName: string;
-    name: string;
-    role: string;
-    line: string;
-    victim?: boolean;
-}
-
-const CHARACTER_SLIDES: CharacterSlide[] = [
-    { spriteName: "npc_male", name: "Mr. Thompson", role: "Butler", line: "The manor's steadfast butler." },
-    { spriteName: "maid", name: "Mrs. Clarke", role: "Maid", line: "Keeps the halls in order." },
-    { spriteName: "worker_man", name: "Chef Ytte", role: "Cook", line: "Prepares every meal at the manor." },
-    { spriteName: "baron", name: "von Virtanen", role: "Baron — the victim", line: "Found dead in the hall when the clock stopped.", victim: true },
-    { spriteName: "baroness", name: "Lady von Virtanen", role: "Baroness", line: "The lady of the house." },
-    { spriteName: "worker_man", name: "The Groundskeeper", role: "Worker", line: "Tends the grounds by day." },
-    { spriteName: "worker_boy", name: "The Stable Boy", role: "Stable hand", line: "Cares for the horses." },
-    { spriteName: "police", name: "Inspector Walsh", role: "Police", line: "First on the scene." },
-    { spriteName: "police2", name: "Constable Reed", role: "Police", line: "Securing the premises." }
-];
+const CHARACTER_SLIDES = CUTSCENE_TEXT.intro.household;
+const PREMISE = CUTSCENE_TEXT.intro.premise;
 
 export class IntroScreen {
     private slideIndex = 0;
@@ -96,19 +80,12 @@ export class IntroScreen {
     private renderPremiseSlide(ctx: CanvasRenderingContext2D, w: number, h: number, scale: number): void {
         const cx = w / 2;
         ctx.font = serif(20 * scale, true);
-        shadowText(ctx, "Murder at", cx, h * 0.14, INK_MUTED);
+        shadowText(ctx, PREMISE.kicker, cx, h * 0.14, INK_MUTED);
         ctx.font = smallCaps(40 * scale);
-        shadowText(ctx, "Von Virtanen Manor", cx, h * 0.14 + 42 * scale, GILT, 3);
+        shadowText(ctx, PREMISE.title, cx, h * 0.14 + 42 * scale, GILT, 3);
         drawRule(ctx, cx, h * 0.14 + 62 * scale, 170 * scale, scale);
 
-        const lines = [
-            "Baron von Virtanen has been murdered in his own hall.",
-            "His body was found beneath the stopped clock at eleven.",
-            "",
-            "The police have secured the scene. Now a detective",
-            "must gather clues, question the household,",
-            "and find the murderer before it's too late."
-        ];
+        const lines = PREMISE.lines;
         const lineHeight = 30 * scale;
         let y = h * 0.4;
         ctx.font = serif(20 * scale);
@@ -118,7 +95,7 @@ export class IntroScreen {
         }
 
         ctx.font = serif(17 * scale, true);
-        shadowText(ctx, "— the night of the murder —", cx, y + lineHeight * 0.9, INK_MUTED);
+        shadowText(ctx, PREMISE.footer, cx, y + lineHeight * 0.9, INK_MUTED);
     }
 
     private renderCharacterSlide(
@@ -126,7 +103,7 @@ export class IntroScreen {
         w: number,
         h: number,
         scale: number,
-        slide: CharacterSlide
+        slide: IntroCharacter
     ): void {
         const cx = w / 2;
         const cardW = 200 * scale;

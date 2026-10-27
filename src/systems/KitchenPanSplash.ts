@@ -10,6 +10,7 @@ import type { TileMap } from "../world/TileMap";
 import { TILE_SIZE } from "../world/constants";
 import { setStovePotTaken, stoveKey } from "../world/kitchenStovePot";
 import { entityCenterOverlapsRect } from "./DiningFireCutscene";
+import { CUTSCENE_TEXT } from "../content/cutsceneText";
 
 /**
  * Finale-chase easter egg: win the struggle beside a kitchen stove and the
@@ -38,7 +39,7 @@ const SHOUT_FOR = 1.4;
 const STEAM_FOR = 2.8;
 const DROPLETS = 26;
 
-const SHOUTS = ["YEOWCH!", "HOT! HOT! HOT!", "AAARGH, MY FACE!"];
+const SHOUTS = CUTSCENE_TEXT.finale.panSplashShouts;
 
 interface Rect {
     x: number;

@@ -10,9 +10,11 @@ src/data/
   npcs/            # NPC definitions and base dialog
   furniture/       # furniture catalog (table.json, bookshelves.json, decorations.json)
   clues.json       # base clue catalog (fallback)
-  story/generated/
-    stories/active.json       # active case: clues, culprit, dialog overrides
-    story_manifest.json       # manifest (id: active)
+  story/
+    cutscenes.json            # scripted scene lines, secret passage reveals, intro slides
+    generated/
+      stories/active.json     # active case: clues, culprit, NPC dialog, confession
+      story_manifest.json     # manifest (id: active)
 ```
 
 ## Workflows
@@ -41,8 +43,9 @@ Edit `src/data/story/generated/stories/active.json`:
 | `generatedClues` | Clue id, name, description; optional `requiresClues`, `blockedHint`, `hideFromInventory` |
 | `clueAssignments` | room, furniture index **or** `npcId`, examine hint |
 | `culpritNpcId` | Murderer NPC id |
-| `npcDialogOverrides` | Per-NPC dialog replacing base JSON when story is active |
-| `roomNarratives` | Atmosphere notes for authors / handoffs (not applied to furniture examine text) |
+| `npcDialogOverrides` | Per-NPC dialog replacing base JSON when story is active. Conditions need `requiresClues` and/or `requiresScenes` (finished scripted scenes); the **first listed** match wins, so put later-game lines first |
+| `sceneTriggers` | Clue that starts each scripted scene (`ledger_scare`, `attic_scare`, `confrontation`) |
+| `roomNarratives` | Atmosphere notes for authors / handoffs (not shown in game) |
 
 Or use the editor (`pnpm dev:editor:full`) — see [src/editor/AGENTS.md](../editor/AGENTS.md).
 
@@ -75,18 +78,6 @@ pnpm validate
 
 Checks room layout, NPC placement (each once), furniture/sprite references, story shape, and clue assignments. Rules live in `packages/content-schema`.
 
-## Edit mapping (quick reference)
+## Edit mapping
 
-| If you changed… | Apply in… |
-|-----------------|-----------|
-| Clue name, description, location, examine hint | `active.json` — `generatedClues`, `clueAssignments` |
-| Clue prerequisites, blocked hint, hide from inventory | `active.json` — `generatedClues` |
-| NPC examine clue (e.g. body) | `active.json` — `clueAssignments` with `npcId`; `src/data/npcs/<id>.json` — `examineClueId` |
-| Confirm-gated clue | furniture JSON — `interactionType: "confirm"`, `confirmRequiresClues`; `Game.ts` puzzle handler |
-| Culprit, victim, suspects | `active.json` — `culpritNpcId`, `victim`, `suspects` |
-| NPC dialog (active case) | `active.json` — `npcDialogOverrides` |
-| NPC dialog (fallback) | `src/data/npcs/<id>.json` |
-| Room connections | `src/data/rooms/<id>.json` — `exits` |
-| Furniture examine text | `src/data/furniture/*.json` — `description`, `confirmPrompt` |
-
-Full mapping and room catalog: [GAME_REFERENCE.md](../../GAME_REFERENCE.md).
+Field-by-field "if you changed X, edit Y" table: [GAME_REFERENCE.md — How to apply changes](../../GAME_REFERENCE.md#how-to-apply-changes-from-this-document).

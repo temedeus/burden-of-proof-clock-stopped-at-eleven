@@ -24,7 +24,7 @@ pnpm dev:editor           # terminal 2
 1. **Rooms** — Place furniture, NPCs, and doors on the canvas. Save rooms to disk (`Save Room` / `Save All`).
 2. **Story** — Title, culprit, validate, and save.
 3. **Clues tab** — Choose a clue from the dropdown (or add/remove clues). Set id/name/description, **requires clues** (comma-separated ids), **blocked hint**, **hide from inventory**, **assignment source** (furniture / NPC / confirm), room, furniture or NPC target, and examine hint. The **dependency chain preview** lists clues in prerequisite order.
-4. **Validate & save** — `Validate Story`, then `Save Story`. Each save archives the previous `active.json` under `stories/archive/<timestamp>/` and removes any other story JSON in `stories/`. Run `pnpm validate` from the repo root.
+4. **Validate & save** — `Validate Story`, then `Save Story`. Each save overwrites `active.json` (history lives in git) and removes any other story JSON in `stories/`. Run `pnpm validate` from the repo root.
 5. **Playtest** — **Play story in game** → `http://localhost:5173/?story=active`
 
 The game uses one story file:
@@ -41,7 +41,7 @@ The game uses one story file:
 | `PUT` | `/api/rooms/:id` | Save one room |
 | `POST` | `/api/rooms/sync` | Save all rooms from editor |
 | `GET` | `/api/story` | Load the active story packet |
-| `PUT` | `/api/story` | Save story (archive previous, purge other story files) |
+| `PUT` | `/api/story` | Save story (purge other story files) |
 
 Implementation: `scripts/editor-backend.mjs`.
 

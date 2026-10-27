@@ -1,4 +1,5 @@
 import { TILE_SIZE } from "../world/constants";
+import { CUTSCENE_TEXT } from "../content/cutsceneText";
 import { drawWineBarrelsAtAnchors, wineBarrelDrawY, WINE_BARREL_DRAW_PX } from "../render/wineBarrelDraw";
 import { spriteLoader } from "../assets/SpriteLoader";
 import { addFurnitureToRoom, removeInteractableById, setHiddenExitDoorOpen } from "../world/Rooms";
@@ -94,7 +95,7 @@ export class CellarSecretPuzzle {
         setHiddenExitDoorOpen(this.getTunnelRoom(), true, "cellar_storage");
 
         return {
-            message: "The barrels roll aside, revealing a hidden passage.",
+            message: CUTSCENE_TEXT.secretPassages.cellar,
             enterDialog: true
         };
     }

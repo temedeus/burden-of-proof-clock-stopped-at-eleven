@@ -1,0 +1,81 @@
+{
+  "intro": {
+    "premise": {
+      "kicker": "Murder at",
+      "title": "Von Virtanen Manor",
+      "lines": [
+        "Baron von Virtanen has been murdered in his own hall.",
+        "His body was found beneath the stopped clock at eleven.",
+        "",
+        "The police have secured the scene. Now a detective",
+        "must gather clues, question the household,",
+        "and find the murderer before it's too late."
+      ],
+      "footer": "— the night of the murder —"
+    },
+    "household": [
+      { "spriteName": "npc_male", "name": "Mr. Thompson", "role": "Butler", "line": "The manor's steadfast butler." },
+      { "spriteName": "maid", "name": "Mrs. Clarke", "role": "Maid", "line": "Keeps the halls in order." },
+      { "spriteName": "worker_man", "name": "Chef Ytte", "role": "Cook", "line": "Prepares every meal at the manor." },
+      { "spriteName": "baron", "name": "von Virtanen", "role": "Baron — the victim", "line": "Found dead in the hall when the clock stopped.", "victim": true },
+      { "spriteName": "baroness", "name": "Lady von Virtanen", "role": "Baroness", "line": "The lady of the house." },
+      { "spriteName": "worker_man", "name": "The Groundskeeper", "role": "Worker", "line": "Tends the grounds by day." },
+      { "spriteName": "worker_boy", "name": "The Stable Boy", "role": "Stable hand", "line": "Cares for the horses." },
+      { "spriteName": "police", "name": "Inspector Walsh", "role": "Police", "line": "First on the scene." },
+      { "spriteName": "police2", "name": "Constable Reed", "role": "Police", "line": "Securing the premises." }
+    ]
+  },
+  "diningScare": {
+    "monologue": [
+      "???: You weren't meant to find that page.",
+      "???: Burned evidence still talks — and so will you, if I don't stop you.",
+      "You: How did you lock the other door as well?!",
+      "???: I'm exploiting bad writing!"
+    ],
+    "panicLine": "???: Arghh!",
+    "aftermath": [
+      "Lady von Virtanen: Help! The dining room is on fire!",
+      "Lady von Virtanen: Chef Ytte — drag the detective out of there! Quickly!"
+    ],
+    "wake": [
+      "Lady von Virtanen: Thank the Lord — you're awake.",
+      "Lady von Virtanen: Easy, Detective. You're in the guest wing. I'm so glad you're all right.",
+      "Lady von Virtanen: Ytte is resting as well. He inhaled a great deal of smoke dragging you out.",
+      "Lady von Virtanen: When you're steady, keep looking. This house is no longer safe for any of us."
+    ],
+    "wakeThought": "You: This is getting serious. The murderer wants me dead — they know I'm onto them. I need to look in the baron's rooms."
+  },
+  "atticScare": {
+    "monologue": [
+      "???: Door's locked. Nowhere left to run, Detective.",
+      "???: You've been poking around where you shouldn't.",
+      "???: Too nosy. Far too nosy."
+    ]
+  },
+  "secretPassages": {
+    "study": "The bookshelf grinds aside, revealing a hidden passage.",
+    "cellar": "The barrels roll aside, revealing a hidden passage."
+  },
+  "study": {
+    "mooseLick": "You: Ugh. Moose drool. Disgusting."
+  },
+  "ballroom": {
+    "groundskeeperWindow": "Groundskeeper: Beg pardon, Detective! Didn't mean to give you a fright.\n\nGroundskeeper: Just tending to the flower beds under the windows. Roses don't stop growing for a murder.",
+    "windowLook": "Neat flower beds below the window, freshly watered. No one in sight now.",
+    "chandelierDodged": "You: That was far too close. Chandeliers don't just fall on their own... do they?"
+  },
+  "finale": {
+    "chaseStart": "Chef Ytte is after you! Find a police officer before he catches you!",
+    "kitchenVaultShout": "Going somewhere, Detective?",
+    "panSplashShouts": [
+      "YEOWCH!",
+      "HOT! HOT! HOT!",
+      "AAARGH, MY FACE!"
+    ],
+    "fistFightTaunt": "Chef Ytte: Running again, Detective? Bok bok bok! Are you a chicken?\n\nChef Ytte: Tell you what — I'll put the knife away. Bare knuckles. Let's see what you're made of.\n\nYou: Nobody calls me a chicken. Put 'em up, Ytte.",
+    "fistFightRooms": {
+      "secret_tunnel": "Chef Ytte crumples onto the tunnel floor, out cold. Run — before he comes to!",
+      "dining": "Chef Ytte is knocked out on the floor. Run — now!"
+    }
+  }
+}

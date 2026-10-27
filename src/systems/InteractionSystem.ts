@@ -11,22 +11,28 @@ import {
 import { ClueSystem } from "./ClueSystem";
 import { DialogSystem } from "./DialogSystem";
 import { NPC } from "../entities/NPC";
-import type { NPCConfig } from "@cse/content-schema";
+import type { NPCConfig, ScriptedSceneId } from "@cse/content-schema";
+
+/** Dialog lines starting with this are the detective speaking first (no NPC name prepended). */
+const PLAYER_LINE_PREFIX = "You: ";
 
 export interface InteractionResult {
     description: string;
     clues: string[];
     speaker?: string; // NPC name if talking to NPC
     speakerId?: string; // NPC id (e.g. "cook") for game logic
-    confirmation?: { id: string; prompt: string };
+    confirmation?: { id: string; prompt: string; grantsClueId?: string };
     interactionSound?: string;
 }
 
 export class InteractionSystem {
     private dialogSystem: DialogSystem;
 
-    constructor(private clueSystem: ClueSystem) {
-        this.dialogSystem = new DialogSystem(clueSystem);
+    constructor(
+        private clueSystem: ClueSystem,
+        sceneFinished?: (id: ScriptedSceneId) => boolean
+    ) {
+        this.dialogSystem = new DialogSystem(clueSystem, sceneFinished);
     }
 
     interact(
@@ -77,8 +83,13 @@ export class InteractionSystem {
                             clues.push(dialogClueId);
                         }
                     }
+                    // Narration about the NPC ("Mrs. Clarke keeps her eyes down…"): no name prefix, no voice
+                    if (dialog.startsWith(`${npc.name} `)) {
+                        return { description: dialog, clues, speakerId: npc.id };
+                    }
                     return {
-                        description: `${npc.name}: ${dialog}`,
+                        // A line opening with "You: " has the detective speak first
+                        description: dialog.startsWith(PLAYER_LINE_PREFIX) ? dialog : `${npc.name}: ${dialog}`,
                         clues,
                         speaker: npc.name,
                         speakerId: npc.id
@@ -155,7 +166,8 @@ export class InteractionSystem {
                             clues: [],
                             confirmation: {
                                 id: obj.confirmId,
-                                prompt: obj.confirmPrompt
+                                prompt: obj.confirmPrompt,
+                                ...(obj.confirmGrantsClueId ? { grantsClueId: obj.confirmGrantsClueId } : {})
                             }
                         };
                     }

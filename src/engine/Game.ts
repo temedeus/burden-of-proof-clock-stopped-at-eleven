@@ -22,8 +22,6 @@ import {
     DINING_FIRE_PANIC_LINE,
     DINING_FIRE_WAKE_THOUGHT,
     HEARTH_SHOVE_HINT,
-    YTTE_AFTER_ATTIC_DIALOG,
-    YTTE_HELPED_DIALOG,
     diningHallDoorPosition,
     diningHearthLandingPosition,
     diningTableRetreatWaypoints,
@@ -37,7 +35,6 @@ import {
     playerNearAtticWindow
 } from "../systems/AtticWindowCutscene";
 import { scareSounds } from "../audio/ScareSounds";
-import { resolveEventNpcDialog } from "../content/eventNpcDialog";
 import { drawBurningFigure, drawFireSpot, drawScorch } from "../render/fireEffects";
 import { drawDragGrip } from "../render/dragGrip";
 import {
@@ -65,9 +62,10 @@ import { spriteLoader } from "../assets/SpriteLoader";
 import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
 import { InventoryPanel } from "./InventoryPanel";
 import { renderClueNotification } from "./ClueNotification";
-import { loadGameContent, loadFurnitureCatalog } from "../content/loadGameContent";
+import { loadGameContent } from "../content/loadGameContent";
 import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
 import { buildClueCatalog, getInventoryClueIds, type ClueCatalog } from "../content/clueCatalog";
+import { formatInvestigationLeads, getInvestigationLeads } from "../content/investigationLeads";
 import { applyStoryDialogOverrides, resolveActiveStory, type ActiveStory } from "../content/loadStoryContent";
 import { fireplaceAmbience } from "../audio/FireplaceAmbience";
 import { gardenAmbience } from "../audio/GardenAmbience";
@@ -115,8 +113,6 @@ import {
     drawRoomTitleBanner,
     drawStruggleMeter,
     drawVictoryOverlay,
-    DIALOG_LINES_PER_PAGE,
-    paginateDialog,
     tickRoomTitleBanner,
     type RoomTitleBanner
 } from "../render/GameHud";
@@ -136,10 +132,18 @@ import { resetSessionWorldState } from "./resetSessionWorldState";
 import type { GameOverSceneInfo } from "../render/gameOverScene";
 import { CHANDELIER_GAME_OVER_CRASH_AT } from "../render/chandelierGameOverScene";
 import { GAME_OVER_STAB_AT } from "../render/gameOverScene";
-import { cluesForRetry, SCRIPTED_SCENES, scenesTriggeredBy, type SceneId } from "../systems/scriptedScenes";
+import {
+    cluesForRetry,
+    SCENE_IDS,
+    scenesTriggeredBy,
+    type SceneId,
+    type SceneTriggers
+} from "../systems/scriptedScenes";
 import { CUFF_CLICK_TIMES } from "../render/arrestScene";
-import { drawDialogBubble, drawPanicBubble, SPEECH_BUBBLE_TEXT_WIDTH } from "../render/speechBubble";
-import { PLAYER_SPEAKER, splitDialogSpeakers, type DialogSegment } from "../systems/dialogSpeakers";
+import { drawDialogBubble, drawPanicBubble } from "../render/speechBubble";
+import { PLAYER_SPEAKER } from "../systems/dialogSpeakers";
+import { DialogController } from "./DialogController";
+import { CUTSCENE_TEXT } from "../content/cutsceneText";
 
 type GameState =
     | "playing"
@@ -157,18 +161,13 @@ type GameState =
     | "barring_door"
     | "fist_fight";
 
-const POLICE_NPC_IDS = ["police", "police2"];
+/** NPC `role` (npcs/*.json) of officers who can make the arrest. */
+const POLICE_ROLE = "Police";
 
-/** Ytte goads the detective into a fist fight the first time he corners them in the secret tunnel. */
-const FIST_FIGHT_TAUNT =
-    "Chef Ytte: Running again, Detective? Bok bok bok! Are you a chicken?\n\n" +
-    "Chef Ytte: Tell you what — I'll put the knife away. Bare knuckles. Let's see what you're made of.\n\n" +
-    "You: Nobody calls me a chicken. Put 'em up, Ytte.";
+/** Ytte goads the detective into a fist fight the first time he corners them in a brawl room. */
+const FIST_FIGHT_TAUNT = CUTSCENE_TEXT.finale.fistFightTaunt;
 /** Rooms where Ytte stops to goad the detective into a brawl (once each), and how he goes down there. */
-const FIST_FIGHT_WON_TEXT: Record<string, string> = {
-    secret_tunnel: "Chef Ytte crumples onto the tunnel floor, out cold. Run — before he comes to!",
-    dining: "Chef Ytte is knocked out on the floor. Run — now!"
-};
+const FIST_FIGHT_WON_TEXT = CUTSCENE_TEXT.finale.fistFightRooms;
 /** How long Ytte stays down after losing the fist fight. */
 const FIST_FIGHT_KO_SECONDS = 6;
 
@@ -211,7 +210,7 @@ export class Game {
 
     private player: Player;
     private clueSystem = new ClueSystem();
-    private interaction = new InteractionSystem(this.clueSystem);
+    private interaction = new InteractionSystem(this.clueSystem, (id) => this.sceneComplete(id));
     private roomTransitions = new RoomTransitionService();
     private murdererChase: MurdererChaseController;
     private murdererConfrontation: MurdererConfrontation;
@@ -230,7 +229,6 @@ export class Game {
     private barDoorAnim = new BarDoorAnimation();
     /** Finale-chase brawl (secret tunnel, dining room) — once per room; later catches are the usual struggle. */
     private fistFight: FistFight;
-    private fistFightPending = false;
     /** Rooms whose brawl has been fought this chase. */
     private fistFightsDone = new Set<string>();
     private fistFightThudPlayed = false;
@@ -258,23 +256,14 @@ export class Game {
     );
 
     private state: GameState = "playing";
-    private mooseLickPending = false;
     private ballroomEggs = new BallroomEasterEggs();
-    private ballroomScareDialogOpen = false;
     private mooseLick = new MooseLickGag();
     private panSplash = new KitchenPanSplash();
     /** Distance field toward the player that chasers route along. */
     private chaseField: ChaseField;
     private panSplashFallSign = 1;
     private mooseRect: { x: number; y: number; w: number; h: number } | null = null;
-    private message: string | null = null;
-    private messagePages: string[] = [];
-    /** Who says each page (parallel to `messagePages`); speakers get a bubble, narration the box. */
-    private messageSpeakers: DialogSegment[] = [];
-    private messagePageIndex = 0;
-    private confirmPages: string[] = [];
-    private confirmPageIndex = 0;
-    private pendingConfirmation: { id: string; prompt: string } | null = null;
+    private dialog: DialogController;
     private clueNotification: { clueId: string } | null = null;
     private debugMode = false;
     private onMenuRequest?: () => void;
@@ -288,7 +277,6 @@ export class Game {
     private roomTitleBanner: RoomTitleBanner | null = null;
     private decorAnimTime = 0;
     private inventoryPanel = new InventoryPanel();
-    private furnitureCatalog = loadFurnitureCatalog();
 
     constructor(
         private ctx: CanvasRenderingContext2D,
@@ -304,6 +292,7 @@ export class Game {
         }
     ) {
         resetSessionWorldState();
+        this.dialog = new DialogController(ctx);
         const difficulty = options?.difficulty ?? "medium";
         this.difficulty = difficulty;
         this.murdererChase = new MurdererChaseController(difficulty);
@@ -369,7 +358,7 @@ export class Game {
     }
 
     /** True when mid-cutscene / struggle / victory — do not checkpoint. */
-    /** Runtime hooks for each scripted scene in `SCRIPTED_SCENES`. */
+    /** Runtime hooks for each scripted scene in `SCENE_IDS`. */
     private readonly scenes: Record<
         SceneId,
         { isComplete(): boolean; isActive(): boolean; setComplete(done: boolean): void; start(): void }
@@ -401,13 +390,18 @@ export class Game {
         }
     };
 
+    /** Trigger clue per scripted scene, from the active story. */
+    private get sceneTriggers(): SceneTriggers {
+        return this.activeStory?.casePacket.sceneTriggers ?? {};
+    }
+
     private sceneComplete(id: SceneId): boolean {
         return this.scenes[id].isComplete();
     }
 
     /** Start every unfinished scene triggered by these new clues; returns those started. */
     private triggerScenes(clueIds: readonly string[]): SceneId[] {
-        const started = scenesTriggeredBy(clueIds).filter(
+        const started = scenesTriggeredBy(this.sceneTriggers, clueIds).filter(
             (id) => !this.scenes[id].isComplete() && !this.scenes[id].isActive()
         );
         for (const id of started) this.scenes[id].start();
@@ -416,7 +410,7 @@ export class Game {
 
     canAutosave(): boolean {
         // Mid-scene saves would resume outside the scene; keep the save from the clue pickup.
-        if (SCRIPTED_SCENES.some((s) => this.scenes[s.id].isActive())) return false;
+        if (SCENE_IDS.some((id) => this.scenes[id].isActive())) return false;
         // Same for the finale chase: Continue replays the confrontation from the weapon pickup.
         if (this.murdererChase.accusedMurderer) return false;
         return (
@@ -447,7 +441,7 @@ export class Game {
             studySecretRevealed: this.studySecret.revealed,
             cellarSecretRevealed: this.cellarSecret.revealed,
             diningFireResolved: this.diningFireResolved,
-            completedScenes: SCRIPTED_SCENES.filter((s) => this.sceneComplete(s.id)).map((s) => s.id),
+            completedScenes: SCENE_IDS.filter((id) => this.sceneComplete(id)),
             accusedMurderer: this.murdererChase.accusedMurderer,
             cookHiddenAfterDiningScare: this.cookHiddenAfterDiningScare != null,
             brokenAtticWindowIds: getBrokenAtticWindowIds(),
@@ -635,7 +629,7 @@ export class Game {
             };
         }
         const completed = new Set(save.completedScenes);
-        this.clueSystem.restoreClues(cluesForRetry(save.discoveredClueIds, completed));
+        this.clueSystem.restoreClues(cluesForRetry(this.sceneTriggers, save.discoveredClueIds, completed));
         this.refreshStoryState();
 
         if (save.studySecretRevealed) {
@@ -646,7 +640,7 @@ export class Game {
         }
 
         this.diningFireResolved = save.diningFireResolved;
-        for (const { id } of SCRIPTED_SCENES) this.scenes[id].setComplete(completed.has(id));
+        for (const id of SCENE_IDS) this.scenes[id].setComplete(completed.has(id));
 
         setBrokenAtticWindows(save.brokenAtticWindowIds);
         setArmorCollapsed(save.armorCollapsed ?? false);
@@ -657,13 +651,13 @@ export class Game {
             save.brokenChandelier ?? null
         );
 
-        const confrontationClue = SCRIPTED_SCENES.find((s) => s.id === "confrontation")!.triggerClue;
-        const finaleRoom = rollBackFinale ? this.findRoomWithClue(confrontationClue) : null;
+        const confrontationClue = this.sceneTriggers.confrontation;
+        const finaleRoom = rollBackFinale && confrontationClue ? this.findRoomWithClue(confrontationClue) : null;
         const room = finaleRoom ?? this.rooms[save.roomId];
         if (!room) return;
         this.currentRoom = room;
         this.placePlayerFromSave(room, save.player.x, save.player.y, save.player.facing);
-        if (finaleRoom) this.placePlayerAtTrigger({ clueId: confrontationClue });
+        if (finaleRoom && confrontationClue) this.placePlayerAtTrigger({ clueId: confrontationClue });
         this.syncRoomAmbience();
         this.roomTitleBanner = createRoomTitleBanner(this.getRoomDisplayTitle(room.id));
 
@@ -741,6 +735,16 @@ export class Game {
         return getMurdererNpcId(this.activeStory?.casePacket ?? null);
     }
 
+    /** Officers can end the finale chase and keep calm while the murderer hunts. */
+    private isPolice(npcId: string): boolean {
+        return this.content.npcs[npcId]?.role === POLICE_ROLE;
+    }
+
+    /** Murderer's display name, restored after hooded disguises. */
+    private getMurdererName(): string {
+        return this.content.npcs[this.getMurdererNpcId()]?.name ?? "???";
+    }
+
     private getRequiredClueIds(): string[] {
         return getRequiredClueIds(this.activeStory?.casePacket ?? null);
     }
@@ -757,6 +761,23 @@ export class Game {
         return ROOM_DISPLAY_TITLES[roomId] ?? roomId.charAt(0).toUpperCase() + roomId.slice(1);
     }
 
+    /** "Current lead" lines for the inventory: where the next clues can be found. */
+    private getLeadLines(): string[] {
+        if (!this.activeStory) return [];
+        const unlocked = this.getUnlockedIds();
+        const leads = getInvestigationLeads(
+            this.activeStory.casePacket,
+            (id) => this.clueSystem.hasClue(id),
+            {
+                rooms: this.rooms,
+                startRoomId: this.currentRoom.id,
+                isUnlocked: (id) => isExitUnlocked(id, unlocked)
+            },
+            this.content.npcs
+        );
+        return formatInvestigationLeads(leads, (roomId) => this.getRoomDisplayTitle(roomId));
+    }
+
     private refreshStoryState(): void {
         if (!this.activeStory) return;
         applyStoryToRooms(this.rooms, this.activeStory.casePacket, {
@@ -771,29 +792,8 @@ export class Game {
         for (const npc of this.currentRoom.npcs) npc.interruptIdle();
     }
 
-    /** Paginate dialog per speaker: spoken lines wrap to bubble width, narration to the message box. */
     private setDialogPages(text: string): void {
-        const segments = splitDialogSpeakers(
-            text,
-            (name) => this.currentRoom.npcs.find((npc) => npc.name === name)?.id ?? null
-        );
-        this.messagePages = [];
-        this.messageSpeakers = [];
-        for (const segment of segments) {
-            const pages = segment.speakerId
-                ? paginateDialog(this.ctx, segment.text, DIALOG_LINES_PER_PAGE, SPEECH_BUBBLE_TEXT_WIDTH)
-                : paginateDialog(this.ctx, segment.text);
-            for (const page of pages) {
-                this.messagePages.push(page);
-                this.messageSpeakers.push(segment);
-            }
-        }
-        if (this.messagePages.length === 0) {
-            this.messagePages = [text];
-            this.messageSpeakers = [{ speakerId: null, speakerName: null, text }];
-        }
-        this.messagePageIndex = 0;
-        this.message = this.messagePages[0];
+        this.dialog.setPages(text, (name) => this.currentRoom.npcs.find((npc) => npc.name === name)?.id ?? null);
     }
 
     /** Sprite box of whoever speaks the current page, if they are on screen. */
@@ -838,7 +838,7 @@ export class Game {
         if (tick.playLick) mooseSounds.playLick();
         if (tick.done) {
             this.mooseRect = null;
-            this.openDialog("You: Ugh. Moose drool. Disgusting.");
+            this.openDialog(CUTSCENE_TEXT.study.mooseLick);
         }
     }
 
@@ -879,27 +879,14 @@ export class Game {
     }
 
     private advanceOrCloseDialog(): void {
-        if (this.messagePageIndex < this.messagePages.length - 1) {
-            this.messagePageIndex += 1;
-            this.message = this.messagePages[this.messagePageIndex];
-            return;
-        }
+        if (this.dialog.nextPage()) return;
         talkSounds.stopDialogue();
-        this.message = null;
-        this.messagePages = [];
-        this.messagePageIndex = 0;
+        this.dialog.clear();
         this.clueNotification = null;
         this.state = "playing";
-        if (this.ballroomScareDialogOpen) {
-            this.ballroomScareDialogOpen = false;
-            this.ballroomEggs.onScareDialogClosed();
-            this.autosave();
-        }
-        if (this.mooseLickPending) {
-            this.mooseLickPending = false;
-            this.startMooseLick();
-            return;
-        }
+        this.dialog.runCloseCallbacks();
+        // A queued follow-up (moose lick, brawl) took over the screen
+        if (this.state !== "playing") return;
         if (this.ledgerScare.armed) {
             this.beginRoomScare(this.ledgerScare, "dining");
         } else if (this.atticScare.armed) {
@@ -950,9 +937,7 @@ export class Game {
         }
 
         talkSounds.stopDialogue();
-        this.message = null;
-        this.messagePages = [];
-        this.messagePageIndex = 0;
+        this.dialog.clear();
         this.state = "playing";
     }
 
@@ -987,21 +972,6 @@ export class Game {
         }
     }
 
-    private openConfirmDialog(prompt: string, hint: string): void {
-        this.confirmPages = paginateDialog(this.ctx, `${prompt}\n\n${hint}`);
-        this.confirmPageIndex = 0;
-    }
-
-    private advanceConfirmDialog(): boolean {
-        if (this.confirmPageIndex < this.confirmPages.length - 1) {
-            this.confirmPageIndex += 1;
-            return false;
-        }
-        this.confirmPages = [];
-        this.confirmPageIndex = 0;
-        return true;
-    }
-
     private getClueAssignmentHint(clueId: string): string {
         const assignment = this.activeStory?.casePacket.clueAssignments.find(
             (entry) => entry.clueId === clueId
@@ -1023,6 +993,7 @@ export class Game {
         this.clueNotification = { clueId };
         this.openDialog(this.getClueAssignmentHint(clueId));
         this.autosave();
+        this.triggerScenes([clueId]);
     }
 
     private loadNPCs(): void {
@@ -1104,7 +1075,7 @@ export class Game {
         cook.setFleeing(false);
         cook.setSwingingKnife(false);
         cook.setSpriteName(this.atticScare.complete ? "worker_man_bandaged" : "worker_man");
-        cook.setName("Chef Ytte");
+        cook.setName(this.getMurdererName());
         cook.setShowNameLabel(true);
         this.moveNPCToRoom(cook, kitchen, x, y);
     }
@@ -1120,7 +1091,8 @@ export class Game {
 
     private startMurdererConfrontation(): void {
         if (this.murdererConfrontation.complete || this.murdererConfrontation.active) return;
-        if (!this.clueSystem.hasClue("murder_weapon")) return;
+        const trigger = this.sceneTriggers.confrontation;
+        if (!trigger || !this.clueSystem.hasClue(trigger)) return;
 
         const murderer = this.getMurderer();
         if (!murderer) return;
@@ -1132,7 +1104,7 @@ export class Game {
         const npcCfg = this.content.npcs[this.getMurdererNpcId()];
         talkSounds.startDialogue(
             inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
-            extractSpokenLine(this.murdererConfrontation.getCurrentLine(), "Chef Ytte")
+            extractSpokenLine(this.murdererConfrontation.getCurrentLine(), this.getMurdererName())
         );
     }
 
@@ -1143,15 +1115,13 @@ export class Game {
             const npcCfg = this.content.npcs[this.getMurdererNpcId()];
             talkSounds.startDialogue(
                 inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
-                extractSpokenLine(this.murdererConfrontation.getCurrentLine(), "Chef Ytte")
+                extractSpokenLine(this.murdererConfrontation.getCurrentLine(), this.getMurdererName())
             );
             return;
         }
 
         talkSounds.stopDialogue();
-        this.message = null;
-        this.messagePages = [];
-        this.messagePageIndex = 0;
+        this.dialog.clear();
         const murderer = this.getMurderer();
         const exit = this.currentRoom.exits.find((e) => !e.interactionOnly);
         if (!murderer || !exit) {
@@ -1165,7 +1135,7 @@ export class Game {
 
     private beginFinaleChase(): void {
         this.murdererChase.triggerAccusation();
-        this.openDialog("Chef Ytte is after you! Find a police officer before he catches you!");
+        this.openDialog(CUTSCENE_TEXT.finale.chaseStart);
     }
 
     private startBarDoor(murderer: NPC, exit: DoorExit): void {
@@ -1230,21 +1200,16 @@ export class Game {
         const dx = this.player.x - murderer.x;
         const dy = this.player.y - murderer.y;
         murderer.setFacing(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up");
-        this.fistFightPending = true;
         this.openDialog(FIST_FIGHT_TAUNT);
+        this.dialog.whenClosed(() => this.beginFistFight());
         const npcCfg = this.content.npcs[this.getMurdererNpcId()];
         talkSounds.startDialogue(
             inferVoiceGender(this.getMurdererNpcId(), npcCfg?.spriteName),
-            extractSpokenLine(FIST_FIGHT_TAUNT, "Chef Ytte")
+            extractSpokenLine(FIST_FIGHT_TAUNT, this.getMurdererName())
         );
     }
 
     private beginFistFight(): void {
-        talkSounds.stopDialogue();
-        this.message = null;
-        this.messagePages = [];
-        this.messagePageIndex = 0;
-        this.fistFightPending = false;
         this.fistFightThudPlayed = false;
         this.fistFight.start();
         this.state = "fist_fight";
@@ -1290,7 +1255,8 @@ export class Game {
             murderer.stun(FIST_FIGHT_KO_SECONDS, murderer.x >= this.player.x ? 1 : -1);
             this.murdererStruggle.beginCatchCooldown();
         }
-        this.openDialog(FIST_FIGHT_WON_TEXT[this.currentRoom.id] ?? FIST_FIGHT_WON_TEXT.secret_tunnel);
+        // Brawls only start in a listed room; fall back to the first knockout line
+        this.openDialog(FIST_FIGHT_WON_TEXT[this.currentRoom.id] ?? Object.values(FIST_FIGHT_WON_TEXT)[0] ?? "");
     }
 
     /** Ytte vaulting a kitchen table to land in the stove corridor ahead of the detective. */
@@ -1462,9 +1428,7 @@ export class Game {
             fallSign
         );
         this.state = "cutscene";
-        this.message = null;
-        this.messagePages = [];
-        this.messagePageIndex = 0;
+        this.dialog.clear();
     }
 
     private hideMurdererDuringAtticCrash(murderer: NPC): void {
@@ -1497,9 +1461,7 @@ export class Game {
         this.cookHiddenAfterDiningScare = null;
         this.atticWindow.reset();
         talkSounds.stopDialogue();
-        this.message = null;
-        this.messagePages = [];
-        this.messagePageIndex = 0;
+        this.dialog.clear();
         this.state = "playing";
         this.autosave();
     }
@@ -1524,13 +1486,11 @@ export class Game {
             this.hideMurdererDuringAtticCrash(murderer);
         }
         if (tick.openCry) {
-            this.openCutsceneDialog(DINING_FIRE_PANIC_LINE, "cook");
+            this.openCutsceneDialog(DINING_FIRE_PANIC_LINE, this.getMurdererNpcId());
         }
         if (tick.clearCry) {
             talkSounds.stopDialogue();
-            this.message = null;
-            this.messagePages = [];
-            this.messagePageIndex = 0;
+            this.dialog.clear();
         }
         if (tick.finished) {
             this.completeAtticWindowCutscene();
@@ -1556,9 +1516,7 @@ export class Game {
 
         this.diningFire.startThrow(murderer.x, murderer.y, toX, toY);
         this.state = "cutscene";
-        this.message = null;
-        this.messagePages = [];
-        this.messagePageIndex = 0;
+        this.dialog.clear();
     }
 
     private placeDiningFireDrag(): void {
@@ -1573,7 +1531,7 @@ export class Game {
 
         // Unmasked, grinning: he only saves the detective because the baroness is watching
         murderer.setSpriteName("worker_man_grin");
-        murderer.setName("Chef Ytte");
+        murderer.setName(this.getMurdererName());
         murderer.setShowNameLabel(true);
         murderer.clearStun();
         murderer.clearCutscenePose();
@@ -1698,9 +1656,7 @@ export class Game {
         this.player.cutsceneFall = 0;
         this.player.isMoving = false;
         this.diningFire.reset();
-        this.message = null;
-        this.messagePages = [];
-        this.messagePageIndex = 0;
+        this.dialog.clear();
         this.state = "playing";
         this.restoreBaronessAfterCutscene();
         this.autosave();
@@ -1721,11 +1677,7 @@ export class Game {
             this.diningFire.phase === "wake_dialog" ||
             this.diningFire.phase === "wake_thought";
         if (dialogPhase && (this.input.wasPressed("e") || this.input.wasPressed(" "))) {
-            if (this.messagePageIndex < this.messagePages.length - 1) {
-                this.messagePageIndex += 1;
-                this.message = this.messagePages[this.messagePageIndex];
-                return;
-            }
+            if (this.dialog.nextPage()) return;
             const result = this.diningFire.advanceDialog();
             if (result === "continue") {
                 const line =
@@ -1736,9 +1688,7 @@ export class Game {
                 return;
             }
             talkSounds.stopDialogue();
-            this.message = null;
-            this.messagePages = [];
-            this.messagePageIndex = 0;
+            this.dialog.clear();
             if (this.diningFire.phase === "baroness_exit") {
                 this.startBaronessExitWalk();
             } else if (this.diningFire.phase === "done" || !this.diningFire.active) {
@@ -1862,13 +1812,11 @@ export class Game {
         if (tick.placeWake) this.placeDiningFireWake();
         if (tick.openPanicCry) {
             scareSounds.playArgh();
-            this.openCutsceneDialog(DINING_FIRE_PANIC_LINE, "cook");
+            this.openCutsceneDialog(DINING_FIRE_PANIC_LINE, this.getMurdererNpcId());
         }
         if (tick.clearPanicCry) {
             talkSounds.stopDialogue();
-            this.message = null;
-            this.messagePages = [];
-            this.messagePageIndex = 0;
+            this.dialog.clear();
         }
         if (tick.openAftermathDialog) {
             this.openCutsceneDialog(this.diningFire.getAftermathLine(), "baroness");
@@ -1942,9 +1890,7 @@ export class Game {
             this.getRoomContainingNPC(this.getMurdererNpcId())
         );
         this.state = "victory";
-        this.message = null;
-        this.messagePages = [];
-        this.messagePageIndex = 0;
+        this.dialog.clear();
     }
 
     isWaitingForVictoryInput(): boolean {
@@ -2027,7 +1973,10 @@ export class Game {
             if (tick.dialog) {
                 this.openDialog(tick.dialog);
                 talkSounds.startDialogue("male", extractSpokenLine(tick.dialog, "Groundskeeper"));
-                this.ballroomScareDialogOpen = true;
+                this.dialog.whenClosed(() => {
+                    this.ballroomEggs.onScareDialogClosed();
+                    this.autosave();
+                });
             }
             return;
         }
@@ -2071,9 +2020,7 @@ export class Game {
 
         if (this.input.wasPressed("escape")) {
             if (this.state === "confirming") {
-                this.pendingConfirmation = null;
-                this.confirmPages = [];
-                this.confirmPageIndex = 0;
+                this.dialog.cancelConfirm();
                 this.state = "playing";
                 return;
             }
@@ -2141,7 +2088,7 @@ export class Game {
                     murderer.clearStun();
                     this.murdererChase.spawnMurdererInRoom(murderer, this.currentRoom, this.rooms);
                     const brawlRoom = this.currentRoom.id in FIST_FIGHT_WON_TEXT;
-                    if (brawlRoom && !this.fistFightsDone.has(this.currentRoom.id) && !this.fistFightPending) {
+                    if (brawlRoom && !this.fistFightsDone.has(this.currentRoom.id)) {
                         this.tauntIntoFistFight(murderer);
                         return;
                     }
@@ -2180,7 +2127,7 @@ export class Game {
                     this.npcDialogs,
                     this.content.npcs,
                     // While Ytte hunts you nobody stops to chat — only the police can end it
-                    this.murdererChase.accusedMurderer ? (npc) => POLICE_NPC_IDS.includes(npc.id) : undefined
+                    this.murdererChase.accusedMurderer ? (npc) => this.isPolice(npc.id) : undefined
                 );
 
                 if (!result) {
@@ -2202,59 +2149,23 @@ export class Game {
 
                 if (result) {
                     if (result.confirmation) {
-                        this.pendingConfirmation = result.confirmation;
                         const confirmHint = shouldShowTouchControls()
                             ? "Tap Interact to confirm    Tap Menu to cancel"
                             : "E — Yes    Esc — No";
-                        this.openConfirmDialog(result.confirmation.prompt, confirmHint);
+                        this.dialog.openConfirm(result.confirmation, confirmHint);
                         this.state = "confirming";
                         return;
                     }
 
-                    if (
-                        result.speakerId === "cook" &&
-                        this.diningFireResolved &&
-                        !this.clueSystem.hasClue("bloody_apron")
-                    ) {
-                        const cookLine = this.atticScare.complete
-                            ? YTTE_AFTER_ATTIC_DIALOG
-                            : YTTE_HELPED_DIALOG;
-                        this.openDialog(cookLine);
-                        talkSounds.startDialogue(
-                            "male",
-                            extractSpokenLine(cookLine, "Chef Ytte")
-                        );
-                        return;
-                    }
-
-                    // Either officer ends the chase — must run before event dialog overrides
-                    // (Reed's weapon line would otherwise return early and skip victory).
+                    // Either officer ends the chase instead of chatting
                     if (
                         result.speakerId &&
-                        POLICE_NPC_IDS.includes(result.speakerId) &&
+                        this.isPolice(result.speakerId) &&
                         this.murdererChase.accusedMurderer
                     ) {
                         talkSounds.stopDialogue();
                         this.startVictorySequence(result.speakerId);
                         return;
-                    }
-
-                    if (result.speakerId) {
-                        const eventLine = resolveEventNpcDialog({
-                            speakerId: result.speakerId,
-                            diningFireResolved: this.diningFireResolved,
-                            atticScareComplete: this.atticScare.complete,
-                            hasClue: (id) => this.clueSystem.hasClue(id)
-                        });
-                        if (eventLine) {
-                            this.openDialog(eventLine);
-                            const npcCfg = this.content.npcs[result.speakerId];
-                            talkSounds.startDialogue(
-                                inferVoiceGender(result.speakerId, npcCfg?.spriteName),
-                                extractSpokenLine(eventLine, result.speaker ?? npcCfg?.name ?? "???")
-                            );
-                            return;
-                        }
                     }
 
                     this.openDialog(result.description);
@@ -2265,7 +2176,7 @@ export class Game {
                         harpSounds.playGlissando();
                     }
                     if (result.interactionSound === "moose_lick") {
-                        this.mooseLickPending = true;
+                        this.dialog.whenClosed(() => this.startMooseLick());
                     }
                     if (result.clues.length > 0) {
                         clueSounds.playFound();
@@ -2298,7 +2209,7 @@ export class Game {
             for (const npc of this.currentRoom.npcs) {
                 // Bystanders wave in panic while the murderer hunts you; police keep their composure
                 npc.setPanicking(
-                    murdererLoose && npc.canPanic() && npc.id !== murdererId && !POLICE_NPC_IDS.includes(npc.id)
+                    murdererLoose && npc.canPanic() && npc.id !== murdererId && !this.isPolice(npc.id)
                 );
                 npc.tickPanic(dt);
                 // Ytte stays put while a scare or the finale has him on a script
@@ -2390,9 +2301,7 @@ export class Game {
 
         if (this.state === "confirming") {
             if (this.input.wasPressed("escape") || this.input.wasPressed("n")) {
-                this.pendingConfirmation = null;
-                this.confirmPages = [];
-                this.confirmPageIndex = 0;
+                this.dialog.cancelConfirm();
                 this.state = "playing";
             } else if (
                 this.input.wasPressed("y") ||
@@ -2400,12 +2309,11 @@ export class Game {
                 this.input.wasPressed("e") ||
                 this.input.wasPressed(" ")
             ) {
-                if (!this.advanceConfirmDialog()) {
+                if (!this.dialog.advanceConfirm()) {
                     return;
                 }
 
-                const pending = this.pendingConfirmation;
-                this.pendingConfirmation = null;
+                const pending = this.dialog.takeConfirmation();
                 if (pending && isTransitionConfirm(pending.id)) {
                     this.transitionViaInteractionExit(targetRoomFromTransitionConfirm(pending.id));
                     this.state = "playing";
@@ -2420,9 +2328,6 @@ export class Game {
                                   this.cellarSecret.startReveal();
                                   this.state = "playing";
                               },
-                              hidden_cabinet: () => {
-                                  this.grantConfirmClue("smuggling_documents");
-                              },
                               armor_shake: () => {
                                   if (isArmorCollapsed()) {
                                       this.state = "playing";
@@ -2431,30 +2336,25 @@ export class Game {
                                   startArmorCollapse();
                                   armorSounds.playRattle();
                                   this.state = "armor_collapse";
-                              },
-                              attic_chest: () => {
-                                  this.grantConfirmClue("manor_floor_plans");
-                                  this.triggerScenes(["manor_floor_plans"]);
                               }
                           })
                         : false;
-                    if (!handled) {
+                    if (!handled && pending?.grantsClueId) {
+                        // Chests and cabinets: the story put a clue behind this prompt
+                        this.grantConfirmClue(pending.grantsClueId);
+                    } else if (!handled) {
                         this.state = "playing";
                     }
                 }
             }
         } else if (this.state === "interacting") {
             if (this.input.wasPressed("e") || this.input.wasPressed(" ")) {
-                if (this.messagePageIndex < this.messagePages.length - 1) {
+                if (this.dialog.hasMorePages) {
                     this.advanceOrCloseDialog();
                     return;
                 }
                 if (this.murdererConfrontation.active) {
                     this.advanceMurdererConfrontation();
-                    return;
-                }
-                if (this.fistFightPending) {
-                    this.beginFistFight();
                     return;
                 }
                 if (this.ledgerScare.monologueActive) {
@@ -2582,14 +2482,7 @@ export class Game {
             return;
         }
         if (this.state === "inventory") {
-            this.inventoryPanel.render(
-                ctx,
-                this.clueSystem,
-                this.clueCatalog,
-                this.activeStory?.casePacket.clueAssignments,
-                this.furnitureCatalog,
-                this.content.npcs
-            );
+            this.inventoryPanel.render(ctx, this.clueSystem, this.clueCatalog, this.getLeadLines());
             return;
         }
 
@@ -2726,33 +2619,35 @@ export class Game {
             );
         }
 
-        if (this.message) {
-            const segment = this.messageSpeakers[this.messagePageIndex];
+        const page = this.dialog.page;
+        if (page) {
+            const segment = this.dialog.segment;
             const box = segment?.speakerId ? this.dialogSpeakerBox(segment.speakerId) : null;
             if (box) {
-                drawDialogBubble(ctx, this.message.split("\n"), {
+                drawDialogBubble(ctx, page.split("\n"), {
                     cx: offset.x + box.x + box.w / 2,
                     aboveY: offset.y + box.y - box.labelGap,
                     belowY: offset.y + box.y + box.h + 2,
-                    showContinue: this.messagePageIndex < this.messagePages.length - 1,
+                    showContinue: this.dialog.hasMorePages,
                     time: this.decorAnimTime
                 });
             } else {
                 // Speaker off screen (or narration): classic box, name restored
                 const text = segment?.speakerId && segment.speakerName
-                    ? `${segment.speakerName}: ${this.message}`
-                    : this.message;
+                    ? `${segment.speakerName}: ${page}`
+                    : page;
                 drawMessageBox(ctx, text, {
-                    pageIndex: this.messagePageIndex,
-                    pageCount: this.messagePages.length
+                    pageIndex: this.dialog.pageIndex,
+                    pageCount: this.dialog.pageCount
                 });
             }
         }
 
-        if (this.state === "confirming" && this.pendingConfirmation && this.confirmPages.length > 0) {
-            drawMessageBox(ctx, this.confirmPages[this.confirmPageIndex], {
-                pageIndex: this.confirmPageIndex,
-                pageCount: this.confirmPages.length
+        const confirmPage = this.dialog.confirmPage;
+        if (this.state === "confirming" && confirmPage) {
+            drawMessageBox(ctx, confirmPage, {
+                pageIndex: this.dialog.confirmPageIndex,
+                pageCount: this.dialog.confirmPageCount
             });
         }
 

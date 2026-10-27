@@ -4,13 +4,13 @@
 
 **Clock Stopped at Eleven** is a top-down, pixel-art murder mystery played in the browser (TypeScript, Vite, Canvas 2D). The player is a detective investigating a killing at **von Virtanen Manor** on the night the manor clock stopped at eleven.
 
-**Core loop:** walk room-to-room → examine furniture for clues → talk to suspects and staff → unlock secret passages → collect all evidence → confront the murderer → report to police to win. If the murderer is accused before all clues are found, or the player lingers after accusing them, a chase sequence can end in game over.
+**Core loop:** walk room-to-room → examine furniture for clues → talk to suspects and staff → unlock secret passages → collect all evidence. Picking up the final clue (the murder weapon) triggers the culprit's confession and a finale chase: reach Inspector Walsh or Constable Reed before the murderer catches you. Being caught ends in game over.
 
 **Setting:** A Victorian-style country manor with main floor (hall, dining, kitchen, library, study, garden), upstairs bedrooms, outbuildings (courtyard, stable), cellars, and two hidden areas linked by a secret tunnel.
 
 **Content model:** Rooms, NPCs, furniture, and base dialog live in `src/data/*.json`. Each playable case is a **story packet** (`src/data/story/generated/stories/active.json`) that assigns clues to furniture or NPCs, sets the culprit, and overrides NPC dialog. The active case is *Clock Stopped at Eleven* — victim **von Virtanen** (body in the Hall), culprit **Ytte** (cook).
 
-**Investigation flow:** Clues form a **dependency chain** — each discovery unlocks the next. See [Investigation order](#investigation-order-active-story) and [Active story clues](#active-story-clues-16-required).
+**Investigation flow:** Clues form a **dependency chain** — each discovery unlocks the next. See [Investigation order](#investigation-order-active-story) and [Active story clues](#active-story-clues-15-required).
 
 **This document** maps rooms and connections, lists where dialog text is defined, and catalogs all clues for the active story.
 
@@ -25,20 +25,20 @@ When returning an edited copy to a coding agent, ask it to **map your edits to t
 | Clue name, description, location, examine hint | `src/data/story/generated/stories/active.json` — `generatedClues`, `clueAssignments` |
 | Clue prerequisites (`requiresClues`), blocked hint, hide from inventory | `active.json` — `generatedClues` (`requiresClues`, `blockedHint`, `hideFromInventory`) |
 | NPC-assigned clues (e.g. body examine) | `active.json` — `clueAssignments` with `npcId`; NPC JSON — `examineClueId` |
-| Confirm-gated clues (cabinet unlock) | Furniture JSON — `interactionType: "confirm"`; `Game.ts` — puzzle handler (e.g. `hidden_cabinet`) |
+| Confirm-gated clues (cabinet unlock) | Furniture JSON — `interactionType: "confirm"`; `active.json` — `clueAssignments` on that furniture (the first assigned clue is granted on "yes") |
+| Clue that starts a scripted scene (dining scare, attic scare, confrontation) | `active.json` — `sceneTriggers` |
 | Who committed the murder, victim, suspects | `active.json` — `culpritNpcId`, `victim`, `suspects` |
 | NPC default or conditional dialog (active case) | `active.json` — `npcDialogOverrides` |
-| Event-driven talk (after dining fire / attic scare / apron / weapon) | `src/content/eventNpcDialog.ts` — `resolveEventNpcDialog` |
+| Event-driven talk (after dining fire / attic scare / apron / weapon, incl. Ytte's kitchen lines) | `active.json` — `npcDialogOverrides` conditions with `requiresScenes` (`ledger_scare` = dining fire, `attic_scare`) |
 | Base NPC dialog (no story / fallback) | `src/data/npcs/<npc_id>.json` — `dialog` |
-| Dining fire wake / aftermath cutscene lines | `src/systems/DiningFireCutscene.ts` |
+| Scripted scene lines (dining scare + fire, attic scare, fist fight, finale chase, ballroom easter eggs), secret passage reveals, intro slides | `src/data/story/cutscenes.json` |
 | Room connections, doors, locked exits | `src/data/rooms/<room_id>.json` — `exits` |
 | NPC placement in a room | `src/data/rooms/<room_id>.json` — `npcs` |
 | Furniture layout in a room | `src/data/rooms/<room_id>.json` — `furniture` |
 | Default examine text or confirm prompts | `src/data/furniture/*.json` — `description`, `confirmPrompt` |
-| Room atmosphere text on all objects | `active.json` — `roomNarratives` |
+| Room atmosphere notes (authoring only, not shown in game) | `active.json` — `roomNarratives` |
 | Room display name (banner) | `src/engine/Game.ts` — `ROOM_DISPLAY_TITLES` |
-| Intro slides, menu copy, victory text | `src/engine/IntroScreen.ts`, `src/engine/Menu.ts`, `src/render/GameHud.ts` |
-| Secret passage reveal messages | `src/puzzles/StudySecretPuzzle.ts`, `src/puzzles/CellarSecretPuzzle.ts` |
+| Menu copy, victory text | `src/engine/Menu.ts`, `src/render/GameHud.ts` |
 
 **Does not map from this doc alone:** tile coordinates, sprite art, new puzzle mechanics, chase/victory logic, or new room/NPC types (those need schema, loaders, and possibly editor updates).
 
@@ -220,14 +220,26 @@ Dialog and player-facing text come from several layers. At runtime, **story over
 | `src/data/npcs/police2.json` | Constable Reed — default only |
 | `src/data/npcs/worker_boy.json` | Stable Boy — default only |
 | `src/data/npcs/worker_man.json` | Groundskeeper — default only |
-| `src/data/story/generated/stories/active.json` | **Active story overrides** — `npcDialogOverrides` for police, baroness, maid, cook, butler, groundskeeper, stable boy |
-| `src/content/eventNpcDialog.ts` | Post-fire / attic / apron / weapon talk lines for household + police |
+| `src/data/story/generated/stories/active.json` | **Active story overrides** — `npcDialogOverrides` for both officers, baroness, maid, cook, butler, groundskeeper, stable boy (incl. post-fire / attic reactions) |
 
-### Intro & menu (TypeScript, hardcoded)
+### Scripted scenes & intro (`src/data/story/cutscenes.json`)
+
+| Section | Contents |
+|---------|----------|
+| `intro` | Premise slide text and the 9 household introduction cards |
+| `diningScare` | Hooded figure's monologue, hearth cry, baroness's aftermath and wake-up lines, detective's thought |
+| `atticScare` | Hooded figure's attic monologue |
+| `secretPassages` | Bookshelf / barrel reveal messages |
+| `study` | Detective's line after the moose lick |
+| `ballroom` | Groundskeeper at the window, window look text, chandelier dodge line |
+| `finale` | Chase start line, kitchen vault shout, pan-splash shouts, fist-fight taunt, `fistFightRooms` (rooms that have a brawl → knockout line) |
+
+The culprit's confession is in `active.json` (`culpritConfrontationMonologue`). Loaded and typed by `src/content/cutsceneText.ts`.
+
+### Menu & HUD (TypeScript, hardcoded)
 
 | File | Contents |
 |------|----------|
-| `src/engine/IntroScreen.ts` | Premise slide, household character introductions (9 slides), detective arrival slide |
 | `src/engine/Menu.ts` | Main menu (Continue / New Game / overwrite confirm), character select, game over, settings labels |
 | `src/engine/SaveGame.ts` | Local autosave slot (`localStorage`); not narrative copy |
 | `src/render/GameHud.ts` | Victory overlay (cuffing close-up from `src/render/arrestScene.ts`, then “Case Closed”) |
@@ -241,23 +253,14 @@ Dialog and player-facing text come from several layers. At runtime, **story over
 | `src/data/furniture/decorations.json` | Descriptions and `confirmPrompt` for fountain, fireplace, cellar hatch, secret bookshelf, passage levers, horses, wine barrels, etc. |
 | `src/data/furniture/table.json` | Table examine text |
 | `src/data/furniture/bookshelves.json` | Bookshelf examine text |
-| `src/data/rooms/library.json` | Override description on one bookshelf placement |
 
-Story **clue examine hints** and **room narrative summaries** are applied at runtime from `active.json` via `src/content/applyStoryToGame.ts` (overwrites furniture descriptions where clues are assigned).
-
-### Puzzle & gameplay messages (TypeScript)
-
-| File | Contents |
-|------|----------|
-| `src/puzzles/StudySecretPuzzle.ts` | Bookshelf reveal message |
-| `src/puzzles/CellarSecretPuzzle.ts` | Barrel reveal message |
-| `src/engine/Game.ts` | Appends `" Find a police officer!"` when accusing the murderer with all clues collected |
+Story **clue examine hints** are applied at runtime from `active.json` via `src/content/applyStoryToGame.ts` (overwrites furniture descriptions where clues are assigned).
 
 ### Dialog resolution
 
-- **NPC talk:** `src/systems/DialogSystem.ts` — `requiresClues` / `requiresClue` on conditions; most-specific condition wins.
+- **NPC talk:** `src/systems/DialogSystem.ts` — conditions are checked **in listed order** and the first whose `requiresClues` and `requiresScenes` are all met wins, so later-game lines go first.
 - **Clue gating:** `src/systems/InteractionSystem.ts` — blocked hint when prerequisites missing; confirm puzzles gated via `confirmRequiresClues` on furniture.
-- **Rendering:** `src/systems/InteractionSystem.ts` formats dialog as `"Name: line"`; examine corpses show plain description.
+- **Rendering:** `src/systems/InteractionSystem.ts` formats dialog as `"Name: line"` (a line starting `You: ` is left as is — the detective speaks first; a line starting with the NPC's own name is narration, shown in the message box without a prefix or voice); examine corpses show plain description.
 
 ### Base NPC dialog (used when no story override)
 
@@ -273,15 +276,15 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 | Groundskeeper | “I was out by the shed when I heard the commotion. Didn't see nothing.” | — |
 | Stable Boy | “The horses are spooked. Something's not right tonight.” | — |
 
-### Active story NPC overrides (`active.json` + event dialog)
+### Active story NPC overrides (`active.json`)
 
 | NPC | Role in investigation |
 |-----|------------------------|
-| Inspector Walsh | Early: scene → maid lead. After dining fire / attic scare / smuggling / apron: mid-game guidance (`eventNpcDialog.ts`). Finale: confront prompt after full clue set |
-| Constable Reed | Perimeter line; after fire and after weapon (`eventNpcDialog.ts`) |
-| Lady von Virtanen / Mrs. Clarke | Early grief / maid beats in story JSON; after fire, attic, apron, weapon via `eventNpcDialog.ts`. Wake cutscene in guest room A |
+| Inspector Walsh | Early: scene → maid lead. After dining fire / attic scare / smuggling / apron: mid-game guidance. Finale: confront prompt after full clue set |
+| Constable Reed | Perimeter line; after fire / attic and after weapon |
+| Lady von Virtanen / Mrs. Clarke | Early grief / maid beats in story JSON; reactions after fire, attic, smuggling, apron, weapon. Wake cutscene in guest room A |
 | Ytte | Alibi → hidden after dining shove until attic scare ends → bandaged in kitchen (“tumbled down the stairs”) → panic ladder after apron → accusation after murder weapon |
-| Mr. Thompson | Dining escort tip after appointment note; fire / apron / weapon reactions via `eventNpcDialog.ts` |
+| Mr. Thompson | Dining escort tip after appointment note; fire / smuggling / apron / weapon reactions |
 | Groundskeeper | Attic key after von Virtanen's diary |
 | Stable Boy | Fire/attic nod; smuggling sighting; bloody apron → wine cellar tip |
 
@@ -295,7 +298,7 @@ Story **clue examine hints** and **room narrative summaries** are applied at run
 4. **Dining Room** — Burned Ledger Page in ash canister → hooded scare, locked doors, fireplace shove cutscene → wake in **Guest Room A** (baroness; Ytte hidden until attic scare ends).
 5. **Master Bedroom** — von Virtanen's Diary (attic chest + groundskeeper key).
 6. **Garden** — Talk groundskeeper → Rusty Old Key.
-7. **Attic** — Unlock old chest → Manor Floor Plans (+ Estate Documents) → attic scare (door locked); shove him out either north window → crash; Ytte returns to the kitchen bandaged afterward.
+7. **Attic** — Unlock old chest → Manor Floor Plans → attic scare (door locked); shove him out either north window → crash; Ytte returns to the kitchen bandaged afterward.
 8. **Study / Hidden Room** — Secret bookshelf; von Virtanen's Journal on writing desk.
 9. **Garden** — Silver Key in fountain.
 10. **Hidden Room** — Unlock cabinet → Smuggling Documents.
@@ -321,7 +324,7 @@ Without an active story, only `torn_page` is required to accuse the murderer (`g
 
 Clues may declare **`requiresClues`** (all must be found first) and **`blockedHint`** (shown when prerequisites are missing). **`hideFromInventory`** omits a clue from the inventory panel but still counts toward the win condition.
 
-### Active story clues (16 required)
+### Active story clues (15 required)
 
 | ID | Name | Requires | Location | Source |
 |----|------|----------|----------|--------|
@@ -333,12 +336,11 @@ Clues may declare **`requiresClues`** (all must be found first) and **`blockedHi
 | `barons_diary` | von Virtanen's Diary | ledger | master_bedroom | bedside_table |
 | `rusty_old_key` | Rusty Old Key | diary | garden | groundskeeper dialog |
 | `manor_floor_plans` | Manor Floor Plans | key | attic | attic_old_chest |
-| `estate_documents` | Estate Documents | plans | attic | same chest |
-| `von_virtanens_journal` | von Virtanen's Journal | ledger | hidden_room | writing_table |
+| `von_virtanens_journal` | von Virtanen's Journal | plans | hidden_room | writing_table |
 | `silver_key` | Silver Key | journal | garden | fountain |
 | `smuggling_documents` | Smuggling Documents | silver key | hidden_room | locked_cabinet |
 | `bloody_apron` | Bloody Apron | smuggling | stable | grey horse stall |
-| `cellar_evidence` | Cellar Evidence | apron | cellar_storage | blood_crate |
+| `cellar_evidence` | Wine Cellar Key | apron | cellar_storage | blood_crate (opens the wine cellar door) |
 | `missing_ledger_page` | Missing Ledger Page | cellar | wine_cellar | wine_barrel |
 | `murder_weapon` | Murder Weapon | ledger page | wine_cellar | same barrel |
 
@@ -356,16 +358,15 @@ Clues may declare **`requiresClues`** (all must be found first) and **`blockedHi
 
 | Source | Notes |
 |--------|-------|
-| `src/data/rooms/library.json` | Bookshelf placement has hardcoded `"clues": ["torn_page"]` — **overwritten** when story is applied |
 | `packages/content-schema/src/normalizeStory.ts` | Template names for procedurally generated stories: Torn Note, Stained Glove, Broken Watch, Smudged Letter, Missing Key |
 
 ### Clue-driven dialog gates
 
-Clues unlock conditional NPC lines via `npcDialogOverrides` in the active story. Dining fire and attic scare also gate lines through `diningFireResolved` / `atticScare.complete` in `src/content/eventNpcDialog.ts` (wired from `Game.ts`).
+Clues unlock conditional NPC lines via `npcDialogOverrides` in the active story. Conditions can also require finished scripted scenes (`requiresScenes`: `ledger_scare` — the dining fire — and `attic_scare`).
 
 ### Win condition
 
-Collect all required clues → talk to the **murderer** (active story: **cook**) → talk to **Inspector Walsh** or **Constable Reed** to trigger the victory sequence.
+Collect the clue chain → picking up the **murder weapon** starts the culprit's confession (`sceneTriggers.confrontation`) → he bars the cellar door and the finale chase begins → talk to **Inspector Walsh** or **Constable Reed** to trigger the victory sequence.
 
 **Murderer (active story):** `cook` (Ytte)  
 **Victim:** von Virtanen, hall, eleven o'clock
@@ -374,15 +375,20 @@ Collect all required clues → talk to the **murderer** (active story: **cook**)
 
 ## Room narratives (active story)
 
-Applied to generic furniture in these rooms (clue and confirm objects keep their own hints):
+Authoring notes in `active.json` — `roomNarratives`. The game does not display them.
 
 | Room | Summary |
 |------|---------|
 | hall | The grand hall feels colder than it should. Something happened here recently. |
 | library | Books are out of place, as if someone searched in haste. |
-| study | The desk has been disturbed. Ashes in the grate still smell of burnt paper. |
-| hidden_room | A secret chamber behind the study shelves — the Baron's private retreat. |
+| master_bedroom | Von Virtanen's private chambers — undisturbed at a glance, but something feels searched. |
+| attic | Dust motes swirl in the rafters. Forgotten trunks and old beams crowd the space. |
+| study | The desk has been disturbed. Papers lie scattered across the blotter. |
+| dining | The long table is set, but the hearth smells of recent burning. |
+| hidden_room | A secret chamber behind the study shelves — von Virtanen's private retreat. |
 | garden | Rain has darkened the gravel paths. The fountain murmurs in the silence. |
+| maid_room | A modest room for the household staff — neat, but plainly furnished. |
 | kitchen | Copper pots hang gleaming, but something feels wrong tonight. |
+| stable | The horses shift uneasily. Straw is scattered more than usual. |
 | cellar_storage | The air is damp and close. Barrels and crates crowd the stone floor. |
 | wine_cellar | Rows of casks stretch into the gloom. Footsteps echo on the flagstones. |

@@ -158,3 +158,32 @@ describe("active story investigation flow", () => {
         );
     });
 });
+
+describe("story wiring the game reads from data", () => {
+    const story = JSON.parse(
+        readFileSync(resolve(process.cwd(), "src/data/story/generated/stories/active.json"), "utf8")
+    ) as StoryCasePacket;
+    const content = loadGameContent();
+
+    it("both officers carry the Police role (they end the finale chase)", () => {
+        const police = Object.values(content.npcs).filter((npc) => npc.role === "Police").map((npc) => npc.id);
+        expect(police.sort()).toEqual(["police", "police2"]);
+    });
+
+    it("story chests and cabinets grant their clue through the confirm prompt", () => {
+        const rooms = Object.fromEntries(
+            Object.entries(content.rooms).map(([id, config]) => [
+                id,
+                createRoomFromConfig(config, undefined, undefined, content.rooms)
+            ])
+        );
+        applyStoryToRooms(rooms, story);
+        const grants = Object.fromEntries(
+            Object.values(rooms)
+                .flatMap((room) => room.interactables)
+                .filter((obj) => obj.confirmId && obj.confirmGrantsClueId)
+                .map((obj) => [obj.confirmId, obj.confirmGrantsClueId])
+        );
+        expect(grants).toEqual({ hidden_cabinet: "smuggling_documents", attic_chest: "manor_floor_plans" });
+    });
+});

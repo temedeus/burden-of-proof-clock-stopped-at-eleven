@@ -189,4 +189,32 @@ describe("InteractionSystem NPC reach", () => {
         far.facing = "up";
         expect(interaction.interact(far, room)).toBeNull();
     });
+
+    it("shows narration about the NPC without a name prefix or voice, and spoken lines with one", () => {
+        const clueSystem = new ClueSystem();
+        const interaction = new InteractionSystem(clueSystem);
+        const room = new Room("maid_room", new TileMap(20, 20, new Array(400).fill(0)), [], []);
+        const npc = new NPC("maid", 8 * TILE_SIZE, 8 * TILE_SIZE, "Mrs. Clarke", "staff", "maid");
+        room.npcs.push(npc);
+        const dialogs = {
+            maid: {
+                default: "I saw the master on the floor.",
+                requiresClues: ["examined_body"],
+                blockedDialog: "Mrs. Clarke keeps her eyes down."
+            }
+        };
+        const player = new Player("player", npc.x, npc.y + 4 * TILE_SIZE);
+        walkInto(player, room, 0, -1);
+        player.facing = "up";
+
+        const blocked = interaction.interact(player, room, dialogs);
+        expect(blocked?.description).toBe("Mrs. Clarke keeps her eyes down.");
+        expect(blocked?.speaker).toBeUndefined();
+        expect(blocked?.speakerId).toBe("maid");
+
+        clueSystem.addClue("examined_body");
+        const spoken = interaction.interact(player, room, dialogs);
+        expect(spoken?.description).toBe("Mrs. Clarke: I saw the master on the floor.");
+        expect(spoken?.speaker).toBe("Mrs. Clarke");
+    });
 });

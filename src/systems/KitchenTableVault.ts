@@ -3,6 +3,7 @@ import type { Interactable } from "../world/Interactable";
 import type { Room } from "../world/Room";
 import { TILE_SIZE } from "../world/constants";
 import { feetBlocked } from "../world/pathfinding";
+import { CUTSCENE_TEXT } from "../content/cutsceneText";
 
 /**
  * Finale chase in the kitchen: while the detective runs the stove corridor, Ytte
@@ -17,7 +18,7 @@ export const VAULT_SECONDS = 0.65;
 export const VAULT_LAND_PAUSE = 0.45;
 /** How long his taunt bubble stays up. */
 export const VAULT_SHOUT_SECONDS = 1.4;
-export const VAULT_SHOUT = "Going somewhere, Detective?";
+export const VAULT_SHOUT = CUTSCENE_TEXT.finale.kitchenVaultShout;
 /** Peak height of the jump arc (sprite lift, px). */
 const ARC_PX = TILE_SIZE * 1.6;
 /**

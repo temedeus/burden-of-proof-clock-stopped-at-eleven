@@ -40,19 +40,47 @@ describe("DialogSystem", () => {
         expect(dialog.getDialog(config)).toBe("Advanced line.");
     });
 
-    it("prefers conditions with more required clues", () => {
+    it("speaks the first listed condition that is met", () => {
         const clues = new ClueSystem();
         const dialog = new DialogSystem(clues);
         clues.addClue("a");
         clues.addClue("b");
-        clues.addClue("c");
         const config: NPCDialogConfig = {
             default: "Default.",
             conditions: [
+                { requiresClues: ["c"], dialog: "Late line." },
                 { requiresClue: "a", dialog: "Early line." },
-                { requiresClues: ["a", "b", "c"], dialog: "Late line." }
+                { requiresClues: ["a", "b"], dialog: "Never reached." }
             ]
         };
+        expect(dialog.getDialog(config)).toBe("Early line.");
+        clues.addClue("c");
         expect(dialog.getDialog(config)).toBe("Late line.");
+    });
+
+    it("gates conditions on finished scripted scenes", () => {
+        const clues = new ClueSystem();
+        const finished = new Set<string>();
+        const dialog = new DialogSystem(clues, (id) => finished.has(id));
+        const config: NPCDialogConfig = {
+            default: "Default.",
+            conditions: [
+                { requiresScenes: ["ledger_scare", "attic_scare"], dialog: "After both." },
+                { requiresScenes: ["ledger_scare"], dialog: "After the fire." }
+            ]
+        };
+        expect(dialog.getDialog(config)).toBe("Default.");
+        finished.add("ledger_scare");
+        expect(dialog.getDialog(config)).toBe("After the fire.");
+        finished.add("attic_scare");
+        expect(dialog.getDialog(config)).toBe("After both.");
+    });
+
+    it("defaults to no scenes finished", () => {
+        const config: NPCDialogConfig = {
+            default: "Default.",
+            conditions: [{ requiresScenes: ["confrontation"], dialog: "Later." }]
+        };
+        expect(new DialogSystem(new ClueSystem()).getDialog(config)).toBe("Default.");
     });
 });

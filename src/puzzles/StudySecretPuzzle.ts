@@ -1,5 +1,6 @@
 import { spriteLoader } from "../assets/SpriteLoader";
 import { TILE_SIZE } from "../world/constants";
+import { CUTSCENE_TEXT } from "../content/cutsceneText";
 import {
     addFurnitureToRoom,
     removeInteractableById,
@@ -91,7 +92,7 @@ export class StudySecretPuzzle {
         setHiddenExitDoorOpen(this.getHiddenRoom(), true, "study");
 
         return {
-            message: "The bookshelf grinds aside, revealing a hidden passage.",
+            message: CUTSCENE_TEXT.secretPassages.study,
             enterDialog: true
         };
     }

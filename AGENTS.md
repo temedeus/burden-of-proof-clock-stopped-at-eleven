@@ -52,7 +52,8 @@ pnpm preview          # preview production build
 | Room display title (banner) | `src/engine/Game.ts` — `ROOM_DISPLAY_TITLES` |
 | New sprite | `packages/content-schema/src/sprites.ts` + procedural art |
 | Gameplay systems | `src/systems/`, `src/puzzles/` |
-| UI copy (menu, intro, victory) | `src/engine/`, `src/render/GameHud.ts` |
+| Cutscene / intro text | `src/data/story/cutscenes.json` |
+| UI copy (menu, victory) | `src/engine/`, `src/render/GameHud.ts` |
 | Local progress save / Continue | `src/engine/SaveGame.ts`, `Game.ts` (`applySave` / `autosave`), `Menu.ts`, `index.ts` |
 
 For narrative/content handoffs, see [GAME_REFERENCE.md](GAME_REFERENCE.md). For code layout, see [ARCHITECTURE.md](ARCHITECTURE.md).

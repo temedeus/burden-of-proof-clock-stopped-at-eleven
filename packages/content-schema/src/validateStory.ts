@@ -1,7 +1,7 @@
 import { listFurnitureSlots } from "./normalizeStory";
 import { detectClueDependencyCycles, mergeRequiredClueIds } from "./cluePrerequisites";
 import type { RoomConfig } from "./rooms";
-import { MIN_STORY_CLUE_COUNT, type StoryCasePacket } from "./story";
+import { MIN_STORY_CLUE_COUNT, SCRIPTED_SCENE_IDS, type StoryCasePacket } from "./story";
 import type { ValidationIssue } from "./validate";
 
 export interface StoryValidationContext {
@@ -150,6 +150,7 @@ export function validateStoryCasePacket(
     }
 
     const allClueIds = new Set([...baseClueIds, ...generatedClueIds]);
+    const sceneIds = new Set<string>(SCRIPTED_SCENE_IDS);
 
     if (!npcIds.has(p.culpritNpcId)) {
         issues.push({ roomId: storyId, message: `Invalid culpritNpcId '${p.culpritNpcId}'.` });
@@ -283,9 +284,29 @@ export function validateStoryCasePacket(
                     });
                 }
             }
+            for (const scene of condition.requiresScenes ?? []) {
+                if (!sceneIds.has(scene)) {
+                    issues.push({
+                        roomId: storyId,
+                        message: `Unknown requiresScenes '${scene}' for npc '${dialog.npcId}'.`
+                    });
+                }
+            }
             if (!isNonEmptyString(condition.dialog)) {
                 issues.push({ roomId: storyId, message: `Conditional dialog for npc '${dialog.npcId}' is empty.` });
             }
+        }
+    }
+
+    if (p.sceneTriggers?.confrontation && !(p.culpritConfrontationMonologue ?? []).some(isNonEmptyString)) {
+        issues.push({ roomId: storyId, message: "sceneTriggers.confrontation needs a culpritConfrontationMonologue." });
+    }
+    for (const [sceneId, clueId] of Object.entries(p.sceneTriggers ?? {})) {
+        if (!sceneIds.has(sceneId)) {
+            issues.push({ roomId: storyId, message: `Unknown sceneTriggers scene '${sceneId}'.` });
+        }
+        if (!clueId || !generatedClueIds.has(clueId)) {
+            issues.push({ roomId: storyId, message: `sceneTriggers '${sceneId}' uses unknown clue '${clueId}'.` });
         }
     }
 

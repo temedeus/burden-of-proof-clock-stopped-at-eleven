@@ -16,12 +16,6 @@ A pixel-art murder mystery set at von Virtanen Manor. Explore rooms, talk to sus
    ```
 3. Open `http://localhost:5173/`.
 
-## Run Modes
-
-| Mode | Command | URL |
-|------|---------|-----|
-| **Game** | `pnpm dev` | `http://localhost:5173/` |
-
 For the level editor and case authoring backend, see **[src/editor/README.md](src/editor/README.md)**.
 
 For architecture and content authoring overview, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
@@ -42,10 +36,6 @@ pnpm preview      # preview production build
 ---
 
 ## Game
-
-```bash
-pnpm dev
-```
 
 Progress is saved **locally in the browser** (one autosave slot). The main menu shows **Continue** when a valid save exists; **New Game** asks for confirmation before overwriting. Clearing site data for the deploy origin wipes progress. See [ARCHITECTURE.md](ARCHITECTURE.md) (Local progress).
 

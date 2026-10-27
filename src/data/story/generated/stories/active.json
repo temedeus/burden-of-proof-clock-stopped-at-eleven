@@ -13,6 +13,11 @@
     "Chef Ytte: That sweet girl almost took the blame for me — a lucky accident, that one. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
     "Chef Ytte: But no worries, Detective. I won't be letting you out of this wine cellar."
   ],
+  "sceneTriggers": {
+    "ledger_scare": "burned_ledger_page",
+    "attic_scare": "manor_floor_plans",
+    "confrontation": "murder_weapon"
+  },
   "suspects": [
     {
       "npcId": "butler",
@@ -328,6 +333,22 @@
           "dialog": "You have the evidence. Confront the killer, then report to me."
         },
         {
+          "requiresClues": ["bloody_apron"],
+          "dialog": "A bloody apron — speak to the stable boy again, then check the cellars. We're close."
+        },
+        {
+          "requiresClues": ["smuggling_documents"],
+          "dialog": "Forged manifests, names cut out… Follow that trail. Someone in this house is in deep."
+        },
+        {
+          "requiresScenes": ["attic_scare"],
+          "dialog": "Assaulted after the attic chest? This killer is getting bold. Keep gathering proof — we'll move when you have it."
+        },
+        {
+          "requiresScenes": ["ledger_scare"],
+          "dialog": "After that business in the dining room, stay sharp. Report anything further."
+        },
+        {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
           "dialog": "Mrs. Clarke's confession explains the broom marks and the clock. A frightened woman, not a killer — keep searching."
         },
@@ -338,9 +359,47 @@
       ]
     },
     {
+      "npcId": "police2",
+      "default": "No one leaves the manor until the Inspector says so.",
+      "conditions": [
+        {
+          "requiresClues": ["murder_weapon"],
+          "dialog": "You've got the weapon? Find the Inspector — or bring the killer to either of us. We're ready."
+        },
+        {
+          "requiresScenes": ["ledger_scare"],
+          "dialog": "Heard about the dining room. Glad you're upright, Detective. Nobody leaves this manor."
+        },
+        {
+          "requiresScenes": ["attic_scare"],
+          "dialog": "Heard about the dining room. Glad you're upright, Detective. Nobody leaves this manor."
+        }
+      ]
+    },
+    {
       "npcId": "baroness",
       "default": "My husband... I cannot bear to look at him. Please — find who did this.",
       "conditions": [
+        {
+          "requiresClues": ["murder_weapon"],
+          "dialog": "You found the weapon? Then you know who did this. God help us — and God keep you safe."
+        },
+        {
+          "requiresClues": ["bloody_apron"],
+          "dialog": "A bloody kitchen apron… I scarcely want to think what that means for our staff."
+        },
+        {
+          "requiresClues": ["smuggling_documents"],
+          "dialog": "Those papers… how dreadful. And last night the horses were restless — something strange was going on out by the stables. I heard them from my window."
+        },
+        {
+          "requiresScenes": ["attic_scare"],
+          "dialog": "Another attack? In the attic? Someone is hunting you in my house. Please — be careful."
+        },
+        {
+          "requiresScenes": ["ledger_scare"],
+          "dialog": "Detective — thank heaven you're on your feet. I'm so glad you're okay."
+        },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
           "dialog": "Poor Mrs. Clarke... She was half mad with fright. I should never have doubted her."
@@ -355,7 +414,29 @@
       "npcId": "maid",
       "default": "When I came through on my rounds it was dark. I saw the master on the floor and I panicked — I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing. I ran for help and struck the hall clock on my way out — the glass shattered and it stopped at eleven. I'm so sorry. Before that awful moment, I had seen him heading toward the library with several papers. He looked worried.",
       "requiresClues": ["examined_body", "examined_clock"],
-      "blockedDialog": "Mrs. Clarke keeps her eyes down. She won't say much until you've examined the scene downstairs."
+      "blockedDialog": "Mrs. Clarke keeps her eyes down. She won't say much until you've examined the scene downstairs.",
+      "conditions": [
+        {
+          "requiresClues": ["murder_weapon"],
+          "dialog": "You've found the knife? Then it's nearly over. I'm glad you're still standing, Detective."
+        },
+        {
+          "requiresClues": ["bloody_apron"],
+          "dialog": "A kitchen apron with blood on it? Mercy — I always thought the kitchen was the safest place in the house."
+        },
+        {
+          "requiresClues": ["smuggling_documents"],
+          "dialog": "Forged papers… mercy. And last night the horses were so restless — stamping and snorting as if something had disturbed them. Something weird was going on out there."
+        },
+        {
+          "requiresScenes": ["attic_scare"],
+          "dialog": "They say someone came after you in the attic… Please don't go wandering alone."
+        },
+        {
+          "requiresScenes": ["ledger_scare"],
+          "dialog": "Oh, Detective! I feared the worst when they brought you up. I'm so glad you're okay."
+        }
+      ]
     },
     {
       "npcId": "cook",
@@ -436,6 +517,14 @@
           "dialog": "That apron isn't mine! Someone planted it — you have to believe me! Why won't you leave me alone?"
         },
         {
+          "requiresScenes": ["ledger_scare", "attic_scare"],
+          "dialog": "Took a tumble down the attic stairs — hence the bandages. I'm alright now. Glad you are too, Detective."
+        },
+        {
+          "requiresScenes": ["ledger_scare"],
+          "dialog": "You: Why did you help me back there?\n\nChef Ytte: The baroness walked in. If I'd left you in that smoke, she'd have seen what I am. I had no choice."
+        },
+        {
           "requiresClues": [
             "examined_body",
             "examined_clock",
@@ -494,12 +583,7 @@
           "dialog": "A burned ledger? People burn rubbish all the time. I — I should get back to the pots. Excuse me."
         },
         {
-          "requiresClues": [
-            "examined_body",
-            "examined_clock",
-            "maid_statement",
-            "torn_appointment_note"
-          ],
+          "requiresClues": ["examined_body", "examined_clock", "maid_statement", "torn_appointment_note"],
           "dialog": "Von Virtanen had papers with him? I saw nothing. I was at my station all evening — though I... I hope nothing's amiss in the Dining Room."
         },
         {
@@ -516,6 +600,22 @@
       "npcId": "butler",
       "default": "Good evening, Detective. I trust you will be discreet.",
       "conditions": [
+        {
+          "requiresClues": ["murder_weapon"],
+          "dialog": "So it was one of our own. I will assist the police in any way I can."
+        },
+        {
+          "requiresClues": ["bloody_apron"],
+          "dialog": "A kitchen apron stiff with blood? I keep the household orderly — this is beyond anything I will tolerate among the staff."
+        },
+        {
+          "requiresClues": ["smuggling_documents"],
+          "dialog": "Smuggling papers in this house? Appalling. And last night the horses were restless — something peculiar was afoot by the stables. I heard the fuss from indoors."
+        },
+        {
+          "requiresScenes": ["ledger_scare"],
+          "dialog": "The dining room… I showed the master in there myself only hours before. What a dreadful scene."
+        },
         {
           "requiresClues": ["torn_appointment_note", "maid_statement", "examined_body", "examined_clock"],
           "dialog": "Von Virtanen did go to the Dining Room after the Library. I showed him in myself."
@@ -557,6 +657,14 @@
         {
           "requiresClues": ["smuggling_documents"],
           "dialog": "The horses have been acting strange all night — restless, like something disturbed them. Something weird was going on out here last night."
+        },
+        {
+          "requiresScenes": ["attic_scare"],
+          "dialog": "Someone jumped you up in the attic? This place ain't safe tonight — not for you, not for anybody."
+        },
+        {
+          "requiresScenes": ["ledger_scare"],
+          "dialog": "Heard there was trouble in the dining room. Horses went mad. Glad you got out."
         }
       ]
     }

@@ -2,38 +2,18 @@ import type { Interactable } from "../world/Interactable";
 import type { Room } from "../world/Room";
 import { TILE_SIZE } from "../world/constants";
 import type { Entity } from "../entities/Entity";
+import { CUTSCENE_TEXT } from "../content/cutsceneText";
 
-export const LEDGER_DINING_SCARE_MONOLOGUE = [
-    "???: You weren't meant to find that page.",
-    "???: Burned evidence still talks — and so will you, if I don't stop you.",
-    "You: How did you lock the other door as well?!",
-    "???: I'm exploiting bad writing!"
-] as const;
+export const LEDGER_DINING_SCARE_MONOLOGUE = CUTSCENE_TEXT.diningScare.monologue;
 
-export const DINING_FIRE_PANIC_LINE = "???: Arghh!";
+export const DINING_FIRE_PANIC_LINE = CUTSCENE_TEXT.diningScare.panicLine;
 
-export const DINING_FIRE_AFTERMATH_LINES = [
-    "Lady von Virtanen: Help! The dining room is on fire!",
-    "Lady von Virtanen: Chef Ytte — drag the detective out of there! Quickly!"
-] as const;
+export const DINING_FIRE_AFTERMATH_LINES = CUTSCENE_TEXT.diningScare.aftermath;
 
-export const DINING_FIRE_WAKE_LINES = [
-    "Lady von Virtanen: Thank the Lord — you're awake.",
-    "Lady von Virtanen: Easy, Detective. You're in the guest wing. I'm so glad you're all right.",
-    "Lady von Virtanen: Ytte is resting as well. He inhaled a great deal of smoke dragging you out.",
-    "Lady von Virtanen: When you're steady, keep looking. This house is no longer safe for any of us."
-] as const;
+export const DINING_FIRE_WAKE_LINES = CUTSCENE_TEXT.diningScare.wake;
 
 /** Detective's thought after the baroness leaves. */
-export const DINING_FIRE_WAKE_THOUGHT =
-    "You: This is getting serious. The murderer wants me dead — they know I'm onto them. I need to look in the baron's rooms.";
-
-export const YTTE_HELPED_DIALOG =
-    "You: Why did you help me back there?\n\nChef Ytte: The baroness walked in. If I'd left you in that smoke, she'd have seen what I am. I had no choice.";
-
-/** First kitchen talk after the attic scare (Ytte returns bandaged from the fall). */
-export const YTTE_AFTER_ATTIC_DIALOG =
-    "Chef Ytte: Took a tumble down the attic stairs — hence the bandages. I'm alright now. Glad you are too, Detective.";
+export const DINING_FIRE_WAKE_THOUGHT = CUTSCENE_TEXT.diningScare.wakeThought;
 
 export const HEARTH_SHOVE_HINT = "The hearth — shove him into the fire!";
 

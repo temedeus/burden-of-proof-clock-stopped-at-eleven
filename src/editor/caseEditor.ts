@@ -744,7 +744,6 @@ export class CaseEditor {
                 error?: string;
                 isValid?: boolean;
                 issues?: Array<{ message: string; roomId: string }>;
-                archivedTo?: string | null;
             };
             if (!response.ok) {
                 throw new Error(
@@ -757,9 +756,6 @@ export class CaseEditor {
             let message = payload.isValid
                 ? `Story saved (valid, ${this.getClues().length} clues).`
                 : "Story saved but validation failed.";
-            if (payload.archivedTo) {
-                message += `\nPrevious version archived to ${payload.archivedTo}.`;
-            }
             if (!payload.isValid) {
                 const msgs = (payload.issues ?? []).map((i) => i.message).join("; ");
                 message += ` ${msgs}`;

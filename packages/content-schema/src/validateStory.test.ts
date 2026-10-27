@@ -58,6 +58,55 @@ describe("validateStoryCasePacket", () => {
         expect(validateStoryCasePacket("active", validPacket(), context)).toEqual([]);
     });
 
+    it("checks sceneTriggers name known scenes and story clues", () => {
+        expect(
+            validateStoryCasePacket(
+                "active",
+                validPacket({ sceneTriggers: { ledger_scare: "clue_1" } }),
+                context
+            )
+        ).toEqual([]);
+        const messages = validateStoryCasePacket(
+            "active",
+            validPacket({
+                sceneTriggers: { confrontation: "missing_clue", tea_party: "clue_1" } as StoryCasePacket["sceneTriggers"]
+            }),
+            context
+        ).map((issue) => issue.message);
+        expect(messages).toEqual([
+            "sceneTriggers.confrontation needs a culpritConfrontationMonologue.",
+            "sceneTriggers 'confrontation' uses unknown clue 'missing_clue'.",
+            "Unknown sceneTriggers scene 'tea_party'."
+        ]);
+    });
+
+    it("requires a confession when the story triggers the confrontation", () => {
+        const packet = validPacket({ sceneTriggers: { confrontation: "clue_1" } });
+        expect(validateStoryCasePacket("active", packet, context).map((i) => i.message)).toEqual([
+            "sceneTriggers.confrontation needs a culpritConfrontationMonologue."
+        ]);
+        packet.culpritConfrontationMonologue = ["Cook: It was me."];
+        expect(validateStoryCasePacket("active", packet, context)).toEqual([]);
+    });
+
+    it("flags unknown requiresScenes on dialog conditions", () => {
+        const packet = validPacket({
+            npcDialogOverrides: [
+                {
+                    npcId: "cook",
+                    default: "I saw nothing.",
+                    conditions: [
+                        { requiresScenes: ["ledger_scare"], dialog: "After the fire." },
+                        { requiresScenes: ["tea_party" as "ledger_scare"], dialog: "Never." }
+                    ]
+                }
+            ]
+        });
+        expect(validateStoryCasePacket("active", packet, context).map((i) => i.message)).toEqual([
+            "Unknown requiresScenes 'tea_party' for npc 'cook'."
+        ]);
+    });
+
     it("rejects non-object packets", () => {
         const issues = validateStoryCasePacket("active", null, context);
         expect(issues[0]?.message).toContain("not an object");

@@ -2,12 +2,9 @@ import { NPC } from "../entities/NPC";
 import { doorwayNpcPosition } from "./MurdererConfrontation";
 import type { Room } from "../world/Room";
 import { DIFFICULTY_CONFIG, type Difficulty } from "./MurdererChaseController";
+import { CUTSCENE_TEXT } from "../content/cutsceneText";
 
-export const DEFAULT_ATTIC_SCARE_MONOLOGUE = [
-    "???: Door's locked. Nowhere left to run, Detective.",
-    "???: You've been poking around where you shouldn't.",
-    "???: Too nosy. Far too nosy."
-] as const;
+export const DEFAULT_ATTIC_SCARE_MONOLOGUE = CUTSCENE_TEXT.atticScare.monologue;
 
 export { LEDGER_DINING_SCARE_MONOLOGUE as DEFAULT_LEDGER_SCARE_MONOLOGUE } from "./DiningFireCutscene";
 

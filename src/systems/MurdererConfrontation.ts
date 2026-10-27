@@ -2,14 +2,6 @@ import { NPC } from "../entities/NPC";
 import { TILE_SIZE } from "../world/constants";
 import type { Room } from "../world/Room";
 
-export const DEFAULT_MURDERER_MONOLOGUE = [
-    "Chef Ytte: You found the knife. Of course you did — you were always going to end up down here.",
-    "Chef Ytte: Von Virtanen uncovered the smuggling ledger. He meant to hand me to the police at dawn.",
-    "Chef Ytte: Years of work — my family's future — gone because his conscience woke up at the wrong hour.",
-    "Chef Ytte: That sweet girl almost took the blame for me. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
-    "Chef Ytte: But no worries, Detective. I won't be letting you out of this wine cellar."
-] as const;
-
 export function doorwayNpcPosition(room: Room): { x: number; y: number } {
     const exit = room.exits.find((e) => !e.interactionOnly) ?? room.exits[0];
     if (!exit) {
@@ -39,8 +31,9 @@ export class MurdererConfrontation {
     private lineIndex = 0;
     private readonly lines: readonly string[];
 
-    constructor(lines: readonly string[] = DEFAULT_MURDERER_MONOLOGUE) {
-        this.lines = lines.length > 0 ? lines : DEFAULT_MURDERER_MONOLOGUE;
+    /** The culprit's confession (story `culpritConfrontationMonologue`). */
+    constructor(lines: readonly string[] = []) {
+        this.lines = lines;
     }
 
     start(
@@ -61,7 +54,7 @@ export class MurdererConfrontation {
     }
 
     getCurrentLine(): string {
-        return this.lines[this.lineIndex] ?? this.lines[this.lines.length - 1];
+        return this.lines[this.lineIndex] ?? this.lines[this.lines.length - 1] ?? "";
     }
 
     advance(): "continue" | "done" {

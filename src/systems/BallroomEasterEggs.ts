@@ -10,6 +10,7 @@ import { ballroomWindowRects, type Rect } from "../assets/procedural/ballroom_wi
 import { drawChandelierShards, drawChandelierWreck } from "../assets/procedural/ballroom";
 import { getHumanoidFrame } from "../assets/procedural/characterAnimation";
 import { getHumanoidStyle } from "../assets/procedural/characters";
+import { CUTSCENE_TEXT } from "../content/cutsceneText";
 import {
     chandelierKey,
     getBrokenChandelier,
@@ -28,11 +29,9 @@ import {
 
 export const BALLROOM_ID = "dancing_room";
 
-export const GROUNDSKEEPER_WINDOW_DIALOG =
-    "Groundskeeper: Beg pardon, Detective! Didn't mean to give you a fright.\n\nGroundskeeper: Just tending to the flower beds under the windows. Roses don't stop growing for a murder.";
-export const WINDOW_LOOK_TEXT = "Neat flower beds below the window, freshly watered. No one in sight now.";
-export const CHANDELIER_DODGED_TEXT =
-    "You: That was far too close. Chandeliers don't just fall on their own... do they?";
+export const GROUNDSKEEPER_WINDOW_DIALOG = CUTSCENE_TEXT.ballroom.groundskeeperWindow;
+export const WINDOW_LOOK_TEXT = CUTSCENE_TEXT.ballroom.windowLook;
+export const CHANDELIER_DODGED_TEXT = CUTSCENE_TEXT.ballroom.chandelierDodged;
 
 // Window scare timeline (s)
 const FADE_IN_END = 0.9;

@@ -100,29 +100,13 @@ Registry sprites must be listed in [`packages/content-schema/src/sprites.ts`](pa
 
 ## Adding content
 
-### New room
+Step-by-step workflows live next to the content they touch:
 
-1. Create `src/data/rooms/<id>.json` (see existing rooms for shape).
-2. Add display title in `ROOM_DISPLAY_TITLES` in [`src/engine/Game.ts`](src/engine/Game.ts) if needed.
-3. Run `pnpm validate`.
-4. No other TypeScript changes required — rooms are auto-discovered via `import.meta.glob`.
-
-### New NPC
-
-1. Create `src/data/npcs/<id>.json`.
-2. Place the NPC in a room JSON file (`npcs` array).
-3. Run `pnpm validate`.
-
-### New furniture / sprite
-
-1. Add sprite name to [`packages/content-schema/src/sprites.ts`](packages/content-schema/src/sprites.ts).
-2. Add procedural definition in [`src/assets/procedural/`](src/assets/procedural/) (registry or custom draw).
-3. Add furniture entry in `src/data/furniture/` (single file or `decorations.json` map).
-4. Reference `furnitureId` in room JSON.
-
-### New story case
-
-Author in the editor (`pnpm dev:editor:full`) or edit `src/data/story/generated/stories/active.json`. See [`src/editor/README.md`](src/editor/README.md).
+| Adding… | See |
+|---------|-----|
+| Room, NPC, story case, clue | [`src/data/AGENTS.md`](src/data/AGENTS.md) |
+| Sprite / furniture art | [`src/assets/procedural/AGENTS.md`](src/assets/procedural/AGENTS.md) |
+| Authoring in the editor | [`src/editor/README.md`](src/editor/README.md) |
 
 ## Local progress (offline save)
 
@@ -149,7 +133,7 @@ flowchart LR
 
 **When written:** room transitions, clue finds, puzzle reveals, major event completions, quit-to-menu from a durable state. Skipped mid-cutscene / struggle / victory. Game over keeps the last checkpoint so Continue can resume.
 
-**Scripted scenes:** clue-triggered scenes (dining ledger scare, attic scare, cellar confrontation) are listed in [`src/systems/scriptedScenes.ts`](src/systems/scriptedScenes.ts); the save keeps `completedScenes`. On load, a held trigger clue whose scene never finished is dropped, so dying or quitting mid-scene replays it. A new clue-triggered scene needs an entry there plus its hooks in `Game.scenes`.
+**Scripted scenes:** clue-triggered scenes (dining ledger scare, attic scare, cellar confrontation) are listed in `SCRIPTED_SCENE_IDS` ([`packages/content-schema/src/story.ts`](packages/content-schema/src/story.ts)); the story picks each one's trigger clue in `sceneTriggers` (`active.json`), and [`src/systems/scriptedScenes.ts`](src/systems/scriptedScenes.ts) resolves them. The save keeps `completedScenes`. On load, a held trigger clue whose scene never finished is dropped, so dying or quitting mid-scene replays it. A new clue-triggered scene needs an id there, a `sceneTriggers` entry, and its hooks in `Game.scenes`.
 
 **Compatibility (fail closed):** saves carry `version` (format) and `contentRevision` (data). Mismatch, corrupt JSON, unknown story/room → treat as no save (Continue hidden). Bump `SAVE_CONTENT_REVISION` in `SaveGame.ts` when shipping breaking content; see [`src/data/AGENTS.md`](src/data/AGENTS.md).
 

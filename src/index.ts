@@ -86,6 +86,11 @@ function setupCanvasPointer(): void {
                 return;
             }
 
+            if (appScreen === "playing" && game?.isMapOpen()) {
+                game.handleMapPointer(x, y);
+                return;
+            }
+
             const touchUi = shouldShowTouchControls();
             if (!touchUi && e.pointerType !== "mouse") return;
             if (touchUi && e.pointerType !== "touch" && !isSimulateMobile()) return;

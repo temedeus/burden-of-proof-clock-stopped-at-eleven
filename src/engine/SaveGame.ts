@@ -42,6 +42,8 @@ export interface GameSaveV1 {
     chandelierTrapArmed?: boolean;
     /** Anchor tile key (`"x,y"`) of the chandelier that fell, if any. */
     brokenChandelier?: string | null;
+    /** Rooms the player has entered (shown on the map). Absent in older saves. */
+    visitedRoomIds?: string[];
 }
 
 export interface SaveValidationContext {
@@ -121,6 +123,12 @@ function parseSaveShape(raw: unknown): GameSaveV1 | null {
     }
     if (!isFiniteNumber(raw.savedAt)) return null;
     if (raw.armorCollapsed !== undefined && typeof raw.armorCollapsed !== "boolean") return null;
+    if (
+        raw.visitedRoomIds !== undefined &&
+        !(Array.isArray(raw.visitedRoomIds) && raw.visitedRoomIds.every((id) => typeof id === "string"))
+    ) {
+        return null;
+    }
     for (const key of ["ballroomWindowScareDone", "chandelierTrapArmed"] as const) {
         if (raw[key] !== undefined && typeof raw[key] !== "boolean") return null;
     }
@@ -169,7 +177,8 @@ function parseSaveShape(raw: unknown): GameSaveV1 | null {
         armorCollapsed: raw.armorCollapsed === true,
         ballroomWindowScareDone: raw.ballroomWindowScareDone === true,
         chandelierTrapArmed: raw.chandelierTrapArmed === true,
-        brokenChandelier: typeof raw.brokenChandelier === "string" ? raw.brokenChandelier : null
+        brokenChandelier: typeof raw.brokenChandelier === "string" ? raw.brokenChandelier : null,
+        visitedRoomIds: Array.isArray(raw.visitedRoomIds) ? (raw.visitedRoomIds as string[]) : undefined
     };
 }
 

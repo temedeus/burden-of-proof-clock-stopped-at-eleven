@@ -61,6 +61,7 @@ import { isExitUnlocked, isTransitionConfirm, runPuzzleConfirm, targetRoomFromTr
 import { spriteLoader } from "../assets/SpriteLoader";
 import { isDebugMode, renderDebugOverlay } from "./DebugOverlay";
 import { InventoryPanel } from "./InventoryPanel";
+import { MapScreen } from "../render/MapScreen";
 import { renderClueNotification } from "./ClueNotification";
 import { loadGameContent } from "../content/loadGameContent";
 import { applyStoryToRooms, getMurdererNpcId, getRequiredClueIds } from "../content/applyStoryToGame";
@@ -150,6 +151,7 @@ type GameState =
     | "interacting"
     | "confirming"
     | "inventory"
+    | "map"
     | "victory"
     | "struggling"
     | "cutscene"
@@ -277,6 +279,8 @@ export class Game {
     private roomTitleBanner: RoomTitleBanner | null = null;
     private decorAnimTime = 0;
     private inventoryPanel = new InventoryPanel();
+    private mapScreen = new MapScreen();
+    private visitedRooms = new Set<string>();
 
     constructor(
         private ctx: CanvasRenderingContext2D,
@@ -417,7 +421,8 @@ export class Game {
             this.state === "playing" ||
             this.state === "interacting" ||
             this.state === "confirming" ||
-            this.state === "inventory"
+            this.state === "inventory" ||
+            this.state === "map"
         );
     }
 
@@ -448,7 +453,8 @@ export class Game {
             armorCollapsed: isArmorCollapsed(),
             ballroomWindowScareDone: this.ballroomEggs.windowScareDone,
             chandelierTrapArmed: this.ballroomEggs.chandelierArmed,
-            brokenChandelier: getBrokenChandelier()
+            brokenChandelier: getBrokenChandelier(),
+            visitedRoomIds: [...this.visitedRooms, this.currentRoom.id]
         };
     }
 
@@ -655,6 +661,7 @@ export class Game {
         const finaleRoom = rollBackFinale && confrontationClue ? this.findRoomWithClue(confrontationClue) : null;
         const room = finaleRoom ?? this.rooms[save.roomId];
         if (!room) return;
+        this.visitedRooms = new Set(save.visitedRoomIds ?? []);
         this.currentRoom = room;
         this.placePlayerFromSave(room, save.player.x, save.player.y, save.player.facing);
         if (finaleRoom && confrontationClue) this.placePlayerAtTrigger({ clueId: confrontationClue });
@@ -1901,6 +1908,17 @@ export class Game {
         return this.state === "inventory";
     }
 
+    isMapOpen(): boolean {
+        return this.state === "map";
+    }
+
+    /** Taps on a floor tab switch floors; any other tap closes the map. */
+    handleMapPointer(x: number, y: number): void {
+        if (this.state === "map" && this.mapScreen.handlePointer(x, y) === "close") {
+            this.state = "playing";
+        }
+    }
+
     handleInventoryPointer(x: number, y: number): void {
         if (this.state !== "inventory") return;
         const layout = this.inventoryPanel.getLayoutForHitTest(this.ctx, this.clueSystem, this.clueCatalog);
@@ -2018,6 +2036,11 @@ export class Game {
 
         this.lockedDoorHintUntil = Math.max(0, this.lockedDoorHintUntil - dt);
 
+        if (this.state === "map" && this.input.wasPressed("escape")) {
+            this.state = "playing";
+            return;
+        }
+
         if (this.input.wasPressed("escape")) {
             if (this.state === "confirming") {
                 this.dialog.cancelConfirm();
@@ -2029,6 +2052,8 @@ export class Game {
             return;
         }
 
+        this.visitedRooms.add(this.currentRoom.id);
+
         if (this.input.wasPressed("i")) {
             if (this.state === "inventory") {
                 this.state = "playing";
@@ -2036,6 +2061,24 @@ export class Game {
                 this.inventoryPanel.reset();
                 this.state = "inventory";
             }
+            return;
+        }
+
+        if (this.input.wasPressed("m")) {
+            if (this.state === "map") {
+                this.state = "playing";
+                return;
+            }
+            if (this.state === "playing") {
+                this.visitedRooms.add(this.currentRoom.id);
+                this.mapScreen.open(this.currentRoom.id, this.visitedRooms);
+                this.state = "map";
+                return;
+            }
+        }
+
+        if (this.state === "map") {
+            this.mapScreen.handleKeys((k) => this.input.wasPressed(k));
             return;
         }
 
@@ -2478,6 +2521,18 @@ export class Game {
                 },
                 this.decorAnimTime,
                 shouldShowTouchControls()
+            );
+            return;
+        }
+        if (this.state === "map") {
+            this.visitedRooms.add(this.currentRoom.id);
+            this.mapScreen.render(
+                ctx,
+                this.rooms,
+                this.visitedRooms,
+                this.currentRoom.id,
+                (id) => this.getRoomDisplayTitle(id),
+                this.decorAnimTime
             );
             return;
         }

@@ -14,54 +14,63 @@ export interface MapFloor {
     rooms: Record<string, MapRect>;
 }
 
-/** Each floor is laid out on its own, in abstract units. */
+/**
+ * Each floor is laid out on its own. Units are room tiles, so every room keeps
+ * its real proportions; positions are schematic (doors link rooms with lines).
+ */
 export const MAP_FLOORS: readonly MapFloor[] = [
+    {
+        id: "attic",
+        label: "Attic",
+        rooms: {
+            attic: { x: 0, y: 0, w: 25, h: 18 }
+        }
+    },
     {
         id: "upper",
         label: "Upper Floor",
         rooms: {
-            master_bedroom: { x: 0, y: 0, w: 2.5, h: 3 },
-            bathroom_master: { x: 2.5, y: 0, w: 1, h: 3 },
-            guest_room_a: { x: 3.5, y: 0, w: 2, h: 3 },
-            bathroom_a: { x: 5.5, y: 0, w: 1, h: 3 },
-            guest_room_b: { x: 6.5, y: 0, w: 2, h: 3 },
-            bathroom_b: { x: 8.5, y: 0, w: 1, h: 3 },
-            maid_room: { x: 9.5, y: 0, w: 2, h: 3 },
-            attic: { x: 11.5, y: 0, w: 3.5, h: 3 },
-            landing_west: { x: 0, y: 3.2, w: 2.5, h: 1.2 },
-            landing: { x: 2.5, y: 3.2, w: 6, h: 1.2 },
-            landing_east: { x: 8.5, y: 3.2, w: 4, h: 1.2 }
+            master_bedroom: { x: 0, y: 0, w: 25, h: 18 },
+            bathroom_master: { x: 28, y: 8, w: 12, h: 10 },
+            bathroom_a: { x: 43, y: 8, w: 12, h: 10 },
+            guest_room_a: { x: 58, y: 5, w: 18, h: 13 },
+            guest_room_b: { x: 79, y: 5, w: 18, h: 13 },
+            bathroom_b: { x: 100, y: 8, w: 12, h: 10 },
+            maid_room: { x: 115, y: 7, w: 14, h: 11 },
+            landing_west: { x: 11, y: 21, w: 14, h: 7 },
+            landing: { x: 62, y: 21, w: 25, h: 7 },
+            landing_east: { x: 108, y: 21, w: 18, h: 7 }
         }
     },
     {
         id: "ground",
         label: "Ground Floor",
         rooms: {
-            dancing_room: { x: 6, y: 0, w: 4, h: 1.8 },
-            study: { x: 10, y: 0, w: 3, h: 1.8 },
-            kitchen: { x: 0, y: 2, w: 3, h: 2.4 },
-            dining: { x: 3, y: 2, w: 3, h: 2.4 },
-            hall: { x: 6, y: 2, w: 4, h: 2.4 },
-            library: { x: 10, y: 2, w: 3, h: 2.4 }
+            dancing_room: { x: 56, y: 0, w: 25, h: 18 },
+            study: { x: 86, y: 4, w: 20, h: 14 },
+            kitchen: { x: 0, y: 21, w: 25, h: 18 },
+            dining: { x: 28, y: 21, w: 25, h: 18 },
+            hall: { x: 56, y: 21, w: 25, h: 18 },
+            library: { x: 84, y: 21, w: 25, h: 18 }
         }
     },
     {
         id: "grounds",
         label: "Grounds",
         rooms: {
-            courtyard: { x: 0, y: 0, w: 4, h: 2.6 },
-            stable: { x: 4, y: 0, w: 3, h: 2.6 },
-            garden: { x: 7, y: 0, w: 5, h: 2.6 }
+            courtyard: { x: 0, y: 0, w: 25, h: 18 },
+            stable: { x: 28, y: 0, w: 25, h: 18 },
+            garden: { x: 56, y: 0, w: 25, h: 18 }
         }
     },
     {
         id: "cellar",
         label: "Cellar",
         rooms: {
-            cellar_storage: { x: 0, y: 0, w: 4, h: 2.4 },
-            wine_cellar: { x: 4, y: 0, w: 4, h: 2.4 },
-            secret_tunnel: { x: 0, y: 2.6, w: 4, h: 1.8 },
-            hidden_room: { x: 4, y: 2.6, w: 4, h: 1.8 }
+            cellar_storage: { x: 0, y: 0, w: 25, h: 18 },
+            wine_cellar: { x: 28, y: 0, w: 25, h: 18 },
+            secret_tunnel: { x: 9, y: 21, w: 7, h: 14 },
+            hidden_room: { x: 3.5, y: 38, w: 18, h: 12 }
         }
     }
 ];
@@ -107,8 +116,8 @@ export function computeMapEdges(rooms: Record<string, Room>): MapEdge[] {
 export function edgeSegment(a: MapRect, b: MapRect): [number, number, number, number] | null {
     const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
     const oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
-    const maxGap = 1.7;
-    if (ox > 0.3) {
+    const maxGap = 40;
+    if (ox > 1) {
         const gap = a.y < b.y ? b.y - (a.y + a.h) : a.y - (b.y + b.h);
         if (gap >= -0.01 && gap <= maxGap) {
             const mx = (Math.max(a.x, b.x) + Math.min(a.x + a.w, b.x + b.w)) / 2;
@@ -116,7 +125,7 @@ export function edgeSegment(a: MapRect, b: MapRect): [number, number, number, nu
             return [mx, top.y + top.h, mx, bottom.y];
         }
     }
-    if (oy > 0.3) {
+    if (oy > 1) {
         const gap = a.x < b.x ? b.x - (a.x + a.w) : a.x - (b.x + b.w);
         if (gap >= -0.01 && gap <= maxGap) {
             const my = (Math.max(a.y, b.y) + Math.min(a.y + a.h, b.y + b.h)) / 2;
@@ -169,6 +178,52 @@ function fitLabel(
     ctx.textBaseline = "alphabetic";
 }
 
+/** Pixel stair glyph: three steps and an arrow showing which way they lead. */
+function drawStairs(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, dir: "up" | "down"): void {
+    const x = Math.round(cx - size / 2);
+    const y = Math.round(cy - size / 2);
+    const u = size / 6;
+    ctx.fillStyle = "#0e0b09";
+    ctx.fillRect(x - 1, y - 1, size + 2, size + 2);
+    ctx.fillStyle = "#2a2118";
+    ctx.fillRect(x, y, size, size);
+    // steps rise to the right (up) or to the left (down)
+    ctx.fillStyle = "#e8dcc8";
+    for (let i = 0; i < 3; i++) {
+        const col = dir === "up" ? i : 2 - i;
+        const h = u * (i + 1);
+        ctx.fillRect(x + u * 0.5 + col * u * 1.6, y + size - u * 0.5 - h, u * 1.6, h);
+    }
+    ctx.fillStyle = GOLD;
+    const ax = x + size - u * 1.4;
+    const ay = y + u * 1.4;
+    ctx.beginPath();
+    if (dir === "up") {
+        ctx.moveTo(ax, ay - u * 0.9);
+        ctx.lineTo(ax - u * 0.9, ay + u * 0.7);
+        ctx.lineTo(ax + u * 0.9, ay + u * 0.7);
+    } else {
+        ctx.moveTo(ax, ay + u * 0.9);
+        ctx.lineTo(ax - u * 0.9, ay - u * 0.7);
+        ctx.lineTo(ax + u * 0.9, ay - u * 0.7);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
+/** Simple door glyph for exits to another outdoor/indoor area on the same level. */
+function drawDoor(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number): void {
+    const w = Math.round(size * 0.6);
+    const x = Math.round(cx - w / 2);
+    const y = Math.round(cy - size / 2);
+    ctx.fillStyle = "#0e0b09";
+    ctx.fillRect(x - 1, y - 1, w + 2, size + 2);
+    ctx.fillStyle = "#8b5e3c";
+    ctx.fillRect(x, y, w, size);
+    ctx.fillStyle = GOLD;
+    ctx.fillRect(x + w - 4, y + size / 2, 2, 2);
+}
+
 export class MapScreen {
     private floorIndex = 0;
     /** Floors with at least one visited room, in display order. */
@@ -207,6 +262,37 @@ export class MapScreen {
             return null;
         }
         return "close";
+    }
+
+    /** Stairs (or a door glyph) where an exit leads to another floor the player has seen. */
+    private drawConnectors(
+        ctx: CanvasRenderingContext2D,
+        room: Room | undefined,
+        r: { x: number; y: number; w: number; h: number },
+        visited: ReadonlySet<string>,
+        currentRoomId: string
+    ): void {
+        if (!room) return;
+        const here = floorIndexOf(room.id);
+        const drawn: { x: number; y: number }[] = [];
+        for (const exit of room.exits) {
+            const target = exit.targetRoom;
+            if (!MAP_LAYOUT[target]) continue;
+            const there = floorIndexOf(target);
+            if (there === here || !(visited.has(target) || target === currentRoomId)) continue;
+            const ids = [MAP_FLOORS[here].id, MAP_FLOORS[there].id];
+            const vertical = ids.some((f) => f === "attic" || f === "upper" || f === "cellar");
+            const size = Math.max(14, Math.min(22, Math.floor(Math.min(r.w, r.h) / 3)));
+            const half = size / 2 + 3;
+            const ex = ((exit.x + 0.5) / room.map.width) * r.w;
+            const ey = ((exit.y + 0.5) / room.map.height) * r.h;
+            const cx = r.x + Math.max(half, Math.min(r.w - half, ex));
+            const cy = r.y + Math.max(half, Math.min(r.h - half, ey));
+            if (drawn.some((d) => Math.hypot(d.x - cx, d.y - cy) < size)) continue;
+            drawn.push({ x: cx, y: cy });
+            if (vertical) drawStairs(ctx, cx, cy, size, there < here ? "up" : "down");
+            else drawDoor(ctx, cx, cy, size);
+        }
     }
 
     render(
@@ -274,7 +360,7 @@ export class MapScreen {
         const maxY = Math.max(...ids.map((id) => layout[id].y + layout[id].h));
         const areaTop = tabY + tabH + 22;
         const areaBottom = H - 44;
-        const scale = Math.floor(Math.min((W - 48) / maxX, (areaBottom - areaTop) / maxY, 70));
+        const scale = Math.min((W - 48) / maxX, (areaBottom - areaTop) / maxY, 22);
         const ox = Math.round((W - maxX * scale) / 2);
         const oy = Math.round(areaTop + (areaBottom - areaTop - maxY * scale) / 2);
         const px = (r: MapRect) => ({
@@ -319,6 +405,8 @@ export class MapScreen {
 
             const label = seen ? titleOf(id) : "?";
             fitLabel(ctx, label, r.x + r.w / 2, r.y + r.h / 2, r.w - 10, r.h - 8, seen ? "#f3ead2" : "#6a5f50");
+
+            this.drawConnectors(ctx, rooms[id], r, visited, currentRoomId);
 
             if (current) {
                 const pulse = 3 + Math.sin(time * 4) * 1.2;

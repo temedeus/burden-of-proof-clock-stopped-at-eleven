@@ -17,16 +17,19 @@ const CLUE_ICON_BY_ID: Record<string, SpriteName> = {
     torn_page: "clue_torn_note",
     torn_appointment_note: "clue_torn_note",
     burned_ledger_page: "clue_burned_ledger",
-    barons_diary: "barons_diary",
-    rusty_old_key: "rusty_old_key",
+    barons_diary: "clue_diary",
+    rusty_old_key: "clue_rusty_key",
     manor_floor_plans: "clue_floor_plans",
     von_virtanens_journal: "clue_journal",
     silver_key: "clue_silver_key",
     smuggling_documents: "clue_smuggling_docs",
     bloody_apron: "clue_bloody_apron",
-    cellar_evidence: "clue_silver_key",
+    cellar_evidence: "clue_cellar_evidence",
     missing_ledger_page: "clue_ledger_page",
-    murder_weapon: "clue_murder_weapon"
+    murder_weapon: "clue_murder_weapon",
+    examined_body: "clue_body",
+    examined_clock: "clue_clock",
+    maid_statement: "clue_testimony"
 };
 
 export function buildClueCatalog(generatedClues?: GeneratedClue[]): ClueCatalog {

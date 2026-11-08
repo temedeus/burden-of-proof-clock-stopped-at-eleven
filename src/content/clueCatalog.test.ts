@@ -21,7 +21,7 @@ describe("resolveClueIconSprite", () => {
     it("uses clue-specific inventory icons", () => {
         expect(resolveClueIconSprite("torn_appointment_note")).toBe("clue_torn_note");
         expect(resolveClueIconSprite("murder_weapon")).toBe("clue_murder_weapon");
-        expect(resolveClueIconSprite("rusty_old_key")).toBe("rusty_old_key");
+        expect(resolveClueIconSprite("rusty_old_key")).toBe("clue_rusty_key");
     });
 
     it("falls back to generic icon for unknown clues", () => {

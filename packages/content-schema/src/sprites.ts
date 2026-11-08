@@ -210,7 +210,12 @@ export const VALID_SPRITE_NAMES = [
     "clue_bloody_apron",
     "clue_cellar_evidence",
     "clue_ledger_page",
-    "clue_murder_weapon"
+    "clue_murder_weapon",
+    "clue_diary",
+    "clue_rusty_key",
+    "clue_clock",
+    "clue_body",
+    "clue_testimony"
 ] as const;
 
 export type SpriteName = (typeof VALID_SPRITE_NAMES)[number];

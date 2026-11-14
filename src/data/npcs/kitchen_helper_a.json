@@ -5,6 +5,6 @@
   "spriteName": "worker_boy",
   "interactionMode": "examine",
   "dialog": {
-    "default": "The kitchen helpers are always busy — chopping, stirring, fetching. No time for chatter."
+    "default": "The kitchen helpers are always busy. No time for chatter."
   }
 }

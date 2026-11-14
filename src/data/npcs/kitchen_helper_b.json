@@ -5,6 +5,6 @@
   "spriteName": "maid",
   "interactionMode": "examine",
   "dialog": {
-    "default": "The kitchen helpers are always busy — pans hissing, dough rising. They barely glance up."
+    "default": "The kitchen helpers are always busy. They barely glance up."
   }
 }

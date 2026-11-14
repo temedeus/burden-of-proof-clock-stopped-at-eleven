@@ -208,20 +208,20 @@
       "clueId": "examined_body",
       "roomId": "hall",
       "npcId": "baron",
-      "hint": "Von Virtanen lies dead on the marble floor. Blood has pooled beneath his body, dark and still. Faint broom marks streak through the blood — someone may have tried to clean the scene."
+      "hint": "Von Virtanen lies dead on the marble floor. Blood has pooled beneath his body. Faint broom marks streak through the blood."
     },
     {
       "clueId": "examined_clock",
       "roomId": "hall",
       "furnitureId": "hall_clock",
       "furnitureIndex": 0,
-      "hint": "The clock hands are frozen at eleven o'clock. The glass door is shattered."
+      "hint": "The clock is frozen at eleven o'clock. The glass door is shattered."
     },
     {
       "clueId": "maid_statement",
       "roomId": "maid_room",
       "npcId": "maid",
-      "hint": "Mrs. Clarke wrings her hands, near tears.\n\n\"When I came through on my rounds it was dark. I saw the master on the floor and I panicked. I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing.\n\nI ran for help and struck the hall clock on my way out — the glass shattered and it stopped at eleven. I'm so sorry.\n\nBefore that awful moment, I had seen him heading toward the library with several papers. He looked worried.\""
+      "hint": "Mrs. Clarke wrings her hands, near tears.\n\n\"When I came through on my rounds it was dark. I saw the master on the floor and I panicked. I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing.\n\nI ran for help and struck the hall clock on my way out. The glass shattered and it stopped at eleven. I'm so sorry.\n\nBefore that awful moment, I had seen him heading toward the library with several papers. He looked worried.\""
     },
     {
       "clueId": "torn_appointment_note",
@@ -406,13 +406,13 @@
         },
         {
           "requiresClues": ["examined_body", "examined_clock"],
-          "dialog": "Mrs. Clarke was on her rounds at eleven. Those broom marks near his body... her room is upstairs. I hate to think it."
+          "dialog": "Mrs. Clarke was on her rounds at eleven. Her room is upstairs. I hate to think it."
         }
       ]
     },
     {
       "npcId": "maid",
-      "default": "When I came through on my rounds it was so dark. I saw the master on the floor and I panicked. I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing. I ran for help and struck the hall clock on my way out — the glass shattered and it stopped at eleven. I'm so sorry. Before that awful moment, I had seen him heading toward the library with several papers. He looked worried.",
+      "default": "When I came through on my rounds it was so dark. I saw the master on the floor and I panicked. I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing. I ran for help and struck the hall clock on my way out. The glass shattered and it stopped at eleven. I'm so sorry. Before that awful moment, I had seen him heading toward the library with several papers. He looked worried.",
       "requiresClues": ["examined_body", "examined_clock"],
       "blockedDialog": "Mrs. Clarke keeps her eyes down. Should look downstairs so that I'd have something concrete to ask.",
       "conditions": [

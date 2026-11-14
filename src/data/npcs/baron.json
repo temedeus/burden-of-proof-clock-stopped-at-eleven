@@ -9,6 +9,6 @@
   "walkable": true,
   "footstepSound": "squish",
   "dialog": {
-    "default": "Von Virtanen lies dead on the marble floor. Blood has pooled beneath his body, dark and still. His evening coat is torn at the chest. Faint broom marks streak through the blood — suspicious at a glance. Nearby, the hall clock stands frozen at eleven, its glazed door shattered."
+    "default": "Von Virtanen lies dead on the marble floor. Blood has pooled beneath his body. His evening coat is torn at the chest. Faint broom marks streak through the blood. Nearby, the hall clock stands frozen at eleven, its glazed door shattered."
   }
 }

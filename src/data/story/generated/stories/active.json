@@ -7,10 +7,10 @@
   },
   "culpritNpcId": "cook",
   "culpritConfrontationMonologue": [
-    "Chef Ytte: You found the knife. Of course you did — you were always going to end up down here.",
+    "Chef Ytte: So, you found the knife. You were always going to end up down here.",
     "Chef Ytte: Von Virtanen uncovered the smuggling ledger. He meant to hand me to the police at dawn.",
-    "Chef Ytte: Years of work — my family's future — gone because his conscience woke up at the wrong hour.",
-    "Chef Ytte: That sweet girl almost took the blame for me — a lucky accident, that one. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
+    "Chef Ytte: Years of hard work gone because his conscience woke up at the wrong hour.",
+    "Chef Ytte: That sweet girl almost took the blame for me, a lucky accident. Her panic dragged a broom through the blood and smashed the hall clock as she fled. The whole investigation nearly went off the rails while I walked free.",
     "Chef Ytte: But no worries, Detective. I won't be letting you out of this wine cellar."
   ],
   "sceneTriggers": {
@@ -33,7 +33,7 @@
     },
     {
       "npcId": "cook",
-      "motive": "Smuggling operation exposed — von Virtanen was about to turn him in.",
+      "motive": "Smuggling operation exposed: von Virtanen was about to turn him in.",
       "opportunity": "The kitchen adjoins the dining room and cellar routes.",
       "alibi": "Insists the roast was in the oven all night."
     },
@@ -55,11 +55,11 @@
     },
     {
       "roomId": "master_bedroom",
-      "summary": "Von Virtanen's private chambers — undisturbed at a glance, but something feels searched."
+      "summary": "Von Virtanen's private chambers, undisturbed at a glance, but something feels off."
     },
     {
       "roomId": "attic",
-      "summary": "Dust motes swirl in the rafters. Forgotten trunks and old beams crowd the space."
+      "summary": "Forgotten trunks and old beams crowd the space."
     },
     {
       "roomId": "study",
@@ -71,7 +71,7 @@
     },
     {
       "roomId": "hidden_room",
-      "summary": "A secret chamber behind the study shelves — von Virtanen's private retreat."
+      "summary": "A secret chamber behind the study shelves: von Virtanen's private retreat."
     },
     {
       "roomId": "garden",
@@ -79,7 +79,7 @@
     },
     {
       "roomId": "maid_room",
-      "summary": "A modest room for the household staff — neat, but plainly furnished."
+      "summary": "A modest room for the household staff: neat, but plainly furnished."
     },
     {
       "roomId": "kitchen",
@@ -102,7 +102,7 @@
     {
       "id": "examined_body",
       "name": "Body Examined",
-      "description": "Von Virtanen was stabbed in the chest. Blood has pooled beneath him, streaked with broom marks — suspicious at first glance.",
+      "description": "Von Virtanen was stabbed in the chest. Blood has pooled beneath him, streaked with broom marks...",
       "hideFromInventory": true
     },
     {
@@ -128,21 +128,21 @@
     {
       "id": "burned_ledger_page",
       "name": "Burned Ledger Page",
-      "description": "A semi-burned ledger page pulled from the ash canister by the dining fireplace. Columns of payments survive, but the payee's name is scorched away — and the final page of the ledger is missing. Von Virtanen kept his private papers in the master bedroom.",
+      "description": "A semi-burned ledger page pulled from the ash canister by the dining fireplace. Columns of payments survive, but the payee's name is scorched away. Final page of the ledger is missing. Von Virtanen kept his private papers in the master bedroom.",
       "requiresClues": ["torn_appointment_note"],
       "blockedHint": "The ash canister looks ordinary."
     },
     {
       "id": "barons_diary",
       "name": "von Virtanen's Diary",
-      "description": "Von Virtanen's diary says the original manor floor plans are locked in an old attic chest — and that the groundskeeper keeps the key.",
+      "description": "Von Virtanen's diary says the original manor floor plans are locked in an old attic chest. The groundskeeper keeps the key.",
       "requiresClues": ["burned_ledger_page"],
       "blockedHint": "Von Virtanen's diary. "
     },
     {
       "id": "rusty_old_key",
       "name": "Rusty Old Key",
-      "description": "A tarnished iron key from the groundskeeper — it opens the old chest in the attic.",
+      "description": "A tarnished iron key from the groundskeeper. It opens the old chest in the attic.",
       "requiresClues": ["barons_diary"],
       "blockedHint": "The groundskeeper shrugs you off. Von Virtanen's diary may explain why you need him."
     },
@@ -156,7 +156,7 @@
     {
       "id": "von_virtanens_journal",
       "name": "von Virtanen's Journal",
-      "description": "Von Virtanen's journal warns of a smuggling ring. He had been walking in the garden afterward — and seems to have lost the silver key to this cabinet there.",
+      "description": "Von Virtanen's journal warns of a smuggling ring. He had lost his silver cabinet key while walking in the garden.",
       "requiresClues": ["manor_floor_plans"],
       "blockedHint": "The writing desk looks untouched."
     },
@@ -170,28 +170,28 @@
     {
       "id": "smuggling_documents",
       "name": "Smuggling Documents",
-      "description": "Forged shipping manifests and ledger sheets — the same columns as the burned page from the study. Wherever a name should appear, it has been cut or inked out.",
+      "description": "Forged shipping manifests and ledger sheets. Same columns as the burned page from the study. Wherever a name should appear, it has been cut or inked out.",
       "requiresClues": ["silver_key"],
-      "blockedHint": "The cabinet is locked. The journal said von Virtanen had been walking in the garden afterward — he seems to have lost the key there."
+      "blockedHint": "The cabinet is locked. The journal said von Virtanen had been walking in the garden afterward."
     },
     {
       "id": "bloody_apron",
       "name": "Bloody Apron",
-      "description": "A kitchen apron stiff with dried blood — whoever wore it was close to the killing.",
+      "description": "A kitchen apron stiff with dried blood. Whoever wore it was close to the killing.",
       "requiresClues": ["smuggling_documents"],
-      "blockedHint": "The stalls look ordinary. The household says the horses were restless last night — ask the stable boy."
+      "blockedHint": "The stalls look ordinary. The household says the horses were restless last night. Ask the stable boy."
     },
     {
       "id": "cellar_evidence",
       "name": "Wine Cellar Key",
-      "description": "An iron key that hung on a nail driven into the stained crate in the cellar storage. A foolish place to keep it — but drilling into stone is a pain.",
+      "description": "An iron key that hung on a nail driven into the stained crate in the cellar storage. A foolish place to keep it but drilling into stone is a pain.",
       "requiresClues": ["bloody_apron"],
       "blockedHint": "Nothing stands out on the crate. The stable boy may know more about the cellars."
     },
     {
       "id": "missing_ledger_page",
       "name": "Missing Ledger Page",
-      "description": "The last page of von Virtanen's ledger — unburned. The payee is written clear as day: Ytte. The amounts match no kitchen supply.",
+      "description": "The last page of von Virtanen's ledger revealing payee clearly: Ytte. The amounts match no kitchen supply.",
       "requiresClues": ["cellar_evidence"],
       "blockedHint": "The barrels look undisturbed."
     },
@@ -200,7 +200,7 @@
       "name": "Murder Weapon",
       "description": "A carving knife wedged behind the barrels, wiped clean but flecked with blood.",
       "requiresClues": ["missing_ledger_page"],
-      "blockedHint": "Something else is tucked behind these barrels — the missing ledger page comes first."
+      "blockedHint": "Something else is tucked behind these barrels: the missing ledger page comes first."
     }
   ],
   "clueAssignments": [
@@ -215,20 +215,20 @@
       "roomId": "hall",
       "furnitureId": "hall_clock",
       "furnitureIndex": 0,
-      "hint": "The clock hands are frozen at eleven o'clock. The glass door is shattered — splinters litter the boards below."
+      "hint": "The clock hands are frozen at eleven o'clock. The glass door is shattered."
     },
     {
       "clueId": "maid_statement",
       "roomId": "maid_room",
       "npcId": "maid",
-      "hint": "Mrs. Clarke wrings her hands, near tears.\n\n\"When I came through on my rounds it was dark. I saw the master on the floor and I panicked — I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing.\n\nI ran for help and struck the hall clock on my way out — the glass shattered and it stopped at eleven. I'm so sorry.\n\nBefore that awful moment, I had seen him heading toward the library with several papers. He looked worried.\""
+      "hint": "Mrs. Clarke wrings her hands, near tears.\n\n\"When I came through on my rounds it was dark. I saw the master on the floor and I panicked. I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing.\n\nI ran for help and struck the hall clock on my way out — the glass shattered and it stopped at eleven. I'm so sorry.\n\nBefore that awful moment, I had seen him heading toward the library with several papers. He looked worried.\""
     },
     {
       "clueId": "torn_appointment_note",
       "roomId": "library",
       "furnitureId": "reading_table",
       "furnitureIndex": 1,
-      "hint": "A torn appointment note lies among the books — von Virtanen was expected in the Dining Room at half past ten.\n\nI should search the Dining Room before anywhere else."
+      "hint": "A torn appointment note lies among the books. von Virtanen was expected in the Dining Room at half past ten.\n\nI should search the Dining Room before anywhere else."
     },
     {
       "clueId": "burned_ledger_page",
@@ -262,14 +262,14 @@
       "roomId": "hidden_room",
       "furnitureId": "writing_table",
       "furnitureIndex": 0,
-      "hint": "Von Virtanen's journal lies open on the desk, warning of smuggling. He had been walking in the garden afterward — and seems to have lost the silver cabinet key there."
+      "hint": "Von Virtanen's journal lies open on the desk, warning of smuggling. He had been walking in the garden and seems to have lost the silver cabinet key there."
     },
     {
       "clueId": "silver_key",
       "roomId": "garden",
       "furnitureId": "fountain",
       "furnitureIndex": 0,
-      "hint": "Something glints at the bottom of the fountain basin — a small silver key, lost after von Virtanen's walk in the garden."
+      "hint": "Something glints at the bottom of the fountain...  a small silver key, lost after von Virtanen's walk in the garden."
     },
     {
       "clueId": "smuggling_documents",
@@ -283,28 +283,28 @@
       "roomId": "stable",
       "furnitureId": "stable_booth_gray",
       "furnitureIndex": 0,
-      "hint": "Hidden in the straw of the grey horse's stall — a kitchen apron stiff with dried blood."
+      "hint": "Hidden in the straw of the grey horse's stall there is a kitchen apron covered in dried blood."
     },
     {
       "clueId": "cellar_evidence",
       "roomId": "cellar_storage",
       "furnitureId": "blood_crate",
       "furnitureIndex": 0,
-      "hint": "An iron key hangs from a nail on the stained crate. A foolish place to keep it — but drilling into stone is a pain. It should open the wine cellar door."
+      "hint": "An iron key hangs from a nail on the stained crate. A foolish place to keep it but drilling into stone is a pain. It should open the wine cellar door."
     },
     {
       "clueId": "missing_ledger_page",
       "roomId": "wine_cellar",
       "furnitureId": "wine_barrel",
       "furnitureIndex": 8,
-      "hint": "Tucked behind the rearmost barrel — the missing ledger page. The payee is written clear as day: Ytte. Something else is hidden behind the barrel..."
+      "hint": "Missing ledger page tucked behind the barrel. The payee is written clear as day: Ytte. Something else is hidden behind the barrel..."
     },
     {
       "clueId": "murder_weapon",
       "roomId": "wine_cellar",
       "furnitureId": "wine_barrel",
       "furnitureIndex": 8,
-      "hint": "Wedged deeper behind the same barrel — a carving knife, flecked with blood."
+      "hint": "Wedged deeper behind the barrel lies a carving knife, covered with blood."
     }
   ],
   "npcDialogOverrides": [
@@ -334,11 +334,11 @@
         },
         {
           "requiresClues": ["bloody_apron"],
-          "dialog": "A bloody apron — speak to the stable boy again, then check the cellars. We're close."
+          "dialog": "A bloody apron... You should ask the stable boy about that."
         },
         {
           "requiresClues": ["smuggling_documents"],
-          "dialog": "Forged manifests, names cut out… Follow that trail. Someone in this house is in deep."
+          "dialog": "Forged manifests, names cut out... Follow that trail. Someone in this house is in deep."
         },
         {
           "requiresScenes": ["attic_scare"],

@@ -350,11 +350,11 @@
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
-          "dialog": "Mrs. Clarke's confession explains the broom marks and the clock. A frightened woman, not a killer — keep searching."
+          "dialog": "Mrs. Clarke's confession explains the broom marks and the clock. She got frightened, not a killer. Keep searching."
         },
         {
           "requiresClues": ["examined_body", "examined_clock"],
-          "dialog": "Mrs. Clarke was making her nightly rounds around eleven o'clock. Her room is upstairs — I'd start there."
+          "dialog": "Mrs. Clarke was making her nightly rounds around eleven o'clock. I'd start at her room in the upstairs."
         }
       ]
     },
@@ -364,7 +364,7 @@
       "conditions": [
         {
           "requiresClues": ["murder_weapon"],
-          "dialog": "You've got the weapon? Find the Inspector — or bring the killer to either of us. We're ready."
+          "dialog": "You've got the weapon? Bring the killer to either of us. We're ready."
         },
         {
           "requiresScenes": ["ledger_scare"],
@@ -378,27 +378,27 @@
     },
     {
       "npcId": "baroness",
-      "default": "My husband... I cannot bear to look at him. Please — find who did this.",
+      "default": "My husband... I cannot bear to look at him. Please find who did this.",
       "conditions": [
         {
           "requiresClues": ["murder_weapon"],
-          "dialog": "You found the weapon? Then you know who did this. God help us — and God keep you safe."
+          "dialog": "You found the weapon? Then you know who did this. God help us."
         },
         {
           "requiresClues": ["bloody_apron"],
-          "dialog": "A bloody kitchen apron… I scarcely want to think what that means for our staff."
+          "dialog": "A bloody kitchen apron... I scarcely want to think what that means for our staff."
         },
         {
           "requiresClues": ["smuggling_documents"],
-          "dialog": "Those papers… how dreadful. And last night the horses were restless — something strange was going on out by the stables. I heard them from my window."
+          "dialog": "Those papers... how dreadful. Last night the horses were restless. Something strange was going on out by the stables. I heard them from my window."
         },
         {
           "requiresScenes": ["attic_scare"],
-          "dialog": "Another attack? In the attic? Someone is hunting you in my house. Please — be careful."
+          "dialog": "Another attack? In the attic? Someone is hunting you in my house. Please be careful."
         },
         {
           "requiresScenes": ["ledger_scare"],
-          "dialog": "Detective — thank heaven you're on your feet. I'm so glad you're okay."
+          "dialog": "Detective, thank heaven you're on your feet. I'm so glad you're okay."
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
@@ -412,9 +412,9 @@
     },
     {
       "npcId": "maid",
-      "default": "When I came through on my rounds it was dark. I saw the master on the floor and I panicked — I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing. I ran for help and struck the hall clock on my way out — the glass shattered and it stopped at eleven. I'm so sorry. Before that awful moment, I had seen him heading toward the library with several papers. He looked worried.",
+      "default": "When I came through on my rounds it was so dark. I saw the master on the floor and I panicked. I couldn't think straight anymore. I still had my broom in hand and I must have swept through the blood before I knew what I was doing. I ran for help and struck the hall clock on my way out — the glass shattered and it stopped at eleven. I'm so sorry. Before that awful moment, I had seen him heading toward the library with several papers. He looked worried.",
       "requiresClues": ["examined_body", "examined_clock"],
-      "blockedDialog": "Mrs. Clarke keeps her eyes down. She won't say much until you've examined the scene downstairs.",
+      "blockedDialog": "Mrs. Clarke keeps her eyes down. Should look downstairs so that I'd have something concrete to ask.",
       "conditions": [
         {
           "requiresClues": ["murder_weapon"],
@@ -422,15 +422,15 @@
         },
         {
           "requiresClues": ["bloody_apron"],
-          "dialog": "A kitchen apron with blood on it? Mercy — I always thought the kitchen was the safest place in the house."
+          "dialog": "A kitchen apron with blood on it? Oh my... I always thought the kitchen was the safest place in the house. Apart from the dozen burn injuries we've had last months, that is."
         },
         {
           "requiresClues": ["smuggling_documents"],
-          "dialog": "Forged papers… mercy. And last night the horses were so restless — stamping and snorting as if something had disturbed them. Something weird was going on out there."
+          "dialog": "Forged papers... oh dear. And last night the horses were so restless. Stamping around as if something had disturbed them. Something weird was going on out there."
         },
         {
           "requiresScenes": ["attic_scare"],
-          "dialog": "They say someone came after you in the attic… Please don't go wandering alone."
+          "dialog": "They say you were attacked in the attic. Please be careful."
         },
         {
           "requiresScenes": ["ledger_scare"],
@@ -440,7 +440,7 @@
     },
     {
       "npcId": "cook",
-      "default": "The roast was perfect. I was in the kitchen all evening — ask anyone.",
+      "default": "The roast was perfect. I was in the kitchen all evening... only one working that late",
       "conditions": [
         {
           "requiresClues": [
@@ -460,7 +460,7 @@
             "missing_ledger_page",
             "murder_weapon"
           ],
-          "dialog": "Stay back! I'm not going down for this — not while I still have a chance!"
+          "dialog": "Stay back! I'm not having it all ruined because of you!"
         },
         {
           "requiresClues": [
@@ -479,7 +479,7 @@
             "cellar_evidence",
             "missing_ledger_page"
           ],
-          "dialog": "That page... you weren't meant to find that. I — I can explain. Please — don't."
+          "dialog": "That page... you weren't meant to find that. I... I can explain... don't."
         },
         {
           "requiresClues": [
@@ -497,7 +497,7 @@
             "bloody_apron",
             "cellar_evidence"
           ],
-          "dialog": "The cellars? I haven't been down there in weeks! Stop following me around — you're making me nervous!"
+          "dialog": "The cellars? I haven't been down there in weeks! Stop following me around. You're starting to annoy me!"
         },
         {
           "requiresClues": [
@@ -514,15 +514,15 @@
             "smuggling_documents",
             "bloody_apron"
           ],
-          "dialog": "That apron isn't mine! Someone planted it — you have to believe me! Why won't you leave me alone?"
+          "dialog": "That apron... someone planted it. You have to believe me! Leave me alone?"
         },
         {
           "requiresScenes": ["ledger_scare", "attic_scare"],
-          "dialog": "Took a tumble down the attic stairs — hence the bandages. I'm alright now. Glad you are too, Detective."
+          "dialog": "Took a tumble down the attic stairs... hence the bandages. But I'm okay. Glad to see you all well, Detective."
         },
         {
           "requiresScenes": ["ledger_scare"],
-          "dialog": "You: Why did you help me back there?\n\nChef Ytte: The baroness walked in. If I'd left you in that smoke, she'd have seen what I am. I had no choice."
+          "dialog": "You: Why did you help me after the fire?\n\nChef Ytte: The baroness walked in. If I'd left you burn, my cover would have been blown"
         },
         {
           "requiresClues": [
@@ -538,7 +538,7 @@
             "silver_key",
             "smuggling_documents"
           ],
-          "dialog": "Those papers... they don't prove anything! Why are you looking at me like that? I need — I need air."
+          "dialog": "Those papers prove nothing! I... need some air."
         },
         {
           "requiresClues": [
@@ -553,7 +553,7 @@
             "von_virtanens_journal",
             "silver_key"
           ],
-          "dialog": "A fountain key? I don't — look, Detective, I've got stock to manage. Must you keep turning up?"
+          "dialog": "A fountain key? Detective, I've got work to do. Must you keep turning up?"
         },
         {
           "requiresClues": [
@@ -567,7 +567,7 @@
             "burned_ledger_page",
             "von_virtanens_journal"
           ],
-          "dialog": "Smuggling? In this house? I wouldn't know the first thing about that. You're... you're making me sweat, Detective."
+          "dialog": "Smuggling? In this house? My my. You're... you're making me sweat, Detective."
         },
         {
           "requiresClues": [
@@ -580,7 +580,7 @@
             "manor_floor_plans",
             "burned_ledger_page"
           ],
-          "dialog": "A burned ledger? People burn rubbish all the time. I — I should get back to the pots. Excuse me."
+          "dialog": "A burned ledger? People burn rubbish all the time. I must get back to the pots. Excuse me."
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement", "torn_appointment_note"],
@@ -606,19 +606,19 @@
         },
         {
           "requiresClues": ["bloody_apron"],
-          "dialog": "A kitchen apron stiff with blood? I keep the household orderly — this is beyond anything I will tolerate among the staff."
+          "dialog": "A kitchen apron stiff with blood? This is beyond anything I will tolerate among the staff."
         },
         {
           "requiresClues": ["smuggling_documents"],
-          "dialog": "Smuggling papers in this house? Appalling. And last night the horses were restless — something peculiar was afoot by the stables. I heard the fuss from indoors."
+          "dialog": "Smuggling papers in this house? Also, something peculiar was afoot by the stables. I heard from indoors the horses were restless."
         },
         {
           "requiresScenes": ["ledger_scare"],
-          "dialog": "The dining room… I showed the master in there myself only hours before. What a dreadful scene."
+          "dialog": "The dining room... I showed the master in there myself only hours before. What a dreadful scene."
         },
         {
           "requiresClues": ["torn_appointment_note", "maid_statement", "examined_body", "examined_clock"],
-          "dialog": "Von Virtanen did go to the Dining Room after the Library. I showed him in myself."
+          "dialog": "Von Virtanen did go to the Dining Room after the Library. How do I know? I showed him in myself."
         },
         {
           "requiresClues": ["examined_body", "examined_clock", "maid_statement"],
@@ -628,17 +628,17 @@
     },
     {
       "npcId": "worker_man",
-      "default": "I keep to the grounds. Heard shouting from the house, but I saw nothing.",
+      "default": "I tend to the grounds. I saw nothing but heard shouting from the house.",
       "requiresClues": ["barons_diary"],
-      "blockedDialog": "I keep to the grounds. Heard shouting from the house, but I saw nothing.",
+      "blockedDialog": "I tend to the grounds. I saw nothing but heard shouting from the hous.",
       "conditions": [
         {
           "requiresClues": ["barons_diary", "rusty_old_key"],
-          "dialog": "You've already got the attic key. The old chest upstairs should open for you now."
+          "dialog": "With the attic key the old chest upstairs should open for you now."
         },
         {
           "requiresClues": ["barons_diary"],
-          "dialog": "Aye — I have the attic key. Here. You'll need it for the old chest upstairs."
+          "dialog": "Aye! I have the attic key. Here. You'll need it for the old chest upstairs."
         }
       ]
     },
@@ -648,11 +648,11 @@
       "conditions": [
         {
           "requiresClues": ["smuggling_documents", "bloody_apron", "cellar_evidence"],
-          "dialog": "You've got the wine cellar key from that crate. Stupid place to hang it — but like I said, drilling stone is a pain. Ytte's wine story still doesn't sit right with me."
+          "dialog": "You've got the wine cellar key from that crate. Stupid place to hang it, but drilling stone is a pain. Ytte's wine story still doesn't sit right with me."
         },
         {
           "requiresClues": ["smuggling_documents", "bloody_apron"],
-          "dialog": "That's the apron — Ytte came through here last night in a hurry, stains all over it. Said he'd spilled wine on it down in the cellar.\n\nFunny thing though… the wine cellar key is hanging on that stained crate down in the storage. Stupid place to put it, but drilling a stone wall is a pain."
+          "dialog": "That's the apron! Ytte came through here last night in a hurry, stains all over it. Said he'd spilled wine on it down in the cellar.\n\nFunny thing though… the wine cellar key is hanging on that stained crate down in the storage. Stupid place to put it, but drilling a stone wall is a pain."
         },
         {
           "requiresClues": ["smuggling_documents"],
@@ -660,11 +660,11 @@
         },
         {
           "requiresScenes": ["attic_scare"],
-          "dialog": "Someone jumped you up in the attic? This place ain't safe tonight — not for you, not for anybody."
+          "dialog": "Someone jumped you up in the attic? This place is no longer safe for anyone!"
         },
         {
           "requiresScenes": ["ledger_scare"],
-          "dialog": "Heard there was trouble in the dining room. Horses went mad. Glad you got out."
+          "dialog": "Heard there was some... trouble in the dining room."
         }
       ]
     }

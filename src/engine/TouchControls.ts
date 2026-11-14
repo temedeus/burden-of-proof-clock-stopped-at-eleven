@@ -5,6 +5,9 @@ const ROTATE_HINT_KEY = "clock-stopped-at-eleven-rotate-hint-dismissed";
 
 const MOVEMENT_KEYS = ["arrowup", "arrowdown", "arrowleft", "arrowright"] as const;
 
+/** How far the d-pad thumb knob leans toward the active direction. */
+const KNOB_REACH_PX = 14;
+
 /** Eight compass sectors (E, SE, S, SW, W, NW, N, NE) from atan2 angle. */
 const SECTOR_KEYS: readonly (readonly string[])[] = [
     ["arrowright"],
@@ -131,6 +134,14 @@ export class TouchControls {
     }
 
     private highlightSector(sector: number | null): void {
+        if (this.dpadEl) {
+            // Sector n sits at n * 45° clockwise from east (screen coords, +Y down)
+            const angle = sector === null ? 0 : (sector * Math.PI) / 4;
+            const reach = sector === null ? 0 : KNOB_REACH_PX;
+            this.dpadEl.style.setProperty("--knob-x", `${(Math.cos(angle) * reach).toFixed(1)}px`);
+            this.dpadEl.style.setProperty("--knob-y", `${(Math.sin(angle) * reach).toFixed(1)}px`);
+            this.dpadEl.classList.toggle("engaged", this.dpadPointerId !== null);
+        }
         for (const btn of this.sectorButtons) {
             const s = btn.dataset.sector;
             btn.classList.toggle("active", s !== undefined && sector !== null && Number(s) === sector);

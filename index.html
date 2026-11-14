@@ -21,21 +21,33 @@
       <canvas id="game" width="800" height="600"></canvas>
       <div id="touch-controls" hidden>
         <div class="touch-dpad" aria-label="Movement controls — drag across sectors">
-          <span class="touch-btn" data-sector="5" aria-hidden="true"></span>
-          <span class="touch-btn" data-sector="6" aria-hidden="true"></span>
-          <span class="touch-btn" data-sector="7" aria-hidden="true"></span>
-          <span class="touch-btn" data-sector="4" aria-hidden="true"></span>
-          <span class="touch-btn empty" aria-hidden="true"></span>
-          <span class="touch-btn" data-sector="0" aria-hidden="true"></span>
-          <span class="touch-btn" data-sector="3" aria-hidden="true"></span>
-          <span class="touch-btn" data-sector="2" aria-hidden="true"></span>
-          <span class="touch-btn" data-sector="1" aria-hidden="true"></span>
+          <span class="touch-arrow diagonal" data-sector="5" aria-hidden="true"></span>
+          <span class="touch-arrow" data-sector="6" aria-hidden="true"></span>
+          <span class="touch-arrow diagonal" data-sector="7" aria-hidden="true"></span>
+          <span class="touch-arrow" data-sector="4" aria-hidden="true"></span>
+          <span class="touch-arrow" data-sector="0" aria-hidden="true"></span>
+          <span class="touch-arrow diagonal" data-sector="3" aria-hidden="true"></span>
+          <span class="touch-arrow" data-sector="2" aria-hidden="true"></span>
+          <span class="touch-arrow diagonal" data-sector="1" aria-hidden="true"></span>
+          <span class="touch-dpad-knob" aria-hidden="true"></span>
         </div>
         <div class="touch-actions" aria-label="Action controls">
-          <button type="button" class="touch-btn wide" data-key="e" data-tap="true" aria-label="Interact">E</button>
-          <button type="button" class="touch-btn wide" data-key="i" data-tap="true" aria-label="Inventory">I</button>
-          <button type="button" class="touch-btn wide" data-key="m" data-tap="true" aria-label="Map">M</button>
-          <button type="button" class="touch-btn wide" data-key="escape" data-tap="true" aria-label="Menu">☰</button>
+          <button type="button" class="touch-btn primary" data-key="e" aria-label="Interact">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M15.5 15.5L21 21" /></svg>
+            <span>Interact</span>
+          </button>
+          <button type="button" class="touch-btn" data-key="m" aria-label="Map">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5zM9 4v13.5M15 6.5V20" /></svg>
+            <span>Map</span>
+          </button>
+          <button type="button" class="touch-btn" data-key="i" aria-label="Inventory">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5h14a1 1 0 0 1 1 1V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9.5a1 1 0 0 1 1-1zM9 8.5V7a3 3 0 0 1 6 0v1.5M4 13h16M12 12v2.5" /></svg>
+            <span>Items</span>
+          </button>
+          <button type="button" class="touch-btn" data-key="escape" aria-label="Menu">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            <span>Menu</span>
+          </button>
         </div>
       </div>
     </div>

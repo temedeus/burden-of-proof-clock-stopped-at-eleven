@@ -65,123 +65,161 @@ body {
 }
 
 .touch-dpad {
-  --touch-pad-size: 128px;
-  --touch-arrow-radius: calc(var(--touch-pad-size) * 0.38);
-  --touch-shaft-length: 22px;
+  --touch-pad-size: 136px;
+  --touch-arrow-radius: calc(var(--touch-pad-size) * 0.36);
+  --knob-x: 0px;
+  --knob-y: 0px;
   position: absolute;
   left: max(12px, env(safe-area-inset-left));
   bottom: max(12px, env(safe-area-inset-bottom));
   width: var(--touch-pad-size);
   height: var(--touch-pad-size);
   border-radius: 50%;
-  border: 2px solid rgba(196, 165, 116, 0.4);
-  background: rgba(42, 31, 31, 0.72);
+  border: 2px solid rgba(196, 165, 116, 0.45);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(70, 52, 44, 0.78) 0%,
+    rgba(42, 31, 31, 0.78) 62%,
+    rgba(24, 17, 17, 0.82) 100%
+  );
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.5);
   pointer-events: auto;
   touch-action: none;
   cursor: pointer;
 }
 
-.touch-dpad .touch-btn {
+/* Notched arrowhead pointing outward (local -Y), placed on a ring */
+.touch-arrow {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 28px;
-  height: 28px;
-  margin: -14px 0 0 -14px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: #e8e0d5;
-  font-size: 0;
+  width: 20px;
+  height: 18px;
+  margin: -9px 0 0 -10px;
+  background: #e8e0d5;
+  opacity: 0.85;
+  clip-path: polygon(50% 0, 100% 100%, 50% 72%, 0 100%);
   pointer-events: none;
   transform: rotate(var(--arrow-angle, 0deg))
-    translateY(calc(-1 * var(--touch-arrow-radius)));
+    translateY(calc(-1 * var(--touch-arrow-radius)))
+    scale(var(--arrow-scale, 1));
+  transition: opacity 80ms, background-color 80ms, transform 80ms;
 }
 
-/* Shaft toward the pad center (local +Y) */
-.touch-dpad .touch-btn::before {
-  content: "";
+.touch-arrow.diagonal {
+  --arrow-scale: 0.55;
+  opacity: 0.4;
+}
+
+.touch-arrow.active {
+  --arrow-scale: 1.25;
+  background: #f0c878;
+  opacity: 1;
+}
+
+.touch-arrow.diagonal.active {
+  --arrow-scale: 0.85;
+}
+
+.touch-arrow[data-sector="0"] { --arrow-angle: 90deg; }   /* E */
+.touch-arrow[data-sector="1"] { --arrow-angle: 135deg; }  /* SE */
+.touch-arrow[data-sector="2"] { --arrow-angle: 180deg; }  /* S */
+.touch-arrow[data-sector="3"] { --arrow-angle: 225deg; }  /* SW */
+.touch-arrow[data-sector="4"] { --arrow-angle: 270deg; }  /* W */
+.touch-arrow[data-sector="5"] { --arrow-angle: 315deg; }  /* NW */
+.touch-arrow[data-sector="6"] { --arrow-angle: 0deg; }    /* N */
+.touch-arrow[data-sector="7"] { --arrow-angle: 45deg; }   /* NE */
+
+/* Thumb knob — leans toward the active direction */
+.touch-dpad-knob {
   position: absolute;
   left: 50%;
-  top: 10px;
-  width: 2px;
-  height: var(--touch-shaft-length);
-  margin-left: -1px;
-  border-radius: 1px;
-  background: currentColor;
-  opacity: 0.9;
+  top: 50%;
+  width: 42px;
+  height: 42px;
+  margin: -21px 0 0 -21px;
+  border-radius: 50%;
+  border: 2px solid rgba(196, 165, 116, 0.55);
+  background: radial-gradient(circle at 40% 35%, #6b4a36, #33231d 75%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  transform: translate(var(--knob-x), var(--knob-y));
+  transition: transform 70ms ease-out, border-color 80ms;
 }
 
-/* Chevron tip pointing outward (local -Y) — same mark for every sector */
-.touch-dpad .touch-btn::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 1px;
-  width: 0;
-  height: 0;
-  margin-left: -6px;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 9px solid currentColor;
-}
-
-.touch-dpad .touch-btn[data-sector="0"] { --arrow-angle: 90deg; }   /* E */
-.touch-dpad .touch-btn[data-sector="1"] { --arrow-angle: 135deg; }  /* SE */
-.touch-dpad .touch-btn[data-sector="2"] { --arrow-angle: 180deg; }  /* S */
-.touch-dpad .touch-btn[data-sector="3"] { --arrow-angle: 225deg; }  /* SW */
-.touch-dpad .touch-btn[data-sector="4"] { --arrow-angle: 270deg; }  /* W */
-.touch-dpad .touch-btn[data-sector="5"] { --arrow-angle: 315deg; }  /* NW */
-.touch-dpad .touch-btn[data-sector="6"] { --arrow-angle: 0deg; }    /* N */
-.touch-dpad .touch-btn[data-sector="7"] { --arrow-angle: 45deg; }   /* NE */
-
-.touch-dpad .touch-btn.empty {
-  display: none;
+.touch-dpad.engaged .touch-dpad-knob {
+  border-color: #f0c878;
 }
 
 .touch-actions {
   position: absolute;
   right: max(12px, env(safe-area-inset-right));
   bottom: max(12px, env(safe-area-inset-bottom));
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 58px);
+  grid-auto-rows: 58px;
+  gap: 10px;
   pointer-events: none;
-}
-
-.touch-actions .touch-btn {
-  pointer-events: auto;
 }
 
 .touch-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  gap: 2px;
+  padding: 0;
   border: 2px solid rgba(196, 165, 116, 0.45);
-  border-radius: 50%;
-  background: rgba(42, 31, 31, 0.82);
+  border-radius: 16px;
+  background: linear-gradient(rgba(62, 46, 40, 0.86), rgba(34, 25, 25, 0.86));
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 235, 200, 0.12);
   color: #e8e0d5;
-  font: bold 14px "IM Fell English SC", "Libre Baskerville", serif;
+  font: 10px "IM Fell English SC", "Libre Baskerville", serif;
+  letter-spacing: 0.04em;
   cursor: pointer;
+  pointer-events: auto;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  transition: transform 60ms, background-color 60ms, border-color 60ms;
 }
 
-.touch-btn:active,
+.touch-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.touch-btn span {
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Interact: the main action, in the thumb's resting corner */
+.touch-btn.primary {
+  border-color: rgba(240, 200, 120, 0.8);
+  background: linear-gradient(rgba(150, 88, 36, 0.92), rgba(104, 54, 18, 0.92));
+  color: #fff4dc;
+}
+
 .touch-btn.active {
-  background: rgba(139, 69, 19, 0.9);
-  border-color: #c4a574;
+  transform: scale(0.94);
+  background: rgba(139, 69, 19, 0.95);
+  border-color: #f0c878;
   color: #fff;
 }
 
-.touch-btn.wide {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  padding: 0;
+.touch-btn.primary.active {
+  background: rgba(190, 120, 50, 0.98);
 }
 
 #rotate-hint {
